@@ -1,0 +1,5 @@
+{
+  "name": "hathor-rpc-lib",
+  "private": true,
+  "packageManager": "yarn@4.2.2"
+}
