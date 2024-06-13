@@ -139,7 +139,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^20.14.2":
+"@types/node@npm:20.14.2":
   version: 20.14.2
   resolution: "@types/node@npm:20.14.2"
   dependencies:
@@ -705,7 +705,7 @@ __metadata:
   dependencies:
     "@eslint/js": "npm:9.4.0"
     "@types/eslint__js": "npm:8.42.3"
-    "@types/node": "npm:^20.14.2"
+    "@types/node": "npm:20.14.2"
     eslint: "npm:9.4.0"
     typescript: "npm:5.4.5"
     typescript-eslint: "npm:7.13.0"
