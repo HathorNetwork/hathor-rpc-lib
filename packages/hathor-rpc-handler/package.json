@@ -1,4 +1,5 @@
 {
+  "name": "hathor-rpc-handler",
   "license": "MIT",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -14,13 +15,6 @@
     "build": "tsc",
     "watch": "tsc -w"
   },
-  "name": "hathor-rpc-handler",
   "author": "André Abadesso",
-  "module": "dist/index.js",
-  "devDependencies": {
-  },
-  "peerDependencies": {
-  },
-  "dependencies": {
-  }
+  "module": "dist/index.js"
 }

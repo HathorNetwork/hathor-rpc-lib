@@ -5,6 +5,12 @@ __metadata:
   version: 8
   cacheKey: 10c0
 
+"hathor-rpc-handler@workspace:packages/hathor-rpc-handler":
+  version: 0.0.0-use.local
+  resolution: "hathor-rpc-handler@workspace:packages/hathor-rpc-handler"
+  languageName: unknown
+  linkType: soft
+
 "hathor-rpc-lib@workspace:.":
   version: 0.0.0-use.local
   resolution: "hathor-rpc-lib@workspace:."
