@@ -5,9 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-export interface RpcRequest {
+export type RpcRequest = {
+  method: 'get_address';
   id: string;
   jsonrpc: string;
-  method: string;
-  params?: unknown;
+} | {
+  method: 'get_balance';
+  id: string;
+  jsonrpc: string;
+  params: {
+    token?: string | null;
+  }
 }

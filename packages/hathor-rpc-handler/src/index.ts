@@ -14,7 +14,7 @@ import { getConnectedNetwork } from './rpcMethods/getConnectedNetwork';
 import { getAddress } from './rpcMethods/getAddress';
 import { HathorWallet } from '@hathor/wallet-lib';
 
-export const handleRpcRequest = async (request: RpcRequest, wallet: HathorWallet): Promise<RpcResponse> => {
+export const handleRpcRequest = async (request: RpcRequest, wallet: HathorWallet): Promise<RpcResponse | void> => {
   switch (request.method) {
     case 'htr_sendTx':
       return sendTx(request, wallet);

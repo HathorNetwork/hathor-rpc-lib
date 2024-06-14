@@ -5,6 +5,4 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-export * from './rpcRequest';
-export * from './rpcResponse';
-export * from './prompt';
+export class PromptRejectedError extends Error {};
