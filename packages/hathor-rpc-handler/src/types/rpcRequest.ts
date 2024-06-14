@@ -43,6 +43,10 @@ export interface SignWithAddressRpcRequest extends BaseRpcRequest {
   }
 }
 
+export interface GetConnectedNetworkRpcRequest extends BaseRpcRequest {
+  method: 'htr_getConnectedNetwork'
+}
+
 export interface GenericRpcRequest extends BaseRpcRequest {
   params?: unknown | null;
 }

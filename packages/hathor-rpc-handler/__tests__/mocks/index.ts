@@ -1,5 +1,5 @@
 import { constants } from '@hathor/wallet-lib';
-import { GetAddressRpcRequest, GetBalanceRpcRequest, GetUtxosRpcRequest, SignWithAddressRpcRequest } from '../../src/types';
+import { GetAddressRpcRequest, GetBalanceRpcRequest, GetConnectedNetworkRpcRequest, GetUtxosRpcRequest, SignWithAddressRpcRequest } from '../../src/types';
 
 export const mockGetBalanceRequest: GetBalanceRpcRequest = {
   id: '1',
@@ -39,6 +39,12 @@ export const mockSignWithAddressRequest: SignWithAddressRpcRequest = {
     addressIndex: 0,
     message: 'Test message',
   },
+};
+
+export const mockGetConnectedNetworkRequest: GetConnectedNetworkRpcRequest = {
+  id: '1',
+  jsonrpc: '2.0',
+  method: 'htr_getConnectedNetwork',
 };
 
 export const mockPromptHandler = jest.fn();
