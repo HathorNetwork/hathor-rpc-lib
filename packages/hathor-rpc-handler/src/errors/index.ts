@@ -6,3 +6,5 @@
  */
 
 export class PromptRejectedError extends Error {};
+
+export class InvalidRpcMethod extends Error {};

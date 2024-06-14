@@ -4,22 +4,53 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+import { GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 
-export type ConfirmationPrompt = {
-  method: 'get_address';
+// TODO: These should come from the lib after we implement the method to
+// be common for both facades.
+export interface UtxoInfo {
+  address: string;
+  amount: number;
+  tx_id: string;
+  locked: boolean;
+  index: number;
+}
+
+export interface UtxoDetails {
+  total_amount_available: number;
+  total_utxos_available: number;
+  total_amount_locked: number;
+  total_utxos_locked: number;
+  utxos: UtxoInfo[];
+}
+
+export interface GetAddressConfirmationPrompt {
+  method: 'htr_getAddress';
   data: {
     address: string;
   }
-} | {
-  method: 'getBalance';
-  data: {
-    available: number;
-    locked: number;
-  }
-} | {
+}
+
+export interface GetBalanceConfirmationPrompt {
+  method: 'htr_getBalance';
+  data: GetBalanceObject[];
+}
+
+export interface GetUtxosConfirmationPrompt {
+  method: 'htr_getUtxos';
+  data: GetBalanceObject[];
+}
+
+export interface GenericConfirmationPrompt {
   method: string;
   data: unknown;
-};
+}
+
+export type ConfirmationPrompt =
+  GetAddressConfirmationPrompt
+  | GetBalanceConfirmationPrompt
+  | GetUtxosConfirmationPrompt
+  | GenericConfirmationPrompt;
 
 export type PromptResult = {
   type: 'CONFIRMATION';

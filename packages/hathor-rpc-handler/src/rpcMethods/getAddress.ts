@@ -6,7 +6,7 @@
  */
 
 import { HathorWallet } from '@hathor/wallet-lib';
-import { PromptHandler, RpcRequest } from '../types';
+import { GetAddressRpcRequest, PromptHandler } from '../types';
 import { PromptRejectedError } from '../errors';
 
 /**
@@ -23,18 +23,14 @@ import { PromptRejectedError } from '../errors';
  * @throws {PromptRejectedError} If the user rejects the prompt.
  */
 export async function getAddress(
-  rpcRequest: RpcRequest,
+  rpcRequest: GetAddressRpcRequest,
   wallet: HathorWallet,
   promptHandler: PromptHandler,
 ) {
-  if (rpcRequest.method !== 'get_address') {
-    throw new Error('getAddress trying to handle method different from get_address');
-  }
-
   const address = wallet.getAddressAtIndex(0);
 
   const confirmed = await promptHandler({
-    method: 'get_address',
+    method: rpcRequest.method,
     data: {
       address,
     }
