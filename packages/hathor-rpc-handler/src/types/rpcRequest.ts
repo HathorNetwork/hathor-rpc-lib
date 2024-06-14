@@ -35,6 +35,14 @@ export interface GetUtxosRpcRequest extends BaseRpcRequest {
   };
 }
 
+export interface SignWithAddressRpcRequest extends BaseRpcRequest {
+  method: 'htr_signWithAddress';
+  params: {
+    message: string;
+    addressIndex: number;
+  }
+}
+
 export interface GenericRpcRequest extends BaseRpcRequest {
   params?: unknown | null;
 }
@@ -42,5 +50,6 @@ export interface GenericRpcRequest extends BaseRpcRequest {
 export type RpcRequest =
   GetAddressRpcRequest
   | GetBalanceRpcRequest
-  | GetUtxosRpcRequest 
+  | GetUtxosRpcRequest
+  | SignWithAddressRpcRequest
   | GenericRpcRequest;

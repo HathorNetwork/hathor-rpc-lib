@@ -1,5 +1,5 @@
 import { constants } from '@hathor/wallet-lib';
-import { GetAddressRpcRequest, GetBalanceRpcRequest, GetUtxosRpcRequest } from '../../src/types';
+import { GetAddressRpcRequest, GetBalanceRpcRequest, GetUtxosRpcRequest, SignWithAddressRpcRequest } from '../../src/types';
 
 export const mockGetBalanceRequest: GetBalanceRpcRequest = {
   id: '1',
@@ -28,6 +28,16 @@ export const mockGetUtxosRequest: GetUtxosRpcRequest = {
     amountBiggerThan: 10,
     maximumAmount: 10000,
     onlyAvailableUtxos: true,
+  },
+};
+
+export const mockSignWithAddressRequest: SignWithAddressRpcRequest = {
+  id: '1',
+  jsonrpc: '2.0',
+  method: 'htr_signWithAddress',
+  params: {
+    addressIndex: 0,
+    message: 'Test message',
   },
 };
 

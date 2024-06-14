@@ -41,6 +41,18 @@ export interface GetUtxosConfirmationPrompt {
   data: GetBalanceObject[];
 }
 
+export interface SignMessageWithAddressConfirmationPrompt {
+  method: 'htr_signWithAddress';
+  data: {
+    address: string;
+    message: string;
+  }
+}
+
+export interface PinConfirmationPrompt {
+  method: string;
+}
+
 export interface GenericConfirmationPrompt {
   method: string;
   data: unknown;
@@ -50,6 +62,7 @@ export type ConfirmationPrompt =
   GetAddressConfirmationPrompt
   | GetBalanceConfirmationPrompt
   | GetUtxosConfirmationPrompt
+  | PinConfirmationPrompt
   | GenericConfirmationPrompt;
 
 export type PromptResult = {
