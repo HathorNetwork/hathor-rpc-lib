@@ -7,4 +7,7 @@
 
 export class PromptRejectedError extends Error {};
 
+export class SendNanoContractTxFailure extends Error {};
+
 export class InvalidRpcMethod extends Error {};
+

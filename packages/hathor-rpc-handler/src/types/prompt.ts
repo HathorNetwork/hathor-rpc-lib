@@ -53,6 +53,10 @@ export interface PinConfirmationPrompt {
   method: string;
 }
 
+export interface AddressRequestPrompt {
+  method: string;
+}
+
 export interface GenericConfirmationPrompt {
   method: string;
   data: unknown;
@@ -63,6 +67,7 @@ export type ConfirmationPrompt =
   | GetBalanceConfirmationPrompt
   | GetUtxosConfirmationPrompt
   | PinConfirmationPrompt
+  | AddressRequestPrompt
   | GenericConfirmationPrompt;
 
 export type PromptResult = {

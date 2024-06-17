@@ -43,6 +43,24 @@ export interface SignWithAddressRpcRequest extends BaseRpcRequest {
   }
 }
 
+export interface NCAction {
+  type: string;
+  token: string;
+  amount: string;
+}
+
+export interface SendNanoContractRpcRequest extends BaseRpcRequest {
+  method: 'htr_sendNanoContract';
+  params: {
+    method: string;
+    blueprint_id: string;
+    nc_id: string | null;
+    actions: NCAction[];
+    args: string[];
+    push_tx: boolean;
+  }
+}
+
 export interface GetConnectedNetworkRpcRequest extends BaseRpcRequest {
   method: 'htr_getConnectedNetwork'
 }
