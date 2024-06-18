@@ -7,7 +7,8 @@
 
 import { HathorWallet } from '@hathor/wallet-lib';
 import { ConfirmationPromptTypes, GetAddressRpcRequest, PromptHandler } from '../types';
-import { PromptRejectedError } from '../errors';
+import { NotImplementedError, PromptRejectedError } from '../errors';
+import { validateNetwork } from '../helpers';
 
 /**
  * Handles the 'get_address' RPC request by prompting the user for confirmation
@@ -26,25 +27,45 @@ export async function getAddress(
   wallet: HathorWallet,
   promptHandler: PromptHandler,
 ) {
-  const { type } = rpcRequest.params;
+  validateNetwork(wallet, rpcRequest.params.network);
+
+  const { type, index } = rpcRequest.params;
   let address: string;
 
-  if (type === 'first_empty') {
-    address = await wallet.getCurrentAddress();
-  } else {
-    throw new Error('Not implemented.');
+  switch (type) {
+    case 'first_empty':
+      address = await wallet.getCurrentAddress();
+    break;
+    case 'full_path':
+      throw new NotImplementedError();
+    case 'index':
+      address = await wallet.getAddressAtIndex(index);
+    break;
+    case 'client': {
+      const response = await promptHandler({
+        type: ConfirmationPromptTypes.AddressRequestClientPrompt,
+        method: rpcRequest.method,
+      });
+
+      address = response.data.address;
+    }
+    break;
   }
 
-  const confirmed = await promptHandler({
-    type: ConfirmationPromptTypes.AddressRequestPrompt,
-    method: rpcRequest.method,
-    data: {
-      address,
-    }
-  });
+  // We already confirmed with the user and he selected the address he wanted
+  // to share. No need to double check
+  if (type !== 'client') {
+    const confirmed = await promptHandler({
+      type: ConfirmationPromptTypes.AddressRequestPrompt,
+      method: rpcRequest.method,
+      data: {
+        address,
+      }
+    });
 
-  if (!confirmed) {
-    throw new PromptRejectedError();
+    if (!confirmed) {
+      throw new PromptRejectedError();
+    }
   }
 
   return address;

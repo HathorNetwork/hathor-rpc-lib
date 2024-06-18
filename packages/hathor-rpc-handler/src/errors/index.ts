@@ -11,3 +11,6 @@ export class SendNanoContractTxFailure extends Error {};
 
 export class InvalidRpcMethod extends Error {};
 
+export class NotImplementedError extends Error {};
+
+export class DifferentNetworkError extends Error {};

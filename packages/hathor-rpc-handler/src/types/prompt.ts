@@ -55,6 +55,11 @@ export enum ConfirmationPromptTypes {
   PinConfirmationPrompt,
   AddressRequestPrompt,
   GenericConfirmationPrompt,
+  AddressRequestClientPrompt,
+}
+
+export enum ConfirmationResponseTypes {
+  AddressRequestClientResponse,
 }
 
 export interface PinConfirmationPrompt {
@@ -70,6 +75,21 @@ export interface AddressRequestPrompt {
   }
 }
 
+export interface AddressRequestClientResponse {
+  type: ConfirmationResponseTypes.AddressRequestClientResponse;
+  data: {
+    address: string;
+  }
+}
+
+export interface AddressRequestClientPrompt {
+  type: ConfirmationPromptTypes.AddressRequestClientPrompt;
+  method: string;
+  data?: {
+    address: string;
+  }
+}
+
 export interface GenericConfirmationPrompt {
   type: ConfirmationPromptTypes.GenericConfirmationPrompt;
   method: string;
@@ -78,6 +98,7 @@ export interface GenericConfirmationPrompt {
 
 export type ConfirmationPrompt =
   GetAddressConfirmationPrompt
+  | AddressRequestClientPrompt
   | GetBalanceConfirmationPrompt
   | GetUtxosConfirmationPrompt
   | PinConfirmationPrompt
@@ -85,12 +106,15 @@ export type ConfirmationPrompt =
   | GenericConfirmationPrompt
   | SignMessageWithAddressConfirmationPrompt;
 
-export type PromptResult = {
-  type: 'CONFIRMATION';
-  result: boolean;
-} | {
-  type: 'INPUT';
-  result: string;
+
+export interface AddressRequestClientResponse {
+  type: ConfirmationResponseTypes.AddressRequestClientResponse;
+  data: {
+    address: string;
+  }
 }
 
-export type PromptHandler = (prompt: ConfirmationPrompt) => Promise<PromptResult>;
+export type ConfirmationResponse =
+  AddressRequestClientResponse;
+
+export type PromptHandler = (prompt: ConfirmationPrompt) => Promise<ConfirmationResponse>;
