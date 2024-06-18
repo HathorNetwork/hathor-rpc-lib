@@ -7,7 +7,7 @@
 
 import { HathorWallet } from '@hathor/wallet-lib';
 import { sendNanoContractTx } from '../../src/rpcMethods/sendNanoContractTx';
-import { RpcMethods, SendNanoContractRpcRequest } from '../../src/types';
+import { ConfirmationPromptTypes, RpcMethods, SendNanoContractRpcRequest } from '../../src/types';
 import { SendNanoContractTxFailure } from '../../src/errors';
 
 describe('sendNanoContractTx', () => {
@@ -51,7 +51,10 @@ describe('sendNanoContractTx', () => {
     const result = await sendNanoContractTx(rpcRequest, wallet, promptHandler);
 
     expect(promptHandler).toHaveBeenCalledTimes(2);
-    expect(promptHandler).toHaveBeenCalledWith({ method: rpcRequest.method });
+    expect(promptHandler).toHaveBeenCalledWith({
+      type: ConfirmationPromptTypes.PinConfirmationPrompt,
+      method: rpcRequest.method,
+    });
     expect(wallet.createAndSendNanoContractTransaction).toHaveBeenCalledWith(
       rpcRequest.params.method,
       address,
@@ -77,7 +80,10 @@ describe('sendNanoContractTx', () => {
     await expect(sendNanoContractTx(rpcRequest, wallet, promptHandler)).rejects.toThrow(SendNanoContractTxFailure);
 
     expect(promptHandler).toHaveBeenCalledTimes(2);
-    expect(promptHandler).toHaveBeenCalledWith({ method: rpcRequest.method });
+    expect(promptHandler).toHaveBeenCalledWith({
+      type: ConfirmationPromptTypes.AddressRequestPrompt,
+      method: rpcRequest.method
+    });
     expect(wallet.createAndSendNanoContractTransaction).toHaveBeenCalledWith(
       rpcRequest.params.method,
       address,

@@ -7,7 +7,7 @@
 
 import { PromptRejectedError } from '../../src/errors';
 import { mockPromptHandler, mockGetUtxosRequest } from '../mocks';
-import { HathorWallet, HathorWalletServiceWallet } from '@hathor/wallet-lib';
+import { HathorWallet, HathorWalletServiceWallet, Network } from '@hathor/wallet-lib';
 import { getUtxos } from '../../src/rpcMethods/getUtxos';
 import { UtxoDetails } from '../../src/types';
 
@@ -27,6 +27,7 @@ const mockResponse: UtxoDetails = {
 
 const mockWallet = {
   getUtxos: jest.fn().mockResolvedValue(mockResponse),
+  getNetworkObject: jest.fn().mockResolvedValue(new Network('mainnet')),
 } as unknown as HathorWallet;
 
 describe('getUtxos', () => {

@@ -27,6 +27,7 @@ export const mockGetUtxosRequest: GetUtxosRpcRequest = {
   jsonrpc: '2.0',
   method: RpcMethods.GetUtxos,
   params: {
+    network: 'mainnet',
     token: 'mock_token',
     maxUtxos: 10,
     filterAddress: 'mock_address',

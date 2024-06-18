@@ -46,6 +46,7 @@ export interface GetBalanceRpcRequest extends BaseRpcRequest {
 export interface GetUtxosRpcRequest extends BaseRpcRequest {
   method: RpcMethods.GetUtxos,
   params: {
+    network: string;
     maxUtxos: number;
     token: string;
     filterAddress: string;

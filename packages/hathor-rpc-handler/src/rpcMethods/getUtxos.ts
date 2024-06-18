@@ -8,6 +8,7 @@ import { HathorWallet, HathorWalletServiceWallet } from '@hathor/wallet-lib';
 import { GetUtxosRpcRequest, PromptHandler, UtxoDetails } from '../types';
 import { PromptRejectedError } from '../errors';
 import { ConfirmationPromptTypes } from '../types';
+import { validateNetwork } from '../helpers';
 
 /**
  * Handles the 'htr_getUtxos' RPC request by prompting the user for confirmation
@@ -28,6 +29,8 @@ export async function getUtxos(
   wallet: HathorWallet,
   promptHandler: PromptHandler,
 ) {
+  validateNetwork(wallet, rpcRequest.params.network);
+
   // TODO: The facades have different signatures, the wallet-service method does
   // not have the `amountSmallerThan` and the `amountBiggerThan` parameters.
   // We need to implement them and use the method here.

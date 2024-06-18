@@ -7,6 +7,7 @@
 
 import { PromptRejectedError } from '../../src/errors';
 import { signWithAddress } from '../../src/rpcMethods/signWithAddress';
+import { ConfirmationPromptTypes } from '../../src/types';
 import { mockPromptHandler, mockSignWithAddressRequest } from '../mocks';
 import { IHathorWallet } from '@hathor/wallet-lib/lib/wallet/types';
 
@@ -29,6 +30,7 @@ describe('signWithAddress', () => {
 
     expect(mockWallet.getAddressAtIndex).toHaveBeenCalledWith(0);
     expect(mockPromptHandler).toHaveBeenCalledWith({
+      type: ConfirmationPromptTypes.SignMessageWithAddress,
       method: mockSignWithAddressRequest.method,
       data: {
         address: 'mocked_address',
@@ -48,6 +50,7 @@ describe('signWithAddress', () => {
     await expect(signWithAddress(mockSignWithAddressRequest, mockWallet, mockPromptHandler)).rejects.toThrow(PromptRejectedError);
     expect(mockWallet.getAddressAtIndex).toHaveBeenCalledWith(0);
     expect(mockPromptHandler).toHaveBeenCalledWith({
+      type: ConfirmationPromptTypes.SignMessageWithAddress,
       method: mockSignWithAddressRequest.method,
       data: {
         address: 'mocked_address',
@@ -68,6 +71,7 @@ describe('signWithAddress', () => {
     await expect(signWithAddress(mockSignWithAddressRequest, mockWallet, mockPromptHandler)).rejects.toThrow(PromptRejectedError);
     expect(mockWallet.getAddressAtIndex).toHaveBeenCalledWith(0);
     expect(mockPromptHandler).toHaveBeenCalledWith({
+      type: ConfirmationPromptTypes.SignMessageWithAddress,
       method: mockSignWithAddressRequest.method,
       data: {
         address: 'mocked_address',
