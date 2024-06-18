@@ -22,7 +22,6 @@ export async function getConnectedNetwork(
   _rpcRequest: GetConnectedNetworkRpcRequest,
   wallet: HathorWallet,
 ) {
-
   const network: Network = await wallet.getNetworkObject();
 
   const result = {

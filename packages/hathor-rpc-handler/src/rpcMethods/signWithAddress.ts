@@ -8,6 +8,8 @@
 import { HathorWallet } from '@hathor/wallet-lib';
 import { ConfirmationPromptTypes, PinConfirmationPrompt, PromptHandler, SignMessageWithAddressConfirmationPrompt, SignWithAddressRpcRequest } from '../types';
 import { PromptRejectedError } from '../errors';
+import { validateNetwork } from '../helpers';
+import { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
 
 /**
  * Handles the 'htr_signWithAddress' RPC request by prompting the user for confirmation
@@ -26,7 +28,18 @@ export async function signWithAddress(
   wallet: HathorWallet,
   promptHandler: PromptHandler,
 ) {
-  const address = await wallet.getAddressAtIndex(rpcRequest.params.addressIndex);
+  validateNetwork(wallet, rpcRequest.params.network);
+
+  const message = rpcRequest.params.message;
+  const base58: string = await wallet.getAddressAtIndex(rpcRequest.params.addressIndex);
+  const index: number = await wallet.getAddressIndex(base58);
+  const addressPath: string = await wallet.getAddressPathForIndex(index);
+  const address: AddressInfoObject = {
+    address: base58,
+    index,
+    addressPath,
+    info: undefined, // The type must be updated in the lib to make this optional
+  };
 
   const prompt: SignMessageWithAddressConfirmationPrompt = {
     type: ConfirmationPromptTypes.SignMessageWithAddress,
@@ -50,13 +63,17 @@ export async function signWithAddress(
 
   try {
     const pinCode = await promptHandler(pinPrompt);
-    const signedMessage = await wallet.signMessageWithAddress(
+    const signature = await wallet.signMessageWithAddress(
       rpcRequest.params.message,
       rpcRequest.params.addressIndex,
       pinCode,
     );
 
-    return signedMessage;
+    return {
+      message,
+      signature,
+      address,
+    };
   } catch (e) {
     throw new PromptRejectedError();
   }

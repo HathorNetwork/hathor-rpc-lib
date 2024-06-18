@@ -5,20 +5,35 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { HathorWallet, Network } from '@hathor/wallet-lib';
 import { PromptRejectedError } from '../../src/errors';
 import { signWithAddress } from '../../src/rpcMethods/signWithAddress';
 import { ConfirmationPromptTypes } from '../../src/types';
 import { mockPromptHandler, mockSignWithAddressRequest } from '../mocks';
-import { IHathorWallet } from '@hathor/wallet-lib/lib/wallet/types';
+import { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
 
-export const mockWallet = {
-  getAddressAtIndex: jest.fn().mockReturnValue('mocked_address'),
-  signMessageWithAddress: jest.fn().mockResolvedValue('signed_message'),
-} as unknown as IHathorWallet;
+const mockedAddressInfo: AddressInfoObject = {
+  address: 'address1',
+  addressPath: 'm/123/123',
+  index: 0,
+  info: undefined,
+};
 
 describe('signWithAddress', () => {
+  let wallet: jest.Mocked<HathorWallet>;
+
   afterEach(() => {
     jest.clearAllMocks();
+  });
+
+  beforeEach(() => {
+    wallet = {
+      getAddressAtIndex: jest.fn().mockResolvedValue(mockedAddressInfo.address),
+      signMessageWithAddress: jest.fn().mockResolvedValue('signed_message'),
+      getNetworkObject: jest.fn().mockReturnValue(new Network('mainnet')),
+      getAddressIndex: jest.fn().mockResolvedValue(mockedAddressInfo.index),
+      getAddressPathForIndex: jest.fn().mockResolvedValue(mockedAddressInfo.addressPath),
+    } as unknown as HathorWallet;
   });
 
   it('should return signed message if user confirms and provides PIN', async () => {
@@ -26,41 +41,46 @@ describe('signWithAddress', () => {
       .mockResolvedValueOnce(true)
       .mockResolvedValueOnce('mock_pin');
 
-    const result = await signWithAddress(mockSignWithAddressRequest, mockWallet, mockPromptHandler);
+    const result = await signWithAddress(mockSignWithAddressRequest, wallet, mockPromptHandler);
 
-    expect(mockWallet.getAddressAtIndex).toHaveBeenCalledWith(0);
+    expect(wallet.getAddressAtIndex).toHaveBeenCalledWith(0);
     expect(mockPromptHandler).toHaveBeenCalledWith({
       type: ConfirmationPromptTypes.SignMessageWithAddress,
       method: mockSignWithAddressRequest.method,
       data: {
-        address: 'mocked_address',
+        address: mockedAddressInfo,
         message: 'Test message',
       },
     });
     expect(mockPromptHandler).toHaveBeenCalledWith({
+      type: ConfirmationPromptTypes.PinConfirmationPrompt,
       method: mockSignWithAddressRequest.method,
     });
-    expect(mockWallet.signMessageWithAddress).toHaveBeenCalledWith('Test message', 0, 'mock_pin');
-    expect(result).toBe('signed_message');
+    expect(wallet.signMessageWithAddress).toHaveBeenCalledWith('Test message', 0, 'mock_pin');
+    expect(result).toStrictEqual({
+      address: mockedAddressInfo,
+      message: 'Test message',
+      signature: 'signed_message',
+    });
   });
 
   it('should throw PromptRejectedError if user rejects address confirmation', async () => {
     mockPromptHandler.mockResolvedValueOnce(false);
 
-    await expect(signWithAddress(mockSignWithAddressRequest, mockWallet, mockPromptHandler)).rejects.toThrow(PromptRejectedError);
-    expect(mockWallet.getAddressAtIndex).toHaveBeenCalledWith(0);
+    await expect(signWithAddress(mockSignWithAddressRequest, wallet, mockPromptHandler)).rejects.toThrow(PromptRejectedError);
+    expect(wallet.getAddressAtIndex).toHaveBeenCalledWith(0);
     expect(mockPromptHandler).toHaveBeenCalledWith({
       type: ConfirmationPromptTypes.SignMessageWithAddress,
       method: mockSignWithAddressRequest.method,
       data: {
-        address: 'mocked_address',
+        address: mockedAddressInfo,
         message: 'Test message',
       },
     });
     expect(mockPromptHandler).not.toHaveBeenCalledWith({
       method: mockSignWithAddressRequest.method,
     });
-    expect(mockWallet.signMessageWithAddress).not.toHaveBeenCalled();
+    expect(wallet.signMessageWithAddress).not.toHaveBeenCalled();
   });
 
   it('should throw PromptRejectedError if user rejects PIN prompt', async () => {
@@ -68,19 +88,20 @@ describe('signWithAddress', () => {
       .mockResolvedValueOnce(true)
       .mockResolvedValueOnce(Promise.reject()); 
 
-    await expect(signWithAddress(mockSignWithAddressRequest, mockWallet, mockPromptHandler)).rejects.toThrow(PromptRejectedError);
-    expect(mockWallet.getAddressAtIndex).toHaveBeenCalledWith(0);
+    await expect(signWithAddress(mockSignWithAddressRequest, wallet, mockPromptHandler)).rejects.toThrow(PromptRejectedError);
+    expect(wallet.getAddressAtIndex).toHaveBeenCalledWith(0);
     expect(mockPromptHandler).toHaveBeenCalledWith({
       type: ConfirmationPromptTypes.SignMessageWithAddress,
       method: mockSignWithAddressRequest.method,
       data: {
-        address: 'mocked_address',
+        address: mockedAddressInfo,
         message: 'Test message',
       },
     });
     expect(mockPromptHandler).toHaveBeenCalledWith({
+      type: ConfirmationPromptTypes.PinConfirmationPrompt,
       method: mockSignWithAddressRequest.method,
     });
-    expect(mockWallet.signMessageWithAddress).not.toHaveBeenCalled();
+    expect(wallet.signMessageWithAddress).not.toHaveBeenCalled();
   });
 });

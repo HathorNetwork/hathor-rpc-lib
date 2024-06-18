@@ -43,6 +43,7 @@ export const mockSignWithAddressRequest: SignWithAddressRpcRequest = {
   jsonrpc: '2.0',
   method: RpcMethods.SignWithAddress,
   params: {
+    network: 'mainnet',
     addressIndex: 0,
     message: 'Test message',
   },

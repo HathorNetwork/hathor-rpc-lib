@@ -60,6 +60,7 @@ export interface GetUtxosRpcRequest extends BaseRpcRequest {
 export interface SignWithAddressRpcRequest extends BaseRpcRequest {
   method: RpcMethods.SignWithAddress,
   params: {
+    network: string;
     message: string;
     addressIndex: number;
   }

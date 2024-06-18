@@ -31,13 +31,6 @@ export async function getUtxos(
 ) {
   validateNetwork(wallet, rpcRequest.params.network);
 
-  // TODO: The facades have different signatures, the wallet-service method does
-  // not have the `amountSmallerThan` and the `amountBiggerThan` parameters.
-  // We need to implement them and use the method here.
-  if (wallet instanceof HathorWalletServiceWallet) {
-    throw new Error('This method is not yet implemented in the wallet-service facade');
-  }
-
   const options = {
     'token': rpcRequest.params.token,
     'authorities': 0,
@@ -67,4 +60,3 @@ export async function getUtxos(
 
   return utxoDetails;
 }
-

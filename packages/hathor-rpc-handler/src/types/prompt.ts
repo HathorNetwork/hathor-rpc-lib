@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import { GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
+import { AddressInfoObject, GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 
 export enum ConfirmationPromptTypes {
   GetBalanceConfirmationPrompt,
@@ -43,7 +43,7 @@ export interface GetUtxosConfirmationPrompt extends BaseConfirmationPrompt {
 export interface SignMessageWithAddressConfirmationPrompt extends BaseConfirmationPrompt {
   type: ConfirmationPromptTypes.SignMessageWithAddress;
   data: {
-    address: string;
+    address: AddressInfoObject;
     message: string;
   }
 }

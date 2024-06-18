@@ -9,7 +9,7 @@ import { PromptRejectedError } from '../../src/errors';
 import { mockPromptHandler, mockGetUtxosRequest } from '../mocks';
 import { HathorWallet, HathorWalletServiceWallet, Network } from '@hathor/wallet-lib';
 import { getUtxos } from '../../src/rpcMethods/getUtxos';
-import { UtxoDetails } from '../../src/types';
+import { ConfirmationPromptTypes, UtxoDetails } from '../../src/types';
 
 const mockResponse: UtxoDetails = {
   total_amount_available: 50,
@@ -25,22 +25,22 @@ const mockResponse: UtxoDetails = {
   }]
 };
 
-const mockWallet = {
-  getUtxos: jest.fn().mockResolvedValue(mockResponse),
-  getNetworkObject: jest.fn().mockResolvedValue(new Network('mainnet')),
-} as unknown as HathorWallet;
-
 describe('getUtxos', () => {
-  afterEach(() => {
-    jest.clearAllMocks();
+  let wallet: jest.Mocked<HathorWallet>;
+
+  beforeEach(() => {
+    wallet = {
+      getUtxos: jest.fn().mockResolvedValue(mockResponse),
+      getNetworkObject: jest.fn().mockReturnValue(new Network('mainnet')),
+    } as unknown as HathorWallet;
   });
 
   it('should return UTXO details if user confirms', async () => {
     mockPromptHandler.mockResolvedValue(true);
 
-    const result = await getUtxos(mockGetUtxosRequest, mockWallet, mockPromptHandler);
+    const result = await getUtxos(mockGetUtxosRequest, wallet, mockPromptHandler);
 
-    expect(mockWallet.getUtxos).toHaveBeenCalledWith({
+    expect(wallet.getUtxos).toHaveBeenCalledWith({
       token: 'mock_token',
       authorities: 0,
       max_utxos: 10,
@@ -52,6 +52,7 @@ describe('getUtxos', () => {
     });
 
     expect(mockPromptHandler).toHaveBeenCalledWith({
+      type: ConfirmationPromptTypes.GenericConfirmationPrompt,
       method: mockGetUtxosRequest.method,
       data: mockResponse,
     });
@@ -62,8 +63,8 @@ describe('getUtxos', () => {
   it('should throw PromptRejectedError if user rejects', async () => {
     mockPromptHandler.mockResolvedValue(false);
 
-    await expect(getUtxos(mockGetUtxosRequest, mockWallet, mockPromptHandler)).rejects.toThrow(PromptRejectedError);
-    expect(mockWallet.getUtxos).toHaveBeenCalledWith({
+    await expect(getUtxos(mockGetUtxosRequest, wallet, mockPromptHandler)).rejects.toThrow(PromptRejectedError);
+    expect(wallet.getUtxos).toHaveBeenCalledWith({
       token: 'mock_token',
       authorities: 0,
       max_utxos: 10,
@@ -75,19 +76,9 @@ describe('getUtxos', () => {
     });
 
     expect(mockPromptHandler).toHaveBeenCalledWith({
+      type: ConfirmationPromptTypes.GenericConfirmationPrompt,
       method: mockGetUtxosRequest.method,
       data: mockResponse,
     });
-  });
-
-  it('should throw Error if the method is not implemented in the wallet-service facade', async () => {
-    const instance = Object.create(HathorWalletServiceWallet.prototype);
-    const walletServiceMock = Object.assign(instance, {
-      ...mockWallet,
-    });
-
-    await expect(getUtxos(mockGetUtxosRequest, walletServiceMock, mockPromptHandler)).rejects.toThrow(Error);
-    expect(walletServiceMock.getUtxos).not.toHaveBeenCalled();
-    expect(mockPromptHandler).not.toHaveBeenCalled();
   });
 });
