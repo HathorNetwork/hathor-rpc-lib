@@ -6,7 +6,8 @@ export const mockGetBalanceRequest: GetBalanceRpcRequest = {
   jsonrpc: '2.0',
   method: RpcMethods.GetBalance,
   params: {
-    token: constants.HATHOR_TOKEN_CONFIG.uid,
+    network: 'mainnet',
+    tokens: [constants.HATHOR_TOKEN_CONFIG.uid],
   },
 };
 

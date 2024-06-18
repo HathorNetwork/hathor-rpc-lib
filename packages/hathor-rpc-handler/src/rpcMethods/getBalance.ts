@@ -5,35 +5,48 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { HathorWallet, constants } from '@hathor/wallet-lib';
+import { HathorWallet } from '@hathor/wallet-lib';
 import { GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
-import { ConfirmationPrompt, ConfirmationPromptTypes, GetBalanceRpcRequest, PromptHandler } from '../types';
-import { PromptRejectedError } from '../errors';
+import {
+  ConfirmationPromptTypes,
+  GetBalanceConfirmationPrompt,
+  GetBalanceRpcRequest,
+  PromptHandler,
+} from '../types';
+import { NotImplementedError, PromptRejectedError } from '../errors';
+import { validateNetwork } from '../helpers';
 
 /**
- * Handles the 'get_balance' RPC request by prompting the user for confirmation
- * and returning the balance if confirmed.
- * 
- * @param rpcRequest - The RPC request object containing the method and parameters.
- * @param wallet - The Hathor wallet instance used to get the balance.
- * @param promptHandler - The function to handle prompting the user for confirmation.
+ * Gets the balance for specified tokens using the provided wallet.
  *
- * @returns The balance from the wallet if the user confirms.
+ * @param rpcRequest - The RPC request containing the parameters for getting the balance.
+ * @param wallet - The wallet instance to use for retrieving the balance.
+ * @param promptHandler - A function to handle prompts for user confirmation.
  *
- * @throws {Error} If the RPC request method is not 'get_balance'.
- * @throws {PromptRejectedError} If the user rejects the prompt.
+ * @returns The balances of the specified tokens.
+ *
+ * @throws {NotImplementedError} - If address indexes are specified, which is not implemented.
+ * @throws {PromptRejectedError} - If the user rejects the balance confirmation prompt.
  */
 export async function getBalance(
   rpcRequest: GetBalanceRpcRequest,
   wallet: HathorWallet,
   promptHandler: PromptHandler,
 ) {
-  const token = rpcRequest.params.token || constants.HATHOR_TOKEN_CONFIG.uid;
+  const { network, tokens, addressIndexes } = rpcRequest.params;
 
-  const balances: GetBalanceObject[] = await wallet.getBalance(token);
+  if (addressIndexes) {
+    throw new NotImplementedError();
+  }
 
-  const prompt: ConfirmationPrompt = {
-    type: ConfirmationPromptTypes.GenericConfirmationPrompt,
+  validateNetwork(wallet, network);
+
+  const balances: GetBalanceObject[] = await Promise.all(
+    tokens.map(token => wallet.getBalance(token)),
+  );
+
+  const prompt: GetBalanceConfirmationPrompt = {
+    type: ConfirmationPromptTypes.GetBalanceConfirmationPrompt,
     method: rpcRequest.method,
     data: balances
   };

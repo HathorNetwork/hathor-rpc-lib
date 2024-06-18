@@ -6,10 +6,10 @@
  */
 
 import { GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
-import { PromptRejectedError } from '../../src/errors';
+import { NotImplementedError, PromptRejectedError } from '../../src/errors';
 import { getBalance } from '../../src/rpcMethods/getBalance';
-import { mockPromptHandler, mockGetBalanceRequest } from '../mocks';
-import { HathorWallet, constants } from '@hathor/wallet-lib';
+import { HathorWallet, Network } from '@hathor/wallet-lib';
+import { ConfirmationPromptTypes, GetBalanceRpcRequest, RpcMethods } from '../../src/types';
 
 const mockedTokenBalance: GetBalanceObject[] = [{
   token: {
@@ -35,36 +35,71 @@ const mockedTokenBalance: GetBalanceObject[] = [{
   lockExpires: null,
 }];
 
-const mockWallet = {
-  getBalance: jest.fn().mockReturnValue(Promise.resolve(mockedTokenBalance)),
-} as unknown as HathorWallet;
+const BaseRpcCall = {
+  jsonrpc: '2.0',
+  id: '3',
+};
 
 describe('getBalance', () => {
-  afterEach(() => {
-    jest.clearAllMocks();
+  let wallet: jest.Mocked<HathorWallet>;
+  let promptHandler: jest.Mock;
+
+  beforeEach(() => {
+    wallet = {
+      getBalance: jest.fn().mockReturnValue(Promise.resolve(mockedTokenBalance)),
+      getNetworkObject: jest.fn().mockReturnValue(new Network('mainnet')),
+    } as unknown as HathorWallet;
+    promptHandler = jest.fn();
   });
 
-  it('should return balance if user confirms', async () => {
-    mockPromptHandler.mockResolvedValue(true);
+  it('should throw NotImplementedError if addressIndexes are specified', async () => {
+    const rpcRequest: GetBalanceRpcRequest = {
+      ...BaseRpcCall,
+      params: {
+        network: 'mainnet',
+        tokens: ['token1'],
+        addressIndexes: [0],
+      },
+      method: RpcMethods.GetBalance,
+    };
 
-    const result = await getBalance(mockGetBalanceRequest, mockWallet, mockPromptHandler);
-
-    expect(mockWallet.getBalance).toHaveBeenCalledWith(constants.HATHOR_TOKEN_CONFIG.uid);
-    expect(mockPromptHandler).toHaveBeenCalledWith({
-      method: mockGetBalanceRequest.method,
-      data: mockedTokenBalance,
-    });
-    expect(result).toEqual(mockedTokenBalance);
+    await expect(getBalance(rpcRequest, wallet, promptHandler)).rejects.toThrow(NotImplementedError);
   });
 
-  it('should throw PromptRejectedError if user rejects', async () => {
-    mockPromptHandler.mockResolvedValue(false);
+  it('should return balances of specified tokens', async () => {
+    const rpcRequest: GetBalanceRpcRequest = {
+      ...BaseRpcCall,
+      params: { network: 'mainnet', tokens: ['token1', 'token2'], addressIndexes: undefined },
+      method: RpcMethods.GetBalance,
+    };
 
-    await expect(getBalance(mockGetBalanceRequest, mockWallet, mockPromptHandler)).rejects.toThrow(PromptRejectedError);
-    expect(mockWallet.getBalance).toHaveBeenCalledWith(constants.HATHOR_TOKEN_CONFIG.uid);
-    expect(mockPromptHandler).toHaveBeenCalledWith({
-      method: mockGetBalanceRequest.method,
-      data: mockedTokenBalance,
+    promptHandler.mockResolvedValue(true);
+
+    const balances = await getBalance(rpcRequest, wallet, promptHandler);
+
+    expect(balances).toEqual([mockedTokenBalance, mockedTokenBalance]);
+    expect(wallet.getBalance).toHaveBeenCalledWith('token1');
+    expect(wallet.getBalance).toHaveBeenCalledWith('token2');
+    expect(promptHandler).toHaveBeenCalledWith({
+      type: ConfirmationPromptTypes.GetBalanceConfirmationPrompt,
+      method: RpcMethods.GetBalance,
+      data: [mockedTokenBalance, mockedTokenBalance],
     });
+  });
+
+  it('should throw PromptRejectedError if balance confirmation is rejected', async () => {
+    const rpcRequest: GetBalanceRpcRequest = {
+      ...BaseRpcCall,
+      params: {
+        network: 'mainnet',
+        tokens: ['token1'],
+        addressIndexes: undefined,
+      },
+      method: RpcMethods.GetBalance,
+    };
+    wallet.getBalance.mockResolvedValue({ token: 'token1', balance: 100 });
+    promptHandler.mockResolvedValue(false);
+
+    await expect(getBalance(rpcRequest, wallet, promptHandler)).rejects.toThrow(PromptRejectedError);
   });
 });

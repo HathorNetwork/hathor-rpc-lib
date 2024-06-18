@@ -37,7 +37,9 @@ export interface GetAddressRpcRequest extends BaseRpcRequest {
 export interface GetBalanceRpcRequest extends BaseRpcRequest {
   method: RpcMethods.GetBalance,
   params: {
-    token?: string | null;
+    network: string;
+    tokens: string[];
+    addressIndexes?: number[];
   };
 }
 

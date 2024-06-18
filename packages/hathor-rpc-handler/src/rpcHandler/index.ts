@@ -7,6 +7,7 @@
 
 import {
     GetAddressRpcRequest,
+  GetBalanceRpcRequest,
   GetConnectedNetworkRpcRequest,
   GetUtxosRpcRequest,
   PromptHandler,
@@ -16,7 +17,7 @@ import {
 } from '../types';
 import { signWithAddress } from '../rpcMethods/signWithAddress';
 import { HathorWallet } from '@hathor/wallet-lib';
-import { getAddress, getUtxos } from '../rpcMethods';
+import { getAddress, getBalance, getUtxos } from '../rpcMethods';
 import { getConnectedNetwork } from '../rpcMethods/getConnectedNetwork';
 
 export const handleRpcRequest = async (
@@ -44,5 +45,10 @@ export const handleRpcRequest = async (
       wallet,
       promptHandler,
     );
+    case RpcMethods.GetBalance: return getBalance(
+      request as GetBalanceRpcRequest,
+      wallet,
+      promptHandler,
+    )
   }
 };

@@ -7,6 +7,7 @@
 import { GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 
 export enum ConfirmationPromptTypes {
+  GetBalanceConfirmationPrompt,
   SignMessageWithAddress,
   PinConfirmationPrompt,
   AddressRequestPrompt,
@@ -30,6 +31,7 @@ export interface GetAddressConfirmationPrompt extends BaseConfirmationPrompt {
 }
 
 export interface GetBalanceConfirmationPrompt extends BaseConfirmationPrompt {
+  type: ConfirmationPromptTypes.GetBalanceConfirmationPrompt;
   data: GetBalanceObject[];
 }
 
@@ -59,9 +61,6 @@ export interface AddressRequestPrompt extends BaseConfirmationPrompt {
 
 export interface AddressRequestClientPrompt extends BaseConfirmationPrompt {
   type: ConfirmationPromptTypes.AddressRequestClientPrompt;
-  data: {
-    address: string;
-  }
 }
 
 export interface GenericConfirmationPrompt extends BaseConfirmationPrompt {
