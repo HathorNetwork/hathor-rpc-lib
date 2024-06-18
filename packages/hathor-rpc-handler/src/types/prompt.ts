@@ -6,6 +6,91 @@
  */
 import { GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 
+export enum ConfirmationPromptTypes {
+  SignMessageWithAddress,
+  PinConfirmationPrompt,
+  AddressRequestPrompt,
+  GenericConfirmationPrompt,
+  AddressRequestClientPrompt,
+  GetUtxosConfirmationPrompt,
+}
+
+export enum ConfirmationResponseTypes {
+  AddressRequestClientResponse,
+}
+
+export interface BaseConfirmationPrompt {
+  method: string;
+}
+
+export interface GetAddressConfirmationPrompt extends BaseConfirmationPrompt {
+  data: {
+    address: string;
+  }
+}
+
+export interface GetBalanceConfirmationPrompt extends BaseConfirmationPrompt {
+  data: GetBalanceObject[];
+}
+
+export interface GetUtxosConfirmationPrompt extends BaseConfirmationPrompt {
+  type: ConfirmationPromptTypes.GetUtxosConfirmationPrompt;
+  data: GetBalanceObject[];
+}
+
+export interface SignMessageWithAddressConfirmationPrompt extends BaseConfirmationPrompt {
+  type: ConfirmationPromptTypes.SignMessageWithAddress;
+  data: {
+    address: string;
+    message: string;
+  }
+}
+
+export interface PinConfirmationPrompt extends BaseConfirmationPrompt {
+  type: ConfirmationPromptTypes.PinConfirmationPrompt;
+}
+
+export interface AddressRequestPrompt extends BaseConfirmationPrompt {
+  type: ConfirmationPromptTypes.AddressRequestPrompt;
+  data?: {
+    address: string;
+  }
+}
+
+export interface AddressRequestClientPrompt extends BaseConfirmationPrompt {
+  type: ConfirmationPromptTypes.AddressRequestClientPrompt;
+  data: {
+    address: string;
+  }
+}
+
+export interface GenericConfirmationPrompt extends BaseConfirmationPrompt {
+  type: ConfirmationPromptTypes.GenericConfirmationPrompt;
+  data: unknown;
+}
+
+export type ConfirmationPrompt =
+  GetAddressConfirmationPrompt
+  | AddressRequestClientPrompt
+  | GetBalanceConfirmationPrompt
+  | GetUtxosConfirmationPrompt
+  | PinConfirmationPrompt
+  | AddressRequestPrompt
+  | GenericConfirmationPrompt
+  | SignMessageWithAddressConfirmationPrompt;
+
+export interface AddressRequestClientResponse {
+  type: ConfirmationResponseTypes.AddressRequestClientResponse;
+  data: {
+    address: string;
+  }
+}
+
+export type ConfirmationResponse =
+  AddressRequestClientResponse;
+
+export type PromptHandler = (prompt: ConfirmationPrompt) => Promise<ConfirmationResponse>;
+
 // TODO: These should come from the lib after we implement the method to
 // be common for both facades.
 export interface UtxoInfo {
@@ -23,98 +108,3 @@ export interface UtxoDetails {
   total_utxos_locked: number;
   utxos: UtxoInfo[];
 }
-
-export interface GetAddressConfirmationPrompt {
-  method: 'htr_getAddress';
-  data: {
-    address: string;
-  }
-}
-
-export interface GetBalanceConfirmationPrompt {
-  method: 'htr_getBalance';
-  data: GetBalanceObject[];
-}
-
-export interface GetUtxosConfirmationPrompt {
-  method: 'htr_getUtxos';
-  data: GetBalanceObject[];
-}
-
-export interface SignMessageWithAddressConfirmationPrompt {
-  type: ConfirmationPromptTypes.SignMessageWithAddress;
-  method: 'htr_signWithAddress';
-  data: {
-    address: string;
-    message: string;
-  }
-}
-
-export enum ConfirmationPromptTypes {
-  SignMessageWithAddress,
-  PinConfirmationPrompt,
-  AddressRequestPrompt,
-  GenericConfirmationPrompt,
-  AddressRequestClientPrompt,
-}
-
-export enum ConfirmationResponseTypes {
-  AddressRequestClientResponse,
-}
-
-export interface PinConfirmationPrompt {
-  type: ConfirmationPromptTypes.PinConfirmationPrompt;
-  method: string;
-}
-
-export interface AddressRequestPrompt {
-  type: ConfirmationPromptTypes.AddressRequestPrompt;
-  method: string;
-  data?: {
-    address: string;
-  }
-}
-
-export interface AddressRequestClientResponse {
-  type: ConfirmationResponseTypes.AddressRequestClientResponse;
-  data: {
-    address: string;
-  }
-}
-
-export interface AddressRequestClientPrompt {
-  type: ConfirmationPromptTypes.AddressRequestClientPrompt;
-  method: string;
-  data?: {
-    address: string;
-  }
-}
-
-export interface GenericConfirmationPrompt {
-  type: ConfirmationPromptTypes.GenericConfirmationPrompt;
-  method: string;
-  data: unknown;
-}
-
-export type ConfirmationPrompt =
-  GetAddressConfirmationPrompt
-  | AddressRequestClientPrompt
-  | GetBalanceConfirmationPrompt
-  | GetUtxosConfirmationPrompt
-  | PinConfirmationPrompt
-  | AddressRequestPrompt
-  | GenericConfirmationPrompt
-  | SignMessageWithAddressConfirmationPrompt;
-
-
-export interface AddressRequestClientResponse {
-  type: ConfirmationResponseTypes.AddressRequestClientResponse;
-  data: {
-    address: string;
-  }
-}
-
-export type ConfirmationResponse =
-  AddressRequestClientResponse;
-
-export type PromptHandler = (prompt: ConfirmationPrompt) => Promise<ConfirmationResponse>;
