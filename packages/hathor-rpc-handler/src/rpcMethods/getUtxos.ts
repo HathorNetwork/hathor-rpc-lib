@@ -6,7 +6,8 @@
  */
 import { HathorWallet, HathorWalletServiceWallet } from '@hathor/wallet-lib';
 import { GetUtxosRpcRequest, PromptHandler, UtxoDetails } from '../types';
-import { InvalidRpcMethod, PromptRejectedError } from '../errors';
+import { PromptRejectedError } from '../errors';
+import { ConfirmationPromptTypes } from '../types';
 
 /**
  * Handles the 'htr_getUtxos' RPC request by prompting the user for confirmation
@@ -52,6 +53,7 @@ export async function getUtxos(
   const utxoDetails: UtxoDetails = await wallet.getUtxos(options);
 
   const confirmed = await promptHandler({
+    type: ConfirmationPromptTypes.GenericConfirmationPrompt,
     method: rpcRequest.method,
     data: utxoDetails
   });

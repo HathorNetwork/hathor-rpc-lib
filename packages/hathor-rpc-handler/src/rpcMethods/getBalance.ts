@@ -7,7 +7,7 @@
 
 import { HathorWallet, constants } from '@hathor/wallet-lib';
 import { GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
-import { ConfirmationPrompt, GetBalanceRpcRequest, PromptHandler } from '../types';
+import { ConfirmationPrompt, ConfirmationPromptTypes, GetBalanceRpcRequest, PromptHandler } from '../types';
 import { PromptRejectedError } from '../errors';
 
 /**
@@ -33,6 +33,7 @@ export async function getBalance(
   const balances: GetBalanceObject[] = await wallet.getBalance(token);
 
   const prompt: ConfirmationPrompt = {
+    type: ConfirmationPromptTypes.GenericConfirmationPrompt,
     method: rpcRequest.method,
     data: balances
   };

@@ -6,7 +6,7 @@
  */
 
 import { HathorWallet } from '@hathor/wallet-lib';
-import { PinConfirmationPrompt, PromptHandler, SignMessageWithAddressConfirmationPrompt, SignWithAddressRpcRequest } from '../types';
+import { ConfirmationPromptTypes, PinConfirmationPrompt, PromptHandler, SignMessageWithAddressConfirmationPrompt, SignWithAddressRpcRequest } from '../types';
 import { PromptRejectedError } from '../errors';
 
 /**
@@ -26,9 +26,10 @@ export async function signWithAddress(
   wallet: HathorWallet,
   promptHandler: PromptHandler,
 ) {
-  const address = wallet.getAddressAtIndex(rpcRequest.params.addressIndex);
+  const address = await wallet.getAddressAtIndex(rpcRequest.params.addressIndex);
 
   const prompt: SignMessageWithAddressConfirmationPrompt = {
+    type: ConfirmationPromptTypes.SignMessageWithAddress,
     method: rpcRequest.method,
     data: {
       address,
@@ -43,6 +44,7 @@ export async function signWithAddress(
   }
 
   const pinPrompt: PinConfirmationPrompt = {
+    type: ConfirmationPromptTypes.PinConfirmationPrompt,
     method: rpcRequest.method,
   };
 

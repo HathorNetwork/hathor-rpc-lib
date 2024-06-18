@@ -6,7 +6,7 @@
  */
 
 import { HathorWallet } from '@hathor/wallet-lib';
-import { GetAddressRpcRequest, PromptHandler } from '../types';
+import { ConfirmationPromptTypes, GetAddressRpcRequest, PromptHandler } from '../types';
 import { PromptRejectedError } from '../errors';
 
 /**
@@ -19,7 +19,6 @@ import { PromptRejectedError } from '../errors';
  *
  * @returns The address from the wallet if the user confirms.
  *
- * @throws {Error} If the RPC request method is not 'get_address'.
  * @throws {PromptRejectedError} If the user rejects the prompt.
  */
 export async function getAddress(
@@ -27,9 +26,17 @@ export async function getAddress(
   wallet: HathorWallet,
   promptHandler: PromptHandler,
 ) {
-  const address = wallet.getAddressAtIndex(0);
+  const { type } = rpcRequest.params;
+  let address: string;
+
+  if (type === 'first_empty') {
+    address = await wallet.getCurrentAddress();
+  } else {
+    throw new Error('Not implemented.');
+  }
 
   const confirmed = await promptHandler({
+    type: ConfirmationPromptTypes.AddressRequestPrompt,
     method: rpcRequest.method,
     data: {
       address,

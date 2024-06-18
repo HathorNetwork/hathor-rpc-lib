@@ -5,6 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+export enum RpcMethods {
+  SendTx = 'htr_sendTx',
+  CreateToken = 'htr_createToken',
+  GetUtxos = 'htr_getUtxos',
+  SignWithAddress = 'htr_signWithAddress',
+  GetBalance = 'htr_getBalance',
+  GetConnectedNetwork = 'htr_getConnectedNetwork',
+  GetAddress = 'htr_getAddress',
+  PushTxHex = 'htr_pushTxHex',
+  GetOperationStatus = 'htr_getOperationStatus',
+  SendNanoContractTx = 'htr_sendNanoContractTx',
+}
+
 export interface BaseRpcRequest {
   method: string;
   id: string;
@@ -12,18 +25,24 @@ export interface BaseRpcRequest {
 }
 
 export interface GetAddressRpcRequest extends BaseRpcRequest {
-  method: 'htr_getAddress';
+  method: RpcMethods.GetAddress,
+  params: {
+    type: 'first_empty' | 'full_path' | 'index' | 'client';
+    index?: number;
+    full_path?: string;
+    network: string;
+  }
 }
 
 export interface GetBalanceRpcRequest extends BaseRpcRequest {
-  method: 'htr_getBalance';
+  method: RpcMethods.GetBalance,
   params: {
     token?: string | null;
   };
 }
 
 export interface GetUtxosRpcRequest extends BaseRpcRequest {
-  method: 'htr_getUtxos';
+  method: RpcMethods.GetUtxos,
   params: {
     maxUtxos: number;
     token: string;
@@ -36,10 +55,40 @@ export interface GetUtxosRpcRequest extends BaseRpcRequest {
 }
 
 export interface SignWithAddressRpcRequest extends BaseRpcRequest {
-  method: 'htr_signWithAddress';
+  method: RpcMethods.SignWithAddress,
   params: {
     message: string;
     addressIndex: number;
+  }
+}
+
+export interface SendTxOutput {
+  address?: string | null;
+  value?: number | null;
+  token: string;
+  type: string;
+  data: string;
+}
+
+export interface SendTxInput {
+  type: 'query' | 'specific';
+  hash?: string | null;
+  index?: number | null;
+  max_utxos?: number | null;
+  token?: string | null;
+  filter_address?: string | null;
+  amount_smaller_than?: number | null;
+  amount_bigger_than?: number | null;
+}
+
+export interface SendTxRpcRequest extends BaseRpcRequest {
+  method: RpcMethods.SendTx,
+  params: {
+    outputs: SendTxOutput[];
+    inputs: SendTxInput[];
+    changeAddress?: string;
+    push_tx: boolean;
+    network: string;
   }
 }
 
@@ -50,7 +99,7 @@ export interface NCAction {
 }
 
 export interface SendNanoContractRpcRequest extends BaseRpcRequest {
-  method: 'htr_sendNanoContract';
+  method: RpcMethods.SendNanoContractTx,
   params: {
     method: string;
     blueprint_id: string;
@@ -62,7 +111,7 @@ export interface SendNanoContractRpcRequest extends BaseRpcRequest {
 }
 
 export interface GetConnectedNetworkRpcRequest extends BaseRpcRequest {
-  method: 'htr_getConnectedNetwork'
+  method: RpcMethods.GetConnectedNetwork,
 }
 
 export interface GenericRpcRequest extends BaseRpcRequest {

@@ -42,6 +42,7 @@ export interface GetUtxosConfirmationPrompt {
 }
 
 export interface SignMessageWithAddressConfirmationPrompt {
+  type: ConfirmationPromptTypes.SignMessageWithAddress;
   method: 'htr_signWithAddress';
   data: {
     address: string;
@@ -49,15 +50,28 @@ export interface SignMessageWithAddressConfirmationPrompt {
   }
 }
 
+export enum ConfirmationPromptTypes {
+  SignMessageWithAddress,
+  PinConfirmationPrompt,
+  AddressRequestPrompt,
+  GenericConfirmationPrompt,
+}
+
 export interface PinConfirmationPrompt {
+  type: ConfirmationPromptTypes.PinConfirmationPrompt;
   method: string;
 }
 
 export interface AddressRequestPrompt {
+  type: ConfirmationPromptTypes.AddressRequestPrompt;
   method: string;
+  data?: {
+    address: string;
+  }
 }
 
 export interface GenericConfirmationPrompt {
+  type: ConfirmationPromptTypes.GenericConfirmationPrompt;
   method: string;
   data: unknown;
 }
@@ -68,7 +82,8 @@ export type ConfirmationPrompt =
   | GetUtxosConfirmationPrompt
   | PinConfirmationPrompt
   | AddressRequestPrompt
-  | GenericConfirmationPrompt;
+  | GenericConfirmationPrompt
+  | SignMessageWithAddressConfirmationPrompt;
 
 export type PromptResult = {
   type: 'CONFIRMATION';

@@ -6,7 +6,7 @@
  */
 
 import { HathorWallet } from '@hathor/wallet-lib';
-import { AddressRequestPrompt, PinConfirmationPrompt, PromptHandler, SendNanoContractRpcRequest } from '../types';
+import { AddressRequestPrompt, ConfirmationPromptTypes, PinConfirmationPrompt, PromptHandler, SendNanoContractRpcRequest } from '../types';
 import { SendNanoContractTxFailure } from '../errors';
 
 /**
@@ -40,11 +40,13 @@ export async function sendNanoContractTx(
   const blueprintId = method === 'initialize' ? blueprint_id : nc_id;
 
   const pinPrompt: PinConfirmationPrompt = {
+    type: ConfirmationPromptTypes.PinConfirmationPrompt,
     method: rpcRequest.method,
   };
   const pinCode = await promptHandler(pinPrompt);
 
   const addressPrompt: AddressRequestPrompt = {
+    type: ConfirmationPromptTypes.AddressRequestPrompt,
     method: rpcRequest.method,
   };
 
