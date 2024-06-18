@@ -7,7 +7,7 @@
 
 import { HathorWallet } from '@hathor/wallet-lib';
 import { sendNanoContractTx } from '../../src/rpcMethods/sendNanoContractTx';
-import { SendNanoContractRpcRequest } from '../../src/types';
+import { RpcMethods, SendNanoContractRpcRequest } from '../../src/types';
 import { SendNanoContractTxFailure } from '../../src/errors';
 
 describe('sendNanoContractTx', () => {
@@ -17,7 +17,7 @@ describe('sendNanoContractTx', () => {
 
   beforeEach(() => {
     rpcRequest = {
-      method: 'htr_sendNanoContract',
+      method: RpcMethods.SendNanoContractTx,
       id: '1',
       jsonrpc: '2.0',
       params: {

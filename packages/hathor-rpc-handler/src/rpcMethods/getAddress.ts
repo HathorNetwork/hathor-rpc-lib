@@ -11,16 +11,16 @@ import { NotImplementedError, PromptRejectedError } from '../errors';
 import { validateNetwork } from '../helpers';
 
 /**
- * Handles the 'get_address' RPC request by prompting the user for confirmation
- * and returning the address if confirmed.
- * 
- * @param rpcRequest - The RPC request object containing the method and parameters.
- * @param wallet - The Hathor wallet instance used to get the address.
- * @param promptHandler - The function to handle prompting the user for confirmation.
+ * Gets an address based on the provided rpcRequest and wallet.
  *
- * @returns The address from the wallet if the user confirms.
+ * @param rpcRequest - The RPC request containing the parameters for getting an address.
+ * @param wallet - The wallet instance to use for retrieving the address.
+ * @param promptHandler - A function to handle prompts for user confirmation.
  *
- * @throws {PromptRejectedError} If the user rejects the prompt.
+ * @returns The address retrieved based on the request parameters.
+ *
+ * @throws {NotImplementedError} - If the request type is 'full_path', which is not implemented.
+ * @throws {PromptRejectedError} - If the user rejects the address confirmation prompt.
  */
 export async function getAddress(
   rpcRequest: GetAddressRpcRequest,

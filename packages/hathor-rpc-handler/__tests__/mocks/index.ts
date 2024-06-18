@@ -1,10 +1,10 @@
 import { constants } from '@hathor/wallet-lib';
-import { GetAddressRpcRequest, GetBalanceRpcRequest, GetConnectedNetworkRpcRequest, GetUtxosRpcRequest, SignWithAddressRpcRequest } from '../../src/types';
+import { GetAddressRpcRequest, GetBalanceRpcRequest, GetConnectedNetworkRpcRequest, GetUtxosRpcRequest, RpcMethods, SignWithAddressRpcRequest } from '../../src/types';
 
 export const mockGetBalanceRequest: GetBalanceRpcRequest = {
   id: '1',
   jsonrpc: '2.0',
-  method: 'htr_getBalance',
+  method: RpcMethods.GetBalance,
   params: {
     token: constants.HATHOR_TOKEN_CONFIG.uid,
   },
@@ -13,13 +13,18 @@ export const mockGetBalanceRequest: GetBalanceRpcRequest = {
 export const mockGetAddressRequest: GetAddressRpcRequest = {
   id: '1',
   jsonrpc: '2.0',
-  method: 'htr_getAddress',
+  method: RpcMethods.GetAddress,
+  params: {
+    network: 'mainnet',
+    type: 'index',
+    index: 1,
+  }
 };
 
 export const mockGetUtxosRequest: GetUtxosRpcRequest = {
   id: '1',
   jsonrpc: '2.0',
-  method: 'htr_getUtxos',
+  method: RpcMethods.GetUtxos,
   params: {
     token: 'mock_token',
     maxUtxos: 10,
@@ -34,7 +39,7 @@ export const mockGetUtxosRequest: GetUtxosRpcRequest = {
 export const mockSignWithAddressRequest: SignWithAddressRpcRequest = {
   id: '1',
   jsonrpc: '2.0',
-  method: 'htr_signWithAddress',
+  method: RpcMethods.SignWithAddress,
   params: {
     addressIndex: 0,
     message: 'Test message',
@@ -44,7 +49,7 @@ export const mockSignWithAddressRequest: SignWithAddressRpcRequest = {
 export const mockGetConnectedNetworkRequest: GetConnectedNetworkRpcRequest = {
   id: '1',
   jsonrpc: '2.0',
-  method: 'htr_getConnectedNetwork',
+  method: RpcMethods.GetConnectedNetwork,
 };
 
 export const mockPromptHandler = jest.fn();
