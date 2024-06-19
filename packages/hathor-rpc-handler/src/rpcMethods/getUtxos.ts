@@ -4,8 +4,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import { HathorWallet, HathorWalletServiceWallet } from '@hathor/wallet-lib';
-import { GetUtxosRpcRequest, PromptHandler, UtxoDetails } from '../types';
+import { HathorWallet } from '@hathor/wallet-lib';
+import { GetUtxosConfirmationResponse, GetUtxosRpcRequest, PromptHandler, UtxoDetails } from '../types';
 import { PromptRejectedError } from '../errors';
 import { ConfirmationPromptTypes } from '../types';
 import { validateNetwork } from '../helpers';
@@ -46,15 +46,15 @@ export async function getUtxos(
   // TODO: Memory usage enhancements are required here as wallet.getUtxos can cause issues on
   // wallets with a huge amount of utxos.
   // TODO: This needs to be paginated.
-  const utxoDetails: UtxoDetails = await wallet.getUtxos(options);
+  const utxoDetails: UtxoDetails[] = await wallet.getUtxos(options);
 
   const confirmed = await promptHandler({
-    type: ConfirmationPromptTypes.GenericConfirmationPrompt,
+    type: ConfirmationPromptTypes.GetUtxosConfirmationPrompt,
     method: rpcRequest.method,
     data: utxoDetails
-  });
+  }) as GetUtxosConfirmationResponse;
 
-  if (!confirmed) {
+  if (!confirmed.data) {
     throw new PromptRejectedError();
   }
 

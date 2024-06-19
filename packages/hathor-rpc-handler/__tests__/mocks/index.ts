@@ -1,5 +1,13 @@
 import { constants } from '@hathor/wallet-lib';
-import { GetAddressRpcRequest, GetBalanceRpcRequest, GetConnectedNetworkRpcRequest, GetUtxosRpcRequest, RpcMethods, SignWithAddressRpcRequest } from '../../src/types';
+import {
+  GetAddressRpcRequest,
+  GetBalanceRpcRequest,
+  GetConnectedNetworkRpcRequest,
+  GetUtxosRpcRequest,
+  RpcMethods,
+  SendTxRpcRequest,
+  SignWithAddressRpcRequest,
+} from '../../src/types';
 
 export const mockGetBalanceRequest: GetBalanceRpcRequest = {
   id: '1',
@@ -35,6 +43,20 @@ export const mockGetUtxosRequest: GetUtxosRpcRequest = {
     amountBiggerThan: 10,
     maximumAmount: 10000,
     onlyAvailableUtxos: true,
+  },
+};
+
+export const mockSendTxRequest: SendTxRpcRequest = {
+  id: '1',
+  jsonrpc: '2.0',
+  method: RpcMethods.SendTx,
+  params: {
+    changeAddress: null,
+    network: 'mainnet',
+    token: '00',
+    outputs: [],
+    inputs: [],
+    push_tx: true,
   },
 };
 

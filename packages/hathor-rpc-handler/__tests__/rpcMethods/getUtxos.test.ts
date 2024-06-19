@@ -9,7 +9,7 @@ import { PromptRejectedError } from '../../src/errors';
 import { mockPromptHandler, mockGetUtxosRequest } from '../mocks';
 import { HathorWallet, HathorWalletServiceWallet, Network } from '@hathor/wallet-lib';
 import { getUtxos } from '../../src/rpcMethods/getUtxos';
-import { ConfirmationPromptTypes, UtxoDetails } from '../../src/types';
+import { ConfirmationPromptTypes, ConfirmationResponseTypes, UtxoDetails } from '../../src/types';
 
 const mockResponse: UtxoDetails = {
   total_amount_available: 50,
@@ -36,7 +36,10 @@ describe('getUtxos', () => {
   });
 
   it('should return UTXO details if user confirms', async () => {
-    mockPromptHandler.mockResolvedValue(true);
+    mockPromptHandler.mockResolvedValue({
+      type: ConfirmationResponseTypes.GetUtxosConfirmationResponse,
+      data: true,
+    });
 
     const result = await getUtxos(mockGetUtxosRequest, wallet, mockPromptHandler);
 
@@ -52,7 +55,7 @@ describe('getUtxos', () => {
     });
 
     expect(mockPromptHandler).toHaveBeenCalledWith({
-      type: ConfirmationPromptTypes.GenericConfirmationPrompt,
+      type: ConfirmationPromptTypes.GetUtxosConfirmationPrompt,
       method: mockGetUtxosRequest.method,
       data: mockResponse,
     });
@@ -61,7 +64,10 @@ describe('getUtxos', () => {
   });
 
   it('should throw PromptRejectedError if user rejects', async () => {
-    mockPromptHandler.mockResolvedValue(false);
+    mockPromptHandler.mockResolvedValue({
+      type: ConfirmationResponseTypes.GetUtxosConfirmationResponse,
+      data: false,
+    });
 
     await expect(getUtxos(mockGetUtxosRequest, wallet, mockPromptHandler)).rejects.toThrow(PromptRejectedError);
     expect(wallet.getUtxos).toHaveBeenCalledWith({
@@ -76,7 +82,7 @@ describe('getUtxos', () => {
     });
 
     expect(mockPromptHandler).toHaveBeenCalledWith({
-      type: ConfirmationPromptTypes.GenericConfirmationPrompt,
+      type: ConfirmationPromptTypes.GetUtxosConfirmationPrompt,
       method: mockGetUtxosRequest.method,
       data: mockResponse,
     });

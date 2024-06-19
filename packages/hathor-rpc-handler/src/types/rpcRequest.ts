@@ -74,23 +74,36 @@ export interface SendTxOutput {
   data: string;
 }
 
-export interface SendTxInput {
-  type: 'query' | 'specific';
-  hash?: string | null;
-  index?: number | null;
+export interface QueryUtxosFilters {
   max_utxos?: number | null;
   token?: string | null;
   filter_address?: string | null;
   amount_smaller_than?: number | null;
   amount_bigger_than?: number | null;
+  authorities?: number | null;
 }
+
+export interface SendTxInputQuery extends QueryUtxosFilters {
+  type: 'query';
+}
+
+export interface SendTxInputSpecific {
+  type: 'specific';
+  hash: string;
+  index: number;
+}
+
+export type SendTxInput = 
+  SendTxInputQuery
+  | SendTxInputSpecific;
 
 export interface SendTxRpcRequest extends BaseRpcRequest {
   method: RpcMethods.SendTx,
   params: {
+    token?: string;
     outputs: SendTxOutput[];
     inputs: SendTxInput[];
-    changeAddress?: string;
+    changeAddress?: string | null;
     push_tx: boolean;
     network: string;
   }

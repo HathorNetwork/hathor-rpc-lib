@@ -6,19 +6,22 @@
  */
 
 import {
-    GetAddressRpcRequest,
+  GetAddressRpcRequest,
   GetBalanceRpcRequest,
   GetConnectedNetworkRpcRequest,
   GetUtxosRpcRequest,
   PromptHandler,
   RpcMethods,
   RpcRequest,
+  SendTxRpcRequest,
   SignWithAddressRpcRequest,
 } from '../types';
 import { signWithAddress } from '../rpcMethods/signWithAddress';
 import { HathorWallet } from '@hathor/wallet-lib';
 import { getAddress, getBalance, getUtxos } from '../rpcMethods';
 import { getConnectedNetwork } from '../rpcMethods/getConnectedNetwork';
+import { sendTx } from '../rpcMethods/sendTx';
+import { InvalidRpcMethod } from '../errors';
 
 export const handleRpcRequest = async (
   request: RpcRequest,
@@ -49,6 +52,12 @@ export const handleRpcRequest = async (
       request as GetBalanceRpcRequest,
       wallet,
       promptHandler,
-    )
+    );
+    case RpcMethods.SendTx: return sendTx(
+      request as SendTxRpcRequest,
+      wallet,
+      promptHandler,
+    );
+    default: throw new InvalidRpcMethod();
   }
 };

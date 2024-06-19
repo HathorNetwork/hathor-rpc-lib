@@ -5,19 +5,26 @@
  * LICENSE file in the root directory of this source tree.
  */
 import { AddressInfoObject, GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
+import { PreparedInput } from '../helpers/transactions';
+import { SendTxOutput } from './rpcRequest';
 
 export enum ConfirmationPromptTypes {
   GetBalanceConfirmationPrompt,
-  SignMessageWithAddress,
+  SignMessageWithAddressConfirmationPrompt,
   PinConfirmationPrompt,
   AddressRequestPrompt,
   GenericConfirmationPrompt,
   AddressRequestClientPrompt,
   GetUtxosConfirmationPrompt,
+  SendTxConfirmationPrompt,
 }
 
 export enum ConfirmationResponseTypes {
   AddressRequestClientResponse,
+  PinRequestResponse,
+  SendTxConfirmationResponse,
+  GetUtxosConfirmationResponse,
+  SignMessageWithAddressConfirmationResponse,
 }
 
 export interface BaseConfirmationPrompt {
@@ -37,11 +44,11 @@ export interface GetBalanceConfirmationPrompt extends BaseConfirmationPrompt {
 
 export interface GetUtxosConfirmationPrompt extends BaseConfirmationPrompt {
   type: ConfirmationPromptTypes.GetUtxosConfirmationPrompt;
-  data: GetBalanceObject[];
+  data: UtxoDetails[];
 }
 
 export interface SignMessageWithAddressConfirmationPrompt extends BaseConfirmationPrompt {
-  type: ConfirmationPromptTypes.SignMessageWithAddress;
+  type: ConfirmationPromptTypes.SignMessageWithAddressConfirmationPrompt;
   data: {
     address: AddressInfoObject;
     message: string;
@@ -63,6 +70,14 @@ export interface AddressRequestClientPrompt extends BaseConfirmationPrompt {
   type: ConfirmationPromptTypes.AddressRequestClientPrompt;
 }
 
+export interface SendTxConfirmationPrompt extends BaseConfirmationPrompt {
+  type: ConfirmationPromptTypes.SendTxConfirmationPrompt;
+  data: {
+    inputs: PreparedInput[],
+    outputs: SendTxOutput[],
+  }
+}
+
 export interface GenericConfirmationPrompt extends BaseConfirmationPrompt {
   type: ConfirmationPromptTypes.GenericConfirmationPrompt;
   data: unknown;
@@ -76,6 +91,7 @@ export type ConfirmationPrompt =
   | PinConfirmationPrompt
   | AddressRequestPrompt
   | GenericConfirmationPrompt
+  | SendTxConfirmationPrompt
   | SignMessageWithAddressConfirmationPrompt;
 
 export interface AddressRequestClientResponse {
@@ -85,8 +101,37 @@ export interface AddressRequestClientResponse {
   }
 }
 
+export interface PinRequestResponse {
+  type: ConfirmationResponseTypes.PinRequestResponse;
+  data: {
+    accepted: true;
+    pinCode: string;
+  } | {
+    accepted: false;
+  }
+}
+
+export interface SendTxConfirmationResponse {
+  type: ConfirmationResponseTypes.SendTxConfirmationResponse;
+  data: boolean;
+}
+
+export interface GetUtxosConfirmationResponse {
+  type: ConfirmationResponseTypes.GetUtxosConfirmationResponse;
+  data: boolean;
+}
+
+export interface SignMessageWithAddressConfirmationResponse {
+  type: ConfirmationResponseTypes.SignMessageWithAddressConfirmationResponse;
+  data: boolean;
+}
+
 export type ConfirmationResponse =
-  AddressRequestClientResponse;
+  AddressRequestClientResponse
+  | SendTxConfirmationResponse
+  | GetUtxosConfirmationResponse
+  | PinRequestResponse
+  | SignMessageWithAddressConfirmationResponse;
 
 export type PromptHandler = (prompt: ConfirmationPrompt) => Promise<ConfirmationResponse>;
 

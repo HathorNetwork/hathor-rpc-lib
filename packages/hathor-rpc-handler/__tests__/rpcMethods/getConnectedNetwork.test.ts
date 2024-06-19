@@ -22,7 +22,7 @@ describe('getConnectedNetwork', () => {
     const result = await getConnectedNetwork(mockGetConnectedNetworkRequest, mockWallet);
 
     expect(mockWallet.getNetworkObject).toHaveBeenCalled();
-    expect(result).toEqual({
+    expect(result).toStrictEqual({
       network: 'mainnet',
       genesisHash: '', // TODO: Update when logic to retrieve genesisHash is implemented
     });

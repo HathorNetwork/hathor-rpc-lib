@@ -14,3 +14,7 @@ export class InvalidRpcMethod extends Error {};
 export class NotImplementedError extends Error {};
 
 export class DifferentNetworkError extends Error {};
+
+export class NoUtxosAvailableError extends Error {};
+
+export class SignMessageFailure extends Error {};

@@ -6,7 +6,7 @@
  */
 
 import { HathorWallet } from '@hathor/wallet-lib';
-import { ConfirmationPromptTypes, GetAddressRpcRequest, PromptHandler } from '../types';
+import { AddressRequestClientResponse, ConfirmationPromptTypes, GetAddressRpcRequest, PromptHandler } from '../types';
 import { NotImplementedError, PromptRejectedError } from '../errors';
 import { validateNetwork } from '../helpers';
 
@@ -42,10 +42,10 @@ export async function getAddress(
       address = await wallet.getAddressAtIndex(index);
     break;
     case 'client': {
-      const response = await promptHandler({
+      const response = (await promptHandler({
         type: ConfirmationPromptTypes.AddressRequestClientPrompt,
         method: rpcRequest.method,
-      });
+      })) as AddressRequestClientResponse;
 
       address = response.data.address;
     }

@@ -6,8 +6,8 @@
  */
 
 import { HathorWallet } from '@hathor/wallet-lib';
-import { ConfirmationPromptTypes, PinConfirmationPrompt, PromptHandler, SignMessageWithAddressConfirmationPrompt, SignWithAddressRpcRequest } from '../types';
-import { PromptRejectedError } from '../errors';
+import { ConfirmationPromptTypes, ConfirmationResponseTypes, PinConfirmationPrompt, PinRequestResponse, PromptHandler, SignMessageWithAddressConfirmationPrompt, SignMessageWithAddressConfirmationResponse, SignWithAddressRpcRequest } from '../types';
+import { PromptRejectedError, SignMessageFailure } from '../errors';
 import { validateNetwork } from '../helpers';
 import { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
 
@@ -31,6 +31,7 @@ export async function signWithAddress(
   validateNetwork(wallet, rpcRequest.params.network);
 
   const message = rpcRequest.params.message;
+
   const base58: string = await wallet.getAddressAtIndex(rpcRequest.params.addressIndex);
   const index: number = await wallet.getAddressIndex(base58);
   const addressPath: string = await wallet.getAddressPathForIndex(index);
@@ -42,7 +43,7 @@ export async function signWithAddress(
   };
 
   const prompt: SignMessageWithAddressConfirmationPrompt = {
-    type: ConfirmationPromptTypes.SignMessageWithAddress,
+    type: ConfirmationPromptTypes.SignMessageWithAddressConfirmationPrompt,
     method: rpcRequest.method,
     data: {
       address,
@@ -50,10 +51,10 @@ export async function signWithAddress(
     }
   };
 
-  const confirmed = await promptHandler(prompt);
+  const signResponse = await promptHandler(prompt) as SignMessageWithAddressConfirmationResponse;
 
-  if (!confirmed) {
-    throw new PromptRejectedError();
+  if (!signResponse.data) {
+    throw new PromptRejectedError('User rejected sign message prompt');
   }
 
   const pinPrompt: PinConfirmationPrompt = {
@@ -61,12 +62,17 @@ export async function signWithAddress(
     method: rpcRequest.method,
   };
 
+  const pinResponse = await promptHandler(pinPrompt) as PinRequestResponse;
+
+  if (!pinResponse.data.accepted) {
+    throw new PromptRejectedError('User rejected PIN prompt');
+  }
+
   try {
-    const pinCode = await promptHandler(pinPrompt);
     const signature = await wallet.signMessageWithAddress(
       rpcRequest.params.message,
       rpcRequest.params.addressIndex,
-      pinCode,
+      pinResponse.data.pinCode,
     );
 
     return {
@@ -75,6 +81,6 @@ export async function signWithAddress(
       address,
     };
   } catch (e) {
-    throw new PromptRejectedError();
+    throw new SignMessageFailure();
   }
 }
