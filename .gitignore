@@ -2,7 +2,3 @@
 node_modules/
 .pnp.*
 .direnv/
-
-# Remove these
-test.js
-todo.md
