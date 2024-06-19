@@ -7,7 +7,7 @@
 
 import { PromptRejectedError } from '../../src/errors';
 import { mockPromptHandler, mockGetUtxosRequest } from '../mocks';
-import { HathorWallet, HathorWalletServiceWallet, Network } from '@hathor/wallet-lib';
+import { HathorWallet, Network } from '@hathor/wallet-lib';
 import { getUtxos } from '../../src/rpcMethods/getUtxos';
 import { ConfirmationPromptTypes, ConfirmationResponseTypes, UtxoDetails } from '../../src/types';
 

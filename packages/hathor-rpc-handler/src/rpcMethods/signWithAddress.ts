@@ -6,7 +6,15 @@
  */
 
 import { HathorWallet } from '@hathor/wallet-lib';
-import { ConfirmationPromptTypes, ConfirmationResponseTypes, PinConfirmationPrompt, PinRequestResponse, PromptHandler, SignMessageWithAddressConfirmationPrompt, SignMessageWithAddressConfirmationResponse, SignWithAddressRpcRequest } from '../types';
+import {
+  ConfirmationPromptTypes,
+  PinConfirmationPrompt,
+  PinRequestResponse,
+  PromptHandler,
+  SignMessageWithAddressConfirmationPrompt,
+  SignMessageWithAddressConfirmationResponse,
+  SignWithAddressRpcRequest,
+} from '../types';
 import { PromptRejectedError, SignMessageFailure } from '../errors';
 import { validateNetwork } from '../helpers';
 import { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
