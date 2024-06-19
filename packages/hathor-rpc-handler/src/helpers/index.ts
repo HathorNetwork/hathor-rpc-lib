@@ -11,7 +11,6 @@ export function validateNetwork(wallet: HathorWallet, network: string) {
   const currentNetwork = wallet.getNetworkObject();
 
   if (currentNetwork.name !== network) {
-    console.log('Different!', currentNetwork.name, network);
     throw new DifferentNetworkError();
   }
 }
