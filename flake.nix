@@ -4,10 +4,9 @@
   inputs = {
     devshell.url = "github:numtide/devshell";
     flake-utils.url = "github:numtide/flake-utils";
-    unstableNixPkgs.url = "nixpkgs/nixos-unstable";
   };
 
-  outputs = { self, flake-utils, devshell, nixpkgs, unstableNixPkgs, ... }@inputs:
+  outputs = { self, flake-utils, devshell, nixpkgs, ... }@inputs:
     let
       overlays.default = final: prev:
         let
@@ -17,7 +16,6 @@
         {
           nodejs = final.nodejs_20;
           nodePackages = prev.nodePackages;
-          yarn = (import unstableNixPkgs { system = final.system; }).yarn-berry;
         };
     in
     flake-utils.lib.eachDefaultSystem (system: {
@@ -35,7 +33,7 @@
           packages = with pkgs; [
             nixpkgs-fmt
             nodejs_20
-            yarn
+            yarn-berry
           ];
         };
     });
