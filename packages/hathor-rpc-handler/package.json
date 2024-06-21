@@ -1,0 +1,28 @@
+{
+  "name": "hathor-rpc-handler",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "type": "module",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "build": "tsc",
+    "watch": "tsc -w"
+  },
+  "author": "André Abadesso",
+  "devDependencies": {
+    "@eslint/js": "9.4.0",
+    "@types/eslint__js": "8.42.3",
+    "@types/node": "20.14.2",
+    "eslint": "9.4.0",
+    "typescript": "5.4.5",
+    "typescript-eslint": "7.13.0"
+  }
+}
