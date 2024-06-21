@@ -5,7 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-export * from './rpcHandler';
-export * from './types';
-export * from './rpcMethods';
-export * from './errors';
+export interface RpcResponse {
+  id: string;
+  jsonrpc: string;
+  result?: unknown;
+  error?: {
+    code: number;
+    message: string;
+  };
+}
