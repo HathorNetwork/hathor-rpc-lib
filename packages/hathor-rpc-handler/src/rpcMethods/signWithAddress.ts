@@ -7,10 +7,11 @@
 
 import { HathorWallet } from '@hathor/wallet-lib';
 import {
-  ConfirmationPromptTypes,
+  TriggerTypes,
   PinConfirmationPrompt,
   PinRequestResponse,
-  PromptHandler,
+  TriggerHandler,
+  RequestMetadata,
   SignMessageWithAddressConfirmationPrompt,
   SignMessageWithAddressConfirmationResponse,
   SignWithAddressRpcRequest,
@@ -34,7 +35,8 @@ import { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
 export async function signWithAddress(
   rpcRequest: SignWithAddressRpcRequest,
   wallet: HathorWallet,
-  promptHandler: PromptHandler,
+  requestMetadata: RequestMetadata,
+  promptHandler: TriggerHandler,
 ) {
   validateNetwork(wallet, rpcRequest.params.network);
 
@@ -51,7 +53,7 @@ export async function signWithAddress(
   };
 
   const prompt: SignMessageWithAddressConfirmationPrompt = {
-    type: ConfirmationPromptTypes.SignMessageWithAddressConfirmationPrompt,
+    type: TriggerTypes.SignMessageWithAddressConfirmationPrompt,
     method: rpcRequest.method,
     data: {
       address,
@@ -59,18 +61,20 @@ export async function signWithAddress(
     }
   };
 
-  const signResponse = await promptHandler(prompt) as SignMessageWithAddressConfirmationResponse;
+  const signResponse = await promptHandler(prompt, requestMetadata) as SignMessageWithAddressConfirmationResponse;
 
   if (!signResponse.data) {
     throw new PromptRejectedError('User rejected sign message prompt');
   }
 
   const pinPrompt: PinConfirmationPrompt = {
-    type: ConfirmationPromptTypes.PinConfirmationPrompt,
+    type: TriggerTypes.PinConfirmationPrompt,
     method: rpcRequest.method,
   };
 
-  const pinResponse = await promptHandler(pinPrompt) as PinRequestResponse;
+  const pinResponse = await promptHandler(pinPrompt, requestMetadata) as PinRequestResponse;
+
+  console.log('Pin response: ', pinResponse);
 
   if (!pinResponse.data.accepted) {
     throw new PromptRejectedError('User rejected PIN prompt');

@@ -6,8 +6,21 @@
  */
 
 import { HathorWallet } from '@hathor/wallet-lib';
-import { AddressRequestPrompt, ConfirmationPromptTypes, PinConfirmationPrompt, PromptHandler, SendNanoContractRpcRequest } from '../types';
-import { SendNanoContractTxFailure } from '../errors';
+import {
+  TriggerTypes,
+  PinConfirmationPrompt,
+  PinRequestResponse,
+  TriggerHandler,
+  RequestMetadata,
+  SendNanoContractRpcRequest,
+  SendNanoContractTxConfirmationPrompt,
+  SendNanoContractTxConfirmationResponse,
+  SendNanoContractTxLoadingTrigger,
+  SendNanoContractTxErrorTrigger,
+  RpcResponseTypes,
+  RpcResponse,
+} from '../types';
+import { PromptRejectedError, SendNanoContractTxFailure } from '../errors';
 
 /**
  * Sends a nano contract transaction.
@@ -17,7 +30,7 @@ import { SendNanoContractTxFailure } from '../errors';
  *
  * @param rpcRequest - The RPC request containing transaction details.
  * @param wallet - The wallet instance to create/send the transaction.
- * @param promptHandler - The handler to manage user prompts.
+ * @param triggerHandler - The handler to manage user prompts.
  *
  * @returns The response from the transaction.
  *
@@ -26,7 +39,8 @@ import { SendNanoContractTxFailure } from '../errors';
 export async function sendNanoContractTx(
   rpcRequest: SendNanoContractRpcRequest,
   wallet: HathorWallet,
-  promptHandler: PromptHandler,
+  requestMetadata: RequestMetadata,
+  triggerHandler: TriggerHandler,
 ) {
   const {
     method,
@@ -39,36 +53,94 @@ export async function sendNanoContractTx(
 
   const blueprintId = method === 'initialize' ? blueprint_id : nc_id;
 
+  if (!blueprintId) {
+    throw new Error('Neither blueprint id or ncId available');
+  }
+
   const pinPrompt: PinConfirmationPrompt = {
-    type: ConfirmationPromptTypes.PinConfirmationPrompt,
-    method: rpcRequest.method,
-  };
-  const pinCode = await promptHandler(pinPrompt);
-
-  const addressPrompt: AddressRequestPrompt = {
-    type: ConfirmationPromptTypes.AddressRequestPrompt,
+    type: TriggerTypes.PinConfirmationPrompt,
     method: rpcRequest.method,
   };
 
-  const address = await promptHandler(addressPrompt);
+  const sendNanoContractTxPrompt: SendNanoContractTxConfirmationPrompt = {
+    type: TriggerTypes.SendNanoContractTxConfirmationPrompt,
+    method: rpcRequest.method,
+    data: {
+      blueprintId,
+      ncId: nc_id,
+      actions,
+      args,
+      pushTx: push_tx,
+    },
+  };
 
-  const sendMethod = push_tx ? wallet.createAndSendNanoContractTransaction
-    : wallet.createNanoContractTransaction;
+  const sendNanoContractTxResponse = await triggerHandler(sendNanoContractTxPrompt, requestMetadata) as SendNanoContractTxConfirmationResponse;
+
+  if (!sendNanoContractTxResponse.data.accepted) {
+    throw new PromptRejectedError();
+  }
+
+  const {
+    caller,
+    blueprintId: confirmedBluePrintId,
+    actions: confirmedActions,
+    args: confirmedArgs,
+  } = sendNanoContractTxResponse.data.nc;
+
+  const pinCodeResponse: PinRequestResponse = (await triggerHandler(pinPrompt, requestMetadata)) as PinRequestResponse;
+
+  if (!pinCodeResponse.data.accepted) {
+    throw new PromptRejectedError('Pin prompt rejected');
+  }
+
+  const sendMethod = push_tx ? wallet.createAndSendNanoContractTransaction.bind(wallet)
+    : wallet.createNanoContractTransaction.bind(wallet);
+
+  const sendNanoContractErrorTrigger: SendNanoContractTxErrorTrigger = {
+    type: TriggerTypes.SendNanoContractTxErrorTrigger,
+  };
 
   try {
+    const sendNanoContractLoadingTrigger: SendNanoContractTxLoadingTrigger = {
+      type: TriggerTypes.SendNanoContractTxLoadingTrigger,
+    };
+    // No need to await as this is a fire-and-forget trigger
+    triggerHandler(sendNanoContractLoadingTrigger, requestMetadata);
+
+    console.log(JSON.stringify({
+      method,
+      caller,
+      data: {
+        ncId: nc_id,
+        blueprintId: confirmedBluePrintId,
+        actions: confirmedActions,
+        args: confirmedArgs,
+      },
+      options: {
+        pinCode: pinCodeResponse.data.pinCode,
+      }
+    }));
+
     const response = await sendMethod(
       method,
-      address, {
-        blueprint_id: blueprintId,
-        actions,
-        args,
+      caller, {
+        ncId: nc_id,
+        blueprintId: confirmedBluePrintId,
+        actions: confirmedActions,
+        args: confirmedArgs,
       }, {
-        pinCode,
+        pinCode: pinCodeResponse.data.pinCode,
       }
     );
 
-    return response;
+    return {
+      type: RpcResponseTypes.SendNanoContractTxResponse,
+      response,
+    } as RpcResponse;
   } catch (err) {
+    console.log('err: ', err);
+    triggerHandler(sendNanoContractErrorTrigger, requestMetadata);
+
     // TODO: Better error handling, we should use the errors from the lib.
     throw new SendNanoContractTxFailure();
   }

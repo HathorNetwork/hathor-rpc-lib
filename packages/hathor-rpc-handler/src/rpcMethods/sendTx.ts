@@ -8,10 +8,11 @@
 import { HathorWallet, Transaction } from '@hathor/wallet-lib';
 import { validateNetwork } from '../helpers';
 import {
-  ConfirmationPromptTypes,
+  TriggerTypes,
   PinConfirmationPrompt,
   PinRequestResponse,
-  PromptHandler,
+  TriggerHandler,
+  RequestMetadata,
   SendTxConfirmationPrompt,
   SendTxConfirmationResponse,
   SendTxRpcRequest,
@@ -34,7 +35,8 @@ import { PromptRejectedError } from '../errors';
 export async function sendTx(
   rpcRequest: SendTxRpcRequest,
   wallet: HathorWallet,
-  promptHandler: PromptHandler,
+  requestMetadata: RequestMetadata,
+  promptHandler: TriggerHandler,
 ) {
   validateNetwork(wallet, rpcRequest.params.network);
 
@@ -49,12 +51,12 @@ export async function sendTx(
   const changeAddress = rpcRequest.params.changeAddress || null;
 
   const pinPrompt: PinConfirmationPrompt = {
-    type: ConfirmationPromptTypes.PinConfirmationPrompt,
+    type: TriggerTypes.PinConfirmationPrompt,
     method: rpcRequest.method,
   };
 
   const sendTxPrompt: SendTxConfirmationPrompt = {
-    type: ConfirmationPromptTypes.SendTxConfirmationPrompt,
+    type: TriggerTypes.SendTxConfirmationPrompt,
     method: rpcRequest.method,
     data: {
       inputs,
@@ -62,12 +64,12 @@ export async function sendTx(
     }
   };
 
-  const pinCodeResponse = (await promptHandler(pinPrompt)) as PinRequestResponse;
+  const pinCodeResponse = (await promptHandler(pinPrompt, requestMetadata)) as PinRequestResponse;
 
   if (!pinCodeResponse.data.accepted) {
     throw new PromptRejectedError('User rejected PIN prompt');
   }
-  const sendTxResponse = (await promptHandler(sendTxPrompt)) as SendTxConfirmationResponse;
+  const sendTxResponse = (await promptHandler(sendTxPrompt, requestMetadata)) as SendTxConfirmationResponse;
 
   if (!sendTxResponse.data) {
     throw new PromptRejectedError('User rejected send tx prompt');

@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { NanoContractAction } from "@hathor/wallet-lib/lib/nano_contracts/types";
+
 export enum RpcMethods {
   SendTx = 'htr_sendTx',
   CreateToken = 'htr_createToken',
@@ -109,23 +111,21 @@ export interface SendTxRpcRequest extends BaseRpcRequest {
   }
 }
 
-export interface NCAction {
-  type: string;
-  token: string;
-  amount: string;
-}
-
 export interface SendNanoContractRpcRequest extends BaseRpcRequest {
   method: RpcMethods.SendNanoContractTx,
   params: {
     method: string;
     blueprint_id: string;
     nc_id: string | null;
-    actions: NCAction[];
-    args: string[];
+    actions: NanoContractAction[],
+    args: unknown[];
     push_tx: boolean;
   }
 }
+
+export type RequestMetadata = {
+  [key: string]: string,
+};
 
 export interface GetConnectedNetworkRpcRequest extends BaseRpcRequest {
   method: RpcMethods.GetConnectedNetwork,

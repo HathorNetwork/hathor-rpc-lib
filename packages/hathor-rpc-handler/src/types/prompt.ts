@@ -5,10 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 import { AddressInfoObject, GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
+import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
 import { PreparedInput } from '../helpers/transactions';
-import { SendTxOutput } from './rpcRequest';
+import { RequestMetadata, SendTxOutput } from './rpcRequest';
 
-export enum ConfirmationPromptTypes {
+export enum TriggerTypes {
   GetBalanceConfirmationPrompt,
   SignMessageWithAddressConfirmationPrompt,
   PinConfirmationPrompt,
@@ -17,17 +18,61 @@ export enum ConfirmationPromptTypes {
   AddressRequestClientPrompt,
   GetUtxosConfirmationPrompt,
   SendTxConfirmationPrompt,
+  SendNanoContractTxConfirmationPrompt,
+  GenericLoadingTrigger,
+  SendNanoContractTxLoadingTrigger,
+  SendNanoContractTxErrorTrigger,
+  SendNanoContractTxSuccessTrigger,
+  LoadingFinishedTrigger,
 }
 
-export enum ConfirmationResponseTypes {
+export enum TriggerResponseTypes {
   AddressRequestClientResponse,
   PinRequestResponse,
   SendTxConfirmationResponse,
   GetUtxosConfirmationResponse,
   SignMessageWithAddressConfirmationResponse,
+  SendNanoContractTxConfirmationResponse,
+}
+
+export type Trigger =
+  GetAddressConfirmationPrompt
+  | AddressRequestClientPrompt
+  | GetBalanceConfirmationPrompt
+  | GetUtxosConfirmationPrompt
+  | PinConfirmationPrompt
+  | AddressRequestPrompt
+  | GenericConfirmationPrompt
+  | SendTxConfirmationPrompt
+  | SignMessageWithAddressConfirmationPrompt
+  | SendNanoContractTxConfirmationPrompt
+  | SendNanoContractTxLoadingTrigger
+  | SendNanoContractTxSuccessTrigger
+  | SendNanoContractTxErrorTrigger
+  | LoadingFinishedTrigger;
+
+export interface BaseLoadingTrigger {
+  type: TriggerTypes;
+}
+
+export interface SendNanoContractTxLoadingTrigger {
+  type: TriggerTypes.SendNanoContractTxLoadingTrigger;
+}
+
+export interface SendNanoContractTxErrorTrigger {
+  type: TriggerTypes.SendNanoContractTxErrorTrigger;
+}
+
+export interface SendNanoContractTxSuccessTrigger {
+  type: TriggerTypes.SendNanoContractTxSuccessTrigger;
+}
+
+export interface LoadingFinishedTrigger {
+  type: TriggerTypes.LoadingFinishedTrigger;
 }
 
 export interface BaseConfirmationPrompt {
+  type: TriggerTypes;
   method: string;
 }
 
@@ -38,17 +83,17 @@ export interface GetAddressConfirmationPrompt extends BaseConfirmationPrompt {
 }
 
 export interface GetBalanceConfirmationPrompt extends BaseConfirmationPrompt {
-  type: ConfirmationPromptTypes.GetBalanceConfirmationPrompt;
+  type: TriggerTypes.GetBalanceConfirmationPrompt;
   data: GetBalanceObject[];
 }
 
 export interface GetUtxosConfirmationPrompt extends BaseConfirmationPrompt {
-  type: ConfirmationPromptTypes.GetUtxosConfirmationPrompt;
+  type: TriggerTypes.GetUtxosConfirmationPrompt;
   data: UtxoDetails[];
 }
 
 export interface SignMessageWithAddressConfirmationPrompt extends BaseConfirmationPrompt {
-  type: ConfirmationPromptTypes.SignMessageWithAddressConfirmationPrompt;
+  type: TriggerTypes.SignMessageWithAddressConfirmationPrompt;
   data: {
     address: AddressInfoObject;
     message: string;
@@ -56,53 +101,67 @@ export interface SignMessageWithAddressConfirmationPrompt extends BaseConfirmati
 }
 
 export interface PinConfirmationPrompt extends BaseConfirmationPrompt {
-  type: ConfirmationPromptTypes.PinConfirmationPrompt;
+  type: TriggerTypes.PinConfirmationPrompt;
 }
 
 export interface AddressRequestPrompt extends BaseConfirmationPrompt {
-  type: ConfirmationPromptTypes.AddressRequestPrompt;
+  type: TriggerTypes.AddressRequestPrompt;
   data?: {
     address: string;
   }
 }
 
 export interface AddressRequestClientPrompt extends BaseConfirmationPrompt {
-  type: ConfirmationPromptTypes.AddressRequestClientPrompt;
+  type: TriggerTypes.AddressRequestClientPrompt;
 }
 
 export interface SendTxConfirmationPrompt extends BaseConfirmationPrompt {
-  type: ConfirmationPromptTypes.SendTxConfirmationPrompt;
+  type: TriggerTypes.SendTxConfirmationPrompt;
   data: {
     inputs: PreparedInput[],
     outputs: SendTxOutput[],
   }
 }
 
+export interface NanoContractParams {
+  blueprintId: string;
+  ncId: string | null;
+  actions: NanoContractAction[],
+  args: unknown[];
+  pushTx: boolean;
+}
+
+export interface SendNanoContractTxConfirmationPrompt extends BaseConfirmationPrompt {
+  type: TriggerTypes.SendNanoContractTxConfirmationPrompt;
+  data: NanoContractParams;
+}
+
 export interface GenericConfirmationPrompt extends BaseConfirmationPrompt {
-  type: ConfirmationPromptTypes.GenericConfirmationPrompt;
+  type: TriggerTypes.GenericConfirmationPrompt;
   data: unknown;
 }
 
-export type ConfirmationPrompt =
-  GetAddressConfirmationPrompt
-  | AddressRequestClientPrompt
-  | GetBalanceConfirmationPrompt
-  | GetUtxosConfirmationPrompt
-  | PinConfirmationPrompt
-  | AddressRequestPrompt
-  | GenericConfirmationPrompt
-  | SendTxConfirmationPrompt
-  | SignMessageWithAddressConfirmationPrompt;
-
 export interface AddressRequestClientResponse {
-  type: ConfirmationResponseTypes.AddressRequestClientResponse;
+  type: TriggerResponseTypes.AddressRequestClientResponse;
   data: {
     address: string;
   }
 }
 
+export interface SendNanoContractTxConfirmationResponse {
+  type: TriggerResponseTypes.SendNanoContractTxConfirmationResponse;
+  data: {
+    accepted: true;
+    nc: NanoContractParams & {
+      caller: string;
+    } 
+  } | {
+      accepted: false;
+  }
+}
+
 export interface PinRequestResponse {
-  type: ConfirmationResponseTypes.PinRequestResponse;
+  type: TriggerResponseTypes.PinRequestResponse;
   data: {
     accepted: true;
     pinCode: string;
@@ -112,28 +171,29 @@ export interface PinRequestResponse {
 }
 
 export interface SendTxConfirmationResponse {
-  type: ConfirmationResponseTypes.SendTxConfirmationResponse;
+  type: TriggerResponseTypes.SendTxConfirmationResponse;
   data: boolean;
 }
 
 export interface GetUtxosConfirmationResponse {
-  type: ConfirmationResponseTypes.GetUtxosConfirmationResponse;
+  type: TriggerResponseTypes.GetUtxosConfirmationResponse;
   data: boolean;
 }
 
 export interface SignMessageWithAddressConfirmationResponse {
-  type: ConfirmationResponseTypes.SignMessageWithAddressConfirmationResponse;
+  type: TriggerResponseTypes.SignMessageWithAddressConfirmationResponse;
   data: boolean;
 }
 
-export type ConfirmationResponse =
+export type TriggerResponse =
   AddressRequestClientResponse
   | SendTxConfirmationResponse
   | GetUtxosConfirmationResponse
   | PinRequestResponse
-  | SignMessageWithAddressConfirmationResponse;
+  | SignMessageWithAddressConfirmationResponse
+  | SendNanoContractTxConfirmationResponse;
 
-export type PromptHandler = (prompt: ConfirmationPrompt) => Promise<ConfirmationResponse>;
+export type TriggerHandler = (prompt: Trigger, requestMetadata: RequestMetadata) => Promise<TriggerResponse | void>;
 
 // TODO: These should come from the lib after we implement the method to
 // be common for both facades.

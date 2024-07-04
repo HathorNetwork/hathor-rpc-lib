@@ -6,7 +6,7 @@
  */
 
 import { HathorWallet } from '@hathor/wallet-lib';
-import { AddressRequestClientResponse, ConfirmationPromptTypes, GetAddressRpcRequest, PromptHandler } from '../types';
+import { AddressRequestClientResponse, TriggerTypes, GetAddressRpcRequest, TriggerHandler, RequestMetadata } from '../types';
 import { NotImplementedError, PromptRejectedError } from '../errors';
 import { validateNetwork } from '../helpers';
 
@@ -25,7 +25,8 @@ import { validateNetwork } from '../helpers';
 export async function getAddress(
   rpcRequest: GetAddressRpcRequest,
   wallet: HathorWallet,
-  promptHandler: PromptHandler,
+  requestMetadata: RequestMetadata,
+  promptHandler: TriggerHandler,
 ) {
   validateNetwork(wallet, rpcRequest.params.network);
 
@@ -43,9 +44,9 @@ export async function getAddress(
     break;
     case 'client': {
       const response = (await promptHandler({
-        type: ConfirmationPromptTypes.AddressRequestClientPrompt,
+        type: TriggerTypes.AddressRequestClientPrompt,
         method: rpcRequest.method,
-      })) as AddressRequestClientResponse;
+      }, requestMetadata)) as AddressRequestClientResponse;
 
       address = response.data.address;
     }
@@ -56,12 +57,12 @@ export async function getAddress(
   // to share. No need to double check
   if (type !== 'client') {
     const confirmed = await promptHandler({
-      type: ConfirmationPromptTypes.AddressRequestPrompt,
+      type: TriggerTypes.AddressRequestPrompt,
       method: rpcRequest.method,
       data: {
         address,
       }
-    });
+    }, requestMetadata);
 
     if (!confirmed) {
       throw new PromptRejectedError();

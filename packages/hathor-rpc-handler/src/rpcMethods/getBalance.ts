@@ -8,10 +8,11 @@
 import { HathorWallet } from '@hathor/wallet-lib';
 import { GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 import {
-  ConfirmationPromptTypes,
+  TriggerTypes,
   GetBalanceConfirmationPrompt,
   GetBalanceRpcRequest,
-  PromptHandler,
+  TriggerHandler,
+  RequestMetadata,
 } from '../types';
 import { NotImplementedError, PromptRejectedError } from '../errors';
 import { validateNetwork } from '../helpers';
@@ -31,7 +32,8 @@ import { validateNetwork } from '../helpers';
 export async function getBalance(
   rpcRequest: GetBalanceRpcRequest,
   wallet: HathorWallet,
-  promptHandler: PromptHandler,
+  requestMetadata: RequestMetadata,
+  promptHandler: TriggerHandler,
 ) {
   const { network, tokens, addressIndexes } = rpcRequest.params;
 
@@ -46,12 +48,12 @@ export async function getBalance(
   );
 
   const prompt: GetBalanceConfirmationPrompt = {
-    type: ConfirmationPromptTypes.GetBalanceConfirmationPrompt,
+    type: TriggerTypes.GetBalanceConfirmationPrompt,
     method: rpcRequest.method,
     data: balances
   };
 
-  const confirmed = await promptHandler(prompt);
+  const confirmed = await promptHandler(prompt, requestMetadata);
 
   if (!confirmed) {
     throw new PromptRejectedError();

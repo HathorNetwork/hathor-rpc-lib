@@ -5,9 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 import { HathorWallet } from '@hathor/wallet-lib';
-import { GetUtxosConfirmationResponse, GetUtxosRpcRequest, PromptHandler, UtxoDetails } from '../types';
+import {
+  GetUtxosConfirmationResponse,
+  GetUtxosRpcRequest,
+  TriggerHandler,
+  RequestMetadata,
+  UtxoDetails,
+} from '../types';
 import { PromptRejectedError } from '../errors';
-import { ConfirmationPromptTypes } from '../types';
+import { TriggerTypes } from '../types';
 import { validateNetwork } from '../helpers';
 
 /**
@@ -27,7 +33,8 @@ import { validateNetwork } from '../helpers';
 export async function getUtxos(
   rpcRequest: GetUtxosRpcRequest,
   wallet: HathorWallet,
-  promptHandler: PromptHandler,
+  requestMetadata: RequestMetadata,
+  promptHandler: TriggerHandler,
 ) {
   validateNetwork(wallet, rpcRequest.params.network);
 
@@ -49,10 +56,10 @@ export async function getUtxos(
   const utxoDetails: UtxoDetails[] = await wallet.getUtxos(options);
 
   const confirmed = await promptHandler({
-    type: ConfirmationPromptTypes.GetUtxosConfirmationPrompt,
+    type: TriggerTypes.GetUtxosConfirmationPrompt,
     method: rpcRequest.method,
     data: utxoDetails
-  }) as GetUtxosConfirmationResponse;
+  }, requestMetadata) as GetUtxosConfirmationResponse;
 
   if (!confirmed.data) {
     throw new PromptRejectedError();

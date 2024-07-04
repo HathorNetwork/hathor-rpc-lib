@@ -5,12 +5,21 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-export interface RpcResponse {
-  id: string;
-  jsonrpc: string;
-  result?: unknown;
-  error?: {
-    code: number;
-    message: string;
-  };
+import { SendTransaction } from '@hathor/wallet-lib';
+import NanoContract from '@hathor/wallet-lib/lib/nano_contracts/nano_contract';
+
+export enum RpcResponseTypes {
+  SendNanoContractTxResponse
 }
+
+export interface BaseRpcResponse {
+  type: RpcResponseTypes;
+}
+
+export interface SendNanoContractTxResponse extends BaseRpcResponse {
+  type: RpcResponseTypes.SendNanoContractTxResponse;
+  response: SendTransaction | NanoContract;
+}
+
+export type RpcResponse =
+  SendNanoContractTxResponse;
