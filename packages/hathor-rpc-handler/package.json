@@ -30,6 +30,6 @@
     "typescript-eslint": "7.13.0"
   },
   "dependencies": {
-    "@hathor/wallet-lib": "1.5.0"
+    "@hathor/wallet-lib": "1.8.0"
   }
 }
