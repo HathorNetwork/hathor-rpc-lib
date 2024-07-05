@@ -15,7 +15,7 @@ export const mockGetBalanceRequest: GetBalanceRpcRequest = {
   method: RpcMethods.GetBalance,
   params: {
     network: 'mainnet',
-    tokens: [constants.HATHOR_TOKEN_CONFIG.uid],
+    tokens: [constants.NATIVE_TOKEN_UID],
   },
 };
 
