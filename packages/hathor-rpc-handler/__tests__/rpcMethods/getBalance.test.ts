@@ -9,7 +9,7 @@ import { GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { NotImplementedError, PromptRejectedError } from '../../src/errors';
 import { getBalance } from '../../src/rpcMethods/getBalance';
 import { HathorWallet, Network } from '@hathor/wallet-lib';
-import { ConfirmationPromptTypes, GetBalanceRpcRequest, RpcMethods } from '../../src/types';
+import { TriggerTypes, GetBalanceRpcRequest, RpcMethods } from '../../src/types';
 
 const mockedTokenBalance: GetBalanceObject[] = [{
   token: {
@@ -63,7 +63,7 @@ describe('getBalance', () => {
       method: RpcMethods.GetBalance,
     };
 
-    await expect(getBalance(rpcRequest, wallet, promptHandler)).rejects.toThrow(NotImplementedError);
+    await expect(getBalance(rpcRequest, wallet, {}, promptHandler)).rejects.toThrow(NotImplementedError);
   });
 
   it('should return balances of specified tokens', async () => {
@@ -75,16 +75,16 @@ describe('getBalance', () => {
 
     promptHandler.mockResolvedValue(true);
 
-    const balances = await getBalance(rpcRequest, wallet, promptHandler);
+    const balances = await getBalance(rpcRequest, wallet, {}, promptHandler);
 
     expect(balances).toEqual([mockedTokenBalance, mockedTokenBalance]);
     expect(wallet.getBalance).toHaveBeenCalledWith('token1');
     expect(wallet.getBalance).toHaveBeenCalledWith('token2');
     expect(promptHandler).toHaveBeenCalledWith({
-      type: ConfirmationPromptTypes.GetBalanceConfirmationPrompt,
+      type: TriggerTypes.GetBalanceConfirmationPrompt,
       method: RpcMethods.GetBalance,
       data: [mockedTokenBalance, mockedTokenBalance],
-    });
+    }, {});
   });
 
   it('should throw PromptRejectedError if balance confirmation is rejected', async () => {
@@ -100,6 +100,6 @@ describe('getBalance', () => {
     wallet.getBalance.mockResolvedValue({ token: 'token1', balance: 100 });
     promptHandler.mockResolvedValue(false);
 
-    await expect(getBalance(rpcRequest, wallet, promptHandler)).rejects.toThrow(PromptRejectedError);
+    await expect(getBalance(rpcRequest, wallet, {}, promptHandler)).rejects.toThrow(PromptRejectedError);
   });
 });

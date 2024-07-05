@@ -9,7 +9,7 @@ import { PromptRejectedError } from '../../src/errors';
 import { mockPromptHandler, mockGetUtxosRequest } from '../mocks';
 import { HathorWallet, Network } from '@hathor/wallet-lib';
 import { getUtxos } from '../../src/rpcMethods/getUtxos';
-import { ConfirmationPromptTypes, ConfirmationResponseTypes, UtxoDetails } from '../../src/types';
+import { TriggerTypes, TriggerResponseTypes, UtxoDetails } from '../../src/types';
 
 const mockResponse: UtxoDetails = {
   total_amount_available: 50,
@@ -37,11 +37,11 @@ describe('getUtxos', () => {
 
   it('should return UTXO details if user confirms', async () => {
     mockPromptHandler.mockResolvedValue({
-      type: ConfirmationResponseTypes.GetUtxosConfirmationResponse,
+      type: TriggerResponseTypes.GetUtxosConfirmationResponse,
       data: true,
     });
 
-    const result = await getUtxos(mockGetUtxosRequest, wallet, mockPromptHandler);
+    const result = await getUtxos(mockGetUtxosRequest, wallet, {}, mockPromptHandler);
 
     expect(wallet.getUtxos).toHaveBeenCalledWith({
       token: 'mock_token',
@@ -55,21 +55,21 @@ describe('getUtxos', () => {
     });
 
     expect(mockPromptHandler).toHaveBeenCalledWith({
-      type: ConfirmationPromptTypes.GetUtxosConfirmationPrompt,
+      type: TriggerTypes.GetUtxosConfirmationPrompt,
       method: mockGetUtxosRequest.method,
       data: mockResponse,
-    });
+    }, {});
 
     expect(result).toEqual(mockResponse);
   });
 
   it('should throw PromptRejectedError if user rejects', async () => {
     mockPromptHandler.mockResolvedValue({
-      type: ConfirmationResponseTypes.GetUtxosConfirmationResponse,
+      type: TriggerResponseTypes.GetUtxosConfirmationResponse,
       data: false,
     });
 
-    await expect(getUtxos(mockGetUtxosRequest, wallet, mockPromptHandler)).rejects.toThrow(PromptRejectedError);
+    await expect(getUtxos(mockGetUtxosRequest, wallet, {}, mockPromptHandler)).rejects.toThrow(PromptRejectedError);
     expect(wallet.getUtxos).toHaveBeenCalledWith({
       token: 'mock_token',
       authorities: 0,
@@ -82,9 +82,9 @@ describe('getUtxos', () => {
     });
 
     expect(mockPromptHandler).toHaveBeenCalledWith({
-      type: ConfirmationPromptTypes.GetUtxosConfirmationPrompt,
+      type: TriggerTypes.GetUtxosConfirmationPrompt,
       method: mockGetUtxosRequest.method,
       data: mockResponse,
-    });
+    }, {});
   });
 });

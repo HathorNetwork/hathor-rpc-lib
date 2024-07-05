@@ -6,7 +6,7 @@
  */
 
 import { prepareTxFunds } from '../../src/helpers/transactions';
-import { ConfirmationResponseTypes, PinRequestResponse, SendTxConfirmationResponse } from '../../src/types';
+import { TriggerResponseTypes, PinRequestResponse, SendTxConfirmationResponse } from '../../src/types';
 import { sendTx } from '../../src/rpcMethods/sendTx';
 import { mockPromptHandler, mockSendTxRequest } from '../mocks';
 import { HathorWallet, Network } from '@hathor/wallet-lib';
@@ -42,7 +42,7 @@ describe('sendTx', () => {
     };
 
     const mockPinResponse: PinRequestResponse = {
-      type: ConfirmationResponseTypes.PinRequestResponse,
+      type: TriggerResponseTypes.PinRequestResponse,
       data: {
         accepted: true,
         pinCode: '1234',
@@ -50,7 +50,7 @@ describe('sendTx', () => {
     };
 
     const mockSendTxResponse: SendTxConfirmationResponse = {
-      type: ConfirmationResponseTypes.SendTxConfirmationResponse,
+      type: TriggerResponseTypes.SendTxConfirmationResponse,
       data: true,
     };
 
@@ -62,7 +62,7 @@ describe('sendTx', () => {
 
     (wallet.sendManyOutputsTransaction as jest.Mock).mockResolvedValue({});
 
-    const response = await sendTx(mockSendTxRequest, wallet as HathorWallet, mockPromptHandler);
+    const response = await sendTx(mockSendTxRequest, wallet as HathorWallet, {}, mockPromptHandler);
 
     expect(response).toBeDefined();
     expect(prepareTxFunds).toHaveBeenCalledWith(
@@ -91,7 +91,7 @@ describe('sendTx', () => {
     };
 
     const mockPinResponse: PinRequestResponse = {
-      type: ConfirmationResponseTypes.PinRequestResponse,
+      type: TriggerResponseTypes.PinRequestResponse,
       data: {
         accepted: true,
         pinCode: '1234',
@@ -99,7 +99,7 @@ describe('sendTx', () => {
     };
 
     const mockSendTxResponse: SendTxConfirmationResponse = {
-      type: ConfirmationResponseTypes.SendTxConfirmationResponse,
+      type: TriggerResponseTypes.SendTxConfirmationResponse,
       data: false,
     };
 
@@ -108,7 +108,7 @@ describe('sendTx', () => {
       .mockResolvedValueOnce(mockPinResponse)
       .mockResolvedValueOnce(mockSendTxResponse);
 
-    await expect(sendTx(mockSendTxRequest, wallet as HathorWallet, mockPromptHandler)).rejects.toThrow(
+    await expect(sendTx(mockSendTxRequest, wallet as HathorWallet, {}, mockPromptHandler)).rejects.toThrow(
       PromptRejectedError
     );
 

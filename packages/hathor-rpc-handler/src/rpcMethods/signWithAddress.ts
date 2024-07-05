@@ -74,8 +74,6 @@ export async function signWithAddress(
 
   const pinResponse = await promptHandler(pinPrompt, requestMetadata) as PinRequestResponse;
 
-  console.log('Pin response: ', pinResponse);
-
   if (!pinResponse.data.accepted) {
     throw new PromptRejectedError('User rejected PIN prompt');
   }

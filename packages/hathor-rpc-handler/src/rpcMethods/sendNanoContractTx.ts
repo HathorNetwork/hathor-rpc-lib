@@ -96,30 +96,12 @@ export async function sendNanoContractTx(
   const sendMethod = push_tx ? wallet.createAndSendNanoContractTransaction.bind(wallet)
     : wallet.createNanoContractTransaction.bind(wallet);
 
-  const sendNanoContractErrorTrigger: SendNanoContractTxErrorTrigger = {
-    type: TriggerTypes.SendNanoContractTxErrorTrigger,
-  };
-
   try {
     const sendNanoContractLoadingTrigger: SendNanoContractTxLoadingTrigger = {
       type: TriggerTypes.SendNanoContractTxLoadingTrigger,
     };
     // No need to await as this is a fire-and-forget trigger
     triggerHandler(sendNanoContractLoadingTrigger, requestMetadata);
-
-    console.log(JSON.stringify({
-      method,
-      caller,
-      data: {
-        ncId: nc_id,
-        blueprintId: confirmedBluePrintId,
-        actions: confirmedActions,
-        args: confirmedArgs,
-      },
-      options: {
-        pinCode: pinCodeResponse.data.pinCode,
-      }
-    }));
 
     const response = await sendMethod(
       method,
@@ -138,10 +120,6 @@ export async function sendNanoContractTx(
       response,
     } as RpcResponse;
   } catch (err) {
-    console.log('err: ', err);
-    triggerHandler(sendNanoContractErrorTrigger, requestMetadata);
-
-    // TODO: Better error handling, we should use the errors from the lib.
     throw new SendNanoContractTxFailure();
   }
 }

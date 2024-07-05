@@ -8,7 +8,7 @@
 import { NotImplementedError, PromptRejectedError } from '../../src/errors';
 import { getAddress } from '../../src/rpcMethods/getAddress';
 import { HathorWallet, Network } from '@hathor/wallet-lib';
-import { ConfirmationPromptTypes, GetAddressRpcRequest, RpcMethods } from '../../src/types';
+import { TriggerTypes, GetAddressRpcRequest, RpcMethods } from '../../src/types';
 
 export const mockPromptHandler = jest.fn();
 
@@ -39,7 +39,7 @@ describe('getAddress', () => {
     mockWallet.getCurrentAddress.mockResolvedValue('current-address');
     promptHandler.mockReturnValueOnce(true);
 
-    const address = await getAddress(rpcRequest, mockWallet, promptHandler);
+    const address = await getAddress(rpcRequest, mockWallet, {}, promptHandler);
 
     expect(address).toBe('current-address');
     expect(mockWallet.getCurrentAddress).toHaveBeenCalled();
@@ -53,7 +53,7 @@ describe('getAddress', () => {
       method: RpcMethods.GetAddress,
     };
 
-    await expect(getAddress(rpcRequest, mockWallet, promptHandler)).rejects.toThrow(NotImplementedError);
+    await expect(getAddress(rpcRequest, mockWallet, {}, promptHandler)).rejects.toThrow(NotImplementedError);
   });
 
   it('should return the address at index for type "index"', async () => {
@@ -66,7 +66,7 @@ describe('getAddress', () => {
     mockWallet.getAddressAtIndex.mockResolvedValue('address-at-index');
     promptHandler.mockReturnValueOnce(true);
 
-    const address = await getAddress(rpcRequest, mockWallet, promptHandler);
+    const address = await getAddress(rpcRequest, mockWallet, {}, promptHandler);
 
     expect(address).toBe('address-at-index');
     expect(mockWallet.getAddressAtIndex).toHaveBeenCalledWith(5);
@@ -82,13 +82,13 @@ describe('getAddress', () => {
     const clientPromptResponse = { data: { address: 'client-address' } };
     promptHandler.mockResolvedValue(clientPromptResponse);
 
-    const address = await getAddress(rpcRequest, mockWallet, promptHandler);
+    const address = await getAddress(rpcRequest, mockWallet, {}, promptHandler);
 
     expect(address).toBe('client-address');
     expect(promptHandler).toHaveBeenCalledWith({
-      type: ConfirmationPromptTypes.AddressRequestClientPrompt,
+      type: TriggerTypes.AddressRequestClientPrompt,
       method: RpcMethods.GetAddress,
-    });
+    }, {});
   });
 
   it('should throw PromptRejectedError if address confirmation is rejected', async () => {
@@ -101,7 +101,7 @@ describe('getAddress', () => {
     mockWallet.getCurrentAddress.mockResolvedValue('current-address');
     promptHandler.mockResolvedValueOnce(false);
 
-    await expect(getAddress(rpcRequest, mockWallet, promptHandler)).rejects.toThrow(PromptRejectedError);
+    await expect(getAddress(rpcRequest, mockWallet, {}, promptHandler)).rejects.toThrow(PromptRejectedError);
   });
 
   it('should confirm the address if type is not "client"', async () => {
@@ -114,13 +114,13 @@ describe('getAddress', () => {
     mockWallet.getCurrentAddress.mockResolvedValue('current-address');
     promptHandler.mockResolvedValue(true);
 
-    const address = await getAddress(rpcRequest, mockWallet, promptHandler);
+    const address = await getAddress(rpcRequest, mockWallet, {}, promptHandler);
 
     expect(address).toBe('current-address');
     expect(promptHandler).toHaveBeenCalledWith({
-      type: ConfirmationPromptTypes.AddressRequestPrompt,
+      type: TriggerTypes.AddressRequestPrompt,
       method: RpcMethods.GetAddress,
       data: { address: 'current-address' },
-    });
+    }, {});
   });
 });
