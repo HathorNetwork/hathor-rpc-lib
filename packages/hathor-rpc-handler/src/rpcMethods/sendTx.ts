@@ -18,7 +18,7 @@ import {
   SendTxRpcRequest,
 } from '../types';
 import { prepareTxFunds } from '../helpers/transactions';
-import { HATHOR_TOKEN_CONFIG } from '@hathor/wallet-lib/lib/constants';
+import { NATIVE_TOKEN_UID } from '@hathor/wallet-lib/lib/constants';
 import { PromptRejectedError } from '../errors';
 
 /**
@@ -44,7 +44,7 @@ export async function sendTx(
     wallet,
     rpcRequest.params.outputs,
     rpcRequest.params.inputs || [],
-    rpcRequest.params.token || HATHOR_TOKEN_CONFIG.uid,
+    rpcRequest.params.token || NATIVE_TOKEN_UID,
   );
 
   const { inputs, outputs } = preparedFundsResponse;

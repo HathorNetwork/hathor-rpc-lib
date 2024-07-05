@@ -16,7 +16,7 @@ import {
   SignMessageWithAddressConfirmationResponse,
   SignWithAddressRpcRequest,
 } from '../types';
-import { PromptRejectedError, SignMessageFailure } from '../errors';
+import { PromptRejectedError, SignMessageError } from '../errors';
 import { validateNetwork } from '../helpers';
 import { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
 
@@ -91,6 +91,6 @@ export async function signWithAddress(
       address,
     };
   } catch (e) {
-    throw new SignMessageFailure();
+    throw new SignMessageError();
   }
 }

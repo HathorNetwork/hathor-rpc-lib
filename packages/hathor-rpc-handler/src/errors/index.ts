@@ -17,4 +17,4 @@ export class DifferentNetworkError extends Error {};
 
 export class NoUtxosAvailableError extends Error {};
 
-export class SignMessageFailure extends Error {};
+export class SignMessageError extends Error {};
