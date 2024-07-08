@@ -8,7 +8,7 @@
 import { GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { NotImplementedError, PromptRejectedError } from '../../src/errors';
 import { getBalance } from '../../src/rpcMethods/getBalance';
-import { HathorWallet, Network } from '@hathor/wallet-lib';
+import { HathorWallet } from '@hathor/wallet-lib';
 import { TriggerTypes, GetBalanceRpcRequest, RpcMethods } from '../../src/types';
 
 const mockedTokenBalance: GetBalanceObject[] = [{
@@ -47,7 +47,7 @@ describe('getBalance', () => {
   beforeEach(() => {
     wallet = {
       getBalance: jest.fn().mockReturnValue(Promise.resolve(mockedTokenBalance)),
-      getNetworkObject: jest.fn().mockReturnValue(new Network('mainnet')),
+      getNetwork: jest.fn().mockReturnValue('mainnet')
     } as unknown as HathorWallet;
     promptHandler = jest.fn();
   });

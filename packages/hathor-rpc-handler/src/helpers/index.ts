@@ -8,9 +8,9 @@ import { HathorWallet } from '@hathor/wallet-lib';
 import { DifferentNetworkError } from '../errors';
 
 export function validateNetwork(wallet: HathorWallet, network: string) {
-  const currentNetwork = wallet.getNetworkObject();
+  const currentNetwork = wallet.getNetwork();
 
-  if (currentNetwork.name !== network) {
+  if (currentNetwork !== network) {
     throw new DifferentNetworkError();
   }
 }

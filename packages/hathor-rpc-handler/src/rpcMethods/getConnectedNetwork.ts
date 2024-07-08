@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { Network } from '@hathor/wallet-lib';
 import { HathorWallet } from '@hathor/wallet-lib';
 import { GetConnectedNetworkRpcRequest } from '../types';
 
@@ -22,10 +21,10 @@ export async function getConnectedNetwork(
   _rpcRequest: GetConnectedNetworkRpcRequest,
   wallet: HathorWallet,
 ) {
-  const network: Network = await wallet.getNetworkObject();
+  const network: string = await wallet.getNetwork();
 
   const result = {
-    network: network.name,
+    network,
     genesisHash: '', // TODO
   }
 

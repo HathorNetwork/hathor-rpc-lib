@@ -9,7 +9,7 @@ import { prepareTxFunds } from '../../src/helpers/transactions';
 import { TriggerResponseTypes, PinRequestResponse, SendTxConfirmationResponse } from '../../src/types';
 import { sendTx } from '../../src/rpcMethods/sendTx';
 import { mockPromptHandler, mockSendTxRequest } from '../mocks';
-import { HathorWallet, Network } from '@hathor/wallet-lib';
+import { HathorWallet } from '@hathor/wallet-lib';
 import { PromptRejectedError } from '../../src/errors';
 
 jest.mock('../../src/helpers/transactions', () => ({
@@ -26,7 +26,7 @@ describe('sendTx', () => {
 
   beforeEach(() => {
     wallet = {
-      getNetworkObject: jest.fn().mockReturnValue(new Network('mainnet')),
+      getNetwork: jest.fn().mockReturnValue('mainnet'),
       sendManyOutputsTransaction: jest.fn(),
     } as unknown as HathorWallet;
   });

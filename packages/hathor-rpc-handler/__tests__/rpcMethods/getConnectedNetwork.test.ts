@@ -10,7 +10,7 @@ import { getConnectedNetwork } from "../../src/rpcMethods/getConnectedNetwork";
 import { mockGetConnectedNetworkRequest } from "../mocks";
 
 export const mockWallet = {
-  getNetworkObject: jest.fn().mockResolvedValue({ name: 'mainnet' }),
+  getNetwork: jest.fn().mockReturnValue('mainnet')
 } as unknown as HathorWallet;
 
 describe('getConnectedNetwork', () => {
@@ -21,7 +21,7 @@ describe('getConnectedNetwork', () => {
   it('should return network information', async () => {
     const result = await getConnectedNetwork(mockGetConnectedNetworkRequest, mockWallet);
 
-    expect(mockWallet.getNetworkObject).toHaveBeenCalled();
+    expect(mockWallet.getNetwork).toHaveBeenCalled();
     expect(result).toStrictEqual({
       network: 'mainnet',
       genesisHash: '', // TODO: Update when logic to retrieve genesisHash is implemented

@@ -7,7 +7,7 @@
 
 import { NotImplementedError, PromptRejectedError } from '../../src/errors';
 import { getAddress } from '../../src/rpcMethods/getAddress';
-import { HathorWallet, Network } from '@hathor/wallet-lib';
+import { HathorWallet } from '@hathor/wallet-lib';
 import { TriggerTypes, GetAddressRpcRequest, RpcMethods } from '../../src/types';
 
 export const mockPromptHandler = jest.fn();
@@ -25,7 +25,7 @@ describe('getAddress', () => {
         index: 0,
         addressPath: `m/44'/280'/0'/0/10`,
       }),
-      getNetworkObject: jest.fn().mockReturnValue(new Network('mainnet'))
+      getNetwork: jest.fn().mockReturnValue('mainnet')
     } as unknown as HathorWallet;
   });
 

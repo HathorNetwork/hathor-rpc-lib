@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { HathorWallet, Network } from '@hathor/wallet-lib';
+import { HathorWallet } from '@hathor/wallet-lib';
 import { PromptRejectedError } from '../../src/errors';
 import { signWithAddress } from '../../src/rpcMethods/signWithAddress';
 import { TriggerTypes, TriggerResponseTypes } from '../../src/types';
@@ -30,7 +30,7 @@ describe('signWithAddress', () => {
     wallet = {
       getAddressAtIndex: jest.fn().mockResolvedValue(mockedAddressInfo.address),
       signMessageWithAddress: jest.fn().mockResolvedValue('signed_message'),
-      getNetworkObject: jest.fn().mockReturnValue(new Network('mainnet')),
+      getNetwork: jest.fn().mockReturnValue('mainnet'),
       getAddressIndex: jest.fn().mockResolvedValue(mockedAddressInfo.index),
       getAddressPathForIndex: jest.fn().mockResolvedValue(mockedAddressInfo.addressPath),
     } as unknown as HathorWallet;

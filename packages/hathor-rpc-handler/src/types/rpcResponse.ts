@@ -9,7 +9,8 @@ import { SendTransaction } from '@hathor/wallet-lib';
 import NanoContract from '@hathor/wallet-lib/lib/nano_contracts/nano_contract';
 
 export enum RpcResponseTypes {
-  SendNanoContractTxResponse
+  SendNanoContractTxResponse,
+  SendWithAddressResponse
 }
 
 export interface BaseRpcResponse {
