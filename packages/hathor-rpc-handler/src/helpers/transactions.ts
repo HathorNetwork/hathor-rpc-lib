@@ -6,7 +6,7 @@
  */
 
 import { HathorWallet } from '@hathor/wallet-lib';
-import { HATHOR_TOKEN_CONFIG } from '@hathor/wallet-lib/lib/constants';
+import { NATIVE_TOKEN_UID } from '@hathor/wallet-lib/lib/constants';
 import { QueryUtxosFilters, SendTxInput, SendTxInputSpecific, SendTxOutput, UtxoDetails, UtxoInfo } from '../types';
 import { NoUtxosAvailableError } from '../errors';
 
@@ -87,7 +87,7 @@ export async function prepareTxFunds(
   wallet: HathorWallet,
   outputs: SendTxOutput[],
   inputs: SendTxInput[],
-  defaultToken = HATHOR_TOKEN_CONFIG.uid,
+  defaultToken = NATIVE_TOKEN_UID,
 ): Promise<{ inputs: PreparedInput[], outputs: SendTxOutput[] }> {
   const preparedOutputs: SendTxOutput[] = [];
   let preparedInputs: PreparedInput[] = [];
