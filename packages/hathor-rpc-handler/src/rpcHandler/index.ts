@@ -45,6 +45,8 @@ export const handleRpcRequest = async (
     case RpcMethods.GetConnectedNetwork: return getConnectedNetwork(
       request as GetConnectedNetworkRpcRequest,
       wallet,
+      requestMetadata,
+      promptHandler,
     );
     case RpcMethods.GetUtxos: return getUtxos(
       request as GetUtxosRpcRequest,
