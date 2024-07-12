@@ -68,6 +68,7 @@ export async function sendNanoContractTx(
       blueprintId,
       ncId: nc_id,
       actions,
+      method,
       args,
       pushTx: push_tx,
     },
@@ -119,6 +120,10 @@ export async function sendNanoContractTx(
       response,
     } as RpcResponse;
   } catch (err) {
-    throw new SendNanoContractTxFailure();
+    if (err instanceof Error) {
+      throw new SendNanoContractTxFailure(err.message);
+    } else {
+      throw new SendNanoContractTxFailure('An unknown error occurred');
+    }
   }
 }

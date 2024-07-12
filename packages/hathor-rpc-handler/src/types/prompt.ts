@@ -115,6 +115,7 @@ export interface NanoContractParams {
   blueprintId: string;
   ncId: string | null;
   actions: NanoContractAction[],
+  method: string;
   args: unknown[];
   pushTx: boolean;
 }

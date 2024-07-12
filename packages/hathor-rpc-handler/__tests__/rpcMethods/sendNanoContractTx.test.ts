@@ -103,6 +103,7 @@ describe('sendNanoContractTx', () => {
   it('should throw SendNanoContractTxFailure if the transaction fails', async () => {
     const pinCode = '1234';
     const ncData = {
+      method: 'initialize',
       blueprintId: rpcRequest.params.blueprint_id,
       ncId: rpcRequest.params.nc_id,
       args: rpcRequest.params.args,
