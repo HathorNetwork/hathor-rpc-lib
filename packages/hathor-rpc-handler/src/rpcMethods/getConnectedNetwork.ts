@@ -6,13 +6,13 @@
  */
 
 import { HathorWallet } from '@hathor/wallet-lib';
-import { GetConnectedNetworkRpcRequest } from '../types';
+import { GetConnectedNetworkRpcRequest, RequestMetadata, TriggerHandler } from '../types';
 
 /**
  * Handles the 'get_connected_network' RPC request by retrieving the network information
  * from the wallet and returning the network name and genesis hash.
  * 
- * @param rpcRequest - The RPC request object containing the method and parameters.
+ * @param _rpcRequest - (unused) The RPC request object containing the method and parameters.
  * @param wallet - The Hathor wallet instance used to get the network information.
  *
  * @returns An object containing the network name and genesis hash.
@@ -20,13 +20,15 @@ import { GetConnectedNetworkRpcRequest } from '../types';
 export async function getConnectedNetwork(
   _rpcRequest: GetConnectedNetworkRpcRequest,
   wallet: HathorWallet,
+  _requestMetadata: RequestMetadata,
+  _promptHandler: TriggerHandler,
 ) {
   const network: string = await wallet.getNetwork();
 
   const result = {
     network,
     genesisHash: '', // TODO
-  }
+  };
 
   return result;
 }
