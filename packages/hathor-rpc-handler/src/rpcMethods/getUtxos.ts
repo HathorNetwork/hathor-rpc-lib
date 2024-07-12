@@ -40,7 +40,8 @@ export async function getUtxos(
 
   const options = {
     'token': rpcRequest.params.token,
-    'authorities': 0,
+     // Defaults to 0 otherwise the lib fails
+    'authorities': rpcRequest.params.authorities || 0,
     'max_utxos': rpcRequest.params.maxUtxos,
     'filter_address': rpcRequest.params.filterAddress,
     'amount_smaller_than': rpcRequest.params.amountSmallerThan,

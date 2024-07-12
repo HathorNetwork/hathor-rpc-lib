@@ -51,6 +51,7 @@ export interface GetUtxosRpcRequest extends BaseRpcRequest {
     maxUtxos: number;
     token: string;
     filterAddress: string;
+    authorities?: number | null;
     amountSmallerThan?: number | null;
     amountBiggerThan?: number | null;
     maximumAmount?: number | null;
