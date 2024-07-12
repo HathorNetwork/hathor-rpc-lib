@@ -15,6 +15,8 @@ import {
   SignMessageWithAddressConfirmationPrompt,
   SignMessageWithAddressConfirmationResponse,
   SignWithAddressRpcRequest,
+  RpcResponseTypes,
+  SignWithAddressResponse,
 } from '../types';
 import { PromptRejectedError, SignMessageError } from '../errors';
 import { validateNetwork } from '../helpers';
@@ -38,16 +40,16 @@ export async function signWithAddress(
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
 ) {
-  validateNetwork(wallet, rpcRequest.params.network);
+  const { message, addressIndex, network } = rpcRequest.params;
 
-  const message = rpcRequest.params.message;
+  validateNetwork(wallet, network);
 
-  const base58: string = await wallet.getAddressAtIndex(rpcRequest.params.addressIndex);
-  const index: number = await wallet.getAddressIndex(base58);
-  const addressPath: string = await wallet.getAddressPathForIndex(index);
+  const base58: string = await wallet.getAddressAtIndex(addressIndex);
+  const addressPath: string = await wallet.getAddressPathForIndex(addressIndex);
+
   const address: AddressInfoObject = {
     address: base58,
-    index,
+    index: addressIndex,
     addressPath,
     info: undefined, // The type must be updated in the lib to make this optional
   };
@@ -78,19 +80,18 @@ export async function signWithAddress(
     throw new PromptRejectedError('User rejected PIN prompt');
   }
 
-  try {
-    const signature = await wallet.signMessageWithAddress(
-      rpcRequest.params.message,
-      rpcRequest.params.addressIndex,
-      pinResponse.data.pinCode,
-    );
+  const signature = await wallet.signMessageWithAddress(
+    message,
+    addressIndex,
+    pinResponse.data.pinCode,
+  );
 
-    return {
+  return {
+    type: RpcResponseTypes.SendWithAddressResponse,
+    response: {
       message,
       signature,
       address,
-    };
-  } catch (e) {
-    throw new SignMessageError();
-  }
+    }
+  } as SignWithAddressResponse;
 }

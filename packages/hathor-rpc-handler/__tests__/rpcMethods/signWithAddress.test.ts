@@ -8,7 +8,7 @@
 import { HathorWallet } from '@hathor/wallet-lib';
 import { PromptRejectedError } from '../../src/errors';
 import { signWithAddress } from '../../src/rpcMethods/signWithAddress';
-import { TriggerTypes, TriggerResponseTypes } from '../../src/types';
+import { TriggerTypes, TriggerResponseTypes, RpcResponseTypes } from '../../src/types';
 import { mockPromptHandler, mockSignWithAddressRequest } from '../mocks';
 import { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
 
@@ -70,9 +70,12 @@ describe('signWithAddress', () => {
 
     expect(wallet.signMessageWithAddress).toHaveBeenCalledWith('Test message', 0, 'mock_pin');
     expect(result).toStrictEqual({
-      address: mockedAddressInfo,
-      message: 'Test message',
-      signature: 'signed_message',
+      type: RpcResponseTypes.SendWithAddressResponse,
+      response: {
+        address: mockedAddressInfo,
+        message: 'Test message',
+        signature: 'signed_message',
+      },
     });
   });
 

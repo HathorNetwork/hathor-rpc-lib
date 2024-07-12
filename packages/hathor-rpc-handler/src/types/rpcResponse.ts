@@ -7,6 +7,7 @@
 
 import { SendTransaction } from '@hathor/wallet-lib';
 import NanoContract from '@hathor/wallet-lib/lib/nano_contracts/nano_contract';
+import { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
 
 export enum RpcResponseTypes {
   SendNanoContractTxResponse,
@@ -20,6 +21,15 @@ export interface BaseRpcResponse {
 export interface SendNanoContractTxResponse extends BaseRpcResponse {
   type: RpcResponseTypes.SendNanoContractTxResponse;
   response: SendTransaction | NanoContract;
+}
+
+export interface SignWithAddressResponse extends BaseRpcResponse {
+  type: RpcResponseTypes.SendWithAddressResponse;
+  response: {
+    message: string;
+    signature: string;
+    address: AddressInfoObject;
+  }
 }
 
 export type RpcResponse =
