@@ -6,8 +6,7 @@
  */
 import { AddressInfoObject, GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
-import { PreparedInput } from '../helpers/transactions';
-import { RequestMetadata, SendTxOutput } from './rpcRequest';
+import { RequestMetadata } from './rpcRequest';
 
 export enum TriggerTypes {
   GetBalanceConfirmationPrompt,
@@ -17,7 +16,6 @@ export enum TriggerTypes {
   GenericConfirmationPrompt,
   AddressRequestClientPrompt,
   GetUtxosConfirmationPrompt,
-  SendTxConfirmationPrompt,
   SendNanoContractTxConfirmationPrompt,
   GenericLoadingTrigger,
   SendNanoContractTxLoadingTrigger,
@@ -29,7 +27,6 @@ export enum TriggerTypes {
 export enum TriggerResponseTypes {
   AddressRequestClientResponse,
   PinRequestResponse,
-  SendTxConfirmationResponse,
   GetUtxosConfirmationResponse,
   SignMessageWithAddressConfirmationResponse,
   SendNanoContractTxConfirmationResponse,
@@ -43,7 +40,6 @@ export type Trigger =
   | PinConfirmationPrompt
   | AddressRequestPrompt
   | GenericConfirmationPrompt
-  | SendTxConfirmationPrompt
   | SignMessageWithAddressConfirmationPrompt
   | SendNanoContractTxConfirmationPrompt
   | SendNanoContractTxLoadingTrigger
@@ -115,14 +111,6 @@ export interface AddressRequestClientPrompt extends BaseConfirmationPrompt {
   type: TriggerTypes.AddressRequestClientPrompt;
 }
 
-export interface SendTxConfirmationPrompt extends BaseConfirmationPrompt {
-  type: TriggerTypes.SendTxConfirmationPrompt;
-  data: {
-    inputs: PreparedInput[],
-    outputs: SendTxOutput[],
-  }
-}
-
 export interface NanoContractParams {
   blueprintId: string;
   ncId: string | null;
@@ -170,11 +158,6 @@ export interface PinRequestResponse {
   }
 }
 
-export interface SendTxConfirmationResponse {
-  type: TriggerResponseTypes.SendTxConfirmationResponse;
-  data: boolean;
-}
-
 export interface GetUtxosConfirmationResponse {
   type: TriggerResponseTypes.GetUtxosConfirmationResponse;
   data: boolean;
@@ -187,7 +170,6 @@ export interface SignMessageWithAddressConfirmationResponse {
 
 export type TriggerResponse =
   AddressRequestClientResponse
-  | SendTxConfirmationResponse
   | GetUtxosConfirmationResponse
   | PinRequestResponse
   | SignMessageWithAddressConfirmationResponse

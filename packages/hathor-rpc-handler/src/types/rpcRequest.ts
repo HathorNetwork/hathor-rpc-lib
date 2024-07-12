@@ -8,7 +8,6 @@
 import { NanoContractAction } from "@hathor/wallet-lib/lib/nano_contracts/types";
 
 export enum RpcMethods {
-  SendTx = 'htr_sendTx',
   CreateToken = 'htr_createToken',
   GetUtxos = 'htr_getUtxos',
   SignWithAddress = 'htr_signWithAddress',
@@ -68,14 +67,6 @@ export interface SignWithAddressRpcRequest extends BaseRpcRequest {
   }
 }
 
-export interface SendTxOutput {
-  address?: string | null;
-  value?: number | null;
-  token: string;
-  type: string;
-  data: string;
-}
-
 export interface QueryUtxosFilters {
   max_utxos?: number | null;
   token?: string | null;
@@ -83,32 +74,6 @@ export interface QueryUtxosFilters {
   amount_smaller_than?: number | null;
   amount_bigger_than?: number | null;
   authorities?: number | null;
-}
-
-export interface SendTxInputQuery extends QueryUtxosFilters {
-  type: 'query';
-}
-
-export interface SendTxInputSpecific {
-  type: 'specific';
-  hash: string;
-  index: number;
-}
-
-export type SendTxInput = 
-  SendTxInputQuery
-  | SendTxInputSpecific;
-
-export interface SendTxRpcRequest extends BaseRpcRequest {
-  method: RpcMethods.SendTx,
-  params: {
-    token?: string;
-    outputs: SendTxOutput[];
-    inputs: SendTxInput[];
-    changeAddress?: string | null;
-    push_tx: boolean;
-    network: string;
-  }
 }
 
 export interface SendNanoContractRpcRequest extends BaseRpcRequest {

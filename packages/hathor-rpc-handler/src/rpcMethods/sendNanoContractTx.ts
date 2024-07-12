@@ -16,7 +16,6 @@ import {
   SendNanoContractTxConfirmationPrompt,
   SendNanoContractTxConfirmationResponse,
   SendNanoContractTxLoadingTrigger,
-  SendNanoContractTxErrorTrigger,
   RpcResponseTypes,
   RpcResponse,
 } from '../types';

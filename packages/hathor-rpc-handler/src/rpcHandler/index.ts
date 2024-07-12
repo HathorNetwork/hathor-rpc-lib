@@ -15,14 +15,12 @@ import {
   RpcMethods,
   RpcRequest,
   SendNanoContractRpcRequest,
-  SendTxRpcRequest,
   SignWithAddressRpcRequest,
 } from '../types';
 import { signWithAddress } from '../rpcMethods/signWithAddress';
 import { HathorWallet } from '@hathor/wallet-lib';
 import { getAddress, getBalance, getUtxos, sendNanoContractTx } from '../rpcMethods';
 import { getConnectedNetwork } from '../rpcMethods/getConnectedNetwork';
-import { sendTx } from '../rpcMethods/sendTx';
 import { InvalidRpcMethod } from '../errors';
 
 export const handleRpcRequest = async (
@@ -56,12 +54,6 @@ export const handleRpcRequest = async (
     );
     case RpcMethods.GetBalance: return getBalance(
       request as GetBalanceRpcRequest,
-      wallet,
-      requestMetadata,
-      promptHandler,
-    );
-    case RpcMethods.SendTx: return sendTx(
-      request as SendTxRpcRequest,
       wallet,
       requestMetadata,
       promptHandler,
