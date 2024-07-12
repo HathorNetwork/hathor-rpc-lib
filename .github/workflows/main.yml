@@ -16,7 +16,7 @@ jobs:
           experimental-features = nix-command flakes
 
     - name: Cache Nix
-      uses: DeterminateSystems/magic-nix-cache-action@v2
+      uses: DeterminateSystems/magic-nix-cache-action@v7
 
     - name: Install dependencies
       run: |
