@@ -40,6 +40,7 @@ export async function sendNanoContractTx(
   wallet: HathorWallet,
   requestMetadata: RequestMetadata,
   triggerHandler: TriggerHandler,
+  context: unknown,
 ) {
   const {
     method,

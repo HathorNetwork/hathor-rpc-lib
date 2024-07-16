@@ -16,18 +16,21 @@ import {
   RpcRequest,
   SendNanoContractRpcRequest,
   SignWithAddressRpcRequest,
+  ExecuteMultipleRpcRequest,
 } from '../types';
 import { signWithAddress } from '../rpcMethods/signWithAddress';
 import { HathorWallet } from '@hathor/wallet-lib';
 import { getAddress, getBalance, getUtxos, sendNanoContractTx } from '../rpcMethods';
 import { getConnectedNetwork } from '../rpcMethods/getConnectedNetwork';
 import { InvalidRpcMethod } from '../errors';
+import { executeMultiple } from '../rpcMethods/executeMultiple';
 
 export const handleRpcRequest = async (
   request: RpcRequest,
   wallet: HathorWallet,
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
+  context?: unknown,
 ) => {
   switch (request.method) {
     case RpcMethods.SignWithAddress: return signWithAddress(
@@ -62,6 +65,13 @@ export const handleRpcRequest = async (
     );
     case RpcMethods.SendNanoContractTx: return sendNanoContractTx(
       request as SendNanoContractRpcRequest,
+      wallet,
+      requestMetadata,
+      promptHandler,
+      context,
+    );
+    case RpcMethods.ExecuteMultiple: return executeMultiple(
+      request as ExecuteMultipleRpcRequest,
       wallet,
       requestMetadata,
       promptHandler,

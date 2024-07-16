@@ -17,6 +17,7 @@ export enum RpcMethods {
   PushTxHex = 'htr_pushTxHex',
   GetOperationStatus = 'htr_getOperationStatus',
   SendNanoContractTx = 'htr_sendNanoContractTx',
+  ExecuteMultiple = 'htr_executeMultiple',
 }
 
 export interface BaseRpcRequest {
@@ -86,6 +87,13 @@ export interface SendNanoContractRpcRequest extends BaseRpcRequest {
     actions: NanoContractAction[],
     args: unknown[];
     push_tx: boolean;
+  }
+}
+
+export interface ExecuteMultipleRpcRequest extends BaseRpcRequest {
+  method: RpcMethods.ExecuteMultiple,
+  params: {
+    requests: RpcRequest[];
   }
 }
 
