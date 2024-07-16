@@ -5,6 +5,7 @@ import {
   GetConnectedNetworkRpcRequest,
   GetUtxosRpcRequest,
   RpcMethods,
+  SignOracleDataRpcRequest,
   SignWithAddressRpcRequest,
 } from '../../src/types';
 
@@ -53,6 +54,17 @@ export const mockSignWithAddressRequest: SignWithAddressRpcRequest = {
     network: 'mainnet',
     addressIndex: 0,
     message: 'Test message',
+  },
+};
+
+export const mockSignOracleDataRequest: SignOracleDataRpcRequest= {
+  id: '1',
+  jsonrpc: '2.0',
+  method: RpcMethods.SignOracleData,
+  params: {
+    network: 'mainnet',
+    oracle: 'address1',
+    data: 'Test oracle data',
   },
 };
 
