@@ -16,12 +16,14 @@ import {
   RpcRequest,
   SendNanoContractRpcRequest,
   SignWithAddressRpcRequest,
+  SignOracleDataRpcRequest,
 } from '../types';
 import { signWithAddress } from '../rpcMethods/signWithAddress';
 import { HathorWallet } from '@hathor/wallet-lib';
 import { getAddress, getBalance, getUtxos, sendNanoContractTx } from '../rpcMethods';
 import { getConnectedNetwork } from '../rpcMethods/getConnectedNetwork';
 import { InvalidRpcMethod } from '../errors';
+import { signOracleData } from '../rpcMethods/signOracleData';
 
 export const handleRpcRequest = async (
   request: RpcRequest,
@@ -62,6 +64,12 @@ export const handleRpcRequest = async (
     );
     case RpcMethods.SendNanoContractTx: return sendNanoContractTx(
       request as SendNanoContractRpcRequest,
+      wallet,
+      requestMetadata,
+      promptHandler,
+    );
+    case RpcMethods.SignOracleData: return signOracleData(
+      request as SignOracleDataRpcRequest,
       wallet,
       requestMetadata,
       promptHandler,

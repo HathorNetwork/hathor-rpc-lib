@@ -22,6 +22,7 @@ export enum TriggerTypes {
   SendNanoContractTxErrorTrigger,
   SendNanoContractTxSuccessTrigger,
   LoadingFinishedTrigger,
+  SignOracleDataConfirmationPrompt,
 }
 
 export enum TriggerResponseTypes {
@@ -30,6 +31,7 @@ export enum TriggerResponseTypes {
   GetUtxosConfirmationResponse,
   SignMessageWithAddressConfirmationResponse,
   SendNanoContractTxConfirmationResponse,
+  SignOracleDataConfirmationResponse,
 }
 
 export type Trigger =
@@ -45,7 +47,8 @@ export type Trigger =
   | SendNanoContractTxLoadingTrigger
   | SendNanoContractTxSuccessTrigger
   | SendNanoContractTxErrorTrigger
-  | LoadingFinishedTrigger;
+  | LoadingFinishedTrigger
+  | SignOracleDataConfirmationPrompt;
 
 export interface BaseLoadingTrigger {
   type: TriggerTypes;
@@ -86,6 +89,14 @@ export interface GetBalanceConfirmationPrompt extends BaseConfirmationPrompt {
 export interface GetUtxosConfirmationPrompt extends BaseConfirmationPrompt {
   type: TriggerTypes.GetUtxosConfirmationPrompt;
   data: UtxoDetails[];
+}
+
+export interface SignOracleDataConfirmationPrompt extends BaseConfirmationPrompt {
+  type: TriggerTypes.SignOracleDataConfirmationPrompt;
+  data: {
+    oracle: string;
+    data: string;
+  }
 }
 
 export interface SignMessageWithAddressConfirmationPrompt extends BaseConfirmationPrompt {
@@ -169,12 +180,18 @@ export interface SignMessageWithAddressConfirmationResponse {
   data: boolean;
 }
 
+export interface SignOracleDataConfirmationResponse {
+  type: TriggerResponseTypes.SignOracleDataConfirmationResponse;
+  data: boolean;
+}
+
 export type TriggerResponse =
   AddressRequestClientResponse
   | GetUtxosConfirmationResponse
   | PinRequestResponse
   | SignMessageWithAddressConfirmationResponse
-  | SendNanoContractTxConfirmationResponse;
+  | SendNanoContractTxConfirmationResponse
+  | SignOracleDataConfirmationResponse;
 
 export type TriggerHandler = (prompt: Trigger, requestMetadata: RequestMetadata) => Promise<TriggerResponse | void>;
 

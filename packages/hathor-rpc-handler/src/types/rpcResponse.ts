@@ -11,7 +11,8 @@ import { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
 
 export enum RpcResponseTypes {
   SendNanoContractTxResponse,
-  SendWithAddressResponse
+  SendWithAddressResponse,
+  SignOracleDataResponse,
 }
 
 export interface BaseRpcResponse {
@@ -29,6 +30,15 @@ export interface SignWithAddressResponse extends BaseRpcResponse {
     message: string;
     signature: string;
     address: AddressInfoObject;
+  }
+}
+
+export interface SignOracleDataResponse extends BaseRpcResponse {
+  type: RpcResponseTypes.SignOracleDataResponse;
+  response: {
+    data: string;
+    signature: string;
+    oracle: string;
   }
 }
 

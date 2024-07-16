@@ -17,6 +17,7 @@ export enum RpcMethods {
   PushTxHex = 'htr_pushTxHex',
   GetOperationStatus = 'htr_getOperationStatus',
   SendNanoContractTx = 'htr_sendNanoContractTx',
+  SignOracleData = 'htr_signOracleData',
 }
 
 export interface BaseRpcRequest {
@@ -59,6 +60,15 @@ export interface GetUtxosRpcRequest extends BaseRpcRequest {
   };
 }
 
+export interface SignOracleDataRpcRequest extends BaseRpcRequest {
+  method: RpcMethods.SignOracleData,
+  params: {
+    network: string;
+    data: string;
+    oracle: string;
+  }
+}
+
 export interface SignWithAddressRpcRequest extends BaseRpcRequest {
   method: RpcMethods.SignWithAddress,
   params: {
@@ -75,6 +85,15 @@ export interface QueryUtxosFilters {
   amount_smaller_than?: number | null;
   amount_bigger_than?: number | null;
   authorities?: number | null;
+}
+
+export interface SignOracleData extends BaseRpcRequest {
+  method: RpcMethods.SignOracleData,
+  params: {
+    network: string;
+    data: string;
+    address: string;
+  }
 }
 
 export interface SendNanoContractRpcRequest extends BaseRpcRequest {
