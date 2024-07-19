@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { HathorWallet } from '@hathor/wallet-lib';
 import {
   GetAddressRpcRequest,
   GetBalanceRpcRequest,
@@ -19,12 +20,16 @@ import {
   RpcResponse,
   CreateTokenRpcRequest,
 } from '../types';
-import { signWithAddress } from '../rpcMethods/signWithAddress';
-import { HathorWallet } from '@hathor/wallet-lib';
-import { getAddress, getBalance, getUtxos, sendNanoContractTx } from '../rpcMethods';
-import { getConnectedNetwork } from '../rpcMethods/getConnectedNetwork';
+import {
+  getAddress,
+  getBalance,
+  getUtxos,
+  sendNanoContractTx,
+  getConnectedNetwork,
+  signOracleData,
+  signWithAddress,
+} from '../rpcMethods';
 import { InvalidRpcMethod } from '../errors';
-import { createToken } from '../rpcMethods/createToken';
 
 export const handleRpcRequest = async (
   request: RpcRequest,
@@ -65,12 +70,6 @@ export const handleRpcRequest = async (
     );
     case RpcMethods.SendNanoContractTx: return sendNanoContractTx(
       request as SendNanoContractRpcRequest,
-      wallet,
-      requestMetadata,
-      promptHandler,
-    );
-    case RpcMethods.CreateToken: return createToken(
-      request as CreateTokenRpcRequest,
       wallet,
       requestMetadata,
       promptHandler,
