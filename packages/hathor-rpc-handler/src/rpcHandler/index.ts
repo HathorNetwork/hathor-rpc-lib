@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { HathorWallet } from '@hathor/wallet-lib';
 import {
   GetAddressRpcRequest,
   GetBalanceRpcRequest,
@@ -18,12 +19,16 @@ import {
   SignWithAddressRpcRequest,
   SignOracleDataRpcRequest,
 } from '../types';
-import { signWithAddress } from '../rpcMethods/signWithAddress';
-import { HathorWallet } from '@hathor/wallet-lib';
-import { getAddress, getBalance, getUtxos, sendNanoContractTx } from '../rpcMethods';
-import { getConnectedNetwork } from '../rpcMethods/getConnectedNetwork';
+import {
+  getAddress,
+  getBalance,
+  getUtxos,
+  sendNanoContractTx,
+  getConnectedNetwork,
+  signOracleData,
+  signWithAddress,
+} from '../rpcMethods';
 import { InvalidRpcMethod } from '../errors';
-import { signOracleData } from '../rpcMethods/signOracleData';
 
 export const handleRpcRequest = async (
   request: RpcRequest,
