@@ -2,7 +2,7 @@
 
 ## Description
 
-**Hathor RPC library** is the official and reference library for implementing JSON-RPC APIs in wallet applications to support dApps on Hathor platform.
+**Hathor RPC library** is the official and reference library for implementing the client and server sides of JSON-RPC APIs for communication between dApps and wallet applications on Hathor platform.
 
 ## Installation
 
