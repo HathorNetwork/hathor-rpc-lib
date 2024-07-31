@@ -41,7 +41,7 @@ describe('getAddress', () => {
 
     const address = await getAddress(rpcRequest, mockWallet, {}, promptHandler);
 
-    expect(address).toBe('current-address');
+    expect(address.response).toBe('current-address');
     expect(mockWallet.getCurrentAddress).toHaveBeenCalled();
   });
 
@@ -68,7 +68,7 @@ describe('getAddress', () => {
 
     const address = await getAddress(rpcRequest, mockWallet, {}, promptHandler);
 
-    expect(address).toBe('address-at-index');
+    expect(address.response).toBe('address-at-index');
     expect(mockWallet.getAddressAtIndex).toHaveBeenCalledWith(5);
   });
 
@@ -84,7 +84,7 @@ describe('getAddress', () => {
 
     const address = await getAddress(rpcRequest, mockWallet, {}, promptHandler);
 
-    expect(address).toBe('client-address');
+    expect(address.response).toBe('client-address');
     expect(promptHandler).toHaveBeenCalledWith({
       type: TriggerTypes.AddressRequestClientPrompt,
       method: RpcMethods.GetAddress,
@@ -116,7 +116,7 @@ describe('getAddress', () => {
 
     const address = await getAddress(rpcRequest, mockWallet, {}, promptHandler);
 
-    expect(address).toBe('current-address');
+    expect(address.response).toBe('current-address');
     expect(promptHandler).toHaveBeenCalledWith({
       type: TriggerTypes.AddressRequestPrompt,
       method: RpcMethods.GetAddress,

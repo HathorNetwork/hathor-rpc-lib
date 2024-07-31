@@ -6,9 +6,18 @@
  */
 
 import { HathorWallet } from '@hathor/wallet-lib';
-import { AddressRequestClientResponse, TriggerTypes, GetAddressRpcRequest, TriggerHandler, RequestMetadata } from '../types';
+import {
+  AddressRequestClientResponse,
+  TriggerTypes,
+  GetAddressRpcRequest,
+  TriggerHandler,
+  RequestMetadata,
+  RpcResponse,
+  RpcResponseTypes,
+} from '../types';
 import { NotImplementedError, PromptRejectedError } from '../errors';
 import { validateNetwork } from '../helpers';
+import { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
 
 /**
  * Gets an address based on the provided rpcRequest and wallet.
@@ -70,5 +79,8 @@ export async function getAddress(
     }
   }
 
-  return address;
+  return {
+    type: RpcResponseTypes.GetAddressResponse,
+    response: address as unknown as AddressInfoObject,
+  } as RpcResponse;
 }

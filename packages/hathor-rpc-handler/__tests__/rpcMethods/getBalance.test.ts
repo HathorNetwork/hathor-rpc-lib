@@ -77,7 +77,7 @@ describe('getBalance', () => {
 
     const balances = await getBalance(rpcRequest, wallet, {}, promptHandler);
 
-    expect(balances).toEqual([mockedTokenBalance, mockedTokenBalance]);
+    expect(balances.response).toEqual([mockedTokenBalance, mockedTokenBalance]);
     expect(wallet.getBalance).toHaveBeenCalledWith('token1');
     expect(wallet.getBalance).toHaveBeenCalledWith('token2');
     expect(promptHandler).toHaveBeenCalledWith({

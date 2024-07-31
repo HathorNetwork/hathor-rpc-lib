@@ -7,15 +7,25 @@
 
 import { SendTransaction } from '@hathor/wallet-lib';
 import NanoContract from '@hathor/wallet-lib/lib/nano_contracts/nano_contract';
-import { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
+import { AddressInfoObject, GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
+import { UtxoDetails } from './prompt';
 
 export enum RpcResponseTypes {
   SendNanoContractTxResponse,
-  SendWithAddressResponse
+  SendWithAddressResponse,
+  GetAddressResponse,
+  GetBalanceResponse,
+  GetConnectedNetworkResponse,
+  GetUtxosResponse,
 }
 
 export interface BaseRpcResponse {
   type: RpcResponseTypes;
+}
+
+export interface GetAddressResponse extends BaseRpcResponse {
+  type: RpcResponseTypes.GetAddressResponse;
+  response: AddressInfoObject,
 }
 
 export interface SendNanoContractTxResponse extends BaseRpcResponse {
@@ -32,5 +42,27 @@ export interface SignWithAddressResponse extends BaseRpcResponse {
   }
 }
 
-export type RpcResponse =
-  SendNanoContractTxResponse;
+export interface GetBalanceResponse extends BaseRpcResponse {
+  type: RpcResponseTypes.GetBalanceResponse;
+  response: GetBalanceObject[];
+}
+
+export interface GetConnectedNetworkResponse extends BaseRpcResponse {
+  type: RpcResponseTypes.GetConnectedNetworkResponse;
+  response: {
+    network: string;
+    genesisHash: string;
+  }
+}
+
+export interface GetUtxosResponse extends BaseRpcResponse {
+  type: RpcResponseTypes.GetUtxosResponse;
+  response: UtxoDetails[];
+}
+
+export type RpcResponse = GetAddressResponse
+  | SendNanoContractTxResponse
+  | SignWithAddressResponse
+  | GetBalanceResponse
+  | GetConnectedNetworkResponse
+  | GetUtxosResponse;

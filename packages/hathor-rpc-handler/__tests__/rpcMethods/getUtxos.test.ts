@@ -60,7 +60,7 @@ describe('getUtxos', () => {
       data: mockResponse,
     }, {});
 
-    expect(result).toEqual(mockResponse);
+    expect(result.response).toEqual(mockResponse);
   });
 
   it('should throw PromptRejectedError if user rejects', async () => {

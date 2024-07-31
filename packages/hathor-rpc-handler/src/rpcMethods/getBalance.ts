@@ -13,6 +13,8 @@ import {
   GetBalanceRpcRequest,
   TriggerHandler,
   RequestMetadata,
+  RpcResponseTypes,
+  RpcResponse,
 } from '../types';
 import { NotImplementedError, PromptRejectedError } from '../errors';
 import { validateNetwork } from '../helpers';
@@ -60,5 +62,8 @@ export async function getBalance(
     throw new PromptRejectedError();
   }
 
-  return balances;
+  return {
+    type: RpcResponseTypes.GetBalanceResponse,
+    response: balances,
+  } as RpcResponse;
 }

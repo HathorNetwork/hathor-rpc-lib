@@ -6,7 +6,13 @@
  */
 
 import { HathorWallet } from '@hathor/wallet-lib';
-import { GetConnectedNetworkRpcRequest, RequestMetadata, TriggerHandler } from '../types';
+import { 
+  GetConnectedNetworkRpcRequest,
+  RequestMetadata,
+  RpcResponse,
+  RpcResponseTypes,
+  TriggerHandler,
+} from '../types';
 
 /**
  * Handles the 'get_connected_network' RPC request by retrieving the network information
@@ -30,5 +36,8 @@ export async function getConnectedNetwork(
     genesisHash: '', // TODO
   };
 
-  return result;
+  return {
+    type: RpcResponseTypes.GetConnectedNetworkResponse,
+    response: result,
+  } as RpcResponse;
 }
