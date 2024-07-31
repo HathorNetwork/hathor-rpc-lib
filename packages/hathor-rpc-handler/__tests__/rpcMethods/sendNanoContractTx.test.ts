@@ -8,7 +8,7 @@
 import { HathorWallet } from '@hathor/wallet-lib';
 import { sendNanoContractTx } from '../../src/rpcMethods/sendNanoContractTx';
 import { TriggerTypes, RpcMethods, SendNanoContractRpcRequest, TriggerResponseTypes, RpcResponseTypes } from '../../src/types';
-import { SendNanoContractTxFailure } from '../../src/errors';
+import { SendNanoContractTxError } from '../../src/errors';
 
 describe('sendNanoContractTx', () => {
   let rpcRequest: SendNanoContractRpcRequest;
@@ -130,7 +130,7 @@ describe('sendNanoContractTx', () => {
       });
     (wallet.createAndSendNanoContractTransaction as jest.Mock).mockRejectedValue(new Error('Transaction failed'));
 
-    await expect(sendNanoContractTx(rpcRequest, wallet, {}, promptHandler)).rejects.toThrow(SendNanoContractTxFailure);
+    await expect(sendNanoContractTx(rpcRequest, wallet, {}, promptHandler)).rejects.toThrow(SendNanoContractTxError);
 
     expect(promptHandler).toHaveBeenCalledTimes(3);
     expect(promptHandler).toHaveBeenNthCalledWith(1, {

@@ -23,7 +23,7 @@ export async function getConnectedNetwork(
   _requestMetadata: RequestMetadata,
   _promptHandler: TriggerHandler,
 ) {
-  const network: string = await wallet.getNetwork();
+  const network: string = wallet.getNetwork();
 
   const result = {
     network,

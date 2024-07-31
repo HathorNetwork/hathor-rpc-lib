@@ -19,7 +19,12 @@ describe('getConnectedNetwork', () => {
   });
 
   it('should return network information', async () => {
-    const result = await getConnectedNetwork(mockGetConnectedNetworkRequest, mockWallet);
+    const result = await getConnectedNetwork(
+      mockGetConnectedNetworkRequest,
+      mockWallet,
+      {},
+      jest.fn(),
+    );
 
     expect(mockWallet.getNetwork).toHaveBeenCalled();
     expect(result).toStrictEqual({
