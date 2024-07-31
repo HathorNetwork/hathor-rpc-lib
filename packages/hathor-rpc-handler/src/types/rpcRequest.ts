@@ -68,15 +68,6 @@ export interface SignWithAddressRpcRequest extends BaseRpcRequest {
   }
 }
 
-export interface QueryUtxosFilters {
-  max_utxos?: number | null;
-  token?: string | null;
-  filter_address?: string | null;
-  amount_smaller_than?: number | null;
-  amount_bigger_than?: number | null;
-  authorities?: number | null;
-}
-
 export interface SendNanoContractRpcRequest extends BaseRpcRequest {
   method: RpcMethods.SendNanoContractTx,
   params: {
