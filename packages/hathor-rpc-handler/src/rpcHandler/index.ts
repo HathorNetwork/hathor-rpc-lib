@@ -16,6 +16,7 @@ import {
   RpcRequest,
   SendNanoContractRpcRequest,
   SignWithAddressRpcRequest,
+  RpcResponse,
 } from '../types';
 import { signWithAddress } from '../rpcMethods/signWithAddress';
 import { HathorWallet } from '@hathor/wallet-lib';
@@ -28,7 +29,7 @@ export const handleRpcRequest = async (
   wallet: HathorWallet,
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
-) => {
+): Promise<RpcResponse> => {
   switch (request.method) {
     case RpcMethods.SignWithAddress: return signWithAddress(
       request as SignWithAddressRpcRequest,

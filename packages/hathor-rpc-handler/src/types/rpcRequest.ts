@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { NanoContractAction } from "@hathor/wallet-lib/lib/nano_contracts/types";
+import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
 
 export enum RpcMethods {
   CreateToken = 'htr_createToken',

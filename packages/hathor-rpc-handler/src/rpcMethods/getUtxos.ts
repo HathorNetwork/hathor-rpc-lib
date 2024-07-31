@@ -12,6 +12,7 @@ import {
   RequestMetadata,
   UtxoDetails,
   RpcResponseTypes,
+  RpcResponse,
 } from '../types';
 import { PromptRejectedError } from '../errors';
 import { TriggerTypes } from '../types';
@@ -71,5 +72,5 @@ export async function getUtxos(
   return {
     type: RpcResponseTypes.GetUtxosResponse,
     response: utxoDetails,
-  };
+  } as RpcResponse;
 }
