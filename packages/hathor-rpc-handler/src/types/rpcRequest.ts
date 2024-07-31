@@ -92,9 +92,10 @@ export interface GenericRpcRequest extends BaseRpcRequest {
   params?: unknown | null;
 }
 
-export type RpcRequest =
-  GetAddressRpcRequest
+export type RpcRequest = GetAddressRpcRequest
   | GetBalanceRpcRequest
   | GetUtxosRpcRequest
   | SignWithAddressRpcRequest
+  | SendNanoContractRpcRequest
+  | GetConnectedNetworkRpcRequest
   | GenericRpcRequest;
