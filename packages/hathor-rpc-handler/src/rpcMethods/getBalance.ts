@@ -22,6 +22,7 @@ import { validateNetwork } from '../helpers';
  *
  * @param rpcRequest - The RPC request containing the parameters for getting the balance.
  * @param wallet - The wallet instance to use for retrieving the balance.
+ * @param requestMetadata - Metadata related to the dApp that sent the RPC
  * @param promptHandler - A function to handle prompts for user confirmation.
  *
  * @returns The balances of the specified tokens.

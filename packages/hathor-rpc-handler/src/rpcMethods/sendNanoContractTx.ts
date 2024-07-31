@@ -29,6 +29,7 @@ import { PromptRejectedError, SendNanoContractTxFailure } from '../errors';
  *
  * @param rpcRequest - The RPC request containing transaction details.
  * @param wallet - The wallet instance to create/send the transaction.
+ * @param requestMetadata - Metadata related to the dApp that sent the RPC
  * @param triggerHandler - The handler to manage user prompts.
  *
  * @returns The response from the transaction.

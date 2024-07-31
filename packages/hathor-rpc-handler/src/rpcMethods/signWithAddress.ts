@@ -18,7 +18,7 @@ import {
   RpcResponseTypes,
   SignWithAddressResponse,
 } from '../types';
-import { PromptRejectedError, SignMessageError } from '../errors';
+import { PromptRejectedError } from '../errors';
 import { validateNetwork } from '../helpers';
 import { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
 
@@ -28,6 +28,7 @@ import { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
  * 
  * @param rpcRequest - The RPC request object containing the method and parameters.
  * @param wallet - The Hathor wallet instance used to sign the message.
+ * @param requestMetadata - Metadata related to the dApp that sent the RPC
  * @param promptHandler - The function to handle prompting the user for confirmation.
  *
  * @returns The signed message if the user confirms.

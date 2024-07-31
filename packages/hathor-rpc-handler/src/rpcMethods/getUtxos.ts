@@ -22,6 +22,7 @@ import { validateNetwork } from '../helpers';
  * 
  * @param rpcRequest - The RPC request object containing the method and parameters.
  * @param wallet - The Hathor wallet instance used to get the UTXOs.
+ * @param requestMetadata - Metadata related to the dApp that sent the RPC
  * @param promptHandler - The function to handle prompting the user for confirmation.
  *
  * @returns The UTXO details from the wallet if the user confirms.

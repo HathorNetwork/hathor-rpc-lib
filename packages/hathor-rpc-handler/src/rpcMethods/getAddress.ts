@@ -15,6 +15,7 @@ import { validateNetwork } from '../helpers';
  *
  * @param rpcRequest - The RPC request containing the parameters for getting an address.
  * @param wallet - The wallet instance to use for retrieving the address.
+ * @param requestMetadata - Metadata related to the dApp that sent the RPC
  * @param promptHandler - A function to handle prompts for user confirmation.
  *
  * @returns The address retrieved based on the request parameters.
