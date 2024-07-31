@@ -19,7 +19,7 @@ import {
   RpcResponseTypes,
   RpcResponse,
 } from '../types';
-import { PromptRejectedError, SendNanoContractTxFailure } from '../errors';
+import { PromptRejectedError, SendNanoContractTxError } from '../errors';
 
 /**
  * Sends a nano contract transaction.
@@ -34,7 +34,7 @@ import { PromptRejectedError, SendNanoContractTxFailure } from '../errors';
  *
  * @returns The response from the transaction.
  *
- * @throws {SendNanoContractTxFailure} - If the transaction fails.
+ * @throws {SendNanoContractTxError} - If the transaction fails.
  */
 export async function sendNanoContractTx(
   rpcRequest: SendNanoContractRpcRequest,
@@ -120,9 +120,9 @@ export async function sendNanoContractTx(
     } as RpcResponse;
   } catch (err) {
     if (err instanceof Error) {
-      throw new SendNanoContractTxFailure(err.message);
+      throw new SendNanoContractTxError(err.message);
     } else {
-      throw new SendNanoContractTxFailure('An unknown error occurred');
+      throw new SendNanoContractTxError('An unknown error occurred');
     }
   }
 }
