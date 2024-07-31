@@ -51,9 +51,7 @@ export async function sendNanoContractTx(
     push_tx,
   } = rpcRequest.params
 
-  const blueprintId = method === 'initialize' ? blueprint_id : nc_id;
-
-  if (!blueprintId) {
+  if (!blueprint_id && !nc_id) {
     throw new Error('Neither blueprint id or ncId available');
   }
 
@@ -66,7 +64,7 @@ export async function sendNanoContractTx(
     type: TriggerTypes.SendNanoContractTxConfirmationPrompt,
     method: rpcRequest.method,
     data: {
-      blueprintId,
+      blueprintId: blueprint_id,
       ncId: nc_id,
       actions,
       method,
