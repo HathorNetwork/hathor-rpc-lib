@@ -8,9 +8,11 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
-    "types": ["node"]
+    "rootDir": "./src/",
+    "types": ["node", "jest"]
   },
   "exclude": [
+    "__tests__/",
     "node_modules",
     "dist"
   ]

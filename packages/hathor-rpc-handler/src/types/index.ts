@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-export * from './rpcHandler';
-export * from './types';
-export * from './rpcMethods';
-export * from './errors';
+export * from './rpcRequest';
+export * from './rpcResponse';
+export * from './prompt';
