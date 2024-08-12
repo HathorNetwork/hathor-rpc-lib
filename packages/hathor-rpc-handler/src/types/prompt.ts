@@ -22,6 +22,7 @@ export enum TriggerTypes {
   SendNanoContractTxErrorTrigger,
   SendNanoContractTxSuccessTrigger,
   LoadingFinishedTrigger,
+  CreateTokenConfirmationPrompt,
 }
 
 export enum TriggerResponseTypes {
@@ -30,6 +31,7 @@ export enum TriggerResponseTypes {
   GetUtxosConfirmationResponse,
   SignMessageWithAddressConfirmationResponse,
   SendNanoContractTxConfirmationResponse,
+  CreateTokenConfirmationResponse,
 }
 
 export type Trigger =
@@ -45,7 +47,8 @@ export type Trigger =
   | SendNanoContractTxLoadingTrigger
   | SendNanoContractTxSuccessTrigger
   | SendNanoContractTxErrorTrigger
-  | LoadingFinishedTrigger;
+  | LoadingFinishedTrigger
+  | CreateTokenConfirmationPrompt;
 
 export interface BaseLoadingTrigger {
   type: TriggerTypes;
@@ -120,6 +123,26 @@ export interface NanoContractParams {
   pushTx: boolean;
 }
 
+export interface CreateTokenParams {
+  name: string,
+  symbol: string,
+  amount: number,
+  address: string | null,
+  changeAddress: string | null,
+  createMint: boolean,
+  mintAuthorityAddress: string | null,
+  allowExternalMintAuthorityAddress: boolean,
+  createMelt: boolean,
+  meltAuthorityAddress: string | null,
+  allowExternalMeltAuthorityAddress: boolean,
+  data: string[] | null,
+}
+
+export interface CreateTokenConfirmationPrompt extends BaseConfirmationPrompt {
+  type: TriggerTypes.CreateTokenConfirmationPrompt;
+  data: CreateTokenParams;
+}
+
 export interface SendNanoContractTxConfirmationPrompt extends BaseConfirmationPrompt {
   type: TriggerTypes.SendNanoContractTxConfirmationPrompt;
   data: NanoContractParams;
@@ -145,7 +168,17 @@ export interface SendNanoContractTxConfirmationResponse {
       caller: string;
     } 
   } | {
-      accepted: false;
+    accepted: false;
+  }
+}
+
+export interface CreateTokenConfirmationResponse {
+  type: TriggerResponseTypes.CreateTokenConfirmationResponse;
+  data: {
+    accepted: true;
+    token: CreateTokenParams;
+  } | {
+    accepted: false;
   }
 }
 
@@ -174,7 +207,8 @@ export type TriggerResponse =
   | GetUtxosConfirmationResponse
   | PinRequestResponse
   | SignMessageWithAddressConfirmationResponse
-  | SendNanoContractTxConfirmationResponse;
+  | SendNanoContractTxConfirmationResponse
+  | CreateTokenConfirmationResponse;
 
 export type TriggerHandler = (prompt: Trigger, requestMetadata: RequestMetadata) => Promise<TriggerResponse | void>;
 
