@@ -9,6 +9,8 @@ export class PromptRejectedError extends Error {};
 
 export class SendNanoContractTxError extends Error {};
 
+export class CreateTokenError extends Error {};
+
 export class InvalidRpcMethod extends Error {};
 
 export class NotImplementedError extends Error {};
