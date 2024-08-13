@@ -9,12 +9,14 @@ import { HathorWallet, Transaction } from '@hathor/wallet-lib';
 import {
   CreateTokenConfirmationPrompt,
   CreateTokenConfirmationResponse,
+  CreateTokenLoadingTrigger,
   CreateTokenRpcRequest,
   PinConfirmationPrompt,
   PinRequestResponse,
   RequestMetadata,
   RpcResponse,
   RpcResponseTypes,
+  SendNanoContractTxLoadingTrigger,
   TriggerHandler,
   TriggerTypes,
 } from '../types';
@@ -97,6 +99,12 @@ export async function createToken(
   }
 
   try {
+    const createTokenLoadingTrigger: CreateTokenLoadingTrigger = {
+      type: TriggerTypes.CreateTokenLoadingTrigger,
+    };
+    // No need to await as this is a fire-and-forget trigger
+    triggerHandler(createTokenLoadingTrigger, requestMetadata);
+
     const response: Transaction = await wallet.createNewToken(
       name,
       symbol,
