@@ -6,6 +6,7 @@
  */
 
 export * from './rpcHandler';
+export * from './rpcRequest';
 export * from './types';
 export * from './rpcMethods';
 export * from './errors';
