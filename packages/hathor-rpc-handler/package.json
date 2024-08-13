@@ -14,7 +14,7 @@
   "scripts": {
     "lint": "eslint .",
     "test": "jest",
-    "build": "tsc",
+    "build": "tsc --declaration",
     "watch": "tsc -w"
   },
   "author": "André Abadesso",
