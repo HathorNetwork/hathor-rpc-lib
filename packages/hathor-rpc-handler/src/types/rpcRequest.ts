@@ -19,33 +19,27 @@ export enum RpcMethods {
   SendNanoContractTx = 'htr_sendNanoContractTx',
 }
 
-export interface BaseRpcRequest {
-  method: string;
-  id: string;
-  jsonrpc: string;
-}
-
-export interface CreateTokenRpcRequest extends BaseRpcRequest {
+export interface CreateTokenRpcRequest {
   method: RpcMethods.CreateToken,
   params: {
     name: string;
     symbol: string;
     amount: number;
-    address?: string;
-    change_address?: string;
+    address: string | null;
+    change_address: string | null;
     create_mint: boolean;
-    mint_authority_address?: string;
+    mint_authority_address: string | null;
     allow_external_mint_authority_address?: boolean;
     create_melt: boolean;
-    melt_authority_address?: string;
+    melt_authority_address: string | null;
     allow_external_melt_authority_address?: boolean;
     push_tx: boolean;
     network: string;
-    data?: string[];
+    data: string[] | null;
   }
 }
 
-export interface GetAddressRpcRequest extends BaseRpcRequest {
+export interface GetAddressRpcRequest {
   method: RpcMethods.GetAddress,
   params: {
     type: 'first_empty' | 'full_path' | 'index' | 'client';
@@ -55,7 +49,7 @@ export interface GetAddressRpcRequest extends BaseRpcRequest {
   }
 }
 
-export interface GetBalanceRpcRequest extends BaseRpcRequest {
+export interface GetBalanceRpcRequest {
   method: RpcMethods.GetBalance,
   params: {
     network: string;
@@ -64,7 +58,7 @@ export interface GetBalanceRpcRequest extends BaseRpcRequest {
   };
 }
 
-export interface GetUtxosRpcRequest extends BaseRpcRequest {
+export interface GetUtxosRpcRequest {
   method: RpcMethods.GetUtxos,
   params: {
     network: string;
@@ -79,7 +73,7 @@ export interface GetUtxosRpcRequest extends BaseRpcRequest {
   };
 }
 
-export interface SignWithAddressRpcRequest extends BaseRpcRequest {
+export interface SignWithAddressRpcRequest {
   method: RpcMethods.SignWithAddress,
   params: {
     network: string;
@@ -88,7 +82,7 @@ export interface SignWithAddressRpcRequest extends BaseRpcRequest {
   }
 }
 
-export interface SendNanoContractRpcRequest extends BaseRpcRequest {
+export interface SendNanoContractRpcRequest {
   method: RpcMethods.SendNanoContractTx,
   params: {
     method: string;
@@ -104,11 +98,12 @@ export type RequestMetadata = {
   [key: string]: string,
 };
 
-export interface GetConnectedNetworkRpcRequest extends BaseRpcRequest {
+export interface GetConnectedNetworkRpcRequest {
   method: RpcMethods.GetConnectedNetwork,
 }
 
-export interface GenericRpcRequest extends BaseRpcRequest {
+export interface GenericRpcRequest {
+  method: string;
   params?: unknown | null;
 }
 
