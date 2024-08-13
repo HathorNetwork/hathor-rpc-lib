@@ -103,6 +103,7 @@ export interface GetConnectedNetworkRpcRequest {
 }
 
 export interface GenericRpcRequest {
+  method: string;
   params?: unknown | null;
 }
 
