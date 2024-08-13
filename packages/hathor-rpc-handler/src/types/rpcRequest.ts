@@ -19,13 +19,7 @@ export enum RpcMethods {
   SendNanoContractTx = 'htr_sendNanoContractTx',
 }
 
-export interface BaseRpcRequest {
-  method: string;
-  id: string;
-  jsonrpc: string;
-}
-
-export interface CreateTokenRpcRequest extends BaseRpcRequest {
+export interface CreateTokenRpcRequest {
   method: RpcMethods.CreateToken,
   params: {
     name: string;
@@ -45,7 +39,7 @@ export interface CreateTokenRpcRequest extends BaseRpcRequest {
   }
 }
 
-export interface GetAddressRpcRequest extends BaseRpcRequest {
+export interface GetAddressRpcRequest {
   method: RpcMethods.GetAddress,
   params: {
     type: 'first_empty' | 'full_path' | 'index' | 'client';
@@ -55,7 +49,7 @@ export interface GetAddressRpcRequest extends BaseRpcRequest {
   }
 }
 
-export interface GetBalanceRpcRequest extends BaseRpcRequest {
+export interface GetBalanceRpcRequest {
   method: RpcMethods.GetBalance,
   params: {
     network: string;
@@ -64,7 +58,7 @@ export interface GetBalanceRpcRequest extends BaseRpcRequest {
   };
 }
 
-export interface GetUtxosRpcRequest extends BaseRpcRequest {
+export interface GetUtxosRpcRequest {
   method: RpcMethods.GetUtxos,
   params: {
     network: string;
@@ -79,7 +73,7 @@ export interface GetUtxosRpcRequest extends BaseRpcRequest {
   };
 }
 
-export interface SignWithAddressRpcRequest extends BaseRpcRequest {
+export interface SignWithAddressRpcRequest {
   method: RpcMethods.SignWithAddress,
   params: {
     network: string;
@@ -88,7 +82,7 @@ export interface SignWithAddressRpcRequest extends BaseRpcRequest {
   }
 }
 
-export interface SendNanoContractRpcRequest extends BaseRpcRequest {
+export interface SendNanoContractRpcRequest {
   method: RpcMethods.SendNanoContractTx,
   params: {
     method: string;
@@ -104,11 +98,11 @@ export type RequestMetadata = {
   [key: string]: string,
 };
 
-export interface GetConnectedNetworkRpcRequest extends BaseRpcRequest {
+export interface GetConnectedNetworkRpcRequest {
   method: RpcMethods.GetConnectedNetwork,
 }
 
-export interface GenericRpcRequest extends BaseRpcRequest {
+export interface GenericRpcRequest {
   params?: unknown | null;
 }
 
