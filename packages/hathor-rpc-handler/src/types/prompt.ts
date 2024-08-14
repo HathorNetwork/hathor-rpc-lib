@@ -21,6 +21,8 @@ export enum TriggerTypes {
   SendNanoContractTxLoadingTrigger,
   SendNanoContractTxErrorTrigger,
   SendNanoContractTxSuccessTrigger,
+  SendNanoContractTxLoadingFinishedTrigger,
+  CreateTokenLoadingFinishedTrigger,
   LoadingFinishedTrigger,
   CreateTokenConfirmationPrompt,
   CreateTokenLoadingTrigger,
@@ -46,11 +48,13 @@ export type Trigger =
   | SignMessageWithAddressConfirmationPrompt
   | SendNanoContractTxConfirmationPrompt
   | SendNanoContractTxLoadingTrigger
+  | SendNanoContractTxLoadingFinishedTrigger
   | SendNanoContractTxSuccessTrigger
   | SendNanoContractTxErrorTrigger
   | LoadingFinishedTrigger
   | CreateTokenConfirmationPrompt
-  | CreateTokenLoadingTrigger;
+  | CreateTokenLoadingTrigger
+  | CreateTokenLoadingFinishedTrigger;
 
 export interface BaseLoadingTrigger {
   type: TriggerTypes;
@@ -70,6 +74,14 @@ export interface SendNanoContractTxSuccessTrigger {
 
 export interface CreateTokenLoadingTrigger {
   type: TriggerTypes.CreateTokenLoadingTrigger;
+}
+
+export interface SendNanoContractTxLoadingFinishedTrigger {
+  type: TriggerTypes.SendNanoContractTxLoadingFinishedTrigger;
+}
+
+export interface CreateTokenLoadingFinishedTrigger {
+  type: TriggerTypes.CreateTokenLoadingFinishedTrigger;
 }
 
 export interface LoadingFinishedTrigger {

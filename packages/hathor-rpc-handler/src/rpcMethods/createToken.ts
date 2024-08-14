@@ -9,6 +9,7 @@ import { HathorWallet, Transaction } from '@hathor/wallet-lib';
 import {
   CreateTokenConfirmationPrompt,
   CreateTokenConfirmationResponse,
+  CreateTokenLoadingFinishedTrigger,
   CreateTokenLoadingTrigger,
   CreateTokenRpcRequest,
   PinConfirmationPrompt,
@@ -16,7 +17,6 @@ import {
   RequestMetadata,
   RpcResponse,
   RpcResponseTypes,
-  SendNanoContractTxLoadingTrigger,
   TriggerHandler,
   TriggerTypes,
 } from '../types';
@@ -102,6 +102,7 @@ export async function createToken(
     const createTokenLoadingTrigger: CreateTokenLoadingTrigger = {
       type: TriggerTypes.CreateTokenLoadingTrigger,
     };
+
     // No need to await as this is a fire-and-forget trigger
     triggerHandler(createTokenLoadingTrigger, requestMetadata);
 
@@ -122,6 +123,11 @@ export async function createToken(
         pinCode: pinCodeResponse.data.pinCode,
       }
     );
+
+    const createTokenLoadingFinished: CreateTokenLoadingFinishedTrigger = {
+      type: TriggerTypes.CreateTokenLoadingFinishedTrigger,
+    };
+    triggerHandler(createTokenLoadingFinished, requestMetadata);
 
     return {
       type: RpcResponseTypes.CreateTokenResponse,

@@ -18,6 +18,7 @@ import {
   SendNanoContractTxLoadingTrigger,
   RpcResponseTypes,
   RpcResponse,
+  SendNanoContractTxLoadingFinishedTrigger,
 } from '../types';
 import { PromptRejectedError, SendNanoContractTxError } from '../errors';
 
@@ -113,6 +114,11 @@ export async function sendNanoContractTx(
         pinCode: pinCodeResponse.data.pinCode,
       }
     );
+
+    const sendNanoContractLoadingFinishedTrigger: SendNanoContractTxLoadingFinishedTrigger = {
+      type: TriggerTypes.SendNanoContractTxLoadingFinishedTrigger,
+    };
+    triggerHandler(sendNanoContractLoadingFinishedTrigger, requestMetadata);
 
     return {
       type: RpcResponseTypes.SendNanoContractTxResponse,
