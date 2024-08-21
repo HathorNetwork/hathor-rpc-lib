@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { SendTransaction, Transaction } from '@hathor/wallet-lib';
+import { CreateTokenTransaction, SendTransaction, Transaction } from '@hathor/wallet-lib';
 import NanoContract from '@hathor/wallet-lib/lib/nano_contracts/nano_contract';
 import { AddressInfoObject, GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { UtxoDetails } from './prompt';
@@ -36,7 +36,7 @@ export interface SendNanoContractTxResponse extends BaseRpcResponse {
 
 export interface CreateTokenResponse extends BaseRpcResponse {
   type: RpcResponseTypes.CreateTokenResponse;
-  response: Transaction,
+  response: CreateTokenTransaction,
 }
 
 export interface SignWithAddressResponse extends BaseRpcResponse {
