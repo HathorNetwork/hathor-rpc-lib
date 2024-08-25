@@ -2580,9 +2580,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"hathor-rpc-handler@workspace:packages/hathor-rpc-handler":
+"hathor-rpc-handler-test@workspace:packages/hathor-rpc-handler":
   version: 0.0.0-use.local
-  resolution: "hathor-rpc-handler@workspace:packages/hathor-rpc-handler"
+  resolution: "hathor-rpc-handler-test@workspace:packages/hathor-rpc-handler"
   dependencies:
     "@eslint/js": "npm:9.4.0"
     "@hathor/wallet-lib": "npm:1.8.0"

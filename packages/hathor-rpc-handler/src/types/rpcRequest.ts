@@ -118,4 +118,6 @@ export type RpcRequest = GetAddressRpcRequest
   | SignWithAddressRpcRequest
   | SendNanoContractRpcRequest
   | GetConnectedNetworkRpcRequest
-  | GenericRpcRequest;
+  | GenericRpcRequest
+  | SignOracleDataRpcRequest;
+
