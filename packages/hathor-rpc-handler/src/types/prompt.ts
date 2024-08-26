@@ -21,7 +21,11 @@ export enum TriggerTypes {
   SendNanoContractTxLoadingTrigger,
   SendNanoContractTxErrorTrigger,
   SendNanoContractTxSuccessTrigger,
+  SendNanoContractTxLoadingFinishedTrigger,
+  CreateTokenLoadingFinishedTrigger,
   LoadingFinishedTrigger,
+  CreateTokenConfirmationPrompt,
+  CreateTokenLoadingTrigger,
 }
 
 export enum TriggerResponseTypes {
@@ -30,6 +34,7 @@ export enum TriggerResponseTypes {
   GetUtxosConfirmationResponse,
   SignMessageWithAddressConfirmationResponse,
   SendNanoContractTxConfirmationResponse,
+  CreateTokenConfirmationResponse,
 }
 
 export type Trigger =
@@ -43,9 +48,13 @@ export type Trigger =
   | SignMessageWithAddressConfirmationPrompt
   | SendNanoContractTxConfirmationPrompt
   | SendNanoContractTxLoadingTrigger
+  | SendNanoContractTxLoadingFinishedTrigger
   | SendNanoContractTxSuccessTrigger
   | SendNanoContractTxErrorTrigger
-  | LoadingFinishedTrigger;
+  | LoadingFinishedTrigger
+  | CreateTokenConfirmationPrompt
+  | CreateTokenLoadingTrigger
+  | CreateTokenLoadingFinishedTrigger;
 
 export interface BaseLoadingTrigger {
   type: TriggerTypes;
@@ -61,6 +70,18 @@ export interface SendNanoContractTxErrorTrigger {
 
 export interface SendNanoContractTxSuccessTrigger {
   type: TriggerTypes.SendNanoContractTxSuccessTrigger;
+}
+
+export interface CreateTokenLoadingTrigger {
+  type: TriggerTypes.CreateTokenLoadingTrigger;
+}
+
+export interface SendNanoContractTxLoadingFinishedTrigger {
+  type: TriggerTypes.SendNanoContractTxLoadingFinishedTrigger;
+}
+
+export interface CreateTokenLoadingFinishedTrigger {
+  type: TriggerTypes.CreateTokenLoadingFinishedTrigger;
 }
 
 export interface LoadingFinishedTrigger {
@@ -120,6 +141,26 @@ export interface NanoContractParams {
   pushTx: boolean;
 }
 
+export interface CreateTokenParams {
+  name: string,
+  symbol: string,
+  amount: number,
+  address: string | null,
+  changeAddress: string | null,
+  createMint: boolean,
+  mintAuthorityAddress: string | null,
+  allowExternalMintAuthorityAddress: boolean,
+  createMelt: boolean,
+  meltAuthorityAddress: string | null,
+  allowExternalMeltAuthorityAddress: boolean,
+  data: string[] | null,
+}
+
+export interface CreateTokenConfirmationPrompt extends BaseConfirmationPrompt {
+  type: TriggerTypes.CreateTokenConfirmationPrompt;
+  data: CreateTokenParams;
+}
+
 export interface SendNanoContractTxConfirmationPrompt extends BaseConfirmationPrompt {
   type: TriggerTypes.SendNanoContractTxConfirmationPrompt;
   data: NanoContractParams;
@@ -145,7 +186,17 @@ export interface SendNanoContractTxConfirmationResponse {
       caller: string;
     } 
   } | {
-      accepted: false;
+    accepted: false;
+  }
+}
+
+export interface CreateTokenConfirmationResponse {
+  type: TriggerResponseTypes.CreateTokenConfirmationResponse;
+  data: {
+    accepted: true;
+    token: CreateTokenParams;
+  } | {
+    accepted: false;
   }
 }
 
@@ -174,7 +225,8 @@ export type TriggerResponse =
   | GetUtxosConfirmationResponse
   | PinRequestResponse
   | SignMessageWithAddressConfirmationResponse
-  | SendNanoContractTxConfirmationResponse;
+  | SendNanoContractTxConfirmationResponse
+  | CreateTokenConfirmationResponse;
 
 export type TriggerHandler = (prompt: Trigger, requestMetadata: RequestMetadata) => Promise<TriggerResponse | void>;
 

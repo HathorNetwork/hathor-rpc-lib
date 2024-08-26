@@ -25,6 +25,26 @@ export interface BaseRpcRequest {
   jsonrpc: string;
 }
 
+export interface CreateTokenRpcRequest extends BaseRpcRequest {
+  method: RpcMethods.CreateToken,
+  params: {
+    name: string;
+    symbol: string;
+    amount: number;
+    address: string | null;
+    change_address: string | null;
+    create_mint: boolean;
+    mint_authority_address: string | null;
+    allow_external_mint_authority_address?: boolean;
+    create_melt: boolean;
+    melt_authority_address: string | null;
+    allow_external_melt_authority_address?: boolean;
+    push_tx: boolean;
+    network: string;
+    data: string[] | null;
+  }
+}
+
 export interface GetAddressRpcRequest extends BaseRpcRequest {
   method: RpcMethods.GetAddress,
   params: {
