@@ -20,3 +20,7 @@ export class DifferentNetworkError extends Error {};
 export class NoUtxosAvailableError extends Error {};
 
 export class SignMessageError extends Error {};
+
+export class ParamsValidationError extends Error {};
+
+export class BluePrintNotFoundError extends ParamsValidationError {};

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { HathorWallet } from '@hathor/wallet-lib';
+import { HathorWallet, ncApi } from '@hathor/wallet-lib';
 import {
   TriggerTypes,
   PinConfirmationPrompt,
@@ -20,7 +20,13 @@ import {
   RpcResponse,
   SendNanoContractTxLoadingFinishedTrigger,
 } from '../types';
-import { PromptRejectedError, SendNanoContractTxError } from '../errors';
+import {
+  BluePrintNotFoundError,
+  ParamsValidationError,
+  PromptRejectedError,
+  SendNanoContractTxError,
+} from '../errors';
+import { NanoRequest404Error } from '@hathor/wallet-lib/lib/errors';
 
 /**
  * Sends a nano contract transaction.
@@ -54,6 +60,20 @@ export async function sendNanoContractTx(
 
   if (!blueprint_id && !nc_id) {
     throw new Error('Neither blueprint id or ncId available');
+  }
+
+  // Validate that the blueprintId exists
+  if (blueprint_id) {
+    try {
+      // Just fetch it to check if it's a valid blueprint
+      await ncApi.getBlueprintInformation(blueprint_id);
+    } catch (error) {
+      if (error instanceof NanoRequest404Error) {
+        throw new BluePrintNotFoundError();
+      }
+
+      throw new ParamsValidationError();
+    }
   }
 
   const pinPrompt: PinConfirmationPrompt = {

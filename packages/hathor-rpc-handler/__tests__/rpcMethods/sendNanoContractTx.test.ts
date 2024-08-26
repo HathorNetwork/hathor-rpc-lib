@@ -5,10 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { HathorWallet } from '@hathor/wallet-lib';
+import { HathorWallet, ncApi } from '@hathor/wallet-lib';
 import { sendNanoContractTx } from '../../src/rpcMethods/sendNanoContractTx';
 import { TriggerTypes, RpcMethods, SendNanoContractRpcRequest, TriggerResponseTypes, RpcResponseTypes } from '../../src/types';
-import { SendNanoContractTxError } from '../../src/errors';
+import { BluePrintNotFoundError, SendNanoContractTxError } from '../../src/errors';
+import { NanoRequest404Error } from '@hathor/wallet-lib/lib/errors';
+
+jest.mock('@hathor/wallet-lib', () => ({
+  ...jest.requireActual('@hathor/wallet-lib'),
+  ncApi: {
+    getBlueprintInformation: jest.fn(),
+  },
+}));
 
 describe('sendNanoContractTx', () => {
   let rpcRequest: SendNanoContractRpcRequest;
@@ -148,5 +156,12 @@ describe('sendNanoContractTx', () => {
     expect(promptHandler).toHaveBeenNthCalledWith(3, {
       type: TriggerTypes.SendNanoContractTxLoadingTrigger,
     }, {});
+  });
+
+  it('should throw BluePrintNotFoundError if the blueprint is not found in the fullnode', async () => {
+    const mockError = new NanoRequest404Error('Blueprint not found');
+    (ncApi.getBlueprintInformation as jest.Mock).mockRejectedValue(mockError);
+
+    await expect(sendNanoContractTx(rpcRequest, wallet, {}, promptHandler)).rejects.toThrow(BluePrintNotFoundError);
   });
 });
