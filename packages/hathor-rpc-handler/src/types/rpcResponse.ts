@@ -18,6 +18,7 @@ export enum RpcResponseTypes {
   GetConnectedNetworkResponse,
   GetUtxosResponse,
   CreateTokenResponse,
+  SignOracleDataResponse
 }
 
 export interface BaseRpcResponse {

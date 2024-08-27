@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { HathorWallet } from '@hathor/wallet-lib';
-import { GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
+import type { HathorWallet } from '@hathor/wallet-lib';
+import type { GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 import {
   TriggerTypes,
   GetBalanceConfirmationPrompt,
