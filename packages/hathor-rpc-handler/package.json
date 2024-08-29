@@ -1,5 +1,5 @@
 {
-  "name": "hathor-rpc-handler-test",
+  "name": "@hathor/hathor-rpc-handler",
   "version": "0.0.24",
   "license": "MIT",
   "main": "dist/index.js",
