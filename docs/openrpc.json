@@ -20,7 +20,7 @@
       "params": [],
       "result": {
         "name": "ConnectedNetwork",
-        "summary": "Object containing network name and genesis hash",
+        "summary": "Provides network name and genesis hash",
         "schema": {
           "type": "object",
           "properties": {
@@ -185,63 +185,35 @@
           "summary": "Selects only UTXOs of the specified address",
           "required": true,
           "schema": {
-            "type": "string"
+            "$ref": "#/components/schemas/Address"
           }
         },
         {
           "name": "authorities",
           "summary": "Selects only UTXOs with specified authority",
           "schema": {
-            "oneOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "type": "number"
           }
         },
         {
           "name": "amountSmallerThan",
           "summary": "Selects only UTXOs smaller than specified amount",
           "schema": {
-            "oneOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "type": "number"
           }
         },
         {
           "name": "amountBiggerThan",
           "summary": "Selects only UTXOs greater than specified amount",
           "schema": {
-            "oneOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "type": "number"
           }
         },
         {
           "name": "maximumAmount",
           "summary": "Returns only UTXOs smaller or equal than specified amount",
           "schema": {
-            "oneOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "type": "number"
           }
         }
       ],
@@ -314,8 +286,8 @@
     },
     {
       "name": "htr_sendNanoContractTx",
-      "summary": "TO DO",
-      "description": "TO DO",
+      "summary": "Requests user to create or execute a contract",
+      "description": "Provides user the details for a contract creation or execution. dApp provides wallet application with data that comprises a contract creation/execution. Wallet application assembles and signs transaction, and then pushes it to network or returns it to dApp.",
       "paramStructure": "by-name",
       "params": [
         {
@@ -328,30 +300,28 @@
         },
         {
           "name": "blueprint_id",
-          "summary": "TO DO",
+          "summary": "Id of blueprint to instantiate new contract",
+          "description": "Should be used with method initialize, to create new contract. Should not be used with any other method.",
           "required": true,
           "schema": {
-            "type": "string"
+            "description": "32 bytes encoded in hexadecimal.",
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$"
           }
         },
         {
           "name": "nc_id",
-          "summary": "TO DO",
-          "required": true,
+          "summary": "Id of contract being called",
+          "description": "Should be used for any method different than initialize, to execute a contract. Should not be used with method initialize."
           "schema": {
-            "oneOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "description": "32 bytes encoded in hexadecimal.",
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$"
           }
         },
         {
           "name": "actions",
-          "summary": "TO DO",
+          "summary": "Set of deposits and withdrawals to be performed to/from the contract",
           "required": true,
           "schema": {
             "type": "array",
@@ -362,7 +332,7 @@
         },
         {
           "name": "args",
-          "summary": "TO DO",
+          "summary": "Arguments of method being called",
           "required": true,
           "schema": {
             "type": "array"
@@ -370,7 +340,7 @@
         },
         {
           "name": "push_tx",
-          "summary": "TO DO",
+          "description": "If true, wallet application signs transaction and pushs it to network. If false, wallet application returns signed transaction to dApp (ready to be pushed).",
           "required": true,
           "schema": {
             "type": "boolean"
@@ -383,9 +353,11 @@
           "type": "object",
           "oneOf": [
             {
-              "$ref": "#/components/schemas/SendTransaction"
+              "description": "If push_tx parameter was false, wallet application returns transaction encoded in hexadecimal, ready to be pushed by any one."
+              "$ref": "#/components/schemas/TransactionHex"
             },
             {
+              "description": "If push_tx parameter was true, wallet application returns the transaction already registered in the blockchain."
               "$ref": "#/components/schemas/NanoContract"
             }
           ]
@@ -405,21 +377,28 @@
     },
     {
       "name": "htr_createToken",
-      "summary": "TO DO",
+      "summary": "Requests user to create token",
+      "description": "Provides user the deailts for a token creation. dApp provides wallet application with data that comprises a token creation. Wallet application assembles and signs transaction, and then pushes it to network or returns it to dApp.",
       "paramStructure": "by-name",
       "params": [
         {
           "name": "name",
           "required": true,
           "schema": {
-            "type": "string"
+            "description": "UTF-8 characters.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30
           }
         },
         {
           "name": "symbol",
           "required": true,
           "schema": {
-            "type": "string"
+            "description": "UTF-8 characters.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5
           }
         },
         {
@@ -431,7 +410,7 @@
         },
         {
           "name": "address",
-          "summary": "TO DO",
+          "summary": "Destination for created amount of new token",
           "schema": {
             "$ref": "#/components/schemas/Address"
           }
@@ -444,7 +423,6 @@
         },
         {
           "name": "create_mint",
-          "summary": "TO DO",
           "required": true,
           "schema": {
             "type": "boolean"
@@ -452,21 +430,18 @@
         },
         {
           "name": "mint_authority_address",
-          "summary": "TO DO",
           "schema": {
-            "type": "string"
+            "$ref": "#/components/schemas/Address"
           }
         },
         {
           "name": "allow_external_mint_authority_address",
-          "summary": "TO DO",
           "schema": {
             "type": "boolean"
           }
         },
         {
           "name": "create_melt",
-          "summary": "TO DO",
           "required": true,
           "schema": {
             "type": "boolean"
@@ -474,21 +449,19 @@
         },
         {
           "name": "melt_authority_address",
-          "summary": "TO DO",
           "schema": {
-            "type": "string"
+            "$ref": "#/components/schemas/Address"
           }
         },
         {
           "name": "allow_external_melt_authority_address",
-          "summary": "TO DO",
           "schema": {
             "type": "boolean"
           }
         },
         {
           "name": "push_tx",
-          "summary": "TO DO",
+          "summary": "If true, wallet application signs transaction and pushs it to network. If false, wallet application returns signed transaction to dApp (ready to be pushed).",
           "required": true,
           "schema": {
             "type": "boolean"
@@ -499,7 +472,6 @@
         },
         {
           "name": "data",
-          "summary": "TO DO",
           "schema": {
             "type": "array",
             "items": {
@@ -511,7 +483,17 @@
       "result": {
         "name": "CreateTokenResponse",
         "schema": {
-          "$ref": "#/components/schemas/Transaction"
+          "type": "object",
+          "oneOf": [
+            {
+              "description": "If push_tx parameter was false, wallet application returns transaction encoded in hexadecimal, ready to be pushed by any one."
+              "$ref": "#/components/schemas/TransactionHex"
+            },
+            {
+              "description": "If push_tx parameter was true, wallet application returns the transaction already registered in the blockchain."
+              "$ref": "#/components/schemas/Transaction"
+            }
+          ]
         }
       },
       "errors": [
@@ -528,7 +510,8 @@
     },
     {
       "name": "htr_signOracleData",
-      "summary": "TO DO",
+      "summary": "Requests oracle to sign data",
+      "description": "Provides an oracle user data to be signed and that a contract requires to work. dApp provides wallet application with data to be signed. Wallet application returns signed data.",
       "paramStructure": "by-name",
       "params": [
         {
@@ -536,7 +519,6 @@
         },
         {
           "name": "data",
-          "summary": "TO DO",
           "required": true,
           "schema": {
             "type": "string"
@@ -544,7 +526,6 @@
         },
         {
           "name": "address",
-          "summary": "TO DO",
           "required": true,
           "schema": {
             "$ref": "#/components/schemas/Address"
@@ -553,7 +534,6 @@
       ],
       "result": {
         "name": "SignOracleDataResponse",
-        "summary": "TO DO",
         "schema": {
           "type": "object",
           "properties": {
@@ -604,7 +584,9 @@
         ]
       },
       "Token": {
-        "type": "string"
+        "description": "32 bytes encoded in hexadecimal.",
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{64}$"
       },
       "GetBalanceObject": {
         "type": "object",
@@ -625,14 +607,7 @@
           },
           "lockExpires": {
             "title": "When next lock expires, if has a timelock",
-            "oneOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "type": "number"
           }
         }
       },
@@ -640,13 +615,21 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "description": "32 bytes encoded in hexadecimal.",
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$"
           },
           "name": {
-            "type": "string"
+            "description": "UTF-8 characters.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30
           },
           "symbol": {
-            "type": "string"
+            "description": "UTF-8 characters.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5
           }
         }
       },
@@ -693,7 +676,9 @@
         }
       },
       "Address": {
-        "type": "string"
+        "description": "20 bytes encoded in base58check.",
+        "type": "string",
+        "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{34}$"
       },
       "UtxoDetails": {
         "type": "object",
@@ -722,13 +707,15 @@
         "type": "object",
         "properties": {
           "address": {
-            "type": "string"
+            "$ref": "#/components/schemas/Address"
           },
           "amount": {
-            "type": "string"
+            "type": "number"
           },
           "tx_id": {
-            "type": "string"
+            "description": "32 bytes encoded in hexadecimal.",
+            "type": "string",
+            "pattern": "pattern": "^[a-fA-F0-9]{64}$"
           },
           "locked": {
             "type": "boolean"
@@ -742,8 +729,7 @@
         "type": "object",
         "properties": {
           "address": {
-            "title": "Address in base58",
-            "type": "string"
+            "$ref": "#/components/schemas/Address"
           },
           "index": {
             "title": "Derivation index of the address",
@@ -781,8 +767,9 @@
           }
         }
       },
-      "SendTransaction": {
-        "type": "object"
+      "TransactionHex": {
+        "description": "Transaction encoded in hexadecimal.",
+        "type": "string"
       },
       "NanoContract": {
         "type": "object",
