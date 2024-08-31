@@ -80,7 +80,7 @@ describe('sendNanoContractTx', () => {
 
     const result = await sendNanoContractTx(rpcRequest, wallet, {}, promptHandler);
 
-    expect(promptHandler).toHaveBeenCalledTimes(3);
+    expect(promptHandler).toHaveBeenCalledTimes(4);
     expect(promptHandler).toHaveBeenCalledWith({
       type: TriggerTypes.PinConfirmationPrompt,
       method: rpcRequest.method,

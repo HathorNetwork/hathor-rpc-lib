@@ -10,8 +10,6 @@ import {
 } from '../../src/types';
 
 export const mockGetBalanceRequest: GetBalanceRpcRequest = {
-  id: '1',
-  jsonrpc: '2.0',
   method: RpcMethods.GetBalance,
   params: {
     network: 'mainnet',
@@ -20,8 +18,6 @@ export const mockGetBalanceRequest: GetBalanceRpcRequest = {
 };
 
 export const mockGetAddressRequest: GetAddressRpcRequest = {
-  id: '1',
-  jsonrpc: '2.0',
   method: RpcMethods.GetAddress,
   params: {
     network: 'mainnet',
@@ -31,8 +27,6 @@ export const mockGetAddressRequest: GetAddressRpcRequest = {
 };
 
 export const mockGetUtxosRequest: GetUtxosRpcRequest = {
-  id: '1',
-  jsonrpc: '2.0',
   method: RpcMethods.GetUtxos,
   params: {
     network: 'mainnet',
@@ -47,8 +41,6 @@ export const mockGetUtxosRequest: GetUtxosRpcRequest = {
 };
 
 export const mockSignWithAddressRequest: SignWithAddressRpcRequest = {
-  id: '1',
-  jsonrpc: '2.0',
   method: RpcMethods.SignWithAddress,
   params: {
     network: 'mainnet',
@@ -57,9 +49,7 @@ export const mockSignWithAddressRequest: SignWithAddressRpcRequest = {
   },
 };
 
-export const mockSignOracleDataRequest: SignOracleDataRpcRequest= {
-  id: '1',
-  jsonrpc: '2.0',
+export const mockSignOracleDataRequest: SignOracleDataRpcRequest = {
   method: RpcMethods.SignOracleData,
   params: {
     network: 'mainnet',
@@ -69,8 +59,6 @@ export const mockSignOracleDataRequest: SignOracleDataRpcRequest= {
 };
 
 export const mockGetConnectedNetworkRequest: GetConnectedNetworkRpcRequest = {
-  id: '1',
-  jsonrpc: '2.0',
   method: RpcMethods.GetConnectedNetwork,
 };
 
