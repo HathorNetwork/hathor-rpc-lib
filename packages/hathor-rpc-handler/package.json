@@ -2,6 +2,7 @@
   "name": "@hathor/hathor-rpc-handler",
   "version": "0.0.24",
   "license": "MIT",
+  "type": "module",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
@@ -12,7 +13,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "lint": "eslint .",
+    "lint": "eslint . --ignore-pattern 'dist/*'",
     "test": "jest",
     "build": "tsc --declaration",
     "watch": "tsc -w"

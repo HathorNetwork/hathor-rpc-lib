@@ -82,4 +82,5 @@ export type RpcResponse = GetAddressResponse
   | GetBalanceResponse
   | GetConnectedNetworkResponse
   | CreateTokenResponse
+  | SignOracleDataResponse
   | GetUtxosResponse;

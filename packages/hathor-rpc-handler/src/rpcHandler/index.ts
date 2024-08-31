@@ -19,6 +19,7 @@ import {
   SignWithAddressRpcRequest,
   RpcResponse,
   CreateTokenRpcRequest,
+  SignOracleDataRpcRequest,
 } from '../types';
 import {
   getAddress,
@@ -30,6 +31,7 @@ import {
   signWithAddress,
 } from '../rpcMethods';
 import { InvalidRpcMethod } from '../errors';
+import { createToken } from '../rpcMethods/createToken';
 
 export const handleRpcRequest = async (
   request: RpcRequest,
@@ -64,6 +66,18 @@ export const handleRpcRequest = async (
     );
     case RpcMethods.GetBalance: return getBalance(
       request as GetBalanceRpcRequest,
+      wallet,
+      requestMetadata,
+      promptHandler,
+    );
+    case RpcMethods.CreateToken: return createToken(
+      request as CreateTokenRpcRequest,
+      wallet,
+      requestMetadata,
+      promptHandler,
+    );
+    case RpcMethods.SignOracleData: return signOracleData(
+      request as SignOracleDataRpcRequest,
       wallet,
       requestMetadata,
       promptHandler,
