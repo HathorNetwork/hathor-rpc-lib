@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { CreateTokenTransaction, SendTransaction, Transaction } from '@hathor/wallet-lib';
+import { CreateTokenTransaction, SendTransaction } from '@hathor/wallet-lib';
 import NanoContract from '@hathor/wallet-lib/lib/nano_contracts/nano_contract';
 import { AddressInfoObject, GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { UtxoDetails } from './prompt';
@@ -18,6 +18,7 @@ export enum RpcResponseTypes {
   GetConnectedNetworkResponse,
   GetUtxosResponse,
   CreateTokenResponse,
+  SignOracleDataResponse
 }
 
 export interface BaseRpcResponse {
@@ -61,6 +62,15 @@ export interface GetConnectedNetworkResponse extends BaseRpcResponse {
   }
 }
 
+export interface SignOracleDataResponse extends BaseRpcResponse {
+  type: RpcResponseTypes.SignOracleDataResponse;
+  response: {
+    data: string;
+    signature: string;
+    oracle: string;
+  }
+}
+
 export interface GetUtxosResponse extends BaseRpcResponse {
   type: RpcResponseTypes.GetUtxosResponse;
   response: UtxoDetails[];
@@ -72,4 +82,5 @@ export type RpcResponse = GetAddressResponse
   | GetBalanceResponse
   | GetConnectedNetworkResponse
   | CreateTokenResponse
+  | SignOracleDataResponse
   | GetUtxosResponse;

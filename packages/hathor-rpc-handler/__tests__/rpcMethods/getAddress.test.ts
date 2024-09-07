@@ -31,8 +31,6 @@ describe('getAddress', () => {
 
   it('should return the current address for type "first_empty"', async () => {
     const rpcRequest: GetAddressRpcRequest = {
-      id: '3',
-      jsonrpc: '2.0',
       params: { type: 'first_empty', network: 'mainnet' },
       method: RpcMethods.GetAddress,
     };
@@ -47,8 +45,6 @@ describe('getAddress', () => {
 
   it('should throw NotImplementedError for type "full_path"', async () => {
     const rpcRequest: GetAddressRpcRequest = {
-      id: '3',
-      jsonrpc: '2.0',
       params: { type: 'full_path', network: 'mainnet' },
       method: RpcMethods.GetAddress,
     };
@@ -58,8 +54,6 @@ describe('getAddress', () => {
 
   it('should return the address at index for type "index"', async () => {
     const rpcRequest: GetAddressRpcRequest = {
-      id: '3',
-      jsonrpc: '2.0',
       params: { type: 'index', index: 5, network: 'mainnet' },
       method: RpcMethods.GetAddress,
     };
@@ -74,8 +68,6 @@ describe('getAddress', () => {
 
   it('should return the client address for type "client"', async () => {
     const rpcRequest: GetAddressRpcRequest = {
-      id: '3',
-      jsonrpc: '2.0',
       params: { type: 'client', network: 'mainnet' },
       method: RpcMethods.GetAddress,
     };
@@ -93,8 +85,6 @@ describe('getAddress', () => {
 
   it('should throw PromptRejectedError if address confirmation is rejected', async () => {
     const rpcRequest: GetAddressRpcRequest = {
-      id: '3',
-      jsonrpc: '2.0',
       params: { type: 'first_empty', network: 'mainnet' },
       method: RpcMethods.GetAddress,
     };
@@ -106,8 +96,6 @@ describe('getAddress', () => {
 
   it('should confirm the address if type is not "client"', async () => {
     const rpcRequest: GetAddressRpcRequest = {
-      id: '3',
-      jsonrpc: '2.0',
       params: { type: 'first_empty', network: 'mainnet' },
       method: RpcMethods.GetAddress,
     };

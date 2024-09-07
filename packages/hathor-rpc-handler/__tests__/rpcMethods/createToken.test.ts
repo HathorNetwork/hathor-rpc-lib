@@ -9,6 +9,23 @@ import {
 } from '../../src/types';
 import { CreateTokenError, PromptRejectedError } from '../../src/errors';
 
+function toCamelCase(params: Pick<CreateTokenRpcRequest, 'params'>['params']) {
+  return {
+    name: params.name,
+    symbol: params.symbol,
+    changeAddress: params.change_address,
+    address: params.address,
+    amount: params.amount,
+    createMint: params.create_mint,
+    mintAuthorityAddress: params.mint_authority_address,
+    allowExternalMintAuthorityAddress: params.allow_external_mint_authority_address,
+    createMelt: params.create_melt,
+    meltAuthorityAddress: params.melt_authority_address,
+    allowExternalMeltAuthorityAddress: params.allow_external_melt_authority_address,
+    data: params.data,
+  };
+}
+
 describe('createToken', () => {
   let rpcRequest: CreateTokenRpcRequest;
   let wallet: HathorWallet;
@@ -17,22 +34,20 @@ describe('createToken', () => {
   beforeEach(() => {
     rpcRequest = {
       method: RpcMethods.CreateToken,
-      id: '1',
-      jsonrpc: '2.0',
       params: {
-        name: 'myToken',
+        name: 'mytoken',
         symbol: 'mtk',
         amount: 1000,
         address: 'address123',
-        changeAddress: 'changeAddress123',
-        createMint: true,
-        mintAuthorityAddress: null,
-        allowExternalMintAuthorityAddress: false,
-        createMelt: true,
-        meltAuthorityAddress: null,
-        allowExternalMeltAuthorityAddress: false,
+        change_address: 'changeAddress123',
+        create_mint: true,
+        mint_authority_address: null,
+        allow_external_mint_authority_address: false,
+        create_melt: true,
+        melt_authority_address: null,
+        allow_external_melt_authority_address: false,
         data: null,
-        pushTx: true,
+        push_tx: true,
         network: 'mainnet',
       },
     } as unknown as CreateTokenRpcRequest;
@@ -73,12 +88,12 @@ describe('createToken', () => {
 
     const result = await createToken(rpcRequest, wallet, {}, triggerHandler);
 
-    expect(triggerHandler).toHaveBeenCalledTimes(2);
+    expect(triggerHandler).toHaveBeenCalledTimes(4);
     expect(triggerHandler).toHaveBeenCalledWith(
       {
         type: TriggerTypes.CreateTokenConfirmationPrompt,
         method: rpcRequest.method,
-        data: rpcRequest.params,
+        data: toCamelCase(rpcRequest.params),
       },
       {}
     );
@@ -95,15 +110,10 @@ describe('createToken', () => {
       rpcRequest.params.symbol,
       rpcRequest.params.amount,
       {
-        changeAddress: rpcRequest.params.change_address,
-        address: rpcRequest.params.address,
-        createMint: rpcRequest.params.create_mint,
-        mintAuthorityAddress: rpcRequest.params.mint_authority_address,
-        allowExternalMintAuthorityAddress: rpcRequest.params.allow_external_mint_authority_address,
-        createMelt: rpcRequest.params.create_melt,
-        meltAuthorityAddress: rpcRequest.params.melt_authority_address,
-        allowExternalMeltAuthorityAddress: rpcRequest.params.allow_external_melt_authority_address,
-        data: rpcRequest.params.data,
+        ...toCamelCase(rpcRequest.params),
+        amount: undefined,
+        name: undefined,
+        symbol: undefined,
         pinCode,
       }
     );
@@ -127,7 +137,7 @@ describe('createToken', () => {
       {
         type: TriggerTypes.CreateTokenConfirmationPrompt,
         method: rpcRequest.method,
-        data: rpcRequest.params,
+        data: toCamelCase(rpcRequest.params),
       },
       {}
     );
@@ -156,7 +166,7 @@ describe('createToken', () => {
 
     await expect(createToken(rpcRequest, wallet, {}, triggerHandler)).rejects.toThrow(CreateTokenError);
 
-    expect(triggerHandler).toHaveBeenCalledTimes(2);
+    expect(triggerHandler).toHaveBeenCalledTimes(3);
   });
 
   it('should throw an error if the change address is not owned by the wallet', async () => {

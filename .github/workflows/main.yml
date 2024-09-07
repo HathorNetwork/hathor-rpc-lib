@@ -3,13 +3,12 @@ on: [push]
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
     - name: Install Nix
-      uses: cachix/install-nix-action/ba0dd844c9180cbf77aa72a116d6fbc515d0e87b
+      uses: cachix/install-nix-action@ba0dd844c9180cbf77aa72a116d6fbc515d0e87b
       with:
         nix_path: nixpkgs=channel:nixos-unstable
         extra_nix_config: |
@@ -24,8 +23,8 @@ jobs:
 
     - name: lint
       run: |
-        nix develop . -c yarn workspace hathor-rpc-handler run lint
+        nix develop . -c yarn workspace @hathor/hathor-rpc-handler run lint
 
     - name: tests
       run: |
-        nix develop . -c yarn workspace hathor-rpc-handler run test
+        nix develop . -c yarn workspace @hathor/hathor-rpc-handler run test

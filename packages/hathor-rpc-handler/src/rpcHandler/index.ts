@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import type { HathorWallet } from '@hathor/wallet-lib';
 import {
   GetAddressRpcRequest,
   GetBalanceRpcRequest,
@@ -18,11 +19,17 @@ import {
   SignWithAddressRpcRequest,
   RpcResponse,
   CreateTokenRpcRequest,
+  SignOracleDataRpcRequest,
 } from '../types';
-import { signWithAddress } from '../rpcMethods/signWithAddress';
-import { HathorWallet } from '@hathor/wallet-lib';
-import { getAddress, getBalance, getUtxos, sendNanoContractTx } from '../rpcMethods';
-import { getConnectedNetwork } from '../rpcMethods/getConnectedNetwork';
+import {
+  getAddress,
+  getBalance,
+  getUtxos,
+  sendNanoContractTx,
+  getConnectedNetwork,
+  signOracleData,
+  signWithAddress,
+} from '../rpcMethods';
 import { InvalidRpcMethod } from '../errors';
 import { createToken } from '../rpcMethods/createToken';
 
@@ -63,14 +70,20 @@ export const handleRpcRequest = async (
       requestMetadata,
       promptHandler,
     );
-    case RpcMethods.SendNanoContractTx: return sendNanoContractTx(
-      request as SendNanoContractRpcRequest,
+    case RpcMethods.CreateToken: return createToken(
+      request as CreateTokenRpcRequest,
       wallet,
       requestMetadata,
       promptHandler,
     );
-    case RpcMethods.CreateToken: return createToken(
-      request as CreateTokenRpcRequest,
+    case RpcMethods.SignOracleData: return signOracleData(
+      request as SignOracleDataRpcRequest,
+      wallet,
+      requestMetadata,
+      promptHandler,
+    );
+    case RpcMethods.SendNanoContractTx: return sendNanoContractTx(
+      request as SendNanoContractRpcRequest,
       wallet,
       requestMetadata,
       promptHandler,

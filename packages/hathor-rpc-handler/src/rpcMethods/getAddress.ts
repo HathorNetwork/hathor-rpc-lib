@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { HathorWallet } from '@hathor/wallet-lib';
+import type { HathorWallet } from '@hathor/wallet-lib';
 import {
   AddressRequestClientResponse,
   TriggerTypes,
@@ -17,7 +17,7 @@ import {
 } from '../types';
 import { NotImplementedError, PromptRejectedError } from '../errors';
 import { validateNetwork } from '../helpers';
-import { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
+import type { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
 
 /**
  * Gets an address based on the provided rpcRequest and wallet.

@@ -17,35 +17,30 @@ export enum RpcMethods {
   PushTxHex = 'htr_pushTxHex',
   GetOperationStatus = 'htr_getOperationStatus',
   SendNanoContractTx = 'htr_sendNanoContractTx',
+  SignOracleData = 'htr_signOracleData',
 }
 
-export interface BaseRpcRequest {
-  method: string;
-  id: string;
-  jsonrpc: string;
-}
-
-export interface CreateTokenRpcRequest extends BaseRpcRequest {
+export interface CreateTokenRpcRequest {
   method: RpcMethods.CreateToken,
   params: {
     name: string;
     symbol: string;
     amount: number;
-    address: string | null;
-    change_address: string | null;
+    address?: string;
+    change_address?: string;
     create_mint: boolean;
-    mint_authority_address: string | null;
+    mint_authority_address?: string;
     allow_external_mint_authority_address?: boolean;
     create_melt: boolean;
-    melt_authority_address: string | null;
+    melt_authority_address?: string;
     allow_external_melt_authority_address?: boolean;
     push_tx: boolean;
     network: string;
-    data: string[] | null;
+    data?: string[];
   }
 }
 
-export interface GetAddressRpcRequest extends BaseRpcRequest {
+export interface GetAddressRpcRequest {
   method: RpcMethods.GetAddress,
   params: {
     type: 'first_empty' | 'full_path' | 'index' | 'client';
@@ -55,7 +50,7 @@ export interface GetAddressRpcRequest extends BaseRpcRequest {
   }
 }
 
-export interface GetBalanceRpcRequest extends BaseRpcRequest {
+export interface GetBalanceRpcRequest {
   method: RpcMethods.GetBalance,
   params: {
     network: string;
@@ -64,7 +59,7 @@ export interface GetBalanceRpcRequest extends BaseRpcRequest {
   };
 }
 
-export interface GetUtxosRpcRequest extends BaseRpcRequest {
+export interface GetUtxosRpcRequest {
   method: RpcMethods.GetUtxos,
   params: {
     network: string;
@@ -79,7 +74,7 @@ export interface GetUtxosRpcRequest extends BaseRpcRequest {
   };
 }
 
-export interface SignWithAddressRpcRequest extends BaseRpcRequest {
+export interface SignWithAddressRpcRequest {
   method: RpcMethods.SignWithAddress,
   params: {
     network: string;
@@ -88,7 +83,16 @@ export interface SignWithAddressRpcRequest extends BaseRpcRequest {
   }
 }
 
-export interface SendNanoContractRpcRequest extends BaseRpcRequest {
+export interface SignOracleDataRpcRequest {
+  method: RpcMethods.SignOracleData,
+  params: {
+    network: string;
+    data: string;
+    oracle: string;
+  }
+}
+
+export interface SendNanoContractRpcRequest {
   method: RpcMethods.SendNanoContractTx,
   params: {
     method: string;
@@ -104,11 +108,12 @@ export type RequestMetadata = {
   [key: string]: string,
 };
 
-export interface GetConnectedNetworkRpcRequest extends BaseRpcRequest {
+export interface GetConnectedNetworkRpcRequest {
   method: RpcMethods.GetConnectedNetwork,
 }
 
-export interface GenericRpcRequest extends BaseRpcRequest {
+export interface GenericRpcRequest {
+  method: string;
   params?: unknown | null;
 }
 
@@ -118,4 +123,6 @@ export type RpcRequest = GetAddressRpcRequest
   | SignWithAddressRpcRequest
   | SendNanoContractRpcRequest
   | GetConnectedNetworkRpcRequest
-  | GenericRpcRequest;
+  | GenericRpcRequest
+  | SignOracleDataRpcRequest;
+
