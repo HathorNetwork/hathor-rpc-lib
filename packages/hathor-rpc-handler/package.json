@@ -1,7 +1,7 @@
 {
   "name": "@hathor/hathor-rpc-handler",
   "license": "MIT",
-  "type": "module",
+  "version": "0.0.2-experimental-alpha",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
