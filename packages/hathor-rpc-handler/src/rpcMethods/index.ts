@@ -5,3 +5,4 @@ export * from './sendNanoContractTx';
 export * from './signWithAddress';
 export * from './getConnectedNetwork';
 export * from './signOracleData';
+export * from './createToken';
