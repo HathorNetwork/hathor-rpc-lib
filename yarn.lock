@@ -477,7 +477,7 @@ __metadata:
   resolution: "@hathor/hathor-rpc-handler@workspace:packages/hathor-rpc-handler"
   dependencies:
     "@eslint/js": "npm:9.4.0"
-    "@hathor/wallet-lib": "npm:1.8.0"
+    "@hathor/wallet-lib": "npm:1.11.0"
     "@types/eslint__js": "npm:8.42.3"
     "@types/jest": "npm:29.5.12"
     "@types/node": "npm:20.14.2"
@@ -489,10 +489,11 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@hathor/wallet-lib@npm:1.8.0":
-  version: 1.8.0
-  resolution: "@hathor/wallet-lib@npm:1.8.0"
+"@hathor/wallet-lib@npm:1.11.0":
+  version: 1.11.0
+  resolution: "@hathor/wallet-lib@npm:1.11.0"
   dependencies:
+    abstract-level: "npm:1.0.4"
     axios: "npm:1.7.2"
     bitcore-lib: "npm:8.25.10"
     bitcore-mnemonic: "npm:8.25.10"
@@ -502,8 +503,8 @@ __metadata:
     level: "npm:8.0.1"
     lodash: "npm:4.17.21"
     long: "npm:5.2.3"
-    ws: "npm:8.17.0"
-  checksum: 10c0/9491e54d643809da970951aab174b3a82d581c9ada40716a99a831057be647dde3da05e91fcee12ec866952b1e0a1a947a239c68317b8b5c813acbb5cb6957a5
+    ws: "npm:8.17.1"
+  checksum: 10c0/b3a1c20b836789040f105237dc35cf35f0cff6aa436eb08e0090ecff92f24a0b3af792060d57b735d5a63bc4a34f37ba17d4b1072682ff0567ba8ce3941517f0
   languageName: node
   linkType: hard
 
@@ -1192,7 +1193,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"abstract-level@npm:^1.0.2, abstract-level@npm:^1.0.4":
+"abstract-level@npm:1.0.4, abstract-level@npm:^1.0.2, abstract-level@npm:^1.0.4":
   version: 1.0.4
   resolution: "abstract-level@npm:1.0.4"
   dependencies:
@@ -4851,9 +4852,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ws@npm:8.17.0":
-  version: 8.17.0
-  resolution: "ws@npm:8.17.0"
+"ws@npm:8.17.1":
+  version: 8.17.1
+  resolution: "ws@npm:8.17.1"
   peerDependencies:
     bufferutil: ^4.0.1
     utf-8-validate: ">=5.0.2"
@@ -4862,7 +4863,7 @@ __metadata:
       optional: true
     utf-8-validate:
       optional: true
-  checksum: 10c0/55241ec93a66fdfc4bf4f8bc66c8eb038fda2c7a4ee8f6f157f2ca7dc7aa76aea0c0da0bf3adb2af390074a70a0e45456a2eaf80e581e630b75df10a64b0a990
+  checksum: 10c0/f4a49064afae4500be772abdc2211c8518f39e1c959640457dcee15d4488628620625c783902a52af2dd02f68558da2868fd06e6fd0e67ebcd09e6881b1b5bfe
   languageName: node
   linkType: hard
 
