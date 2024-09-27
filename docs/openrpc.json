@@ -211,7 +211,7 @@
         },
         {
           "name": "maximumAmount",
-          "summary": "Returns only UTXOs smaller or equal than specified amount",
+          "summary": "Limit the maximum total amount to return summing all utxos",
           "schema": {
             "type": "number"
           }
@@ -378,7 +378,7 @@
     {
       "name": "htr_createToken",
       "summary": "Requests user to create token",
-      "description": "Provides user the deailts for a token creation. dApp provides wallet application with data that comprises a token creation. Wallet application assembles and signs transaction, and then pushes it to network or returns it to dApp.",
+      "description": "Provides user the details for a token creation. dApp provides wallet application with data that comprises a token creation. Wallet application assembles and signs transaction, and then pushes it to network or returns it to dApp.",
       "paramStructure": "by-name",
       "params": [
         {
@@ -580,13 +580,12 @@
       "Network": {
         "enum": [
           "testnet",
-          "mainnet"
+          "mainnet",
+          "privatenet"
         ]
       },
       "Token": {
-        "description": "32 bytes encoded in hexadecimal.",
-        "type": "string",
-        "pattern": "^[a-fA-F0-9]{64}$"
+        "$ref": "#/components/schemas/TransactionId"
       },
       "GetBalanceObject": {
         "type": "object",
@@ -615,9 +614,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "description": "32 bytes encoded in hexadecimal.",
-            "type": "string",
-            "pattern": "^[a-fA-F0-9]{64}$"
+            "$ref": "#/components/schemas/Token"
           },
           "name": {
             "description": "UTF-8 characters.",
@@ -676,7 +673,7 @@
         }
       },
       "Address": {
-        "description": "20 bytes encoded in base58check.",
+        "description": "25 bytes encoded in base58check.",
         "type": "string",
         "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{34}$"
       },
@@ -710,12 +707,10 @@
             "$ref": "#/components/schemas/Address"
           },
           "amount": {
-            "type": "number"
+            "$ref": "#/components/schemas/OutputValueType"
           },
           "tx_id": {
-            "description": "32 bytes encoded in hexadecimal.",
-            "type": "string",
-            "pattern": "pattern": "^[a-fA-F0-9]{64}$"
+            "$ref": "#/components/schemas/TransactionId"
           },
           "locked": {
             "type": "boolean"
@@ -771,6 +766,11 @@
         "description": "Transaction encoded in hexadecimal.",
         "type": "string"
       },
+      "TransactionId": {
+        "description": "32 bytes encoded in hexadecimal; hash of transaction.",
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{64}$"
+      },
       "NanoContract": {
         "type": "object",
         "allOf": [
@@ -780,6 +780,7 @@
           {
             "properties": {
               "id": {
+                "description": "Refers to blueprint_id when method is initialize; refers to nc_id otherwise.",
                 "type": "string"
               },
               "method": {
@@ -844,7 +845,7 @@
             }
           },
           "hash": {
-            "type": "string"
+            "$ref": "#/components/schemas/TransactionId"
           }
         }
       },
@@ -852,8 +853,8 @@
         "type": "object",
         "properties": {
           "hash": {
-            "title": "Hash of transaction being spent",
-            "type": "string"
+            "title": "Hash of transaction's UTXO being spent",
+            "$ref": "#/components/schemas/TransactionId"
           },
           "index": {
             "title": "Index of outputs array from output being spent",
@@ -881,7 +882,7 @@
       },
       "Buffer": {
         "type": "string"
-      }
+      },
     },
     "errors":{
       "NotImplementedError": {
