@@ -405,7 +405,7 @@
           "name": "amount",
           "required": true,
           "schema": {
-            "type": "number"
+            "$ref": "#/components/schemas/OutputValueType"
           }
         },
         {
