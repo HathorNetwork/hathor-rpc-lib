@@ -1,0 +1,918 @@
+{
+  "openrpc": "1.3.2",
+  "info": {
+    "title": "Hathor wallet-to-DApp API",
+    "description": "API exposed by wallet applications for integration with DApps on Hathor platform.",
+    "contact": {
+      "name": "Hathor Labs",
+      "url": "https://docs.hathor.network/references/besides-documentation#support"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://github.com/HathorNetwork/hathor-rpc-lib/blob/release/LICENSE"
+    },
+    "version": "0.0.3-experimental-alpha"
+  },
+  "methods": [
+    {
+      "name": "htr_getConnectedNetwork",
+      "summary": "Returns the network to which the wallet is connected",
+      "params": [],
+      "result": {
+        "name": "ConnectedNetwork",
+        "summary": "Provides network name and genesis hash",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "network": {
+              "$ref": "#/components/schemas/Network"
+            },
+            "genesisHash": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "htr_getBalance",
+      "summary": "Given an array of tokens, returns the balance of the wallet for each token",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "$ref": "#/components/contentDescriptors/Network"
+        },
+        {
+          "name": "tokens",
+          "required": true,
+          "schema": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Token"
+            }
+          }
+        },
+        {
+          "name": "addressIndexes",
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        }
+      ],
+      "result": {
+        "name": "getBalanceObjects",
+        "schema": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/GetBalanceObject"
+          }
+        }
+      },
+      "errors": [
+        {
+          "$ref": "#/components/errors/DifferentNetworkError"
+        },
+        {
+          "$ref": "#/components/errors/NotImplementedError"
+        },
+        {
+          "$ref": "#/components/errors/PromptRejectedError"
+        }
+      ]
+    },
+    {
+      "name": "htr_getAddress",
+      "summary": "Returns an address of the wallet",
+      "description": "Use the param 'type' to define how address should be selected.",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "$ref": "#/components/contentDescriptors/Network"
+        },
+        {
+          "name": "type",
+          "summary": "Define how the address should be selected",
+          "description": "Should be one of four possible values: 'first_empty', 'full_path', 'index', or 'client'.",
+          "required": true,
+          "schema": {
+            "oneOf": [
+              {
+                "const": "first_empty",
+                "description": "Use 'first_empty' to get the first address without transactions."
+              },
+              {
+                "const": "full_path",
+                "description": "Use 'full_path' to get an address given its full path."
+              },
+              {
+                "const": "index",
+                "description": "Use 'index' to get an address given its index in the wallet."
+              },
+              {
+                "const": "client",
+                "description": "Use 'client' to let the user select the address he/she wants to provide."
+              }
+            ]
+          }
+        },
+        {
+          "name": "full_path",
+          "summary": "Address full path in a wallet",
+          "description": "Should only be used alongside type 'full_path'.",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "index",
+          "summary": "Address index in a wallet",
+          "description": "Should only be used alongside type 'index'.",
+          "schema": {
+            "type": "number"
+          }
+        }
+      ],
+      "result": {
+        "name": "address",
+        "schema": {
+          "$ref": "#/components/schemas/Address"
+        }
+      },
+      "errors": [
+        {
+          "$ref": "#/components/errors/DifferentNetworkError"
+        },
+        {
+          "$ref": "#/components/errors/NotImplementedError"
+        },
+        {
+          "$ref": "#/components/errors/PromptRejectedError"
+        }
+      ]
+    },
+    {
+      "name": "htr_getUtxos",
+      "summary": "Returns all UTXOs that meet the filter criteria",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "$ref": "#/components/contentDescriptors/Network"
+        },
+        {
+          "$ref": "#/components/contentDescriptors/Token"
+        },
+        {
+          "name": "maxUtxos",
+          "summary": "Limit number of UTXOs to be returned",
+          "required": true,
+          "schema": {
+            "type": "number"
+          }
+        },
+        {
+          "name": "onlyAvailableUtxos",
+          "summary": "Selects only UTXOs available to be spent",
+          "required": true,
+          "schema": {
+            "type": "boolean"
+          }
+        },
+        {
+          "name": "filterAddress",
+          "summary": "Selects only UTXOs of the specified address",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/Address"
+          }
+        },
+        {
+          "name": "authorities",
+          "summary": "Selects only UTXOs with specified authority",
+          "schema": {
+            "type": "number"
+          }
+        },
+        {
+          "name": "amountSmallerThan",
+          "summary": "Selects only UTXOs smaller than specified amount",
+          "schema": {
+            "type": "number"
+          }
+        },
+        {
+          "name": "amountBiggerThan",
+          "summary": "Selects only UTXOs greater than specified amount",
+          "schema": {
+            "type": "number"
+          }
+        },
+        {
+          "name": "maximumAmount",
+          "summary": "Limit the maximum total amount to return summing all utxos",
+          "schema": {
+            "type": "number"
+          }
+        }
+      ],
+      "result": {
+        "name": "utxosDetails",
+        "summary": "Object with overall information about the set of UTXOs and an array of UTXOs",
+        "schema": {
+          "$ref": "#/components/schemas/UtxoDetails"
+        }
+      },
+      "errors": [
+        {
+          "$ref": "#/components/errors/DifferentNetworkError"
+        },
+        {
+          "$ref": "#/components/errors/PromptRejectedError"
+        }
+      ]
+    },
+    {
+      "name": "htr_signWithAddress",
+      "summary": "Given a message and an address, returns the correspondent signature",
+      "description": "Returns a message signed with the private key associated with the address, proving identity and/or authenticity.",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "$ref": "#/components/contentDescriptors/Network"
+        },
+        {
+          "name": "message",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "addressIndex",
+          "summary": "Address index in a wallet",
+          "required": true,
+          "schema": {
+            "type": "number"
+          }
+        }
+      ],
+      "result": {
+        "name": "SignWithAddressResponse",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "message": {
+              "type": "string"
+            },
+            "signature": {
+              "type": "string"
+            },
+            "address": {
+              "$ref": "#/components/schemas/AddressInfoObject"
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "$ref": "#/components/errors/DifferentNetworkError"
+        },
+        {
+          "$ref": "#/components/errors/PromptRejectedError"
+        }
+      ]
+    },
+    {
+      "name": "htr_sendNanoContractTx",
+      "summary": "Requests user to create or execute a contract",
+      "description": "Provides user the details for a contract creation or execution. DApp provides wallet application with data that comprises a contract creation/execution. Wallet application assembles and signs transaction, and then pushes it to network or returns it to DApp.",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "method",
+          "summary": "Method from contract or blueprint that should be called",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "blueprint_id",
+          "summary": "Id of blueprint to instantiate new contract",
+          "description": "Should be used with method initialize, to create new contract. Should not be used with any other method.",
+          "required": true,
+          "schema": {
+            "description": "32 bytes encoded in hexadecimal.",
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$"
+          }
+        },
+        {
+          "name": "nc_id",
+          "summary": "Id of contract being called",
+          "description": "Should be used for any method different than initialize, to execute a contract. Should not be used with method initialize."
+          "schema": {
+            "description": "32 bytes encoded in hexadecimal.",
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$"
+          }
+        },
+        {
+          "name": "actions",
+          "summary": "Set of deposits and withdrawals to be performed to/from the contract",
+          "required": true,
+          "schema": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NanoContractAction"
+            }
+          }
+        },
+        {
+          "name": "args",
+          "summary": "Arguments of method being called",
+          "required": true,
+          "schema": {
+            "type": "array"
+          }
+        },
+        {
+          "name": "push_tx",
+          "description": "If true, wallet application signs transaction and pushs it to network. If false, wallet application returns signed transaction to DApp (ready to be pushed).",
+          "required": true,
+          "schema": {
+            "type": "boolean"
+          }
+        }
+      ],
+      "result": {
+        "name": "SendNanoContractTxResponse",
+        "schema": {
+          "type": "object",
+          "oneOf": [
+            {
+              "description": "If push_tx parameter was false, wallet application returns transaction encoded in hexadecimal, ready to be pushed by any one."
+              "$ref": "#/components/schemas/TransactionHex"
+            },
+            {
+              "description": "If push_tx parameter was true, wallet application returns the transaction already registered in the blockchain."
+              "$ref": "#/components/schemas/NanoContract"
+            }
+          ]
+        }
+      },
+      "errors": [
+        {
+          "$ref": "#/components/errors/NCBadRequest"
+        },
+        {
+          "$ref": "#/components/errors/PromptRejectedError"
+        },
+        {
+          "$ref": "#/components/errors/SendNanoContractTxFailure"
+        }
+      ]
+    },
+    {
+      "name": "htr_createToken",
+      "summary": "Requests user to create token",
+      "description": "Provides user the details for a token creation. DApp provides wallet application with data that comprises a token creation. Wallet application assembles and signs transaction, and then pushes it to network or returns it to DApp.",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "name",
+          "required": true,
+          "schema": {
+            "description": "UTF-8 characters.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30
+          }
+        },
+        {
+          "name": "symbol",
+          "required": true,
+          "schema": {
+            "description": "UTF-8 characters.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5
+          }
+        },
+        {
+          "name": "amount",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/OutputValueType"
+          }
+        },
+        {
+          "name": "address",
+          "summary": "Destination for created amount of new token",
+          "schema": {
+            "$ref": "#/components/schemas/Address"
+          }
+        },
+        {
+          "name": "change_address",
+          "schema": {
+            "$ref": "#/components/schemas/Address"
+          }
+        },
+        {
+          "name": "create_mint",
+          "required": true,
+          "schema": {
+            "type": "boolean"
+          }
+        },
+        {
+          "name": "mint_authority_address",
+          "schema": {
+            "$ref": "#/components/schemas/Address"
+          }
+        },
+        {
+          "name": "allow_external_mint_authority_address",
+          "schema": {
+            "type": "boolean"
+          }
+        },
+        {
+          "name": "create_melt",
+          "required": true,
+          "schema": {
+            "type": "boolean"
+          }
+        },
+        {
+          "name": "melt_authority_address",
+          "schema": {
+            "$ref": "#/components/schemas/Address"
+          }
+        },
+        {
+          "name": "allow_external_melt_authority_address",
+          "schema": {
+            "type": "boolean"
+          }
+        },
+        {
+          "name": "push_tx",
+          "summary": "If true, wallet application signs transaction and pushs it to network. If false, wallet application returns signed transaction to DApp (ready to be pushed).",
+          "required": true,
+          "schema": {
+            "type": "boolean"
+          }
+        },
+        {
+          "$ref": "#/components/contentDescriptors/Network"
+        },
+        {
+          "name": "data",
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "result": {
+        "name": "CreateTokenResponse",
+        "schema": {
+          "type": "object",
+          "oneOf": [
+            {
+              "description": "If push_tx parameter was false, wallet application returns transaction encoded in hexadecimal, ready to be pushed by any one."
+              "$ref": "#/components/schemas/TransactionHex"
+            },
+            {
+              "description": "If push_tx parameter was true, wallet application returns the transaction already registered in the blockchain."
+              "$ref": "#/components/schemas/Transaction"
+            }
+          ]
+        }
+      },
+      "errors": [
+        {
+          "$ref": "#/components/errors/ChangeAddressError"
+        },
+        {
+          "$ref": "#/components/errors/PromptRejectedError"
+        },
+        {
+          "$ref": "#/components/errors/CreateTokenError"
+        }
+      ]
+    },
+    {
+      "name": "htr_signOracleData",
+      "summary": "Requests oracle to sign data",
+      "description": "Provides an oracle user data to be signed and that a contract requires to work. DApp provides wallet application with data to be signed. Wallet application returns signed data.",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "$ref": "#/components/contentDescriptors/Network"
+        },
+        {
+          "name": "data",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "address",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/Address"
+          }
+        }
+      ],
+      "result": {
+        "name": "SignOracleDataResponse",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": "string"
+            },
+            "signature": {
+              "type": "string"
+            },
+            "oracle": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "$ref": "#/components/errors/DifferentNetworkError"
+        },
+        {
+          "$ref": "#/components/errors/PromptRejectedError"
+        }
+      ]
+    }
+  ],
+  "components": {
+    "contentDescriptors": {
+      "Network": {
+        "name": "network",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/Network"
+        }
+      },
+      "Token": {
+        "name": "token",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/Token"
+        }
+      }
+    },
+    "schemas": {
+      "Network": {
+        "enum": [
+          "testnet",
+          "mainnet",
+          "privatenet"
+        ]
+      },
+      "Token": {
+        "$ref": "#/components/schemas/TransactionId"
+      },
+      "GetBalanceObject": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "$ref": "#/components/schemas/TokenInfo"
+          },
+          "balance": {
+            "$ref": "#/components/schemas/Balance"
+          },
+          "tokenAuthorities": {
+            "title": "Authorities mint/melt availability",
+            "$ref": "#/components/schemas/AuthoritiesBalance"
+          },
+          "transactions": {
+            "title": "quantity of transactions",
+            "type": "number"
+          },
+          "lockExpires": {
+            "title": "When next lock expires, if has a timelock",
+            "type": "number"
+          }
+        }
+      },
+      "TokenInfo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Token"
+          },
+          "name": {
+            "description": "UTF-8 characters.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30
+          },
+          "symbol": {
+            "description": "UTF-8 characters.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5
+          }
+        }
+      },
+      "Balance": {
+        "type": "object",
+        "properties": {
+          "unlocked": {
+            "title": "Available amount",
+            "$ref": "#/components/schemas/OutputValueType"
+          },
+          "locked": {
+            "title": "Locked amount",
+            "$ref": "#/components/schemas/OutputValueType"
+          }
+        }
+      },
+      "OutputValueType": {
+        "type": "number"
+      },
+      "AuthoritiesBalance": {
+        "type": "object",
+        "properties": {
+          "unlocked": {
+            "title": "unlocked mint/melt",
+            "$ref": "#/components/schemas/Authority"
+          },
+          "locked": {
+            "title": "locked mint/melt",
+            "$ref": "#/components/schemas/Authority"
+          }
+        }
+      },
+      "Authority": {
+        "type": "object",
+        "properties": {
+          "mint": {
+            "title": "if has mint authority",
+            "type": "boolean"
+          },
+          "melt": {
+            "title": "if has melt authority",
+            "type": "boolean"
+          }
+        }
+      },
+      "Address": {
+        "description": "25 bytes encoded in base58check.",
+        "type": "string",
+        "pattern": "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{34}$"
+      },
+      "UtxoDetails": {
+        "type": "object",
+        "properties": {
+          "total_amount_available": {
+            "type": "number"
+          },
+          "total_utxos_available": {
+            "type": "number"
+          },
+          "total_amount_locked": {
+            "type": "number"
+          },
+          "total_utxos_locked": {
+            "type": "number"
+          },
+          "utxos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UtxoInfo"
+            }
+          }
+        }
+      },
+      "UtxoInfo": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "$ref": "#/components/schemas/Address"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/OutputValueType"
+          },
+          "tx_id": {
+            "$ref": "#/components/schemas/TransactionId"
+          },
+          "locked": {
+            "type": "boolean"
+          },
+          "index": {
+            "type": "number"
+          }
+        }
+      },
+      "AddressInfoObject": {
+        "type": "object",
+        "properties": {
+          "address": {
+            "$ref": "#/components/schemas/Address"
+          },
+          "index": {
+            "title": "Derivation index of the address",
+            "type": "number"
+          },
+          "addressPath": {
+            "title": "Path of the address",
+            "type": "string"
+          },
+          "info": {
+            "title": "Optional extra info when getting address info",
+            "type": "null"
+          }
+        }
+      },
+      "NanoContractAction": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": ["deposit", "withdrawal"]
+          },
+          "token": {
+            "$ref": "#/components/schemas/Token"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/OutputValueType"
+          },
+          "address": {
+            "description": "When action type is 'withdrawal', address is required and specifies the destination for sending the output. When action type is 'deposit', address is optional and specifies the source from UTXOs.",
+            "$ref": "#/components/schemas/Address"
+          },
+          "changeAddress": {
+            "description": "When action type is 'deposit', change addess is optional and specifies the destination for the change output after selecting UTXOs. When action type is 'withdrawal', it is ignored.",
+            "$ref": "#/components/schemas/Address"
+          }
+        }
+      },
+      "TransactionHex": {
+        "description": "Transaction encoded in hexadecimal.",
+        "type": "string"
+      },
+      "TransactionId": {
+        "description": "32 bytes encoded in hexadecimal; hash of transaction.",
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{64}$"
+      },
+      "NanoContract": {
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Transaction"
+          },
+          {
+            "properties": {
+              "id": {
+                "description": "Refers to blueprint_id when method is initialize; refers to nc_id otherwise.",
+                "type": "string"
+              },
+              "method": {
+                "type": "string"
+              },
+              "args": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Buffer"
+                }
+              },
+              "pubkey": {
+                "$ref": "#/components/schemas/Buffer"
+              },
+              "signature": {
+                "$ref": "#/components/schemas/Buffer"
+              }
+            }
+          }
+        ]
+      },
+      "Transaction": {
+        "type": "object",
+        "properties": {
+          "inputs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Input"
+            }
+          },
+          "outputs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Output"
+            }
+          },
+          "signalBits": {
+            "type": "number"
+          },
+          "version": {
+            "type": "number"
+          },
+          "weight": {
+            "type": "number"
+          },
+          "nonce": {
+            "type": "number"
+          },
+          "timestamp": {
+            "type": "number"
+          },
+          "parents": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tokens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Token"
+            }
+          },
+          "hash": {
+            "$ref": "#/components/schemas/TransactionId"
+          }
+        }
+      },
+      "Input": {
+        "type": "object",
+        "properties": {
+          "hash": {
+            "title": "Hash of transaction's UTXO being spent",
+            "$ref": "#/components/schemas/TransactionId"
+          },
+          "index": {
+            "title": "Index of outputs array from output being spent",
+            "type": "number"
+          },
+          "data": {
+            "title": "Input signed data for P2PKH and redeemScript for P2SH",
+            "$ref": "#/components/schemas/Buffer"
+          }
+        }
+      },
+      "Output": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "$ref": "#/components/schemas/OutputValueType"
+          },
+          "tokenData": {
+            "type": "number"
+          },
+          "script": {
+            "$ref": "#/components/schemas/Buffer"
+          }
+        }
+      },
+      "Buffer": {
+        "type": "string"
+      },
+    },
+    "errors":{
+      "NotImplementedError": {
+        "code": -31001,
+        "message": "Feature not implemented"
+      },
+      "DifferentNetworkError": {
+        "code": -31002,
+        "message": "Wallet not connected to requested network"
+      },
+      "PromptRejectedError": {
+        "code": -31003,
+        "message": "User rejects confirmation prompt to reply DApp request"
+      },
+      "NCBadRequest": {
+        "code": -31004,
+        "message": "Neither blueprint id nor NC id available"
+      },
+      "SendNanoContractTxFailure": {
+        "code": -31005,
+        "message": "NC tx failed"
+      },
+      "ChangeAddressError": {
+        "code": -31006,
+        "message": "Change address is not from this wallet"
+      },
+      "CreateTokenError": {
+        "code": -31007,
+        "message": "Error creating token"
+      }
+    }
+  }
+}
