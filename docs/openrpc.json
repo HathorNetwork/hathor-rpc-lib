@@ -11,7 +11,7 @@
       "name": "MIT",
       "url": "https://github.com/HathorNetwork/hathor-rpc-lib/blob/release/LICENSE"
     },
-    "version": "0.0.3-experimental-alpha"
+    "version": "0.3.0-experimental-alpha"
   },
   "methods": [
     {
