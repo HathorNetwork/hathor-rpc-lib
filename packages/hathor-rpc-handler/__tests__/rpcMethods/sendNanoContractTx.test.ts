@@ -6,9 +6,10 @@
  */
 
 import { HathorWallet } from '@hathor/wallet-lib';
+import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
 import { sendNanoContractTx } from '../../src/rpcMethods/sendNanoContractTx';
 import { TriggerTypes, RpcMethods, SendNanoContractRpcRequest, TriggerResponseTypes, RpcResponseTypes } from '../../src/types';
-import { SendNanoContractTxError } from '../../src/errors';
+import { SendNanoContractTxError, InvalidParamsError } from '../../src/errors';
 
 describe('sendNanoContractTx', () => {
   let rpcRequest: SendNanoContractRpcRequest;
@@ -148,5 +149,154 @@ describe('sendNanoContractTx', () => {
     expect(promptHandler).toHaveBeenNthCalledWith(3, {
       type: TriggerTypes.SendNanoContractTxLoadingTrigger,
     }, {});
+  });
+});
+
+describe('sendNanoContractTx parameter validation', () => {
+  const mockWallet = {
+    createAndSendNanoContractTransaction: jest.fn(),
+    createNanoContractTransaction: jest.fn(),
+  } as unknown as HathorWallet;
+
+  const mockTriggerHandler = jest.fn().mockResolvedValue({
+    type: TriggerResponseTypes.SendNanoContractTxConfirmationResponse,
+    data: { 
+      accepted: true,
+      nc: {
+        caller: 'test-caller',
+        blueprintId: 'test-blueprint',
+        actions: [] as NanoContractAction[],
+        args: [] as unknown[],
+      },
+    }
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should reject when neither blueprint_id nor nc_id is provided', async () => {
+    const invalidRequest = {
+      method: RpcMethods.SendNanoContractTx,
+      params: {
+        method: 'test-method',
+        blueprint_id: '',
+        nc_id: null,
+        actions: [] as NanoContractAction[],
+        args: [] as unknown[],
+        push_tx: true,
+      },
+    } as SendNanoContractRpcRequest;
+
+    await expect(
+      sendNanoContractTx(invalidRequest, mockWallet, {}, mockTriggerHandler)
+    ).rejects.toThrow(InvalidParamsError);
+  });
+
+  it('should reject when method is missing', async () => {
+    const invalidRequest = {
+      method: RpcMethods.SendNanoContractTx,
+      params: {
+        method: '',
+        blueprint_id: 'test-blueprint',
+        nc_id: null,
+        actions: [] as NanoContractAction[],
+        args: [] as unknown[],
+        push_tx: true,
+      },
+    } as SendNanoContractRpcRequest;
+
+    await expect(
+      sendNanoContractTx(invalidRequest, mockWallet, {}, mockTriggerHandler)
+    ).rejects.toThrow(InvalidParamsError);
+  });
+
+  it('should reject when method is empty', async () => {
+    const invalidRequest = {
+      method: RpcMethods.SendNanoContractTx,
+      params: {
+        method: '',
+        blueprint_id: 'test-blueprint',
+        nc_id: null,
+        actions: [] as NanoContractAction[],
+        args: [] as unknown[],
+        push_tx: true,
+      },
+    } as SendNanoContractRpcRequest;
+
+    await expect(
+      sendNanoContractTx(invalidRequest, mockWallet, {}, mockTriggerHandler)
+    ).rejects.toThrow(InvalidParamsError);
+  });
+
+  it('should reject when actions is not an array', async () => {
+    const invalidRequest = {
+      method: RpcMethods.SendNanoContractTx,
+      params: {
+        method: 'test-method',
+        blueprint_id: 'test-blueprint',
+        nc_id: null,
+        actions: 'not-an-array' as unknown as NanoContractAction[],
+        args: [] as unknown[],
+        push_tx: true,
+      },
+    } as SendNanoContractRpcRequest;
+
+    await expect(
+      sendNanoContractTx(invalidRequest, mockWallet, {}, mockTriggerHandler)
+    ).rejects.toThrow(InvalidParamsError);
+  });
+
+  it('should accept valid parameters with blueprint_id', async () => {
+    const validRequest = {
+      method: RpcMethods.SendNanoContractTx,
+      params: {
+        method: 'test-method',
+        blueprint_id: 'test-blueprint',
+        nc_id: null,
+        actions: [] as NanoContractAction[],
+        args: [] as unknown[],
+        push_tx: true,
+      },
+    } as SendNanoContractRpcRequest;
+
+    await expect(
+      sendNanoContractTx(validRequest, mockWallet, {}, mockTriggerHandler)
+    ).resolves.toBeDefined();
+  });
+
+  it('should accept valid parameters with nc_id', async () => {
+    const validRequest = {
+      method: RpcMethods.SendNanoContractTx,
+      params: {
+        method: 'test-method',
+        blueprint_id: '',
+        nc_id: 'test-nc-id',
+        actions: [] as NanoContractAction[],
+        args: [] as unknown[],
+        push_tx: true,
+      },
+    } as SendNanoContractRpcRequest;
+
+    await expect(
+      sendNanoContractTx(validRequest, mockWallet, {}, mockTriggerHandler)
+    ).resolves.toBeDefined();
+  });
+
+  it('should use default push_tx value when not provided', async () => {
+    const validRequest = {
+      method: RpcMethods.SendNanoContractTx,
+      params: {
+        method: 'test-method',
+        blueprint_id: 'test-blueprint',
+        nc_id: null,
+        actions: [] as NanoContractAction[],
+        args: [] as unknown[],
+        push_tx: false,
+      },
+    } as SendNanoContractRpcRequest;
+
+    await sendNanoContractTx(validRequest, mockWallet, {}, mockTriggerHandler);
+    expect(mockWallet.createNanoContractTransaction).toHaveBeenCalled();
   });
 });
