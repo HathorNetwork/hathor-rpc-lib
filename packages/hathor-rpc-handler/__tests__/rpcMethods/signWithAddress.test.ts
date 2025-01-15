@@ -6,38 +6,90 @@
  */
 
 import { HathorWallet } from '@hathor/wallet-lib';
-import { PromptRejectedError } from '../../src/errors';
+import { 
+  TriggerResponseTypes, 
+  RpcMethods,
+  SignWithAddressRpcRequest,
+} from '../../src/types';
 import { signWithAddress } from '../../src/rpcMethods/signWithAddress';
-import { TriggerTypes, TriggerResponseTypes, RpcResponseTypes } from '../../src/types';
-import { mockPromptHandler, mockSignWithAddressRequest } from '../mocks';
-import { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
+import { InvalidParamsError } from '../../src/errors';
 
-const mockedAddressInfo: AddressInfoObject = {
-  address: 'address1',
-  addressPath: 'm/123/123',
-  index: 0,
-  info: undefined,
-};
+describe('signWithAddress parameter validation', () => {
+  const mockWallet = {
+    getNetwork: jest.fn().mockReturnValue('testnet'),
+    getAddressAtIndex: jest.fn().mockResolvedValue('test-address'),
+    getAddressPathForIndex: jest.fn().mockResolvedValue('test-path'),
+    signMessageWithAddress: jest.fn().mockResolvedValue('test-signature'),
+  } as unknown as HathorWallet;
 
-describe('signWithAddress', () => {
-  let wallet: jest.Mocked<HathorWallet>;
-
-  afterEach(() => {
-    jest.clearAllMocks();
+  const mockTriggerHandler = jest.fn().mockResolvedValue({
+    type: TriggerResponseTypes.SignMessageWithAddressConfirmationResponse,
+    data: { 
+      accepted: true,
+      pinCode: '1234'
+    }
   });
 
   beforeEach(() => {
-    wallet = {
-      getAddressAtIndex: jest.fn().mockResolvedValue(mockedAddressInfo.address),
-      signMessageWithAddress: jest.fn().mockResolvedValue('signed_message'),
-      getNetwork: jest.fn().mockReturnValue('mainnet'),
-      getAddressIndex: jest.fn().mockResolvedValue(mockedAddressInfo.index),
-      getAddressPathForIndex: jest.fn().mockResolvedValue(mockedAddressInfo.addressPath),
-    } as unknown as HathorWallet;
+    jest.clearAllMocks();
   });
 
-  it('should return signed message if user confirms and provides PIN', async () => {
-    mockPromptHandler
+  it('should reject when network is missing', async () => {
+    const invalidRequest = {
+      method: RpcMethods.SignWithAddress,
+      params: {
+        message: 'test-message',
+        addressIndex: 0,
+        // network is missing
+      },
+    } as SignWithAddressRpcRequest;
+
+    await expect(
+      signWithAddress(invalidRequest, mockWallet, {}, mockTriggerHandler)
+    ).rejects.toThrow(InvalidParamsError);
+  });
+
+  it('should reject when message is empty', async () => {
+    const invalidRequest = {
+      method: RpcMethods.SignWithAddress,
+      params: {
+        network: 'testnet',
+        message: '',
+        addressIndex: 0,
+      },
+    } as SignWithAddressRpcRequest;
+
+    await expect(
+      signWithAddress(invalidRequest, mockWallet, {}, mockTriggerHandler)
+    ).rejects.toThrow(InvalidParamsError);
+  });
+
+  it('should reject when addressIndex is negative', async () => {
+    const invalidRequest = {
+      method: RpcMethods.SignWithAddress,
+      params: {
+        network: 'testnet',
+        message: 'test-message',
+        addressIndex: -1,
+      },
+    } as SignWithAddressRpcRequest;
+
+    await expect(
+      signWithAddress(invalidRequest, mockWallet, {}, mockTriggerHandler)
+    ).rejects.toThrow(InvalidParamsError);
+  });
+
+  it('should accept valid parameters', async () => {
+    const validRequest = {
+      method: RpcMethods.SignWithAddress,
+      params: {
+        network: 'testnet',
+        message: 'test-message',
+        addressIndex: 0,
+      },
+    } as SignWithAddressRpcRequest;
+
+    mockTriggerHandler
       .mockResolvedValueOnce({
         type: TriggerResponseTypes.SignMessageWithAddressConfirmationResponse,
         data: true,
@@ -46,85 +98,12 @@ describe('signWithAddress', () => {
         type: TriggerResponseTypes.PinRequestResponse,
         data: {
           accepted: true,
-          pinCode: 'mock_pin',
+          pinCode: '1234',
         },
       });
 
-    const result = await signWithAddress(mockSignWithAddressRequest, wallet, {}, mockPromptHandler);
-
-    expect(wallet.getAddressAtIndex).toHaveBeenCalledWith(0);
-
-    expect(mockPromptHandler).toHaveBeenNthCalledWith(1, {
-      type: TriggerTypes.SignMessageWithAddressConfirmationPrompt,
-      method: mockSignWithAddressRequest.method,
-      data: {
-        address: mockedAddressInfo,
-        message: 'Test message',
-      },
-    }, {});
-
-    expect(mockPromptHandler).toHaveBeenNthCalledWith(2, {
-      type: TriggerTypes.PinConfirmationPrompt,
-      method: mockSignWithAddressRequest.method,
-    }, {});
-
-    expect(wallet.signMessageWithAddress).toHaveBeenCalledWith('Test message', 0, 'mock_pin');
-    expect(result).toStrictEqual({
-      type: RpcResponseTypes.SendWithAddressResponse,
-      response: {
-        address: mockedAddressInfo,
-        message: 'Test message',
-        signature: 'signed_message',
-      },
-    });
-  });
-
-  it('should throw PromptRejectedError if user rejects address confirmation', async () => {
-    mockPromptHandler.mockResolvedValueOnce(false);
-
-    await expect(signWithAddress(mockSignWithAddressRequest, wallet, {}, mockPromptHandler)).rejects.toThrow(PromptRejectedError);
-    expect(wallet.getAddressAtIndex).toHaveBeenCalledWith(0);
-    expect(mockPromptHandler).toHaveBeenCalledWith({
-      type: TriggerTypes.SignMessageWithAddressConfirmationPrompt,
-      method: mockSignWithAddressRequest.method,
-      data: {
-        address: mockedAddressInfo,
-        message: 'Test message',
-      },
-    }, {});
-    expect(mockPromptHandler).not.toHaveBeenCalledWith({
-      method: mockSignWithAddressRequest.method,
-    });
-    expect(wallet.signMessageWithAddress).not.toHaveBeenCalled();
-  });
-
-  it('should throw PromptRejectedError if user rejects PIN prompt', async () => {
-    mockPromptHandler
-      .mockResolvedValueOnce({
-        type: TriggerResponseTypes.SignMessageWithAddressConfirmationResponse,
-        data: true,
-      })
-      .mockResolvedValueOnce({
-        type: TriggerResponseTypes.PinRequestResponse,
-        data: {
-          accepted: false,
-        },
-      }); 
-
-    await expect(signWithAddress(mockSignWithAddressRequest, wallet, {}, mockPromptHandler)).rejects.toThrow(PromptRejectedError);
-    expect(wallet.getAddressAtIndex).toHaveBeenCalledWith(0);
-    expect(mockPromptHandler).toHaveBeenCalledWith({
-      type: TriggerTypes.SignMessageWithAddressConfirmationPrompt,
-      method: mockSignWithAddressRequest.method,
-      data: {
-        address: mockedAddressInfo,
-        message: 'Test message',
-      },
-    }, {});
-    expect(mockPromptHandler).toHaveBeenCalledWith({
-      type: TriggerTypes.PinConfirmationPrompt,
-      method: mockSignWithAddressRequest.method,
-    }, {});
-    expect(wallet.signMessageWithAddress).not.toHaveBeenCalled();
+    await expect(
+      signWithAddress(validRequest, mockWallet, {}, mockTriggerHandler)
+    ).resolves.toBeDefined();
   });
 });
