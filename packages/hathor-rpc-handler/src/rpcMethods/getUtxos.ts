@@ -23,24 +23,16 @@ import { validateNetwork } from '../helpers';
 const getUtxosSchema = z.object({
   method: z.literal(RpcMethods.GetUtxos),
   params: z.object({
-    network: z.string().min(1),
+    network: z.string(),
     maxUtxos: z.number().default(255),
     token: z.string().default('HTR'),
     filterAddress: z.string(),
-    authorities: z.number().default(0),
-    amountSmallerThan: z.number().min(0).default(0),
-    amountBiggerThan: z.number().min(0).default(0),
-    maximumAmount: z.number().default(0),
+    authorities: z.number().nullable().optional(),
+    amountSmallerThan: z.number().nullable().optional(),
+    amountBiggerThan: z.number().nullable().optional(),
+    maximumAmount: z.number().nullable().optional(),
     onlyAvailableUtxos: z.boolean().default(true),
-  }).transform(data => ({
-    ...data,
-    max_utxos: data.maxUtxos,
-    filter_address: data.filterAddress,
-    amount_smaller_than: data.amountSmallerThan,
-    amount_bigger_than: data.amountBiggerThan,
-    max_amount: data.maximumAmount,
-    only_available_utxos: data.onlyAvailableUtxos,
-  })),
+  }),
 });
 
 /**
@@ -70,16 +62,16 @@ export async function getUtxos(
 
     validateNetwork(wallet, params.network);
 
-    // Extract only the snake_case properties that the wallet.getUtxos expects
     const options = {
       'token': params.token,
-      'authorities': params.authorities,
-      'max_utxos': params.max_utxos,
-      'filter_address': params.filter_address,
-      'amount_smaller_than': params.amount_smaller_than,
-      'amount_bigger_than': params.amount_bigger_than,
-      'max_amount': params.max_amount,
-      'only_available_utxos': params.only_available_utxos,
+      // Defaults to 0 otherwise the lib fails
+      'authorities': params.authorities || 0,
+      'max_utxos': params.maxUtxos,
+      'filter_address': params.filterAddress,
+      'amount_smaller_than': params.amountSmallerThan,
+      'amount_bigger_than': params.amountBiggerThan,
+      'max_amount': params.maximumAmount,
+      'only_available_utxos': params.onlyAvailableUtxos,
     };
 
     // We have the same issues here that we do have in the headless wallet:
