@@ -24,7 +24,14 @@ import {
   SignOracleDataConfirmationResponse,
 } from '../types';
 import { validateNetwork } from '../helpers';
-import { PromptRejectedError } from '../errors';
+import { PromptRejectedError, InvalidParamsError } from '../errors';
+import { z } from 'zod';
+
+const signOracleDataSchema = z.object({
+  network: z.string().min(1),
+  oracle: z.string().min(1),
+  data: z.string().min(1),
+});
 
 export async function signOracleData(
   rpcRequest: SignOracleDataRpcRequest,
@@ -32,51 +39,58 @@ export async function signOracleData(
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
 ) {
-  const { network, oracle, data } = rpcRequest.params;
+  try {
+    const params = signOracleDataSchema.parse(rpcRequest.params);
+    
+    validateNetwork(wallet, params.network);
 
-  validateNetwork(wallet, network);
+    const prompt: SignOracleDataConfirmationPrompt = {
+      type: TriggerTypes.SignOracleDataConfirmationPrompt,
+      method: rpcRequest.method,
+      data: {
+        oracle: params.oracle,
+        data: params.data,
+      }
+    };
 
-  const prompt: SignOracleDataConfirmationPrompt = {
-    type: TriggerTypes.SignOracleDataConfirmationPrompt,
-    method: rpcRequest.method,
-    data: {
-      oracle,
-      data,
+    const signResponse = await promptHandler(prompt, requestMetadata) as SignOracleDataConfirmationResponse;
+
+    if (!signResponse.data) {
+      throw new PromptRejectedError('User rejected sign oracle data prompt');
     }
-  };
 
-  const signResponse = await promptHandler(prompt, requestMetadata) as SignOracleDataConfirmationResponse;
+    const pinPrompt: PinConfirmationPrompt = {
+      type: TriggerTypes.PinConfirmationPrompt,
+      method: rpcRequest.method,
+    };
 
-  if (!signResponse.data) {
-    throw new PromptRejectedError('User rejected sign oracle data prompt');
-  }
+    const pinResponse = await promptHandler(pinPrompt, requestMetadata) as PinRequestResponse;
 
-  const pinPrompt: PinConfirmationPrompt = {
-    type: TriggerTypes.PinConfirmationPrompt,
-    method: rpcRequest.method,
-  };
-
-  const pinResponse = await promptHandler(pinPrompt, requestMetadata) as PinRequestResponse;
-
-  if (!pinResponse.data.accepted) {
-    throw new PromptRejectedError('User rejected PIN prompt');
-  }
-
-  const oracleData = nanoUtils.getOracleBuffer(oracle, wallet.getNetworkObject());
-  const nanoSerializer = new NanoContractSerializer();
-  const dataSerialized = nanoSerializer.serializeFromType(data, 'str');
-
-  // TODO getOracleInputData method should be able to receive the PIN as optional parameter as well
-  wallet.pinCode = pinResponse.data.pinCode;
-  const inputData = await nanoUtils.getOracleInputData(oracleData, dataSerialized, wallet);
-  const signature = `${bufferUtils.bufferToHex(inputData)},${data},str`;
-
-  return {
-    type: RpcResponseTypes.SignOracleDataResponse,
-    response: {
-      data,
-      signature,
-      oracle,
+    if (!pinResponse.data.accepted) {
+      throw new PromptRejectedError('User rejected PIN prompt');
     }
-  } as SignOracleDataResponse;
+
+    const oracleData = nanoUtils.getOracleBuffer(params.oracle, wallet.getNetworkObject());
+    const nanoSerializer = new NanoContractSerializer();
+    const dataSerialized = nanoSerializer.serializeFromType(params.data, 'str');
+
+    // TODO getOracleInputData method should be able to receive the PIN as optional parameter as well
+    wallet.pinCode = pinResponse.data.pinCode;
+    const inputData = await nanoUtils.getOracleInputData(oracleData, dataSerialized, wallet);
+    const signature = `${bufferUtils.bufferToHex(inputData)},${params.data},str`;
+
+    return {
+      type: RpcResponseTypes.SignOracleDataResponse,
+      response: {
+        data: params.data,
+        signature,
+        oracle: params.oracle,
+      }
+    } as SignOracleDataResponse;
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      throw new InvalidParamsError(err.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
+    }
+    throw err;
+  }
 }

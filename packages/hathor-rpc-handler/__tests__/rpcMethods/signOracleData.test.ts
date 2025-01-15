@@ -6,10 +6,17 @@
  */
 
 import { HathorWallet, Network, bufferUtils, nanoUtils } from '@hathor/wallet-lib';
-import { TriggerTypes, TriggerResponseTypes, RpcResponseTypes } from '../../src/types';
+import { 
+  TriggerTypes, 
+  TriggerResponseTypes, 
+  RpcResponseTypes,
+  RpcMethods,
+  SignOracleDataRpcRequest,
+} from '../../src/types';
 import { mockPromptHandler, mockSignOracleDataRequest } from '../mocks';
 import { signOracleData } from '../../src/rpcMethods/signOracleData';
 import { PromptRejectedError } from '../../src/errors';
+import { InvalidParamsError } from '../../src/errors';
 
 jest.mock('@hathor/wallet-lib', () => ({
   ...jest.requireActual('@hathor/wallet-lib'),
@@ -126,5 +133,89 @@ describe('signOracleData', () => {
         oracle: mockSignOracleDataRequest.params.oracle,
       }
     });
+  });
+});
+
+describe('signOracleData parameter validation', () => {
+  const mockWallet = {
+    getNetworkObject: jest.fn(),
+    getNetwork: jest.fn().mockReturnValue('testnet'),
+    pinCode: null,
+  } as unknown as HathorWallet;
+
+  const mockTriggerHandler = jest.fn().mockResolvedValue({
+    type: TriggerResponseTypes.SignOracleDataConfirmationResponse,
+    data: { 
+      accepted: true,
+      pinCode: '1234'
+    }
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should reject when network is missing', async () => {
+    const invalidRequest = {
+      method: RpcMethods.SignOracleData,
+      params: {
+        oracle: 'test-oracle',
+        data: 'test-data',
+        // network is missing
+      },
+    } as SignOracleDataRpcRequest;
+
+    await expect(
+      signOracleData(invalidRequest, mockWallet, {}, mockTriggerHandler)
+    ).rejects.toThrow(InvalidParamsError);
+  });
+
+  it('should reject when oracle is empty', async () => {
+    const invalidRequest = {
+      method: RpcMethods.SignOracleData,
+      params: {
+        network: 'testnet',
+        oracle: '',
+        data: 'test-data',
+      },
+    } as SignOracleDataRpcRequest;
+
+    await expect(
+      signOracleData(invalidRequest, mockWallet, {}, mockTriggerHandler)
+    ).rejects.toThrow(InvalidParamsError);
+  });
+
+  it('should reject when data is empty', async () => {
+    const invalidRequest = {
+      method: RpcMethods.SignOracleData,
+      params: {
+        network: 'testnet',
+        oracle: 'test-oracle',
+        data: '',
+      },
+    } as SignOracleDataRpcRequest;
+
+    await expect(
+      signOracleData(invalidRequest, mockWallet, {}, mockTriggerHandler)
+    ).rejects.toThrow(InvalidParamsError);
+  });
+
+  it('should accept valid parameters', async () => {
+    const validRequest = {
+      method: RpcMethods.SignOracleData,
+      params: {
+        network: 'testnet',
+        oracle: 'test-oracle',
+        data: 'test-data',
+      },
+    } as SignOracleDataRpcRequest;
+
+    mockTriggerHandler.mockResolvedValue({
+      data: { accepted: true, pinCode: '1234' }
+    });
+
+    await expect(
+      signOracleData(validRequest, mockWallet, {}, mockTriggerHandler)
+    ).resolves.toBeDefined();
   });
 });
