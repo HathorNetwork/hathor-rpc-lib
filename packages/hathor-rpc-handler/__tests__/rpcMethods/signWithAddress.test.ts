@@ -148,7 +148,7 @@ describe('signWithAddress', () => {
       const result = await signWithAddress(validRequest, mockWallet, {}, mockTriggerHandler);
 
       expect(result).toBeDefined();
-      expect(result.type).toBe(RpcResponseTypes.SendWithAddressResponse);
+      expect(result.type).toBe(RpcResponseTypes.SignWithAddressResponse);
       expect(result.response).toEqual({
         message: 'test-message',
         signature: 'test-signature',

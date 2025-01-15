@@ -105,7 +105,7 @@ export async function signWithAddress(
   );
 
   return {
-    type: RpcResponseTypes.SendWithAddressResponse,
+    type: RpcResponseTypes.SignWithAddressResponse,
     response: {
       message: params.message,
       signature,
