@@ -5,11 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { PromptRejectedError } from '../../src/errors';
+import { PromptRejectedError, InvalidParamsError } from '../../src/errors';
 import { mockPromptHandler, mockGetUtxosRequest } from '../mocks';
 import { HathorWallet } from '@hathor/wallet-lib';
 import { getUtxos } from '../../src/rpcMethods/getUtxos';
-import { TriggerTypes, TriggerResponseTypes, UtxoDetails } from '../../src/types';
+import { TriggerTypes, TriggerResponseTypes, UtxoDetails, RpcMethods, GetUtxosRpcRequest } from '../../src/types';
 
 const mockResponse: UtxoDetails = {
   total_amount_available: 50,
@@ -33,6 +33,80 @@ describe('getUtxos', () => {
       getUtxos: jest.fn().mockResolvedValue(mockResponse),
       getNetwork: jest.fn().mockReturnValue('mainnet')
     } as unknown as HathorWallet;
+  });
+
+  describe('parameter validation', () => {
+    it('should reject when method is missing', async () => {
+      const invalidRequest = {
+        params: mockGetUtxosRequest.params,
+      } as GetUtxosRpcRequest;
+
+      await expect(
+        getUtxos(invalidRequest, wallet, {}, mockPromptHandler)
+      ).rejects.toThrow(InvalidParamsError);
+    });
+
+    it('should reject when method is invalid', async () => {
+      const invalidRequest = {
+        method: 'invalid_method',
+        params: mockGetUtxosRequest.params,
+      } as unknown as GetUtxosRpcRequest;
+
+      await expect(
+        getUtxos(invalidRequest, wallet, {}, mockPromptHandler)
+      ).rejects.toThrow(InvalidParamsError);
+    });
+
+    it('should reject when network is missing', async () => {
+      const invalidRequest = {
+        method: RpcMethods.GetUtxos,
+        params: {
+          ...mockGetUtxosRequest.params,
+          network: undefined,
+        },
+      } as unknown as GetUtxosRpcRequest;
+
+      await expect(
+        getUtxos(invalidRequest, wallet, {}, mockPromptHandler)
+      ).rejects.toThrow(InvalidParamsError);
+    });
+
+    it('should reject when filterAddress is missing', async () => {
+      const invalidRequest = {
+        method: RpcMethods.GetUtxos,
+        params: {
+          ...mockGetUtxosRequest.params,
+          filterAddress: undefined,
+        },
+      } as unknown as GetUtxosRpcRequest;
+
+      await expect(
+        getUtxos(invalidRequest, wallet, {}, mockPromptHandler)
+      ).rejects.toThrow(InvalidParamsError);
+    });
+
+    it('should use default values for optional parameters', async () => {
+      mockPromptHandler.mockResolvedValue({
+        type: TriggerResponseTypes.GetUtxosConfirmationResponse,
+        data: true,
+      });
+
+      const request = {
+        method: RpcMethods.GetUtxos,
+        params: {
+          network: 'mainnet',
+          filterAddress: 'mock_address',
+        },
+      } as GetUtxosRpcRequest;
+
+      await getUtxos(request, wallet, {}, mockPromptHandler);
+
+      expect(wallet.getUtxos).toHaveBeenCalledWith(expect.objectContaining({
+        token: 'HTR',
+        max_utxos: 255,
+        only_available_utxos: true,
+      }));
+    });
   });
 
   it('should return UTXO details if user confirms', async () => {
