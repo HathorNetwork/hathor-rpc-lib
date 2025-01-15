@@ -96,7 +96,7 @@ export async function createToken(
       data: {
         name: params.name,
         symbol: params.symbol,
-        amount: params.amount,
+        amount: BigInt(params.amount),
         address: params.options.address,
         changeAddress: params.options.changeAddress,
         createMint: params.options.createMint,

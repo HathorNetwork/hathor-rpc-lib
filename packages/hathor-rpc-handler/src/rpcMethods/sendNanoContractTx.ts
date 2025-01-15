@@ -102,7 +102,7 @@ export async function sendNanoContractTx(
       throw new PromptRejectedError('Pin prompt rejected');
     }
 
-    const sendMethod = params.pushTx 
+    const sendMethod = params.push_tx 
       ? wallet.createAndSendNanoContractTransaction.bind(wallet)
       : wallet.createNanoContractTransaction.bind(wallet);
 
@@ -112,17 +112,15 @@ export async function sendNanoContractTx(
       };
       triggerHandler(sendNanoContractLoadingTrigger, requestMetadata);
 
-      const txData = {
-        ncId: params.ncId,
-        blueprintId: confirmedBluePrintId,
-        actions: confirmedActions,
-        args: confirmedArgs,
-      };
-
       const response = await sendMethod(
         params.method,
         caller, 
-        txData, 
+        {
+          ncId: params.nc_id,
+          blueprintId: confirmedBluePrintId,
+          actions: confirmedActions,
+          args: confirmedArgs,
+        }, 
         {
           pinCode: pinCodeResponse.data.pinCode,
         }
