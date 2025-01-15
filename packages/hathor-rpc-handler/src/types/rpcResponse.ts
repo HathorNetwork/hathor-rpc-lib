@@ -12,7 +12,7 @@ import { UtxoDetails } from './prompt';
 
 export enum RpcResponseTypes {
   SendNanoContractTxResponse,
-  SendWithAddressResponse,
+  SignWithAddressResponse,
   GetAddressResponse,
   GetBalanceResponse,
   GetConnectedNetworkResponse,
@@ -41,7 +41,7 @@ export interface CreateTokenResponse extends BaseRpcResponse {
 }
 
 export interface SignWithAddressResponse extends BaseRpcResponse {
-  type: RpcResponseTypes.SendWithAddressResponse;
+  type: RpcResponseTypes.SignWithAddressResponse;
   response: {
     message: string;
     signature: string;

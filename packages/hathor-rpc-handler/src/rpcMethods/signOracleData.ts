@@ -5,62 +5,86 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { z } from 'zod';
+import { HathorWallet } from '@hathor/wallet-lib';
 import {
-  HathorWallet,
-  nanoUtils,
-  bufferUtils,
-  NanoContractSerializer,
-} from '@hathor/wallet-lib';
-import {
+  TriggerTypes,
+  PinConfirmationPrompt,
+  PinRequestResponse,
   TriggerHandler,
   RequestMetadata,
-  SignOracleDataRpcRequest,
-  PinRequestResponse,
-  PinConfirmationPrompt,
-  TriggerTypes,
+  SignMessageWithAddressConfirmationPrompt,
+  SignMessageWithAddressConfirmationResponse,
+  SignWithAddressRpcRequest,
   RpcResponseTypes,
-  SignOracleDataResponse,
-  SignOracleDataConfirmationPrompt,
-  SignOracleDataConfirmationResponse,
+  SignWithAddressResponse,
+  RpcMethods,
 } from '../types';
-import { validateNetwork } from '../helpers';
 import { PromptRejectedError, InvalidParamsError } from '../errors';
-import { z } from 'zod';
+import { validateNetwork } from '../helpers';
+import { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
 
-const signOracleDataSchema = z.object({
-  network: z.string().min(1),
-  oracle: z.string().min(1),
-  data: z.string().min(1),
+const signWithAddressSchema = z.object({
+  method: z.literal(RpcMethods.SignWithAddress),
+  params: z.object({
+    network: z.string().min(1),
+    message: z.string().min(1),
+    addressIndex: z.number().int().nonnegative(),
+  }),
 });
 
-export async function signOracleData(
-  rpcRequest: SignOracleDataRpcRequest,
+/**
+ * Handles the 'htr_signWithAddress' RPC request by prompting the user for confirmation
+ * and signing the message if confirmed.
+ * 
+ * @param rpcRequest - The RPC request object containing the method and parameters.
+ * @param wallet - The Hathor wallet instance used to sign the message.
+ * @param requestMetadata - Metadata related to the dApp that sent the RPC
+ * @param promptHandler - The function to handle prompting the user for confirmation.
+ *
+ * @returns The signed message if the user confirms.
+ *
+ * @throws {PromptRejectedError} If the user rejects any of the prompts.
+ * @throws {InvalidParamsError} If the request parameters are invalid.
+ */
+export async function signWithAddress(
+  rpcRequest: SignWithAddressRpcRequest,
   wallet: HathorWallet,
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
 ) {
-  const parseResult = signOracleDataSchema.safeParse(rpcRequest.params);
+  const parseResult = signWithAddressSchema.safeParse(rpcRequest);
   
   if (!parseResult.success) {
     throw new InvalidParamsError(parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
   }
 
-  const params = parseResult.data;
+  const { params } = parseResult.data;
   validateNetwork(wallet, params.network);
 
-  const prompt: SignOracleDataConfirmationPrompt = {
-    type: TriggerTypes.SignOracleDataConfirmationPrompt,
+  const base58: string = await wallet.getAddressAtIndex(params.addressIndex);
+  const addressPath: string = await wallet.getAddressPathForIndex(params.addressIndex);
+
+  const address: AddressInfoObject = {
+    address: base58,
+    index: params.addressIndex,
+    addressPath,
+    info: undefined, // The type must be updated in the lib to make this optional
+  };
+
+  const prompt: SignMessageWithAddressConfirmationPrompt = {
+    type: TriggerTypes.SignMessageWithAddressConfirmationPrompt,
     method: rpcRequest.method,
     data: {
-      oracle: params.oracle,
-      data: params.data,
+      address,
+      message: params.message,
     }
   };
 
-  const signResponse = await promptHandler(prompt, requestMetadata) as SignOracleDataConfirmationResponse;
+  const signResponse = await promptHandler(prompt, requestMetadata) as SignMessageWithAddressConfirmationResponse;
 
   if (!signResponse.data) {
-    throw new PromptRejectedError('User rejected sign oracle data prompt');
+    throw new PromptRejectedError('User rejected sign message prompt');
   }
 
   const pinPrompt: PinConfirmationPrompt = {
@@ -74,21 +98,18 @@ export async function signOracleData(
     throw new PromptRejectedError('User rejected PIN prompt');
   }
 
-  const oracleData = nanoUtils.getOracleBuffer(params.oracle, wallet.getNetworkObject());
-  const nanoSerializer = new NanoContractSerializer();
-  const dataSerialized = nanoSerializer.serializeFromType(params.data, 'str');
-
-  // TODO getOracleInputData method should be able to receive the PIN as optional parameter as well
-  wallet.pinCode = pinResponse.data.pinCode;
-  const inputData = await nanoUtils.getOracleInputData(oracleData, dataSerialized, wallet);
-  const signature = `${bufferUtils.bufferToHex(inputData)},${params.data},str`;
+  const signature = await wallet.signMessageWithAddress(
+    params.message,
+    params.addressIndex,
+    pinResponse.data.pinCode,
+  );
 
   return {
-    type: RpcResponseTypes.SignOracleDataResponse,
+    type: RpcResponseTypes.SignWithAddressResponse,
     response: {
-      data: params.data,
+      message: params.message,
       signature,
-      oracle: params.oracle,
+      address,
     }
-  } as SignOracleDataResponse;
+  } as SignWithAddressResponse;
 }
