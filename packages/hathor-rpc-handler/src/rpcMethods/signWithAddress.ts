@@ -18,15 +18,19 @@ import {
   SignWithAddressRpcRequest,
   RpcResponseTypes,
   SignWithAddressResponse,
+  RpcMethods,
 } from '../types';
 import { PromptRejectedError, InvalidParamsError } from '../errors';
 import { validateNetwork } from '../helpers';
 import { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
 
 const signWithAddressSchema = z.object({
-  network: z.string().min(1),
-  message: z.string().min(1),
-  addressIndex: z.number().int().nonnegative(),
+  method: z.literal(RpcMethods.SignWithAddress),
+  params: z.object({
+    network: z.string().min(1),
+    message: z.string().min(1),
+    addressIndex: z.number().int().nonnegative(),
+  }),
 });
 
 /**
@@ -50,7 +54,9 @@ export async function signWithAddress(
   promptHandler: TriggerHandler,
 ) {
   try {
-    const params = signWithAddressSchema.parse(rpcRequest.params);
+    const validatedRequest = signWithAddressSchema.parse(rpcRequest);
+    const { params } = validatedRequest;
+
     validateNetwork(wallet, params.network);
 
     const base58: string = await wallet.getAddressAtIndex(params.addressIndex);
