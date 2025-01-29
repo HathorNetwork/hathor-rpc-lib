@@ -23,13 +23,13 @@ import { validateNetwork } from '../helpers';
 const getUtxosSchema = z.object({
   method: z.literal(RpcMethods.GetUtxos),
   params: z.object({
-    network: z.string(),
+    network: z.string().min(1),
     maxUtxos: z.number().default(255),
     token: z.string().default('HTR'),
     filterAddress: z.string(),
     authorities: z.number().nullable().optional(),
-    amountSmallerThan: z.number().nullable().optional(),
-    amountBiggerThan: z.number().nullable().optional(),
+    amountSmallerThan: z.number().min(0).nullable().optional(),
+    amountBiggerThan: z.number().min(0).nullable().optional(),
     maximumAmount: z.number().nullable().optional(),
     onlyAvailableUtxos: z.boolean().default(true),
   }),
