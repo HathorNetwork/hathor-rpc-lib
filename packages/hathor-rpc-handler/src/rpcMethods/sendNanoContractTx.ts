@@ -26,7 +26,7 @@ import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types'
 
 const sendNanoContractSchema = z.object({
   method: z.string().min(1),
-  blueprint_id: z.string(),
+  blueprint_id: z.string().nullable(),
   nc_id: z.string().nullable(),
   actions: z.array(z.custom<NanoContractAction>()),
   args: z.array(z.unknown()).default([]),
