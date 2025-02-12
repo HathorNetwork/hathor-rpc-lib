@@ -27,6 +27,9 @@ export enum TriggerTypes {
   CreateTokenConfirmationPrompt,
   CreateTokenLoadingTrigger,
   SignOracleDataConfirmationPrompt,
+  SendTransactionConfirmationPrompt,
+  SendTransactionLoadingTrigger,
+  SendTransactionLoadingFinishedTrigger,
 }
 
 export enum TriggerResponseTypes {
@@ -37,6 +40,7 @@ export enum TriggerResponseTypes {
   SendNanoContractTxConfirmationResponse,
   CreateTokenConfirmationResponse,
   SignOracleDataConfirmationResponse,
+  SendTransactionConfirmationResponse,
 }
 
 export type Trigger =
@@ -57,7 +61,10 @@ export type Trigger =
   | CreateTokenConfirmationPrompt
   | CreateTokenLoadingTrigger
   | CreateTokenLoadingFinishedTrigger
-  | SignOracleDataConfirmationPrompt;
+  | SignOracleDataConfirmationPrompt
+  | SendTransactionConfirmationPrompt
+  | SendTransactionLoadingTrigger
+  | SendTransactionLoadingFinishedTrigger;
 
 export interface BaseLoadingTrigger {
   type: TriggerTypes;
@@ -236,6 +243,31 @@ export interface SignOracleDataConfirmationResponse {
   data: boolean;
 }
 
+export interface SendTransactionConfirmationPrompt extends BaseConfirmationPrompt {
+  type: TriggerTypes.SendTransactionConfirmationPrompt;
+  data: {
+    outputs: Array<{
+      address?: string;
+      value: number;
+      token?: string;
+      type?: string;
+      data?: string[];
+    }>;
+    inputs?: Array<{
+      txId: string;
+      index: number;
+    }>;
+    changeAddress?: string;
+  }
+}
+
+export interface SendTransactionConfirmationResponse {
+  type: TriggerResponseTypes.SendTransactionConfirmationResponse;
+  data: {
+    accepted: boolean;
+  }
+}
+
 export type TriggerResponse =
   AddressRequestClientResponse
   | GetUtxosConfirmationResponse
@@ -243,7 +275,8 @@ export type TriggerResponse =
   | SignMessageWithAddressConfirmationResponse
   | SendNanoContractTxConfirmationResponse
   | CreateTokenConfirmationResponse
-  | SignOracleDataConfirmationResponse;
+  | SignOracleDataConfirmationResponse
+  | SendTransactionConfirmationResponse;
 
 export type TriggerHandler = (prompt: Trigger, requestMetadata: RequestMetadata) => Promise<TriggerResponse | void>;
 
@@ -263,4 +296,12 @@ export interface UtxoDetails {
   total_amount_locked: number;
   total_utxos_locked: number;
   utxos: UtxoInfo[];
+}
+
+export interface SendTransactionLoadingTrigger extends BaseLoadingTrigger {
+  type: TriggerTypes.SendTransactionLoadingTrigger;
+}
+
+export interface SendTransactionLoadingFinishedTrigger extends BaseLoadingTrigger {
+  type: TriggerTypes.SendTransactionLoadingFinishedTrigger;
 }
