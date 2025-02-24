@@ -27,15 +27,15 @@ const createTokenSchema = z.object({
   name: z.string().min(1),
   symbol: z.string().min(1),
   amount: z.number().positive(),
-  address: z.string().nullable().optional(),
-  change_address: z.string().nullable().optional(),
-  create_mint: z.boolean().optional().default(true),
-  mint_authority_address: z.string().nullable().optional(),
+  address: z.string().nullish().optional(),
+  change_address: z.string().nullish().optional(),
+  create_mint: z.boolean().default(true),
+  mint_authority_address: z.string().nullish().optional(),
   allow_external_mint_authority_address: z.boolean().optional().default(false),
-  create_melt: z.boolean().optional().default(true),
-  melt_authority_address: z.string().nullable().optional(),
+  create_melt: z.boolean().default(true),
+  melt_authority_address: z.string().nullish().optional(),
   allow_external_melt_authority_address: z.boolean().optional().default(false),
-  data: z.string().array().nullable().optional(),
+  data: z.string().array().nullish().optional(),
 });
 
 /**
