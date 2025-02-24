@@ -40,24 +40,21 @@ export async function getConnectedNetwork(
   _requestMetadata: RequestMetadata,
   _promptHandler: TriggerHandler,
 ) {
-  try {
-    getConnectedNetworkSchema.parse(rpcRequest);
-
-    const network: string = wallet.getNetwork();
-
-    const result = {
-      network,
-      genesisHash: '', // TODO
-    };
-
-    return {
-      type: RpcResponseTypes.GetConnectedNetworkResponse,
-      response: result,
-    } as RpcResponse;
-  } catch (err) {
-    if (err instanceof z.ZodError) {
-      throw new InvalidParamsError(err.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
-    }
-    throw err;
+  const parseResult = getConnectedNetworkSchema.safeParse(rpcRequest);
+  
+  if (!parseResult.success) {
+    throw new InvalidParamsError(parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
   }
+
+  const network: string = wallet.getNetwork();
+
+  const result = {
+    network,
+    genesisHash: '', // TODO
+  };
+
+  return {
+    type: RpcResponseTypes.GetConnectedNetworkResponse,
+    response: result,
+  } as RpcResponse;
 }

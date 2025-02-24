@@ -46,39 +46,38 @@ export async function getBalance(
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
 ) {
-  try {
-    const params = getBalanceSchema.parse(rpcRequest.params);
-
-    if (params.addressIndexes) {
-      throw new NotImplementedError();
-    }
-
-    validateNetwork(wallet, params.network);
-
-    const balances: GetBalanceObject[] = await Promise.all(
-      params.tokens.map(token => wallet.getBalance(token)),
-    );
-
-    const prompt: GetBalanceConfirmationPrompt = {
-      type: TriggerTypes.GetBalanceConfirmationPrompt,
-      method: rpcRequest.method,
-      data: balances
-    };
-
-    const confirmed = await promptHandler(prompt, requestMetadata);
-
-    if (!confirmed) {
-      throw new PromptRejectedError();
-    }
-
-    return {
-      type: RpcResponseTypes.GetBalanceResponse,
-      response: balances,
-    } as RpcResponse;
-  } catch (err) {
-    if (err instanceof z.ZodError) {
-      throw new InvalidParamsError(err.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
-    }
-    throw err;
+  const parseResult = getBalanceSchema.safeParse(rpcRequest.params);
+  
+  if (!parseResult.success) {
+    throw new InvalidParamsError(parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
   }
+
+  const params = parseResult.data;
+
+  if (params.addressIndexes) {
+    throw new NotImplementedError();
+  }
+
+  validateNetwork(wallet, params.network);
+
+  const balances: GetBalanceObject[] = await Promise.all(
+    params.tokens.map(token => wallet.getBalance(token)),
+  );
+
+  const prompt: GetBalanceConfirmationPrompt = {
+    type: TriggerTypes.GetBalanceConfirmationPrompt,
+    method: rpcRequest.method,
+    data: balances
+  };
+
+  const confirmed = await promptHandler(prompt, requestMetadata);
+
+  if (!confirmed) {
+    throw new PromptRejectedError();
+  }
+
+  return {
+    type: RpcResponseTypes.GetBalanceResponse,
+    response: balances,
+  } as RpcResponse;
 }

@@ -53,66 +53,63 @@ export async function signWithAddress(
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
 ) {
-  try {
-    const validatedRequest = signWithAddressSchema.parse(rpcRequest);
-    const { params } = validatedRequest;
-
-    validateNetwork(wallet, params.network);
-
-    const base58: string = await wallet.getAddressAtIndex(params.addressIndex);
-    const addressPath: string = await wallet.getAddressPathForIndex(params.addressIndex);
-
-    const address: AddressInfoObject = {
-      address: base58,
-      index: params.addressIndex,
-      addressPath,
-      info: undefined, // The type must be updated in the lib to make this optional
-    };
-
-    const prompt: SignMessageWithAddressConfirmationPrompt = {
-      type: TriggerTypes.SignMessageWithAddressConfirmationPrompt,
-      method: rpcRequest.method,
-      data: {
-        address,
-        message: params.message,
-      }
-    };
-
-    const signResponse = await promptHandler(prompt, requestMetadata) as SignMessageWithAddressConfirmationResponse;
-
-    if (!signResponse.data) {
-      throw new PromptRejectedError('User rejected sign message prompt');
-    }
-
-    const pinPrompt: PinConfirmationPrompt = {
-      type: TriggerTypes.PinConfirmationPrompt,
-      method: rpcRequest.method,
-    };
-
-    const pinResponse = await promptHandler(pinPrompt, requestMetadata) as PinRequestResponse;
-
-    if (!pinResponse.data.accepted) {
-      throw new PromptRejectedError('User rejected PIN prompt');
-    }
-
-    const signature = await wallet.signMessageWithAddress(
-      params.message,
-      params.addressIndex,
-      pinResponse.data.pinCode,
-    );
-
-    return {
-      type: RpcResponseTypes.SendWithAddressResponse,
-      response: {
-        message: params.message,
-        signature,
-        address,
-      }
-    } as SignWithAddressResponse;
-  } catch (err) {
-    if (err instanceof z.ZodError) {
-      throw new InvalidParamsError(err.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
-    }
-    throw err;
+  const parseResult = signWithAddressSchema.safeParse(rpcRequest);
+  
+  if (!parseResult.success) {
+    throw new InvalidParamsError(parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
   }
+
+  const { params } = parseResult.data;
+  validateNetwork(wallet, params.network);
+
+  const base58: string = await wallet.getAddressAtIndex(params.addressIndex);
+  const addressPath: string = await wallet.getAddressPathForIndex(params.addressIndex);
+
+  const address: AddressInfoObject = {
+    address: base58,
+    index: params.addressIndex,
+    addressPath,
+    info: undefined, // The type must be updated in the lib to make this optional
+  };
+
+  const prompt: SignMessageWithAddressConfirmationPrompt = {
+    type: TriggerTypes.SignMessageWithAddressConfirmationPrompt,
+    method: rpcRequest.method,
+    data: {
+      address,
+      message: params.message,
+    }
+  };
+
+  const signResponse = await promptHandler(prompt, requestMetadata) as SignMessageWithAddressConfirmationResponse;
+
+  if (!signResponse.data) {
+    throw new PromptRejectedError('User rejected sign message prompt');
+  }
+
+  const pinPrompt: PinConfirmationPrompt = {
+    type: TriggerTypes.PinConfirmationPrompt,
+    method: rpcRequest.method,
+  };
+
+  const pinResponse = await promptHandler(pinPrompt, requestMetadata) as PinRequestResponse;
+
+  if (!pinResponse.data.accepted) {
+    throw new PromptRejectedError('User rejected PIN prompt');
+  }
+
+  const signature = await wallet.signMessageWithAddress(
+    params.message,
+    params.addressIndex,
+    pinResponse.data.pinCode,
+  );
+
+  return {
+    type: RpcResponseTypes.SendWithAddressResponse,
+    response: {
+      message: params.message,
+      signature,
+      address,
+    }
+  } as SignWithAddressResponse;
 }
