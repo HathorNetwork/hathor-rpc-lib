@@ -32,7 +32,15 @@ const getUtxosSchema = z.object({
     amountBiggerThan: z.number().min(0).nullish().optional(),
     maximumAmount: z.number().nullish().optional(),
     onlyAvailableUtxos: z.boolean().default(true),
-  }),
+  }).transform(data => ({
+    ...data,
+    max_utxos: data.maxUtxos,
+    filter_address: data.filterAddress,
+    amount_smaller_than: data.amountSmallerThan,
+    amount_bigger_than: data.amountBiggerThan,
+    max_amount: data.maximumAmount,
+    only_available_utxos: data.onlyAvailableUtxos,
+  })),
 });
 
 /**
@@ -66,12 +74,12 @@ export async function getUtxos(
       'token': params.token,
       // Defaults to 0 otherwise the lib fails
       'authorities': params.authorities || 0,
-      'max_utxos': params.maxUtxos,
-      'filter_address': params.filterAddress,
-      'amount_smaller_than': params.amountSmallerThan,
-      'amount_bigger_than': params.amountBiggerThan,
-      'max_amount': params.maximumAmount,
-      'only_available_utxos': params.onlyAvailableUtxos,
+      'max_utxos': params.max_utxos,
+      'filter_address': params.filter_address,
+      'amount_smaller_than': params.amount_smaller_than,
+      'amount_bigger_than': params.amount_bigger_than,
+      'max_amount': params.max_amount,
+      'only_available_utxos': params.only_available_utxos,
     };
 
     // We have the same issues here that we do have in the headless wallet:

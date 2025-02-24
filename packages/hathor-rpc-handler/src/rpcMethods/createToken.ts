@@ -28,15 +28,24 @@ const createTokenSchema = z.object({
   symbol: z.string().min(1),
   amount: z.number().positive(),
   address: z.string().nullish().default(null),
-  change_address: z.string().nullish().default(null),
-  create_mint: z.boolean().default(true),
-  mint_authority_address: z.string().nullish().default(null),
-  allow_external_mint_authority_address: z.boolean().optional().default(false),
-  create_melt: z.boolean().default(true),
-  melt_authority_address: z.string().nullish().default(null),
-  allow_external_melt_authority_address: z.boolean().optional().default(false),
+  change_address: z.string().nullish().default(null).transform(val => val),
+  create_mint: z.boolean().default(true).transform(val => val),
+  mint_authority_address: z.string().nullish().default(null).transform(val => val),
+  allow_external_mint_authority_address: z.boolean().optional().default(false).transform(val => val),
+  create_melt: z.boolean().default(true).transform(val => val),
+  melt_authority_address: z.string().nullish().default(null).transform(val => val),
+  allow_external_melt_authority_address: z.boolean().optional().default(false).transform(val => val),
   data: z.string().array().nullish().default(null),
-});
+}).transform(data => ({
+  ...data,
+  changeAddress: data.change_address,
+  createMint: data.create_mint,
+  mintAuthorityAddress: data.mint_authority_address,
+  allowExternalMintAuthorityAddress: data.allow_external_mint_authority_address,
+  createMelt: data.create_melt,
+  meltAuthorityAddress: data.melt_authority_address,
+  allowExternalMeltAuthorityAddress: data.allow_external_melt_authority_address,
+}));
 
 /**
  * Handles the creation of a new token on the Hathor blockchain.
@@ -66,7 +75,7 @@ export async function createToken(
   try {
     const params = createTokenSchema.parse(rpcRequest.params);
     
-    if (params.change_address && !await wallet.isAddressMine(params.change_address)) {
+    if (params.changeAddress && !await wallet.isAddressMine(params.changeAddress)) {
       throw new Error('Change address is not from this wallet');
     }
 
@@ -83,13 +92,13 @@ export async function createToken(
         symbol: params.symbol,
         amount: params.amount,
         address: params.address,
-        changeAddress: params.change_address,
-        createMint: params.create_mint,
-        mintAuthorityAddress: params.mint_authority_address,
-        allowExternalMintAuthorityAddress: params.allow_external_mint_authority_address,
-        createMelt: params.create_melt,
-        meltAuthorityAddress: params.melt_authority_address,
-        allowExternalMeltAuthorityAddress: params.allow_external_melt_authority_address,
+        changeAddress: params.changeAddress,
+        createMint: params.createMint,
+        mintAuthorityAddress: params.mintAuthorityAddress,
+        allowExternalMintAuthorityAddress: params.allowExternalMintAuthorityAddress,
+        createMelt: params.createMelt,
+        meltAuthorityAddress: params.meltAuthorityAddress,
+        allowExternalMeltAuthorityAddress: params.allowExternalMeltAuthorityAddress,
         data: params.data,
       },
     };
@@ -119,14 +128,14 @@ export async function createToken(
         params.symbol,
         params.amount,
         {
-          changeAddress: params.change_address,
+          changeAddress: params.changeAddress,
           address: params.address,
-          createMint: params.create_mint,
-          mintAuthorityAddress: params.mint_authority_address,
-          allowExternalMintAuthorityAddress: params.allow_external_mint_authority_address,
-          createMelt: params.create_melt,
-          meltAuthorityAddress: params.melt_authority_address,
-          allowExternalMeltAuthorityAddress: params.allow_external_melt_authority_address,
+          createMint: params.createMint,
+          mintAuthorityAddress: params.mintAuthorityAddress,
+          allowExternalMintAuthorityAddress: params.allowExternalMintAuthorityAddress,
+          createMelt: params.createMelt,
+          meltAuthorityAddress: params.meltAuthorityAddress,
+          allowExternalMeltAuthorityAddress: params.allowExternalMeltAuthorityAddress,
           data: params.data,
           pinCode: pinCodeResponse.data.pinCode,
         }

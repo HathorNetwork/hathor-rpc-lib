@@ -25,13 +25,16 @@ const getAddressSchema = z.object({
   index: z.number().int().nonnegative().optional(),
   full_path: z.string().min(1).optional(),
   network: z.string().min(1),
-}).refine(
+}).transform(data => ({
+  ...data,
+  fullPath: data.full_path,
+})).refine(
   (data) => {
     if (data.type === 'index') {
       return data.index !== undefined;
     }
     if (data.type === 'full_path') {
-      return data.full_path !== undefined;
+      return data.fullPath !== undefined;
     }
     return true;
   },

@@ -31,8 +31,13 @@ const sendNanoContractSchema = z.object({
   actions: z.array(z.custom<NanoContractAction>()),
   args: z.array(z.unknown()).default([]),
   push_tx: z.boolean().default(true),
-}).refine(
-  (data) => data.blueprint_id || data.nc_id,
+}).transform(data => ({
+  ...data,
+  blueprintId: data.blueprint_id || null,
+  ncId: data.nc_id || null,
+  pushTx: data.push_tx,
+})).refine(
+  (data) => data.blueprintId || data.ncId,
   "Either blueprint_id or nc_id must be provided"
 );
 
@@ -69,12 +74,12 @@ export async function sendNanoContractTx(
       type: TriggerTypes.SendNanoContractTxConfirmationPrompt,
       method: rpcRequest.method,
       data: {
-        blueprintId: params.blueprint_id,
-        ncId: params.nc_id,
+        blueprintId: params.blueprintId,
+        ncId: params.ncId,
         actions: params.actions as NanoContractAction[],
         method: params.method,
         args: params.args,
-        pushTx: params.push_tx,
+        pushTx: params.pushTx,
       },
     };
 
@@ -97,7 +102,7 @@ export async function sendNanoContractTx(
       throw new PromptRejectedError('Pin prompt rejected');
     }
 
-    const sendMethod = params.push_tx 
+    const sendMethod = params.pushTx 
       ? wallet.createAndSendNanoContractTransaction.bind(wallet)
       : wallet.createNanoContractTransaction.bind(wallet);
 
@@ -111,7 +116,7 @@ export async function sendNanoContractTx(
         params.method,
         caller, 
         {
-          ncId: params.nc_id,
+          ncId: params.ncId,
           blueprintId: confirmedBluePrintId,
           actions: confirmedActions,
           args: confirmedArgs,
