@@ -2594,10 +2594,11 @@ __metadata:
     "@types/node": "npm:20.14.2"
     eslint: "npm:9.4.0"
     jest: "npm:29.7.0"
+    long: "npm:5.2.3"
     ts-jest: "npm:29.1.4"
     typescript: "npm:5.4.5"
     typescript-eslint: "npm:7.13.0"
-    zod: "npm:^3.24.1"
+    zod: "npm:3.24.1"
   languageName: unknown
   linkType: soft
 
@@ -3567,6 +3568,13 @@ __metadata:
   version: 4.17.21
   resolution: "lodash@npm:4.17.21"
   checksum: 10c0/d8cbea072bb08655bb4c989da418994b073a608dffa608b09ac04b43a791b12aeae7cd7ad919aa4c925f33b48490b5cfe6c1f71d827956071dae2e7bb3a6b74c
+  languageName: node
+  linkType: hard
+
+"long@npm:5.2.3":
+  version: 5.2.3
+  resolution: "long@npm:5.2.3"
+  checksum: 10c0/6a0da658f5ef683b90330b1af76f06790c623e148222da9d75b60e266bbf88f803232dd21464575681638894a84091616e7f89557aa087fd14116c0f4e0e43d9
   languageName: node
   linkType: hard
 
@@ -4920,7 +4928,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"zod@npm:^3.24.1":
+"zod@npm:3.24.1":
   version: 3.24.1
   resolution: "zod@npm:3.24.1"
   checksum: 10c0/0223d21dbaa15d8928fe0da3b54696391d8e3e1e2d0283a1a070b5980a1dbba945ce631c2d1eccc088fdbad0f2dfa40155590bf83732d3ac4fcca2cc9237591b

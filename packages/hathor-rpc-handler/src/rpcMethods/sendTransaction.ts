@@ -64,126 +64,118 @@ const sendTransactionSchema = z.object({
  * @throws {PromptRejectedError} If the user rejects any of the prompts.
  * @throws {InvalidParamsError} If the request parameters are invalid.
  * @throws {SendTransactionError} If there's an error preparing or sending the transaction.
+ * @throws {InsufficientFundsError} If there are not enough funds to complete the transaction.
  */
 export async function sendTransaction(
   rpcRequest: SendTransactionRpcRequest,
   wallet: HathorWallet,
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
-) {
+): Promise<RpcResponse> {
+  const validationResult = sendTransactionSchema.safeParse(rpcRequest);
+  
+  if (!validationResult.success) {
+    throw new InvalidParamsError(validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
+  }
+
+  const { params } = validationResult.data;
+  validateNetwork(wallet, params.network);
+
+  // Prepare the transaction outputs
+  const sendTransactionOutputs = params.outputs.map(output => {
+    const outputData = {
+      address: output.address,
+      value: output.value,
+      token: output.token,
+      type: output.type,
+      data: output.data,
+    };
+    const typedOutput = outputData as unknown as OutputSendTransaction;
+
+    if (typedOutput.type === 'data') {
+      (typedOutput as unknown as { value: bigint }).value = BigInt(1);
+      typedOutput.token = '00';
+    }
+
+    return typedOutput;
+  });
+
+  // Create the transaction service but don't run it yet
+  const sendTransaction = await wallet.sendManyOutputsSendTransaction(sendTransactionOutputs, {
+    inputs: params.inputs || [],
+    changeAddress: params.changeAddress,
+    pinCode: '111111',
+  });
+
+  // Prepare the transaction to get all inputs (including automatically selected ones)
+  let preparedTx: Transaction;
   try {
-    const validatedRequest = sendTransactionSchema.parse(rpcRequest);
-    const { params } = validatedRequest;
-
-    validateNetwork(wallet, params.network);
-
-    try {
-      // Prepare the transaction outputs
-      const sendTransactionOutputs = params.outputs.map(output => {
-        const outputData = {
-          address: output.address,
-          value: output.value,
-          token: output.token,
-          type: output.type,
-          data: output.data,
-        };
-        const typedOutput = outputData as unknown as OutputSendTransaction;
-
-        if (typedOutput.type === 'data') {
-          (typedOutput as unknown as { value: bigint }).value = BigInt(1);
-          typedOutput.token = '00';
-        }
-
-        return typedOutput;
-      });
-
-      // Create the transaction service but don't run it yet
-      const sendTransaction = await wallet.sendManyOutputsSendTransaction(sendTransactionOutputs, {
-        inputs: params.inputs || [],
-        changeAddress: params.changeAddress,
-        pinCode: '111111',
-      });
-
-      // Prepare the transaction to get all inputs (including automatically selected ones)
-      let preparedTx: Transaction;
-      try {
-        preparedTx = await sendTransaction.prepareTxData();
-      } catch (err) {
-        if (err instanceof Error) {
-          // Check if the error is about insufficient funds
-          if (err.message.includes('Insufficient amount of tokens')) {
-            throw new InsufficientFundsError(err.message);
-          }
-          throw new SendTransactionError(err.message);
-        }
-        throw new SendTransactionError('An unknown error occurred while preparing the transaction');
-      }
-
-      // Show the complete transaction (with all inputs) to the user
-      const prompt: SendTransactionConfirmationPrompt = {
-        type: TriggerTypes.SendTransactionConfirmationPrompt,
-        method: rpcRequest.method,
-        data: {
-          outputs: params.outputs as unknown as Array<{
-            address?: string;
-            value: number;
-            token?: string;
-            type?: string;
-            data?: string[];
-          }>,
-          // @ts-expect-error Transaction inputs type mismatch with prompt interface
-          inputs: preparedTx.inputs,
-          changeAddress: params.changeAddress,
-        }
-      };
-
-      const sendResponse = await promptHandler(prompt, requestMetadata) as SendTransactionConfirmationResponse;
-
-      if (!sendResponse.data.accepted) {
-        throw new PromptRejectedError('User rejected send transaction prompt');
-      }
-
-      const pinPrompt: PinConfirmationPrompt = {
-        type: TriggerTypes.PinConfirmationPrompt,
-        method: rpcRequest.method,
-      };
-
-      const pinResponse = await promptHandler(pinPrompt, requestMetadata) as PinRequestResponse;
-
-      if (!pinResponse.data.accepted) {
-        throw new PromptRejectedError('User rejected PIN prompt');
-      }
-
-      const loadingTrigger: SendTransactionLoadingTrigger = {
-        type: TriggerTypes.SendTransactionLoadingTrigger,
-      };
-      promptHandler(loadingTrigger, requestMetadata);
-
-      sendTransaction.pin = pinResponse.data.pinCode;
-
-      // Now execute the prepared transaction
-      const response = await sendTransaction.run();
-
-      const loadingFinishedTrigger: SendTransactionLoadingFinishedTrigger = {
-        type: TriggerTypes.SendTransactionLoadingFinishedTrigger,
-      };
-      promptHandler(loadingFinishedTrigger, requestMetadata);
-
-      return {
-        type: RpcResponseTypes.SendTransactionResponse,
-        response,
-      } as RpcResponse;
-    } catch (err) {
-      if (err instanceof Error) {
-        throw new SendTransactionError(err.message);
-      } else {
-        throw new SendTransactionError('An unknown error occurred while sending the transaction');
-      }
-    }
+    preparedTx = await sendTransaction.prepareTxData();
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      throw new InvalidParamsError(err.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
+    if (err instanceof Error) {
+      if (err.message.includes('Insufficient amount of tokens')) {
+        throw new InsufficientFundsError(err.message);
+      }
     }
-    throw err;
+    throw new SendTransactionError(err instanceof Error ? err.message : 'An unknown error occurred while preparing the transaction');
+  }
+
+  // Show the complete transaction (with all inputs) to the user
+  const prompt: SendTransactionConfirmationPrompt = {
+    type: TriggerTypes.SendTransactionConfirmationPrompt,
+    method: rpcRequest.method,
+    data: {
+      outputs: params.outputs as unknown as Array<{
+        address?: string;
+        value: number;
+        token?: string;
+        type?: string;
+        data?: string[];
+      }>,
+      // @ts-expect-error Transaction inputs type mismatch with prompt interface
+      inputs: preparedTx.inputs,
+      changeAddress: params.changeAddress,
+    }
+  };
+
+  const sendResponse = await promptHandler(prompt, requestMetadata) as SendTransactionConfirmationResponse;
+
+  if (!sendResponse.data.accepted) {
+    throw new PromptRejectedError('User rejected send transaction prompt');
+  }
+
+  const pinPrompt: PinConfirmationPrompt = {
+    type: TriggerTypes.PinConfirmationPrompt,
+    method: rpcRequest.method,
+  };
+
+  const pinResponse = await promptHandler(pinPrompt, requestMetadata) as PinRequestResponse;
+
+  if (!pinResponse.data.accepted) {
+    throw new PromptRejectedError('User rejected PIN prompt');
+  }
+
+  const loadingTrigger: SendTransactionLoadingTrigger = {
+    type: TriggerTypes.SendTransactionLoadingTrigger,
+  };
+  promptHandler(loadingTrigger, requestMetadata);
+
+  sendTransaction.pin = pinResponse.data.pinCode;
+
+  try {
+    // Now execute the prepared transaction
+    const response = await sendTransaction.run();
+
+    const loadingFinishedTrigger: SendTransactionLoadingFinishedTrigger = {
+      type: TriggerTypes.SendTransactionLoadingFinishedTrigger,
+    };
+    promptHandler(loadingFinishedTrigger, requestMetadata);
+
+    return {
+      type: RpcResponseTypes.SendTransactionResponse,
+      response,
+    } as RpcResponse;
+  } catch (err) {
+    throw new SendTransactionError(err instanceof Error ? err.message : 'An unknown error occurred while sending the transaction');
   }
 } 
