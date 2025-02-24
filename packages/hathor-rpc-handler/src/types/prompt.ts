@@ -253,9 +253,12 @@ export interface SendTransactionConfirmationPrompt extends BaseConfirmationPromp
       type?: string;
       data?: string[];
     }>;
-    inputs?: Array<{
+    inputs: Array<{
       txId: string;
       index: number;
+      value: number;
+      address: string;
+      token: string;
     }>;
     changeAddress?: string;
   }
