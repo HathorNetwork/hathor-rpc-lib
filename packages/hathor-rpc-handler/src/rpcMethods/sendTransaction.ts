@@ -72,19 +72,13 @@ export async function sendTransaction(
   promptHandler: TriggerHandler,
 ) {
   try {
-    console.log('[sendTransaction] Starting transaction process');
-    console.log('[sendTransaction] Request params:', JSON.stringify(rpcRequest.params, null, 2));
-
     const validatedRequest = sendTransactionSchema.parse(rpcRequest);
     const { params } = validatedRequest;
-    // console.log('[sendTransaction] Validation passed, parsed params:', JSON.stringify(params, null, 2));
 
     validateNetwork(wallet, params.network);
-    console.log('[sendTransaction] Network validation passed');
 
     try {
       // Prepare the transaction outputs
-      console.log('[sendTransaction] Preparing transaction outputs');
       const sendTransactionOutputs = params.outputs.map(output => {
         const outputData = {
           address: output.address,
@@ -100,11 +94,6 @@ export async function sendTransaction(
           typedOutput.token = '00';
         }
 
-        console.log('[sendTransaction] Prepared output:', {
-          ...typedOutput,
-          value: typedOutput.value.toString(),
-        });
-
         return typedOutput;
       });
 
@@ -116,12 +105,10 @@ export async function sendTransaction(
       });
 
       // Prepare the transaction to get all inputs (including automatically selected ones)
-      console.log('[sendTransaction] Preparing transaction data');
+      let preparedTx: Transaction;
       try {
-        const preparedTx: Transaction = await sendTransaction.prepareTxData();
-        console.log('[sendTransaction] Prepared Tx: ', preparedTx);
+        preparedTx = await sendTransaction.prepareTxData();
       } catch (err) {
-        console.error('[sendTransaction] Error preparing transaction:', err);
         if (err instanceof Error) {
           // Check if the error is about insufficient funds
           if (err.message.includes('Insufficient amount of tokens')) {
@@ -133,7 +120,6 @@ export async function sendTransaction(
       }
 
       // Show the complete transaction (with all inputs) to the user
-      console.log('[sendTransaction] Creating confirmation prompt');
       const prompt: SendTransactionConfirmationPrompt = {
         type: TriggerTypes.SendTransactionConfirmationPrompt,
         method: rpcRequest.method,
@@ -182,14 +168,12 @@ export async function sendTransaction(
         type: TriggerTypes.SendTransactionLoadingFinishedTrigger,
       };
       promptHandler(loadingFinishedTrigger, requestMetadata);
-      console.log('[sendTransaction] Loading finished trigger sent');
 
       return {
         type: RpcResponseTypes.SendTransactionResponse,
         response,
       } as RpcResponse;
     } catch (err) {
-      console.error('[sendTransaction] Error in transaction execution:', err);
       if (err instanceof Error) {
         throw new SendTransactionError(err.message);
       } else {
@@ -197,7 +181,6 @@ export async function sendTransaction(
       }
     }
   } catch (err) {
-    console.error('[sendTransaction] Error in main try block:', err);
     if (err instanceof z.ZodError) {
       throw new InvalidParamsError(err.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
     }
