@@ -108,7 +108,7 @@ export async function sendTransaction(
   });
 
   // Prepare the transaction to get all inputs (including automatically selected ones)
-  let preparedTx: Transaction;
+  let preparedTx;
   try {
     preparedTx = await sendTransaction.prepareTxData();
   } catch (err) {
@@ -132,7 +132,6 @@ export async function sendTransaction(
         type?: string;
         data?: string[];
       }>,
-      // @ts-expect-error Transaction inputs type mismatch with prompt interface
       inputs: preparedTx.inputs,
       changeAddress: params.changeAddress,
     }
