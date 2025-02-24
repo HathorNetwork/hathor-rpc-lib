@@ -20,25 +20,38 @@ import { NotImplementedError, PromptRejectedError, InvalidParamsError } from '..
 import { validateNetwork } from '../helpers';
 import type { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
 
-const getAddressSchema = z.object({
-  type: z.enum(['first_empty', 'full_path', 'index', 'client']),
-  index: z.number().int().nonnegative().optional(),
-  full_path: z.string().min(1).optional(),
+const baseSchema = {
   network: z.string().min(1),
-}).transform(data => ({
-  ...data,
-  fullPath: data.full_path,
-})).refine(
-  (data) => data.type !== 'index' || data.index !== undefined,
-  {
-    message: "index is required when type is 'index'",
+};
+
+const getAddressSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal('first_empty'),
+    ...baseSchema,
+  }),
+  z.object({
+    type: z.literal('full_path'),
+    full_path: z.string().min(1),
+    ...baseSchema,
+  }),
+  z.object({
+    type: z.literal('index'),
+    index: z.number().int().nonnegative(),
+    ...baseSchema,
+  }),
+  z.object({
+    type: z.literal('client'),
+    ...baseSchema,
+  }),
+]).transform(data => {
+  if (data.type === 'full_path') {
+    return {
+      ...data,
+      fullPath: data.full_path,
+    };
   }
-).refine(
-  (data) => data.type !== 'full_path' || data.fullPath !== undefined,
-  {
-    message: "full_path is required when type is 'full_path'",
-  }
-);
+  return data;
+});
 
 /**
  * Gets an address based on the provided rpcRequest and wallet.
@@ -64,17 +77,17 @@ export async function getAddress(
     const params = getAddressSchema.parse(rpcRequest.params);
     validateNetwork(wallet, params.network);
 
-    let address: string;
+    let address: string = '';
 
     switch (params.type) {
       case 'first_empty':
         address = await wallet.getCurrentAddress();
-      break;
+        break;
       case 'full_path':
         throw new NotImplementedError();
       case 'index':
-        address = await wallet.getAddressAtIndex(params.index!);
-      break;
+        address = await wallet.getAddressAtIndex(params.index);
+        break;
       case 'client': {
         const response = (await promptHandler({
           type: TriggerTypes.AddressRequestClientPrompt,
@@ -82,8 +95,8 @@ export async function getAddress(
         }, requestMetadata)) as AddressRequestClientResponse;
 
         address = response.data.address;
+        break;
       }
-      break;
     }
 
     // We already confirmed with the user and he selected the address he wanted
