@@ -29,17 +29,14 @@ const getAddressSchema = z.object({
   ...data,
   fullPath: data.full_path,
 })).refine(
-  (data) => {
-    if (data.type === 'index') {
-      return data.index !== undefined;
-    }
-    if (data.type === 'full_path') {
-      return data.fullPath !== undefined;
-    }
-    return true;
-  },
+  (data) => data.type !== 'index' || data.index !== undefined,
   {
-    message: "index is required when type is 'index', full_path is required when type is 'full_path'",
+    message: "index is required when type is 'index'",
+  }
+).refine(
+  (data) => data.type !== 'full_path' || data.fullPath !== undefined,
+  {
+    message: "full_path is required when type is 'full_path'",
   }
 );
 
