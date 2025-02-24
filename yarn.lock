@@ -472,40 +472,24 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@hathor/hathor-rpc-handler@workspace:packages/hathor-rpc-handler":
-  version: 0.0.0-use.local
-  resolution: "@hathor/hathor-rpc-handler@workspace:packages/hathor-rpc-handler"
-  dependencies:
-    "@eslint/js": "npm:9.4.0"
-    "@hathor/wallet-lib": "npm:1.11.0"
-    "@types/eslint__js": "npm:8.42.3"
-    "@types/jest": "npm:29.5.12"
-    "@types/node": "npm:20.14.2"
-    eslint: "npm:9.4.0"
-    jest: "npm:29.7.0"
-    ts-jest: "npm:29.1.4"
-    typescript: "npm:5.4.5"
-    typescript-eslint: "npm:7.13.0"
-    zod: "npm:^3.24.1"
-  languageName: unknown
-  linkType: soft
-
-"@hathor/wallet-lib@npm:1.11.0":
-  version: 1.11.0
-  resolution: "@hathor/wallet-lib@npm:1.11.0"
+"@hathor/wallet-lib@npm:2.0.1":
+  version: 2.0.1
+  resolution: "@hathor/wallet-lib@npm:2.0.1"
   dependencies:
     abstract-level: "npm:1.0.4"
-    axios: "npm:1.7.2"
+    axios: "npm:1.7.7"
     bitcore-lib: "npm:8.25.10"
     bitcore-mnemonic: "npm:8.25.10"
     buffer: "npm:6.0.3"
     crypto-js: "npm:4.2.0"
     isomorphic-ws: "npm:5.0.0"
     level: "npm:8.0.1"
+    level-transcoder: "npm:1.0.1"
     lodash: "npm:4.17.21"
-    long: "npm:5.2.3"
+    queue-microtask: "npm:1.2.3"
     ws: "npm:8.17.1"
-  checksum: 10c0/b3a1c20b836789040f105237dc35cf35f0cff6aa436eb08e0090ecff92f24a0b3af792060d57b735d5a63bc4a34f37ba17d4b1072682ff0567ba8ce3941517f0
+    zod: "npm:3.23.8"
+  checksum: 10c0/92d9aa9319a21e67b7619b7ef0d90b78b71f4f34efeea28b4328b0cc00ab4d4e6c957ea4f850127a8c309d29d50cf9e34c24d931ebcbb996dfd6f9343f8776d9
   languageName: node
   linkType: hard
 
@@ -1353,14 +1337,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:1.7.2":
-  version: 1.7.2
-  resolution: "axios@npm:1.7.2"
+"axios@npm:1.7.7":
+  version: 1.7.7
+  resolution: "axios@npm:1.7.7"
   dependencies:
     follow-redirects: "npm:^1.15.6"
     form-data: "npm:^4.0.0"
     proxy-from-env: "npm:^1.1.0"
-  checksum: 10c0/cbd47ce380fe045313364e740bb03b936420b8b5558c7ea36a4563db1258c658f05e40feb5ddd41f6633fdd96d37ac2a76f884dad599c5b0224b4c451b3fa7ae
+  checksum: 10c0/4499efc89e86b0b49ffddc018798de05fab26e3bf57913818266be73279a6418c3ce8f9e934c7d2d707ab8c095e837fc6c90608fb7715b94d357720b5f568af7
   languageName: node
   linkType: hard
 
@@ -2599,6 +2583,24 @@ __metadata:
   languageName: node
   linkType: hard
 
+"hathor-rpc-handler-test@workspace:packages/hathor-rpc-handler":
+  version: 0.0.0-use.local
+  resolution: "hathor-rpc-handler-test@workspace:packages/hathor-rpc-handler"
+  dependencies:
+    "@eslint/js": "npm:9.4.0"
+    "@hathor/wallet-lib": "npm:2.0.1"
+    "@types/eslint__js": "npm:8.42.3"
+    "@types/jest": "npm:29.5.12"
+    "@types/node": "npm:20.14.2"
+    eslint: "npm:9.4.0"
+    jest: "npm:29.7.0"
+    ts-jest: "npm:29.1.4"
+    typescript: "npm:5.4.5"
+    typescript-eslint: "npm:7.13.0"
+    zod: "npm:^3.24.1"
+  languageName: unknown
+  linkType: soft
+
 "hathor-rpc-lib@workspace:.":
   version: 0.0.0-use.local
   resolution: "hathor-rpc-lib@workspace:."
@@ -3484,7 +3486,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"level-transcoder@npm:^1.0.1":
+"level-transcoder@npm:1.0.1, level-transcoder@npm:^1.0.1":
   version: 1.0.1
   resolution: "level-transcoder@npm:1.0.1"
   dependencies:
@@ -3565,13 +3567,6 @@ __metadata:
   version: 4.17.21
   resolution: "lodash@npm:4.17.21"
   checksum: 10c0/d8cbea072bb08655bb4c989da418994b073a608dffa608b09ac04b43a791b12aeae7cd7ad919aa4c925f33b48490b5cfe6c1f71d827956071dae2e7bb3a6b74c
-  languageName: node
-  linkType: hard
-
-"long@npm:5.2.3":
-  version: 5.2.3
-  resolution: "long@npm:5.2.3"
-  checksum: 10c0/6a0da658f5ef683b90330b1af76f06790c623e148222da9d75b60e266bbf88f803232dd21464575681638894a84091616e7f89557aa087fd14116c0f4e0e43d9
   languageName: node
   linkType: hard
 
@@ -4175,7 +4170,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"queue-microtask@npm:^1.2.2, queue-microtask@npm:^1.2.3":
+"queue-microtask@npm:1.2.3, queue-microtask@npm:^1.2.2, queue-microtask@npm:^1.2.3":
   version: 1.2.3
   resolution: "queue-microtask@npm:1.2.3"
   checksum: 10c0/900a93d3cdae3acd7d16f642c29a642aea32c2026446151f0778c62ac089d4b8e6c986811076e1ae180a694cedf077d453a11b58ff0a865629a4f82ab558e102
@@ -4915,6 +4910,13 @@ __metadata:
   version: 0.1.0
   resolution: "yocto-queue@npm:0.1.0"
   checksum: 10c0/dceb44c28578b31641e13695d200d34ec4ab3966a5729814d5445b194933c096b7ced71494ce53a0e8820685d1d010df8b2422e5bf2cdea7e469d97ffbea306f
+  languageName: node
+  linkType: hard
+
+"zod@npm:3.23.8":
+  version: 3.23.8
+  resolution: "zod@npm:3.23.8"
+  checksum: 10c0/8f14c87d6b1b53c944c25ce7a28616896319d95bc46a9660fe441adc0ed0a81253b02b5abdaeffedbeb23bdd25a0bf1c29d2c12dd919aef6447652dd295e3e69
   languageName: node
   linkType: hard
 

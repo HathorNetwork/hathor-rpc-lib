@@ -111,7 +111,7 @@ export interface SendTransactionRpcRequest {
     network: string;
     outputs: Array<{
       address?: string;
-      value: number;
+      value: string | number | bigint;
       token?: string;
       type?: string;
       data?: string[];
