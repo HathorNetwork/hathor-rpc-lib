@@ -34,7 +34,7 @@ const createTokenSchema = z.object({
   allow_external_mint_authority_address: z.boolean().default(false),
   create_melt: z.boolean().default(true),
   melt_authority_address: z.string().nullish().default(null),
-  allow_external_melt_authority_address: z.boolean().optional().default(false),
+  allow_external_melt_authority_address: z.boolean().default(false),
   data: z.string().array().nullish().default(null),
 }).transform(data => ({
   name: data.name,
