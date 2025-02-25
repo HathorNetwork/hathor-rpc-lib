@@ -25,15 +25,13 @@ const baseSchema = {
 };
 
 const getAddressSchema = z.discriminatedUnion("type", [
-  z.object({
+  z.object(baseSchema).merge(z.object({
     type: z.literal('first_empty'),
-    ...baseSchema,
-  }),
-  z.object({
+  })),
+  z.object(baseSchema).merge(z.object({
     type: z.literal('full_path'),
     full_path: z.string().min(1),
-    ...baseSchema,
-  }),
+  })),
   z.object({
     type: z.literal('index'),
     index: z.number().int().nonnegative(),
