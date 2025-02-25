@@ -70,11 +70,23 @@ export async function getUtxos(
 
     validateNetwork(wallet, params.network);
 
+    // Extract only the snake_case properties that the wallet.getUtxos expects
+    const options = {
+      'token': params.token,
+      'authorities': params.authorities,
+      'max_utxos': params.max_utxos,
+      'filter_address': params.filter_address,
+      'amount_smaller_than': params.amount_smaller_than,
+      'amount_bigger_than': params.amount_bigger_than,
+      'max_amount': params.max_amount,
+      'only_available_utxos': params.only_available_utxos,
+    };
+
     // We have the same issues here that we do have in the headless wallet:
     // TODO: Memory usage enhancements are required here as wallet.getUtxos can cause issues on
     // wallets with a huge amount of utxos.
     // TODO: This needs to be paginated.
-    const utxoDetails: UtxoDetails[] = await wallet.getUtxos(params);
+    const utxoDetails: UtxoDetails[] = await wallet.getUtxos(options);
 
     const confirmed = await promptHandler({
       type: TriggerTypes.GetUtxosConfirmationPrompt,

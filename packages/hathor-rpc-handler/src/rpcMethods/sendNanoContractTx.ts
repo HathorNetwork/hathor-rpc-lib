@@ -76,7 +76,7 @@ export async function sendNanoContractTx(
       data: {
         blueprintId: params.blueprintId,
         ncId: params.ncId,
-        actions: params.actions as NanoContractAction[],
+        actions: params.actions,
         method: params.method,
         args: params.args,
         pushTx: params.pushTx,
@@ -112,15 +112,17 @@ export async function sendNanoContractTx(
       };
       triggerHandler(sendNanoContractLoadingTrigger, requestMetadata);
 
+      const txData = {
+        ncId: params.ncId,
+        blueprintId: confirmedBluePrintId,
+        actions: confirmedActions,
+        args: confirmedArgs,
+      };
+
       const response = await sendMethod(
         params.method,
         caller, 
-        {
-          ncId: params.ncId,
-          blueprintId: confirmedBluePrintId,
-          actions: confirmedActions,
-          args: confirmedArgs,
-        }, 
+        txData, 
         {
           pinCode: pinCodeResponse.data.pinCode,
         }
