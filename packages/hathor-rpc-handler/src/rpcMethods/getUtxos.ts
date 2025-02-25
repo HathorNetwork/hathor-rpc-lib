@@ -73,7 +73,7 @@ export async function getUtxos(
     const options = {
       'token': params.token,
       // Defaults to 0 otherwise the lib fails
-      'authorities': params.authorities || 0,
+      'authorities': params.authorities,
       'max_utxos': params.max_utxos,
       'filter_address': params.filter_address,
       'amount_smaller_than': params.amount_smaller_than,
