@@ -15,7 +15,7 @@ function toCamelCase(params: Pick<CreateTokenRpcRequest, 'params'>['params']) {
     symbol: params.symbol,
     changeAddress: params.change_address,
     address: params.address,
-    amount: params.amount,
+    amount: BigInt(params.amount),
     createMint: params.create_mint,
     mintAuthorityAddress: params.mint_authority_address,
     allowExternalMintAuthorityAddress: params.allow_external_mint_authority_address,
@@ -37,7 +37,7 @@ describe('createToken', () => {
       params: {
         name: 'mytoken',
         symbol: 'mtk',
-        amount: 1000,
+        amount: '1000',
         address: 'address123',
         change_address: 'changeAddress123',
         create_mint: true,
@@ -108,12 +108,17 @@ describe('createToken', () => {
     expect(wallet.createNewToken).toHaveBeenCalledWith(
       rpcRequest.params.name,
       rpcRequest.params.symbol,
-      rpcRequest.params.amount,
+      BigInt(rpcRequest.params.amount),
       {
-        ...toCamelCase(rpcRequest.params),
-        amount: undefined,
-        name: undefined,
-        symbol: undefined,
+        changeAddress: rpcRequest.params.change_address,
+        address: rpcRequest.params.address,
+        createMint: rpcRequest.params.create_mint,
+        mintAuthorityAddress: rpcRequest.params.mint_authority_address,
+        allowExternalMintAuthorityAddress: rpcRequest.params.allow_external_mint_authority_address,
+        createMelt: rpcRequest.params.create_melt,
+        meltAuthorityAddress: rpcRequest.params.melt_authority_address,
+        allowExternalMeltAuthorityAddress: rpcRequest.params.allow_external_melt_authority_address,
+        data: rpcRequest.params.data,
         pinCode,
       }
     );
@@ -187,73 +192,105 @@ describe('createToken', () => {
     });
 
     it('should reject when required parameters are missing', async () => {
-      const invalidRequest = {
+      const invalidRequest: unknown = {
         method: RpcMethods.CreateToken,
         params: {
           symbol: 'MTK',
-          amount: 1000,
+          amount: '1000',
           // name is missing
         },
-      } as CreateTokenRpcRequest;
+      };
 
-      await expect(createToken(invalidRequest, wallet, {}, triggerHandler))
+      await expect(createToken(invalidRequest as CreateTokenRpcRequest, wallet, {}, triggerHandler))
         .rejects.toThrow(InvalidParamsError);
     });
 
     it('should reject when amount is not positive', async () => {
-      const invalidRequest = {
+      const invalidRequest: unknown = {
         method: RpcMethods.CreateToken,
         params: {
           name: 'My Token',
           symbol: 'MTK',
-          amount: 0,
+          amount: '0',
+          network: 'mainnet',
+          create_mint: true,
+          create_melt: true,
+          push_tx: true,
         },
-      } as CreateTokenRpcRequest;
+      };
 
-      await expect(createToken(invalidRequest, wallet, {}, triggerHandler))
+      await expect(createToken(invalidRequest as CreateTokenRpcRequest, wallet, {}, triggerHandler))
         .rejects.toThrow(InvalidParamsError);
     });
 
     it('should reject when parameters have wrong types', async () => {
-      const invalidRequest = {
+      const invalidRequest: unknown = {
         method: RpcMethods.CreateToken,
         params: {
           name: 'My Token',
           symbol: 'MTK',
-          amount: '1000' as unknown as number,
+          amount: 1000, // Intentionally wrong type
+          network: 'mainnet',
+          create_mint: true,
+          create_melt: true,
+          push_tx: true,
         },
-      } as CreateTokenRpcRequest;
+      };
 
-      await expect(createToken(invalidRequest, wallet, {}, triggerHandler))
+      await expect(createToken(invalidRequest as CreateTokenRpcRequest, wallet, {}, triggerHandler))
         .rejects.toThrow(InvalidParamsError);
     });
 
     it('should reject when optional parameters have wrong types', async () => {
-      const invalidRequest = {
+      const invalidRequest: unknown = {
         method: RpcMethods.CreateToken,
         params: {
           name: 'My Token',
           symbol: 'MTK',
-          amount: 1000,
-          create_mint: 'yes' as unknown as boolean,
+          amount: '1000',
+          network: 'mainnet',
+          create_mint: 'yes' as unknown as boolean, // Intentionally wrong type
+          create_melt: true,
+          push_tx: true,
         },
-      } as CreateTokenRpcRequest;
+      };
 
-      await expect(createToken(invalidRequest, wallet, {}, triggerHandler))
+      await expect(createToken(invalidRequest as CreateTokenRpcRequest, wallet, {}, triggerHandler))
         .rejects.toThrow(InvalidParamsError);
     });
 
     it('should reject when name or symbol are empty strings', async () => {
-      const invalidRequest = {
+      const invalidRequest: unknown = {
         method: RpcMethods.CreateToken,
         params: {
           name: '',
           symbol: 'MTK',
-          amount: 1000,
+          amount: '1000',
+          network: 'mainnet',
+          create_mint: true,
+          create_melt: true,
+          push_tx: true,
         },
-      } as CreateTokenRpcRequest;
+      };
 
-      await expect(createToken(invalidRequest, wallet, {}, triggerHandler))
+      await expect(createToken(invalidRequest as CreateTokenRpcRequest, wallet, {}, triggerHandler))
+        .rejects.toThrow(InvalidParamsError);
+    });
+
+    it('should reject when name is missing', async () => {
+      const invalidRequest: unknown = {
+        method: RpcMethods.CreateToken,
+        params: {
+          symbol: 'MTK',
+          amount: '1000',
+          network: 'mainnet',
+          create_mint: true,
+          create_melt: true,
+          push_tx: true,
+        },
+      };
+
+      await expect(createToken(invalidRequest as CreateTokenRpcRequest, wallet, {}, triggerHandler))
         .rejects.toThrow(InvalidParamsError);
     });
   });

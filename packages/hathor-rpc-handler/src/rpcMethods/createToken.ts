@@ -26,7 +26,20 @@ import { z } from 'zod';
 const createTokenSchema = z.object({
   name: z.string().min(1),
   symbol: z.string().min(1),
-  amount: z.number().positive(),
+  amount: z.string().min(1).refine(
+    (val) => {
+      try {
+        const num = BigInt(val);
+        return num > 0n;
+      } catch (e) {
+        return false;
+      }
+    },
+    { message: "Amount must be a valid positive number string" }
+  ).transform(val => {
+    // Store as BigInt internally
+    return BigInt(val);
+  }),
   address: z.string().nullish().default(null),
   change_address: z.string().nullish().default(null),
   create_mint: z.boolean().default(true),
@@ -118,17 +131,23 @@ export async function createToken(
     const pinCodeResponse: PinRequestResponse = (await triggerHandler(pinPrompt, requestMetadata)) as PinRequestResponse;
 
     if (!pinCodeResponse.data.accepted) {
+      console.log('Pin rejected.');
       throw new PromptRejectedError('Pin prompt rejected');
     }
+
+    console.log('Pin response: ', pinCodeResponse);
 
     try {
       const createTokenLoadingTrigger: CreateTokenLoadingTrigger = {
         type: TriggerTypes.CreateTokenLoadingTrigger,
       };
 
+      console.log('Will send create token loading trigger.');
+
       // No need to await as this is a fire-and-forget trigger
       triggerHandler(createTokenLoadingTrigger, requestMetadata);
 
+      console.log('Will send create new token');
       const response: Transaction = await wallet.createNewToken(
         params.name,
         params.symbol,
@@ -138,11 +157,14 @@ export async function createToken(
           pinCode: pinCodeResponse.data.pinCode,
         }
       );
+      console.log('Done.');
 
       const createTokenLoadingFinished: CreateTokenLoadingFinishedTrigger = {
         type: TriggerTypes.CreateTokenLoadingFinishedTrigger,
       };
+      console.log('Will send create token loading finished trigger.');
       triggerHandler(createTokenLoadingFinished, requestMetadata);
+      console.log('sent!');
 
       return {
         type: RpcResponseTypes.CreateTokenResponse,

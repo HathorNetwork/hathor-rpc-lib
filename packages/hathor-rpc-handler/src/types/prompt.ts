@@ -162,7 +162,7 @@ export interface NanoContractParams {
 export interface CreateTokenParams {
   name: string,
   symbol: string,
-  amount: number,
+  amount: bigint,
   address: string | null,
   changeAddress: string | null,
   createMint: boolean,

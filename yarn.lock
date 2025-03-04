@@ -472,25 +472,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@hathor/hathor-rpc-handler@workspace:packages/hathor-rpc-handler":
-  version: 0.0.0-use.local
-  resolution: "@hathor/hathor-rpc-handler@workspace:packages/hathor-rpc-handler"
-  dependencies:
-    "@eslint/js": "npm:9.4.0"
-    "@hathor/wallet-lib": "npm:2.0.1"
-    "@types/eslint__js": "npm:8.42.3"
-    "@types/jest": "npm:29.5.12"
-    "@types/node": "npm:20.14.2"
-    eslint: "npm:9.4.0"
-    jest: "npm:29.7.0"
-    long: "npm:5.2.3"
-    ts-jest: "npm:29.1.4"
-    typescript: "npm:5.4.5"
-    typescript-eslint: "npm:7.13.0"
-    zod: "npm:3.24.1"
-  languageName: unknown
-  linkType: soft
-
 "@hathor/wallet-lib@npm:2.0.1":
   version: 2.0.1
   resolution: "@hathor/wallet-lib@npm:2.0.1"
@@ -2601,6 +2582,25 @@ __metadata:
   checksum: 10c0/3769d434703b8ac66b209a4cca0737519925bbdb61dd887f93a16372b14694c63ff4e797686d87c90f08168e81082248b9b028bad60d4da9e0d1148766f56eb9
   languageName: node
   linkType: hard
+
+"hathor-rpc-handler-test@workspace:packages/hathor-rpc-handler":
+  version: 0.0.0-use.local
+  resolution: "hathor-rpc-handler-test@workspace:packages/hathor-rpc-handler"
+  dependencies:
+    "@eslint/js": "npm:9.4.0"
+    "@hathor/wallet-lib": "npm:2.0.1"
+    "@types/eslint__js": "npm:8.42.3"
+    "@types/jest": "npm:29.5.12"
+    "@types/node": "npm:20.14.2"
+    eslint: "npm:9.4.0"
+    jest: "npm:29.7.0"
+    long: "npm:5.2.3"
+    ts-jest: "npm:29.1.4"
+    typescript: "npm:5.4.5"
+    typescript-eslint: "npm:7.13.0"
+    zod: "npm:3.24.1"
+  languageName: unknown
+  linkType: soft
 
 "hathor-rpc-lib@workspace:.":
   version: 0.0.0-use.local
