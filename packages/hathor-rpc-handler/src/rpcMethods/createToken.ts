@@ -20,7 +20,38 @@ import {
   TriggerHandler,
   TriggerTypes,
 } from '../types';
-import { CreateTokenError, PromptRejectedError } from '../errors';
+import { CreateTokenError, PromptRejectedError, InvalidParamsError } from '../errors';
+import { z } from 'zod';
+
+const createTokenSchema = z.object({
+  name: z.string().min(1),
+  symbol: z.string().min(1),
+  amount: z.number().positive(),
+  address: z.string().nullish().default(null),
+  change_address: z.string().nullish().default(null),
+  create_mint: z.boolean().default(true),
+  mint_authority_address: z.string().nullish().default(null),
+  allow_external_mint_authority_address: z.boolean().default(false),
+  create_melt: z.boolean().default(true),
+  melt_authority_address: z.string().nullish().default(null),
+  allow_external_melt_authority_address: z.boolean().default(false),
+  data: z.string().array().nullish().default(null),
+}).transform(data => ({
+  name: data.name,
+  symbol: data.symbol,
+  amount: data.amount,
+  options: {
+    address: data.address,
+    changeAddress: data.change_address,
+    createMint: data.create_mint,
+    mintAuthorityAddress: data.mint_authority_address,
+    allowExternalMintAuthorityAddress: data.allow_external_mint_authority_address,
+    createMelt: data.create_melt,
+    meltAuthorityAddress: data.melt_authority_address,
+    allowExternalMeltAuthorityAddress: data.allow_external_melt_authority_address,
+    data: data.data,
+  }
+}));
 
 /**
  * Handles the creation of a new token on the Hathor blockchain.
@@ -47,98 +78,88 @@ export async function createToken(
   requestMetadata: RequestMetadata,
   triggerHandler: TriggerHandler,
 ) {
-  const { name, symbol, amount } = rpcRequest.params;
-  const address = rpcRequest.params.address || null;
-  const changeAddress = rpcRequest.params.change_address || null;
-  const createMint = rpcRequest.params.create_mint ?? true;
-  const mintAuthorityAddress = rpcRequest.params.mint_authority_address || null;
-  const allowExternalMintAuthorityAddress = rpcRequest.params.allow_external_mint_authority_address || false;
-  const createMelt = rpcRequest.params.create_melt ?? true;
-  const meltAuthorityAddress = rpcRequest.params.melt_authority_address || null;
-  const allowExternalMeltAuthorityAddress = rpcRequest.params.allow_external_melt_authority_address || false;
-  const data = rpcRequest.params.data || null;
-
-  if (changeAddress && !await wallet.isAddressMine(changeAddress)) {
-    throw new Error('Change address is not from this wallet');
-  }
-
-  const pinPrompt: PinConfirmationPrompt = {
-    type: TriggerTypes.PinConfirmationPrompt,
-    method: rpcRequest.method,
-  };
-
-  const createTokenPrompt: CreateTokenConfirmationPrompt = {
-    type: TriggerTypes.CreateTokenConfirmationPrompt,
-    method: rpcRequest.method,
-    data: {
-      name,
-      symbol,
-      amount,
-      address,
-      changeAddress,
-      createMint,
-      mintAuthorityAddress,
-      allowExternalMintAuthorityAddress,
-      createMelt,
-      meltAuthorityAddress,
-      allowExternalMeltAuthorityAddress,
-      data,
-    },
-  };
-
-  const createTokeResponse = await triggerHandler(createTokenPrompt, requestMetadata) as CreateTokenConfirmationResponse;
-
-  if (!createTokeResponse.data.accepted) {
-    throw new PromptRejectedError();
-  }
-
-  const pinCodeResponse: PinRequestResponse = (await triggerHandler(pinPrompt, requestMetadata)) as PinRequestResponse;
-
-  if (!pinCodeResponse.data.accepted) {
-    throw new PromptRejectedError('Pin prompt rejected');
-  }
-
   try {
-    const createTokenLoadingTrigger: CreateTokenLoadingTrigger = {
-      type: TriggerTypes.CreateTokenLoadingTrigger,
-    };
-
-    // No need to await as this is a fire-and-forget trigger
-    triggerHandler(createTokenLoadingTrigger, requestMetadata);
-
-    const response: Transaction = await wallet.createNewToken(
-      name,
-      symbol,
-      amount,
-      {
-        changeAddress,
-        address,
-        createMint,
-        mintAuthorityAddress,
-        allowExternalMintAuthorityAddress,
-        createMelt,
-        meltAuthorityAddress,
-        allowExternalMeltAuthorityAddress,
-        data,
-        pinCode: pinCodeResponse.data.pinCode,
-      }
-    );
-
-    const createTokenLoadingFinished: CreateTokenLoadingFinishedTrigger = {
-      type: TriggerTypes.CreateTokenLoadingFinishedTrigger,
-    };
-    triggerHandler(createTokenLoadingFinished, requestMetadata);
-
-    return {
-      type: RpcResponseTypes.CreateTokenResponse,
-      response,
-    } as RpcResponse;
-
-  } catch (err) {
-    if (err instanceof Error) {
-      throw new CreateTokenError(err.message);
-    } else {
-      throw new CreateTokenError('An unknown error occurred');
+    const params = createTokenSchema.parse(rpcRequest.params);
+    
+    if (params.options.changeAddress && !await wallet.isAddressMine(params.options.changeAddress)) {
+      throw new Error('Change address is not from this wallet');
     }
+
+    const pinPrompt: PinConfirmationPrompt = {
+      type: TriggerTypes.PinConfirmationPrompt,
+      method: rpcRequest.method,
+    };
+
+    const createTokenPrompt: CreateTokenConfirmationPrompt = {
+      type: TriggerTypes.CreateTokenConfirmationPrompt,
+      method: rpcRequest.method,
+      data: {
+        name: params.name,
+        symbol: params.symbol,
+        amount: params.amount,
+        address: params.options.address,
+        changeAddress: params.options.changeAddress,
+        createMint: params.options.createMint,
+        mintAuthorityAddress: params.options.mintAuthorityAddress,
+        allowExternalMintAuthorityAddress: params.options.allowExternalMintAuthorityAddress,
+        createMelt: params.options.createMelt,
+        meltAuthorityAddress: params.options.meltAuthorityAddress,
+        allowExternalMeltAuthorityAddress: params.options.allowExternalMeltAuthorityAddress,
+        data: params.options.data,
+      },
+    };
+
+    const createTokeResponse = await triggerHandler(createTokenPrompt, requestMetadata) as CreateTokenConfirmationResponse;
+
+    if (!createTokeResponse.data.accepted) {
+      throw new PromptRejectedError();
+    }
+
+    const pinCodeResponse: PinRequestResponse = (await triggerHandler(pinPrompt, requestMetadata)) as PinRequestResponse;
+
+    if (!pinCodeResponse.data.accepted) {
+      throw new PromptRejectedError('Pin prompt rejected');
+    }
+
+    try {
+      const createTokenLoadingTrigger: CreateTokenLoadingTrigger = {
+        type: TriggerTypes.CreateTokenLoadingTrigger,
+      };
+
+      // No need to await as this is a fire-and-forget trigger
+      triggerHandler(createTokenLoadingTrigger, requestMetadata);
+
+      const response: Transaction = await wallet.createNewToken(
+        params.name,
+        params.symbol,
+        params.amount,
+        {
+          ...params.options,
+          pinCode: pinCodeResponse.data.pinCode,
+        }
+      );
+
+      const createTokenLoadingFinished: CreateTokenLoadingFinishedTrigger = {
+        type: TriggerTypes.CreateTokenLoadingFinishedTrigger,
+      };
+      triggerHandler(createTokenLoadingFinished, requestMetadata);
+
+      return {
+        type: RpcResponseTypes.CreateTokenResponse,
+        response,
+      } as RpcResponse;
+
+    } catch (err) {
+      if (err instanceof Error) {
+        throw new CreateTokenError(err.message);
+      } else {
+        throw new CreateTokenError('An unknown error occurred');
+      }
+    }
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      throw new InvalidParamsError(err.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
+    }
+    throw err;
   }
 }

@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { z } from 'zod';
 import type { HathorWallet } from '@hathor/wallet-lib';
 import { 
   GetConnectedNetworkRpcRequest,
@@ -12,23 +13,39 @@ import {
   RpcResponse,
   RpcResponseTypes,
   TriggerHandler,
+  RpcMethods,
 } from '../types';
+import { InvalidParamsError } from '../errors';
+
+const getConnectedNetworkSchema = z.object({
+  method: z.literal(RpcMethods.GetConnectedNetwork),
+});
 
 /**
  * Handles the 'get_connected_network' RPC request by retrieving the network information
  * from the wallet and returning the network name and genesis hash.
  * 
- * @param _rpcRequest - (unused) The RPC request object containing the method and parameters.
+ * @param rpcRequest - The RPC request object containing the method.
  * @param wallet - The Hathor wallet instance used to get the network information.
+ * @param _requestMetadata - (unused) Metadata related to the dApp that sent the RPC
+ * @param _promptHandler - (unused) The function to handle prompts for user confirmation.
  *
  * @returns An object containing the network name and genesis hash.
+ * 
+ * @throws {InvalidParamsError} - If the request parameters are invalid.
  */
 export async function getConnectedNetwork(
-  _rpcRequest: GetConnectedNetworkRpcRequest,
+  rpcRequest: GetConnectedNetworkRpcRequest,
   wallet: HathorWallet,
   _requestMetadata: RequestMetadata,
   _promptHandler: TriggerHandler,
 ) {
+  const parseResult = getConnectedNetworkSchema.safeParse(rpcRequest);
+  
+  if (!parseResult.success) {
+    throw new InvalidParamsError(parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
+  }
+
   const network: string = wallet.getNetwork();
 
   const result = {

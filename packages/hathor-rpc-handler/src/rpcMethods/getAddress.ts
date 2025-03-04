@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { z } from 'zod';
 import type { HathorWallet } from '@hathor/wallet-lib';
 import {
   AddressRequestClientResponse,
@@ -15,9 +16,40 @@ import {
   RpcResponse,
   RpcResponseTypes,
 } from '../types';
-import { NotImplementedError, PromptRejectedError } from '../errors';
+import { NotImplementedError, PromptRejectedError, InvalidParamsError } from '../errors';
 import { validateNetwork } from '../helpers';
 import type { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
+
+const baseSchema = {
+  network: z.string().min(1),
+};
+
+const getAddressSchema = z.discriminatedUnion("type", [
+  z.object(baseSchema).merge(z.object({
+    type: z.literal('first_empty'),
+  })),
+  z.object(baseSchema).merge(z.object({
+    type: z.literal('full_path'),
+    full_path: z.string().min(1),
+  })),
+  z.object({
+    type: z.literal('index'),
+    index: z.number().int().nonnegative(),
+    ...baseSchema,
+  }),
+  z.object({
+    type: z.literal('client'),
+    ...baseSchema,
+  }),
+]).transform(data => {
+  if (data.type === 'full_path') {
+    return {
+      ...data,
+      fullPath: data.full_path,
+    };
+  }
+  return data;
+});
 
 /**
  * Gets an address based on the provided rpcRequest and wallet.
@@ -31,6 +63,7 @@ import type { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
  *
  * @throws {NotImplementedError} - If the request type is 'full_path', which is not implemented.
  * @throws {PromptRejectedError} - If the user rejects the address confirmation prompt.
+ * @throws {InvalidParamsError} - If the request parameters are invalid.
  */
 export async function getAddress(
   rpcRequest: GetAddressRpcRequest,
@@ -38,49 +71,56 @@ export async function getAddress(
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
 ) {
-  validateNetwork(wallet, rpcRequest.params.network);
+  try {
+    const params = getAddressSchema.parse(rpcRequest.params);
+    validateNetwork(wallet, params.network);
 
-  const { type, index } = rpcRequest.params;
-  let address: string;
+    let address: string = '';
 
-  switch (type) {
-    case 'first_empty':
-      address = await wallet.getCurrentAddress();
-    break;
-    case 'full_path':
-      throw new NotImplementedError();
-    case 'index':
-      address = await wallet.getAddressAtIndex(index);
-    break;
-    case 'client': {
-      const response = (await promptHandler({
-        type: TriggerTypes.AddressRequestClientPrompt,
-        method: rpcRequest.method,
-      }, requestMetadata)) as AddressRequestClientResponse;
+    switch (params.type) {
+      case 'first_empty':
+        address = await wallet.getCurrentAddress();
+        break;
+      case 'full_path':
+        throw new NotImplementedError();
+      case 'index':
+        address = await wallet.getAddressAtIndex(params.index);
+        break;
+      case 'client': {
+        const response = (await promptHandler({
+          type: TriggerTypes.AddressRequestClientPrompt,
+          method: rpcRequest.method,
+        }, requestMetadata)) as AddressRequestClientResponse;
 
-      address = response.data.address;
-    }
-    break;
-  }
-
-  // We already confirmed with the user and he selected the address he wanted
-  // to share. No need to double check
-  if (type !== 'client') {
-    const confirmed = await promptHandler({
-      type: TriggerTypes.AddressRequestPrompt,
-      method: rpcRequest.method,
-      data: {
-        address,
+        address = response.data.address;
+        break;
       }
-    }, requestMetadata);
-
-    if (!confirmed) {
-      throw new PromptRejectedError();
     }
-  }
 
-  return {
-    type: RpcResponseTypes.GetAddressResponse,
-    response: address as unknown as AddressInfoObject,
-  } as RpcResponse;
+    // We already confirmed with the user and he selected the address he wanted
+    // to share. No need to double check
+    if (params.type !== 'client') {
+      const confirmed = await promptHandler({
+        type: TriggerTypes.AddressRequestPrompt,
+        method: rpcRequest.method,
+        data: {
+          address,
+        }
+      }, requestMetadata);
+
+      if (!confirmed) {
+        throw new PromptRejectedError();
+      }
+    }
+
+    return {
+      type: RpcResponseTypes.GetAddressResponse,
+      response: address as unknown as AddressInfoObject,
+    } as RpcResponse;
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      throw new InvalidParamsError(err.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
+    }
+    throw err;
+  }
 }

@@ -144,7 +144,7 @@ export interface AddressRequestClientPrompt extends BaseConfirmationPrompt {
 }
 
 export interface NanoContractParams {
-  blueprintId: string;
+  blueprintId: string | null;
   ncId: string | null;
   actions: NanoContractAction[],
   method: string;

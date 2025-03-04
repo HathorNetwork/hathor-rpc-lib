@@ -24,7 +24,14 @@ import {
   SignOracleDataConfirmationResponse,
 } from '../types';
 import { validateNetwork } from '../helpers';
-import { PromptRejectedError } from '../errors';
+import { PromptRejectedError, InvalidParamsError } from '../errors';
+import { z } from 'zod';
+
+const signOracleDataSchema = z.object({
+  network: z.string().min(1),
+  oracle: z.string().min(1),
+  data: z.string().min(1),
+});
 
 export async function signOracleData(
   rpcRequest: SignOracleDataRpcRequest,
@@ -32,16 +39,21 @@ export async function signOracleData(
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
 ) {
-  const { network, oracle, data } = rpcRequest.params;
+  const parseResult = signOracleDataSchema.safeParse(rpcRequest.params);
+  
+  if (!parseResult.success) {
+    throw new InvalidParamsError(parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
+  }
 
-  validateNetwork(wallet, network);
+  const params = parseResult.data;
+  validateNetwork(wallet, params.network);
 
   const prompt: SignOracleDataConfirmationPrompt = {
     type: TriggerTypes.SignOracleDataConfirmationPrompt,
     method: rpcRequest.method,
     data: {
-      oracle,
-      data,
+      oracle: params.oracle,
+      data: params.data,
     }
   };
 
@@ -62,21 +74,21 @@ export async function signOracleData(
     throw new PromptRejectedError('User rejected PIN prompt');
   }
 
-  const oracleData = nanoUtils.getOracleBuffer(oracle, wallet.getNetworkObject());
+  const oracleData = nanoUtils.getOracleBuffer(params.oracle, wallet.getNetworkObject());
   const nanoSerializer = new NanoContractSerializer();
-  const dataSerialized = nanoSerializer.serializeFromType(data, 'str');
+  const dataSerialized = nanoSerializer.serializeFromType(params.data, 'str');
 
   // TODO getOracleInputData method should be able to receive the PIN as optional parameter as well
   wallet.pinCode = pinResponse.data.pinCode;
   const inputData = await nanoUtils.getOracleInputData(oracleData, dataSerialized, wallet);
-  const signature = `${bufferUtils.bufferToHex(inputData)},${data},str`;
+  const signature = `${bufferUtils.bufferToHex(inputData)},${params.data},str`;
 
   return {
     type: RpcResponseTypes.SignOracleDataResponse,
     response: {
-      data,
+      data: params.data,
       signature,
-      oracle,
+      oracle: params.oracle,
     }
   } as SignOracleDataResponse;
 }

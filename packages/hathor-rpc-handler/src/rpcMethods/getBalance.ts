@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { z } from 'zod';
 import type { HathorWallet } from '@hathor/wallet-lib';
 import type { GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 import {
@@ -16,8 +17,14 @@ import {
   RpcResponseTypes,
   RpcResponse,
 } from '../types';
-import { NotImplementedError, PromptRejectedError } from '../errors';
+import { NotImplementedError, PromptRejectedError, InvalidParamsError } from '../errors';
 import { validateNetwork } from '../helpers';
+
+const getBalanceSchema = z.object({
+  network: z.string().min(1),
+  tokens: z.array(z.string().min(1)).min(1),
+  addressIndexes: z.array(z.number().int().nonnegative()).optional(),
+});
 
 /**
  * Gets the balance for specified tokens using the provided wallet.
@@ -31,6 +38,7 @@ import { validateNetwork } from '../helpers';
  *
  * @throws {NotImplementedError} - If address indexes are specified, which is not implemented.
  * @throws {PromptRejectedError} - If the user rejects the balance confirmation prompt.
+ * @throws {InvalidParamsError} - If the request parameters are invalid.
  */
 export async function getBalance(
   rpcRequest: GetBalanceRpcRequest,
@@ -38,16 +46,22 @@ export async function getBalance(
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
 ) {
-  const { network, tokens, addressIndexes } = rpcRequest.params;
+  const parseResult = getBalanceSchema.safeParse(rpcRequest.params);
+  
+  if (!parseResult.success) {
+    throw new InvalidParamsError(parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
+  }
 
-  if (addressIndexes) {
+  const params = parseResult.data;
+
+  if (params.addressIndexes) {
     throw new NotImplementedError();
   }
 
-  validateNetwork(wallet, network);
+  validateNetwork(wallet, params.network);
 
   const balances: GetBalanceObject[] = await Promise.all(
-    tokens.map(token => wallet.getBalance(token)),
+    params.tokens.map(token => wallet.getBalance(token)),
   );
 
   const prompt: GetBalanceConfirmationPrompt = {

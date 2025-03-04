@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { z } from 'zod';
 import type { HathorWallet } from '@hathor/wallet-lib';
 import {
   TriggerTypes,
@@ -20,7 +21,25 @@ import {
   RpcResponse,
   SendNanoContractTxLoadingFinishedTrigger,
 } from '../types';
-import { PromptRejectedError, SendNanoContractTxError } from '../errors';
+import { PromptRejectedError, SendNanoContractTxError, InvalidParamsError } from '../errors';
+import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
+
+const sendNanoContractSchema = z.object({
+  method: z.string().min(1),
+  blueprint_id: z.string().nullish(),
+  nc_id: z.string().nullish(),
+  actions: z.array(z.custom<NanoContractAction>()),
+  args: z.array(z.unknown()).default([]),
+  push_tx: z.boolean().default(true),
+}).transform(data => ({
+  ...data,
+  blueprintId: data.blueprint_id || null,
+  ncId: data.nc_id || null,
+  pushTx: data.push_tx,
+})).refine(
+  (data) => data.blueprintId || data.ncId,
+  "Either blueprint_id or nc_id must be provided"
+);
 
 /**
  * Sends a nano contract transaction.
@@ -43,92 +62,92 @@ export async function sendNanoContractTx(
   requestMetadata: RequestMetadata,
   triggerHandler: TriggerHandler,
 ) {
-  const {
-    method,
-    blueprint_id,
-    nc_id,
-    actions,
-    args,
-    push_tx,
-  } = rpcRequest.params
-
-  if (!blueprint_id && !nc_id) {
-    throw new Error('Neither blueprint id or ncId available');
-  }
-
-  const pinPrompt: PinConfirmationPrompt = {
-    type: TriggerTypes.PinConfirmationPrompt,
-    method: rpcRequest.method,
-  };
-
-  const sendNanoContractTxPrompt: SendNanoContractTxConfirmationPrompt = {
-    type: TriggerTypes.SendNanoContractTxConfirmationPrompt,
-    method: rpcRequest.method,
-    data: {
-      blueprintId: blueprint_id,
-      ncId: nc_id,
-      actions,
-      method,
-      args,
-      pushTx: push_tx,
-    },
-  };
-
-  const sendNanoContractTxResponse = await triggerHandler(sendNanoContractTxPrompt, requestMetadata) as SendNanoContractTxConfirmationResponse;
-
-  if (!sendNanoContractTxResponse.data.accepted) {
-    throw new PromptRejectedError();
-  }
-
-  const {
-    caller,
-    blueprintId: confirmedBluePrintId,
-    actions: confirmedActions,
-    args: confirmedArgs,
-  } = sendNanoContractTxResponse.data.nc;
-
-  const pinCodeResponse: PinRequestResponse = (await triggerHandler(pinPrompt, requestMetadata)) as PinRequestResponse;
-
-  if (!pinCodeResponse.data.accepted) {
-    throw new PromptRejectedError('Pin prompt rejected');
-  }
-
-  const sendMethod = push_tx ? wallet.createAndSendNanoContractTransaction.bind(wallet)
-    : wallet.createNanoContractTransaction.bind(wallet);
-
   try {
-    const sendNanoContractLoadingTrigger: SendNanoContractTxLoadingTrigger = {
-      type: TriggerTypes.SendNanoContractTxLoadingTrigger,
+    const params = sendNanoContractSchema.parse(rpcRequest.params);
+    
+    const pinPrompt: PinConfirmationPrompt = {
+      type: TriggerTypes.PinConfirmationPrompt,
+      method: rpcRequest.method,
     };
-    // No need to await as this is a fire-and-forget trigger
-    triggerHandler(sendNanoContractLoadingTrigger, requestMetadata);
 
-    const response = await sendMethod(
-      method,
-      caller, {
-        ncId: nc_id,
+    const sendNanoContractTxPrompt: SendNanoContractTxConfirmationPrompt = {
+      type: TriggerTypes.SendNanoContractTxConfirmationPrompt,
+      method: rpcRequest.method,
+      data: {
+        blueprintId: params.blueprintId,
+        ncId: params.ncId,
+        actions: params.actions,
+        method: params.method,
+        args: params.args,
+        pushTx: params.pushTx,
+      },
+    };
+
+    const sendNanoContractTxResponse = await triggerHandler(sendNanoContractTxPrompt, requestMetadata) as SendNanoContractTxConfirmationResponse;
+
+    if (!sendNanoContractTxResponse.data.accepted) {
+      throw new PromptRejectedError();
+    }
+
+    const {
+      caller,
+      blueprintId: confirmedBluePrintId,
+      actions: confirmedActions,
+      args: confirmedArgs,
+    } = sendNanoContractTxResponse.data.nc;
+
+    const pinCodeResponse: PinRequestResponse = (await triggerHandler(pinPrompt, requestMetadata)) as PinRequestResponse;
+
+    if (!pinCodeResponse.data.accepted) {
+      throw new PromptRejectedError('Pin prompt rejected');
+    }
+
+    const sendMethod = params.pushTx 
+      ? wallet.createAndSendNanoContractTransaction.bind(wallet)
+      : wallet.createNanoContractTransaction.bind(wallet);
+
+    try {
+      const sendNanoContractLoadingTrigger: SendNanoContractTxLoadingTrigger = {
+        type: TriggerTypes.SendNanoContractTxLoadingTrigger,
+      };
+      triggerHandler(sendNanoContractLoadingTrigger, requestMetadata);
+
+      const txData = {
+        ncId: params.ncId,
         blueprintId: confirmedBluePrintId,
         actions: confirmedActions,
         args: confirmedArgs,
-      }, {
-        pinCode: pinCodeResponse.data.pinCode,
+      };
+
+      const response = await sendMethod(
+        params.method,
+        caller, 
+        txData, 
+        {
+          pinCode: pinCodeResponse.data.pinCode,
+        }
+      );
+
+      const sendNanoContractLoadingFinishedTrigger: SendNanoContractTxLoadingFinishedTrigger = {
+        type: TriggerTypes.SendNanoContractTxLoadingFinishedTrigger,
+      };
+      triggerHandler(sendNanoContractLoadingFinishedTrigger, requestMetadata);
+
+      return {
+        type: RpcResponseTypes.SendNanoContractTxResponse,
+        response,
+      } as RpcResponse;
+    } catch (err) {
+      if (err instanceof Error) {
+        throw new SendNanoContractTxError(err.message);
+      } else {
+        throw new SendNanoContractTxError('An unknown error occurred');
       }
-    );
-
-    const sendNanoContractLoadingFinishedTrigger: SendNanoContractTxLoadingFinishedTrigger = {
-      type: TriggerTypes.SendNanoContractTxLoadingFinishedTrigger,
-    };
-    triggerHandler(sendNanoContractLoadingFinishedTrigger, requestMetadata);
-
-    return {
-      type: RpcResponseTypes.SendNanoContractTxResponse,
-      response,
-    } as RpcResponse;
-  } catch (err) {
-    if (err instanceof Error) {
-      throw new SendNanoContractTxError(err.message);
-    } else {
-      throw new SendNanoContractTxError('An unknown error occurred');
     }
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      throw new InvalidParamsError(err.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
+    }
+    throw err;
   }
 }

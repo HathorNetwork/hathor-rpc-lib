@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { z } from 'zod';
 import { HathorWallet } from '@hathor/wallet-lib';
 import {
   TriggerTypes,
@@ -17,10 +18,20 @@ import {
   SignWithAddressRpcRequest,
   RpcResponseTypes,
   SignWithAddressResponse,
+  RpcMethods,
 } from '../types';
-import { PromptRejectedError } from '../errors';
+import { PromptRejectedError, InvalidParamsError } from '../errors';
 import { validateNetwork } from '../helpers';
 import { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
+
+const signWithAddressSchema = z.object({
+  method: z.literal(RpcMethods.SignWithAddress),
+  params: z.object({
+    network: z.string().min(1),
+    message: z.string().min(1),
+    addressIndex: z.number().int().nonnegative(),
+  }),
+});
 
 /**
  * Handles the 'htr_signWithAddress' RPC request by prompting the user for confirmation
@@ -34,6 +45,7 @@ import { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
  * @returns The signed message if the user confirms.
  *
  * @throws {PromptRejectedError} If the user rejects any of the prompts.
+ * @throws {InvalidParamsError} If the request parameters are invalid.
  */
 export async function signWithAddress(
   rpcRequest: SignWithAddressRpcRequest,
@@ -41,16 +53,21 @@ export async function signWithAddress(
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
 ) {
-  const { message, addressIndex, network } = rpcRequest.params;
+  const parseResult = signWithAddressSchema.safeParse(rpcRequest);
+  
+  if (!parseResult.success) {
+    throw new InvalidParamsError(parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
+  }
 
-  validateNetwork(wallet, network);
+  const { params } = parseResult.data;
+  validateNetwork(wallet, params.network);
 
-  const base58: string = await wallet.getAddressAtIndex(addressIndex);
-  const addressPath: string = await wallet.getAddressPathForIndex(addressIndex);
+  const base58: string = await wallet.getAddressAtIndex(params.addressIndex);
+  const addressPath: string = await wallet.getAddressPathForIndex(params.addressIndex);
 
   const address: AddressInfoObject = {
     address: base58,
-    index: addressIndex,
+    index: params.addressIndex,
     addressPath,
     info: undefined, // The type must be updated in the lib to make this optional
   };
@@ -60,7 +77,7 @@ export async function signWithAddress(
     method: rpcRequest.method,
     data: {
       address,
-      message: rpcRequest.params.message,
+      message: params.message,
     }
   };
 
@@ -82,15 +99,15 @@ export async function signWithAddress(
   }
 
   const signature = await wallet.signMessageWithAddress(
-    message,
-    addressIndex,
+    params.message,
+    params.addressIndex,
     pinResponse.data.pinCode,
   );
 
   return {
     type: RpcResponseTypes.SendWithAddressResponse,
     response: {
-      message,
+      message: params.message,
       signature,
       address,
     }

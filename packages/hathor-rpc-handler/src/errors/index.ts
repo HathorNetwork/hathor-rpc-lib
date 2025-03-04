@@ -20,3 +20,24 @@ export class DifferentNetworkError extends Error {};
 export class NoUtxosAvailableError extends Error {};
 
 export class SignMessageError extends Error {};
+
+export class InvalidParamsError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'InvalidParamsError';
+  }
+}
+
+export class MissingParamError extends Error {
+  constructor(paramName: string) {
+    super(`Missing required parameter: ${paramName}`);
+    this.name = 'MissingParamError';
+  }
+}
+
+export class InvalidParamTypeError extends Error {
+  constructor(paramName: string, expectedType: string) {
+    super(`Invalid parameter type for ${paramName}. Expected ${expectedType}`);
+    this.name = 'InvalidParamTypeError';
+  }
+}

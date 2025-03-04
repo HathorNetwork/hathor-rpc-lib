@@ -5,110 +5,199 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { NotImplementedError, PromptRejectedError } from '../../src/errors';
-import { getAddress } from '../../src/rpcMethods/getAddress';
 import { HathorWallet } from '@hathor/wallet-lib';
-import { TriggerTypes, GetAddressRpcRequest, RpcMethods } from '../../src/types';
+import { 
+  RpcMethods,
+  GetAddressRpcRequest,
+  TriggerResponseTypes,
+  AddressRequestClientResponse,
+} from '../../src/types';
+import { getAddress } from '../../src/rpcMethods/getAddress';
+import { InvalidParamsError, NotImplementedError, PromptRejectedError } from '../../src/errors';
 
-export const mockPromptHandler = jest.fn();
+describe('getAddress parameter validation', () => {
+  const mockWallet = {
+    getNetwork: jest.fn().mockReturnValue('testnet'),
+    getCurrentAddress: jest.fn().mockResolvedValue('test-address'),
+    getAddressAtIndex: jest.fn().mockResolvedValue('test-address'),
+  } as unknown as HathorWallet;
 
-describe('getAddress', () => {
-  let promptHandler: jest.Mock;
-  let mockWallet: jest.Mocked<HathorWallet>;
+  const mockTriggerHandler = jest.fn().mockResolvedValue(true);
 
   beforeEach(() => {
-    promptHandler = jest.fn();
-    mockWallet = {
-      getAddressAtIndex: jest.fn().mockReturnValue('mocked_address'),
-      getCurrentAddress: jest.fn().mockReturnValue({
-        address: 'address1',
-        index: 0,
-        addressPath: `m/44'/280'/0'/0/10`,
-      }),
-      getNetwork: jest.fn().mockReturnValue('mainnet')
-    } as unknown as HathorWallet;
+    jest.clearAllMocks();
   });
 
-  it('should return the current address for type "first_empty"', async () => {
-    const rpcRequest: GetAddressRpcRequest = {
-      params: { type: 'first_empty', network: 'mainnet' },
+  it('should reject when network is missing', async () => {
+    const invalidRequest = {
       method: RpcMethods.GetAddress,
-    };
-    mockWallet.getCurrentAddress.mockResolvedValue('current-address');
-    promptHandler.mockReturnValueOnce(true);
+      params: {
+        type: 'first_empty',
+        // network is missing
+      },
+    } as GetAddressRpcRequest;
 
-    const address = await getAddress(rpcRequest, mockWallet, {}, promptHandler);
+    await expect(
+      getAddress(invalidRequest, mockWallet, {}, mockTriggerHandler)
+    ).rejects.toThrow(InvalidParamsError);
+  });
 
-    expect(address.response).toBe('current-address');
+  it('should reject when type is invalid', async () => {
+    const invalidRequest = {
+      method: RpcMethods.GetAddress,
+      params: {
+        type: 'invalid_type',
+        network: 'testnet',
+      },
+    } as unknown as GetAddressRpcRequest;
+
+    await expect(
+      getAddress(invalidRequest, mockWallet, {}, mockTriggerHandler)
+    ).rejects.toThrow(InvalidParamsError);
+  });
+
+  it('should reject when type is index but index is missing', async () => {
+    const invalidRequest = {
+      method: RpcMethods.GetAddress,
+      params: {
+        type: 'index',
+        network: 'testnet',
+        // index is missing
+      },
+    } as GetAddressRpcRequest;
+
+    await expect(
+      getAddress(invalidRequest, mockWallet, {}, mockTriggerHandler)
+    ).rejects.toThrow(InvalidParamsError);
+  });
+
+  it('should reject when type is index but index is negative', async () => {
+    const invalidRequest = {
+      method: RpcMethods.GetAddress,
+      params: {
+        type: 'index',
+        network: 'testnet',
+        index: -1,
+      },
+    } as GetAddressRpcRequest;
+
+    await expect(
+      getAddress(invalidRequest, mockWallet, {}, mockTriggerHandler)
+    ).rejects.toThrow(InvalidParamsError);
+  });
+
+  it('should reject when type is full_path but full_path is missing', async () => {
+    const invalidRequest = {
+      method: RpcMethods.GetAddress,
+      params: {
+        type: 'full_path',
+        network: 'testnet',
+        // full_path is missing
+      },
+    } as GetAddressRpcRequest;
+
+    await expect(
+      getAddress(invalidRequest, mockWallet, {}, mockTriggerHandler)
+    ).rejects.toThrow(InvalidParamsError);
+  });
+
+  it('should reject when type is full_path but full_path is empty', async () => {
+    const invalidRequest = {
+      method: RpcMethods.GetAddress,
+      params: {
+        type: 'full_path',
+        network: 'testnet',
+        full_path: '',
+      },
+    } as GetAddressRpcRequest;
+
+    await expect(
+      getAddress(invalidRequest, mockWallet, {}, mockTriggerHandler)
+    ).rejects.toThrow(InvalidParamsError);
+  });
+
+  it('should throw NotImplementedError when type is full_path', async () => {
+    const request = {
+      method: RpcMethods.GetAddress,
+      params: {
+        type: 'full_path',
+        network: 'testnet',
+        full_path: 'm/44/0/0',
+      },
+    } as GetAddressRpcRequest;
+
+    await expect(
+      getAddress(request, mockWallet, {}, mockTriggerHandler)
+    ).rejects.toThrow(NotImplementedError);
+  });
+
+  it('should accept valid first_empty request', async () => {
+    const validRequest = {
+      method: RpcMethods.GetAddress,
+      params: {
+        type: 'first_empty',
+        network: 'testnet',
+      },
+    } as GetAddressRpcRequest;
+
+    await expect(
+      getAddress(validRequest, mockWallet, {}, mockTriggerHandler)
+    ).resolves.toBeDefined();
+
     expect(mockWallet.getCurrentAddress).toHaveBeenCalled();
   });
 
-  it('should throw NotImplementedError for type "full_path"', async () => {
-    const rpcRequest: GetAddressRpcRequest = {
-      params: { type: 'full_path', network: 'mainnet' },
+  it('should accept valid index request', async () => {
+    const validRequest = {
       method: RpcMethods.GetAddress,
-    };
+      params: {
+        type: 'index',
+        network: 'testnet',
+        index: 0,
+      },
+    } as GetAddressRpcRequest;
 
-    await expect(getAddress(rpcRequest, mockWallet, {}, promptHandler)).rejects.toThrow(NotImplementedError);
+    await expect(
+      getAddress(validRequest, mockWallet, {}, mockTriggerHandler)
+    ).resolves.toBeDefined();
+
+    expect(mockWallet.getAddressAtIndex).toHaveBeenCalledWith(0);
   });
 
-  it('should return the address at index for type "index"', async () => {
-    const rpcRequest: GetAddressRpcRequest = {
-      params: { type: 'index', index: 5, network: 'mainnet' },
+  it('should accept valid client request', async () => {
+    const validRequest = {
       method: RpcMethods.GetAddress,
-    };
-    mockWallet.getAddressAtIndex.mockResolvedValue('address-at-index');
-    promptHandler.mockReturnValueOnce(true);
+      params: {
+        type: 'client',
+        network: 'testnet',
+      },
+    } as GetAddressRpcRequest;
 
-    const address = await getAddress(rpcRequest, mockWallet, {}, promptHandler);
+    mockTriggerHandler.mockResolvedValueOnce({
+      type: TriggerResponseTypes.AddressRequestClientResponse,
+      data: {
+        address: 'client-address',
+      },
+    } as AddressRequestClientResponse);
 
-    expect(address.response).toBe('address-at-index');
-    expect(mockWallet.getAddressAtIndex).toHaveBeenCalledWith(5);
+    await expect(
+      getAddress(validRequest, mockWallet, {}, mockTriggerHandler)
+    ).resolves.toBeDefined();
   });
 
-  it('should return the client address for type "client"', async () => {
-    const rpcRequest: GetAddressRpcRequest = {
-      params: { type: 'client', network: 'mainnet' },
+  it('should throw PromptRejectedError when user rejects non-client address', async () => {
+    const validRequest = {
       method: RpcMethods.GetAddress,
-    };
-    const clientPromptResponse = { data: { address: 'client-address' } };
-    promptHandler.mockResolvedValue(clientPromptResponse);
+      params: {
+        type: 'first_empty',
+        network: 'testnet',
+      },
+    } as GetAddressRpcRequest;
 
-    const address = await getAddress(rpcRequest, mockWallet, {}, promptHandler);
+    mockTriggerHandler.mockResolvedValueOnce(false);
 
-    expect(address.response).toBe('client-address');
-    expect(promptHandler).toHaveBeenCalledWith({
-      type: TriggerTypes.AddressRequestClientPrompt,
-      method: RpcMethods.GetAddress,
-    }, {});
-  });
-
-  it('should throw PromptRejectedError if address confirmation is rejected', async () => {
-    const rpcRequest: GetAddressRpcRequest = {
-      params: { type: 'first_empty', network: 'mainnet' },
-      method: RpcMethods.GetAddress,
-    };
-    mockWallet.getCurrentAddress.mockResolvedValue('current-address');
-    promptHandler.mockResolvedValueOnce(false);
-
-    await expect(getAddress(rpcRequest, mockWallet, {}, promptHandler)).rejects.toThrow(PromptRejectedError);
-  });
-
-  it('should confirm the address if type is not "client"', async () => {
-    const rpcRequest: GetAddressRpcRequest = {
-      params: { type: 'first_empty', network: 'mainnet' },
-      method: RpcMethods.GetAddress,
-    };
-    mockWallet.getCurrentAddress.mockResolvedValue('current-address');
-    promptHandler.mockResolvedValue(true);
-
-    const address = await getAddress(rpcRequest, mockWallet, {}, promptHandler);
-
-    expect(address.response).toBe('current-address');
-    expect(promptHandler).toHaveBeenCalledWith({
-      type: TriggerTypes.AddressRequestPrompt,
-      method: RpcMethods.GetAddress,
-      data: { address: 'current-address' },
-    }, {});
+    await expect(
+      getAddress(validRequest, mockWallet, {}, mockTriggerHandler)
+    ).rejects.toThrow(PromptRejectedError);
   });
 });

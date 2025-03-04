@@ -7,7 +7,7 @@ import {
   TriggerResponseTypes,
   RpcResponseTypes,
 } from '../../src/types';
-import { CreateTokenError, PromptRejectedError } from '../../src/errors';
+import { CreateTokenError, PromptRejectedError, InvalidParamsError } from '../../src/errors';
 
 function toCamelCase(params: Pick<CreateTokenRpcRequest, 'params'>['params']) {
   return {
@@ -175,6 +175,87 @@ describe('createToken', () => {
     await expect(createToken(rpcRequest, wallet, {}, triggerHandler)).rejects.toThrow(Error);
 
     expect(wallet.isAddressMine).toHaveBeenCalledWith('changeAddress123');
+  });
+
+  describe('parameter validation', () => {
+    beforeEach(() => {
+      (wallet.isAddressMine as jest.Mock).mockResolvedValue(true);
+      triggerHandler.mockResolvedValue({
+        type: TriggerResponseTypes.CreateTokenConfirmationResponse,
+        data: { accepted: true },
+      });
+    });
+
+    it('should reject when required parameters are missing', async () => {
+      const invalidRequest = {
+        method: RpcMethods.CreateToken,
+        params: {
+          symbol: 'MTK',
+          amount: 1000,
+          // name is missing
+        },
+      } as CreateTokenRpcRequest;
+
+      await expect(createToken(invalidRequest, wallet, {}, triggerHandler))
+        .rejects.toThrow(InvalidParamsError);
+    });
+
+    it('should reject when amount is not positive', async () => {
+      const invalidRequest = {
+        method: RpcMethods.CreateToken,
+        params: {
+          name: 'My Token',
+          symbol: 'MTK',
+          amount: 0,
+        },
+      } as CreateTokenRpcRequest;
+
+      await expect(createToken(invalidRequest, wallet, {}, triggerHandler))
+        .rejects.toThrow(InvalidParamsError);
+    });
+
+    it('should reject when parameters have wrong types', async () => {
+      const invalidRequest = {
+        method: RpcMethods.CreateToken,
+        params: {
+          name: 'My Token',
+          symbol: 'MTK',
+          amount: '1000' as unknown as number,
+        },
+      } as CreateTokenRpcRequest;
+
+      await expect(createToken(invalidRequest, wallet, {}, triggerHandler))
+        .rejects.toThrow(InvalidParamsError);
+    });
+
+    it('should reject when optional parameters have wrong types', async () => {
+      const invalidRequest = {
+        method: RpcMethods.CreateToken,
+        params: {
+          name: 'My Token',
+          symbol: 'MTK',
+          amount: 1000,
+          create_mint: 'yes' as unknown as boolean,
+        },
+      } as CreateTokenRpcRequest;
+
+      await expect(createToken(invalidRequest, wallet, {}, triggerHandler))
+        .rejects.toThrow(InvalidParamsError);
+    });
+
+    it('should reject when name or symbol are empty strings', async () => {
+      const invalidRequest = {
+        method: RpcMethods.CreateToken,
+        params: {
+          name: '',
+          symbol: 'MTK',
+          amount: 1000,
+        },
+      } as CreateTokenRpcRequest;
+
+      await expect(createToken(invalidRequest, wallet, {}, triggerHandler))
+        .rejects.toThrow(InvalidParamsError);
+    });
   });
 });
 
