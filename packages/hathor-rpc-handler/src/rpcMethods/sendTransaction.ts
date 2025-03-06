@@ -100,11 +100,17 @@ export async function sendTransaction(
     return typedOutput;
   });
 
+  // sendManyOutputsSendTransaction throws if it doesn't receive a pin,
+  // but doesn't use it until prepareTxData is called, so we can just assign
+  // an arbitrary value to it and then mutate the instance after we get the
+  // actual pin from the pin prompt.
+  const stubPinCode = '111111';
+
   // Create the transaction service but don't run it yet
   const sendTransaction = await wallet.sendManyOutputsSendTransaction(sendTransactionOutputs, {
     inputs: params.inputs || [],
     changeAddress: params.changeAddress,
-    pinCode: '111111',
+    pinCode: stubPinCode,
   });
 
   // Prepare the transaction to get all inputs (including automatically selected ones)
@@ -148,6 +154,7 @@ export async function sendTransaction(
     method: rpcRequest.method,
   };
 
+  // Actually request the pin from the client
   const pinResponse = await promptHandler(pinPrompt, requestMetadata) as PinRequestResponse;
 
   if (!pinResponse.data.accepted) {
@@ -159,6 +166,7 @@ export async function sendTransaction(
   };
   promptHandler(loadingTrigger, requestMetadata);
 
+  // And then mutate the instance
   sendTransaction.pin = pinResponse.data.pinCode;
 
   try {
