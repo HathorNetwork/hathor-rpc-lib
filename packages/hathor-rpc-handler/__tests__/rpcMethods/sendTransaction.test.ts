@@ -122,6 +122,41 @@ describe('sendTransaction', () => {
     }, {});
   });
 
+  it('should handle data outputs correctly', async () => {
+    rpcRequest.params.outputs = [{
+      type: 'data',
+      value: '100',
+      data: ['test data'],
+    }];
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.SendTransactionConfirmationResponse,
+        data: { accepted: true },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: { accepted: true, pinCode: '1234' },
+      });
+
+    sendTransactionMock.mockResolvedValue({ hash: 'txHash123' });
+
+    await sendTransaction(rpcRequest, wallet, {}, promptHandler);
+
+    // Verify data output was transformed correctly
+    expect(wallet.sendManyOutputsSendTransaction).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: 'data',
+          value: BigInt(1),
+          token: '00',
+          data: ['test data'],
+        }),
+      ]),
+      expect.any(Object),
+    );
+  });
+
   it('should throw InvalidParamsError for invalid request parameters', async () => {
     // Invalid request with missing required fields
     const invalidRequest = {

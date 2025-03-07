@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import type { HathorWallet } from '@hathor/wallet-lib';
+import { constants, type HathorWallet } from '@hathor/wallet-lib';
 import {
   TriggerTypes,
   PinConfirmationPrompt,
@@ -96,6 +96,18 @@ export async function sendTransaction(
   const { params } = validationResult.data;
   validateNetwork(wallet, params.network);
 
+  // Transform outputs before sending to wallet-lib
+  const transformedOutputs = params.outputs.map(output => {
+    const result = { ...output };
+    
+    if (result.type === 'data' || (result.data && result.data.length > 0)) {
+      result.value = BigInt(1);
+      result.token = constants.NATIVE_TOKEN_UID;
+    }
+    
+    return result;
+  });
+
   // sendManyOutputsSendTransaction throws if it doesn't receive a pin,
   // but doesn't use it until prepareTxData is called, so we can just assign
   // an arbitrary value to it and then mutate the instance after we get the
@@ -103,7 +115,7 @@ export async function sendTransaction(
   const stubPinCode = '111111';
 
   // Create the transaction service but don't run it yet
-  const sendTransaction = await wallet.sendManyOutputsSendTransaction(params.outputs, {
+  const sendTransaction = await wallet.sendManyOutputsSendTransaction(transformedOutputs, {
     inputs: params.inputs || [],
     changeAddress: params.changeAddress,
     pinCode: stubPinCode,
