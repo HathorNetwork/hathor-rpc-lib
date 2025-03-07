@@ -7,7 +7,6 @@
 
 import { z } from 'zod';
 import type { HathorWallet } from '@hathor/wallet-lib';
-import type { OutputSendTransaction } from '@hathor/wallet-lib/lib/wallet/types';
 import {
   TriggerTypes,
   PinConfirmationPrompt,
@@ -37,10 +36,26 @@ const sendTransactionSchema = z.object({
     network: z.string().min(1),
     outputs: z.array(z.object({
       address: z.string().optional(),
-      value: z.string().transform(val => BigInt(val)),
+      value: z.string().transform(val => BigInt(val)).optional(),
       token: z.string().optional(),
       type: z.string().optional(),
       data: z.array(z.string()).optional(),
+    })
+    .transform(output => {
+      // If data is present, automatically set type to 'data'
+      if (output.data && output.data.length > 0 && !output.type) {
+        output.type = 'data';
+      }
+      return output;
+    })
+    .refine((output) => {
+      // If data is undefined, value must be defined
+      if (output.data === undefined && output.value === undefined) {
+        return false;
+      }
+      return true;
+    }, {
+      message: "Value is required when data is not provided"
     })).min(1),
     inputs: z.array(z.object({
       txId: z.string(),
@@ -81,25 +96,6 @@ export async function sendTransaction(
   const { params } = validationResult.data;
   validateNetwork(wallet, params.network);
 
-  // Prepare the transaction outputs
-  const sendTransactionOutputs = params.outputs.map(output => {
-    const outputData = {
-      address: output.address,
-      value: output.value,
-      token: output.token,
-      type: output.type,
-      data: output.data,
-    };
-    const typedOutput = outputData as unknown as OutputSendTransaction;
-
-    if (typedOutput.type === 'data') {
-      (typedOutput as unknown as { value: bigint }).value = BigInt(1);
-      typedOutput.token = '00';
-    }
-
-    return typedOutput;
-  });
-
   // sendManyOutputsSendTransaction throws if it doesn't receive a pin,
   // but doesn't use it until prepareTxData is called, so we can just assign
   // an arbitrary value to it and then mutate the instance after we get the
@@ -107,7 +103,7 @@ export async function sendTransaction(
   const stubPinCode = '111111';
 
   // Create the transaction service but don't run it yet
-  const sendTransaction = await wallet.sendManyOutputsSendTransaction(sendTransactionOutputs, {
+  const sendTransaction = await wallet.sendManyOutputsSendTransaction(params.outputs, {
     inputs: params.inputs || [],
     changeAddress: params.changeAddress,
     pinCode: stubPinCode,
