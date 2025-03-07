@@ -6,3 +6,4 @@ export * from './signWithAddress';
 export * from './getConnectedNetwork';
 export * from './signOracleData';
 export * from './createToken';
+export * from './sendTransaction';

@@ -18,7 +18,8 @@ export enum RpcResponseTypes {
   GetConnectedNetworkResponse,
   GetUtxosResponse,
   CreateTokenResponse,
-  SignOracleDataResponse
+  SignOracleDataResponse,
+  SendTransactionResponse,
 }
 
 export interface BaseRpcResponse {
@@ -76,6 +77,11 @@ export interface GetUtxosResponse extends BaseRpcResponse {
   response: UtxoDetails[];
 }
 
+export interface SendTransactionResponse extends BaseRpcResponse {
+  type: RpcResponseTypes.SendTransactionResponse;
+  response: SendTransaction;
+}
+
 export type RpcResponse = GetAddressResponse
   | SendNanoContractTxResponse
   | SignWithAddressResponse
@@ -83,4 +89,5 @@ export type RpcResponse = GetAddressResponse
   | GetConnectedNetworkResponse
   | CreateTokenResponse
   | SignOracleDataResponse
-  | GetUtxosResponse;
+  | GetUtxosResponse
+  | SendTransactionResponse;

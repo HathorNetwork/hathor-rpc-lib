@@ -18,6 +18,7 @@ export enum RpcMethods {
   GetOperationStatus = 'htr_getOperationStatus',
   SendNanoContractTx = 'htr_sendNanoContractTx',
   SignOracleData = 'htr_signOracleData',
+  SendTransaction = 'htr_sendTransaction',
 }
 
 export interface CreateTokenRpcRequest {
@@ -104,6 +105,25 @@ export interface SendNanoContractRpcRequest {
   }
 }
 
+export interface SendTransactionRpcRequest {
+  method: RpcMethods.SendTransaction,
+  params: {
+    network: string;
+    outputs: Array<{
+      address?: string;
+      value: string | number | bigint;
+      token?: string;
+      type?: string;
+      data?: string[];
+    }>;
+    inputs?: Array<{
+      txId: string;
+      index: number;
+    }>;
+    changeAddress?: string;
+  }
+}
+
 export type RequestMetadata = {
   [key: string]: string,
 };
@@ -124,5 +144,6 @@ export type RpcRequest = GetAddressRpcRequest
   | SendNanoContractRpcRequest
   | GetConnectedNetworkRpcRequest
   | GenericRpcRequest
-  | SignOracleDataRpcRequest;
+  | SignOracleDataRpcRequest
+  | SendTransactionRpcRequest;
 
