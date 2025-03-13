@@ -27,6 +27,7 @@ import {
   InvalidParamsError,
   SendTransactionError,
   InsufficientFundsError,
+  PrepareSendTransactionError,
 } from '../errors';
 import { validateNetwork } from '../helpers';
 
@@ -131,7 +132,7 @@ export async function sendTransaction(
         throw new InsufficientFundsError(err.message);
       }
     }
-    throw new SendTransactionError(err instanceof Error ? err.message : 'An unknown error occurred while preparing the transaction');
+    throw new PrepareSendTransactionError(err instanceof Error ? err.message : 'An unknown error occurred while preparing the transaction');
   }
 
   // Show the complete transaction (with all inputs) to the user
