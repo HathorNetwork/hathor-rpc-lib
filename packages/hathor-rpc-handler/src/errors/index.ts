@@ -49,6 +49,13 @@ export class InvalidParamTypeError extends Error {
   }
 }
 
+export class PrepareSendTransactionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'PrepareSendTransactionError';
+  }
+}
+
 export class SendTransactionError extends Error {
   constructor(message: string) {
     super(message);
