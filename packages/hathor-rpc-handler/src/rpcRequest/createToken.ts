@@ -12,7 +12,7 @@ export function createTokenRpcRequest(
   network: string,
   name: string,
   symbol: string,
-  amount: number,
+  amount: string,
   address?: string,
   createMint: boolean = true,
   createMelt: boolean = true,

@@ -26,7 +26,7 @@ import { z } from 'zod';
 const createTokenSchema = z.object({
   name: z.string().min(1),
   symbol: z.string().min(1),
-  amount: z.number().positive(),
+  amount: z.string().transform(val => BigInt(val)),
   address: z.string().nullish().default(null),
   change_address: z.string().nullish().default(null),
   create_mint: z.boolean().default(true),
