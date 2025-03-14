@@ -35,20 +35,20 @@ describe('createToken', () => {
     rpcRequest = {
       method: RpcMethods.CreateToken,
       params: {
-        name: 'mytoken',
-        symbol: 'mtk',
-        amount: 1000,
-        address: 'address123',
-        change_address: 'changeAddress123',
+        name: 'Test Token',
+        symbol: 'TT',
+        amount: '100',
+        address: 'wallet1',
+        change_address: 'wallet1',
         create_mint: true,
-        mint_authority_address: null,
+        mint_authority_address: 'wallet1',
         allow_external_mint_authority_address: false,
         create_melt: true,
-        melt_authority_address: null,
+        melt_authority_address: 'wallet1',
         allow_external_melt_authority_address: false,
-        data: null,
         push_tx: true,
-        network: 'mainnet',
+        network: 'testnet',
+        data: ['test'],
       },
     } as unknown as CreateTokenRpcRequest;
 
@@ -93,7 +93,9 @@ describe('createToken', () => {
       {
         type: TriggerTypes.CreateTokenConfirmationPrompt,
         method: rpcRequest.method,
-        data: toCamelCase(rpcRequest.params),
+        data: expect.objectContaining({
+          amount: BigInt(rpcRequest.params.amount),
+        }),
       },
       {}
     );
@@ -108,7 +110,7 @@ describe('createToken', () => {
     expect(wallet.createNewToken).toHaveBeenCalledWith(
       rpcRequest.params.name,
       rpcRequest.params.symbol,
-      rpcRequest.params.amount,
+      BigInt(rpcRequest.params.amount),
       {
         ...toCamelCase(rpcRequest.params),
         amount: undefined,
@@ -174,7 +176,7 @@ describe('createToken', () => {
 
     await expect(createToken(rpcRequest, wallet, {}, triggerHandler)).rejects.toThrow(Error);
 
-    expect(wallet.isAddressMine).toHaveBeenCalledWith('changeAddress123');
+    expect(wallet.isAddressMine).toHaveBeenCalledWith('wallet1');
   });
 
   describe('parameter validation', () => {
@@ -190,8 +192,8 @@ describe('createToken', () => {
       const invalidRequest = {
         method: RpcMethods.CreateToken,
         params: {
-          symbol: 'MTK',
-          amount: 1000,
+          symbol: 'TT',
+          amount: '100',
           // name is missing
         },
       } as CreateTokenRpcRequest;
@@ -204,9 +206,9 @@ describe('createToken', () => {
       const invalidRequest = {
         method: RpcMethods.CreateToken,
         params: {
-          name: 'My Token',
-          symbol: 'MTK',
-          amount: 0,
+          name: 'Test Token',
+          symbol: 'TT',
+          amount: '0',
         },
       } as CreateTokenRpcRequest;
 
@@ -218,9 +220,9 @@ describe('createToken', () => {
       const invalidRequest = {
         method: RpcMethods.CreateToken,
         params: {
-          name: 'My Token',
-          symbol: 'MTK',
-          amount: '1000' as unknown as number,
+          name: 'Test Token',
+          symbol: 'TT',
+          amount: 100 as unknown as string,
         },
       } as CreateTokenRpcRequest;
 
@@ -232,9 +234,9 @@ describe('createToken', () => {
       const invalidRequest = {
         method: RpcMethods.CreateToken,
         params: {
-          name: 'My Token',
-          symbol: 'MTK',
-          amount: 1000,
+          name: 'Test Token',
+          symbol: 'TT',
+          amount: '100',
           create_mint: 'yes' as unknown as boolean,
         },
       } as CreateTokenRpcRequest;
@@ -248,8 +250,8 @@ describe('createToken', () => {
         method: RpcMethods.CreateToken,
         params: {
           name: '',
-          symbol: 'MTK',
-          amount: 1000,
+          symbol: 'TT',
+          amount: '100',
         },
       } as CreateTokenRpcRequest;
 

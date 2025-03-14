@@ -26,7 +26,7 @@ export interface CreateTokenRpcRequest {
   params: {
     name: string;
     symbol: string;
-    amount: number;
+    amount: string;
     address?: string;
     change_address?: string;
     create_mint: boolean;
