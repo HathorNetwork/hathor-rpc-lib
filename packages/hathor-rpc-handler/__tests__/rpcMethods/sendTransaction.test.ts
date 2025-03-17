@@ -20,6 +20,7 @@ import {
   SendTransactionError,
   InsufficientFundsError,
   DifferentNetworkError,
+  PrepareSendTransactionError,
 } from '../../src/errors';
 
 describe('sendTransaction', () => {
@@ -220,15 +221,15 @@ describe('sendTransaction', () => {
   });
 
   it('should throw SendTransactionError when transaction preparation fails', async () => {
-    wallet.sendManyOutputsSendTransaction.mockResolvedValue({
-      prepareTxData: jest.fn().mockRejectedValue(
-        new Error('Failed to prepare transaction')
-      ),
+    (wallet.sendManyOutputsSendTransaction as jest.Mock).mockImplementation(() => {
+      return {
+        prepareTxData: jest.fn().mockRejectedValue(new Error('Failed to prepare transaction')),
+      };
     });
 
     await expect(sendTransaction(rpcRequest, wallet, {}, promptHandler))
       .rejects
-      .toThrow(SendTransactionError);
+      .toThrow(PrepareSendTransactionError);
 
     expect(promptHandler).not.toHaveBeenCalled();
   });

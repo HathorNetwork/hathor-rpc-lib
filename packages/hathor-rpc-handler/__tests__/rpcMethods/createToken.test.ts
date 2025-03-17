@@ -139,7 +139,11 @@ describe('createToken', () => {
       {
         type: TriggerTypes.CreateTokenConfirmationPrompt,
         method: rpcRequest.method,
-        data: toCamelCase(rpcRequest.params),
+        data: expect.objectContaining({
+          amount: BigInt(rpcRequest.params.amount),
+          name: rpcRequest.params.name,
+          symbol: rpcRequest.params.symbol,
+        }),
       },
       {}
     );
