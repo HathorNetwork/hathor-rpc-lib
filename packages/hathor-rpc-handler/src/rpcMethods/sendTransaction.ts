@@ -37,7 +37,9 @@ const sendTransactionSchema = z.object({
     network: z.string().min(1),
     outputs: z.array(z.object({
       address: z.string().optional(),
-      value: z.string().transform(val => BigInt(val)).optional(),
+      value: z.string().regex(/^\d+$/)
+        .pipe(z.coerce.bigint())
+        .optional(),
       token: z.string().optional(),
       type: z.string().optional(),
       data: z.array(z.string()).optional(),

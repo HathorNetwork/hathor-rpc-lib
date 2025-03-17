@@ -26,16 +26,8 @@ import { z } from 'zod';
 const createTokenSchema = z.object({
   name: z.string().min(1),
   symbol: z.string().min(1),
-  amount: z.string().refine(val => {
-    try {
-      const bigIntVal = BigInt(val);
-      return bigIntVal > BigInt(0);
-    } catch (e) {
-      return false;
-    }
-  }, {
-    message: "Amount must be a valid positive number string"
-  }).transform(val => BigInt(val)),
+  amount: z.string().regex(/^\d+$/)
+    .pipe(z.coerce.bigint().positive()),
   address: z.string().nullish().default(null),
   change_address: z.string().nullish().default(null),
   create_mint: z.boolean().default(true),

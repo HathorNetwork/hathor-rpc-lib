@@ -32,22 +32,12 @@ const sendNanoContractSchema = z.object({
   method: z.string().min(1),
   blueprint_id: z.string().nullish(),
   nc_id: z.string().nullish(),
-  actions: z.array(z.custom<NanoContractActionWithStringAmount>()
-    .refine(action => {
-      try {
-        // Check if amount is a valid number string that can be converted to BigInt
-        const bigIntVal = BigInt(action.amount);
-        return bigIntVal >= BigInt(0); // Ensure non-negative value
-      } catch (e) {
-        return false;
-      }
-    }, {
-      message: "Amount must be a valid non-negative number string"
-    })
-  ).transform(actions => 
-    actions.map(action => ({
+  actions: z.array(
+    z.custom<NanoContractActionWithStringAmount>().transform(action => ({
       ...action,
-      amount: BigInt(action.amount)
+      amount: z.string().regex(/^\d+$/)
+        .pipe(z.coerce.bigint().nonnegative())
+        .parse(action.amount)
     }))
   ),
   args: z.array(z.unknown()).default([]),
