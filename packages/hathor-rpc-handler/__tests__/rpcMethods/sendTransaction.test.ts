@@ -265,4 +265,4 @@ describe('sendTransaction', () => {
 
     expect(promptHandler).not.toHaveBeenCalled();
   });
-}); 
+});
