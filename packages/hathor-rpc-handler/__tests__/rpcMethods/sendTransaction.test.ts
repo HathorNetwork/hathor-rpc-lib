@@ -61,6 +61,11 @@ describe('sendTransaction', () => {
             address: 'testAddress',
             token: '00',
           }],
+          outputs: [{
+            address: 'testAddress',
+            value: BigInt(100),
+            token: '00',
+          }],
         }),
         run: sendTransactionMock,
       }),
@@ -151,11 +156,124 @@ describe('sendTransaction', () => {
           type: 'data',
           value: BigInt(1),
           token: '00',
-          data: ['test data'],
+          data: 'test data',
         }),
       ]),
       expect.any(Object),
     );
+  });
+
+  it('should split multiple data items into separate outputs', async () => {
+    rpcRequest.params.outputs = [{
+      type: 'data',
+      value: '100',
+      data: ['data item 1', 'data item 2', 'data item 3'],
+    }];
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.SendTransactionConfirmationResponse,
+        data: { accepted: true },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: { accepted: true, pinCode: '1234' },
+      });
+
+    sendTransactionMock.mockResolvedValue({ hash: 'txHash123' });
+
+    await sendTransaction(rpcRequest, wallet, {}, promptHandler);
+
+    // Verify each data item was transformed into a separate output
+    expect(wallet.sendManyOutputsSendTransaction).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: 'data',
+          value: BigInt(1),
+          token: '00',
+          data: 'data item 1',
+        }),
+        expect.objectContaining({
+          type: 'data',
+          value: BigInt(1),
+          token: '00',
+          data: 'data item 2',
+        }),
+        expect.objectContaining({
+          type: 'data',
+          value: BigInt(1),
+          token: '00',
+          data: 'data item 3',
+        }),
+      ]),
+      expect.any(Object),
+    );
+  });
+
+  it('should handle mix of data and regular outputs correctly', async () => {
+    rpcRequest.params.outputs = [
+      {
+        address: 'testAddress1',
+        value: '100',
+        token: '00',
+      },
+      {
+        type: 'data',
+        data: ['data item 1', 'data item 2'],
+        value: '1',
+      },
+      {
+        address: 'testAddress2',
+        value: '200',
+        token: '00',
+      }
+    ];
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.SendTransactionConfirmationResponse,
+        data: { accepted: true },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: { accepted: true, pinCode: '1234' },
+      });
+
+    sendTransactionMock.mockResolvedValue({ hash: 'txHash123' });
+
+    await sendTransaction(rpcRequest, wallet, {}, promptHandler);
+
+    // Verify the transformation preserves regular outputs and splits data outputs
+    expect(wallet.sendManyOutputsSendTransaction).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          address: 'testAddress1',
+          value: BigInt(100),
+          token: '00',
+        }),
+        expect.objectContaining({
+          type: 'data',
+          value: BigInt(1),
+          token: '00',
+          data: 'data item 1',
+        }),
+        expect.objectContaining({
+          type: 'data',
+          value: BigInt(1),
+          token: '00',
+          data: 'data item 2',
+        }),
+        expect.objectContaining({
+          address: 'testAddress2',
+          value: BigInt(200),
+          token: '00',
+        }),
+      ]),
+      expect.any(Object),
+    );
+    
+    // Verify the array length matches the expected number of outputs (2 regular + 2 data outputs)
+    expect(wallet.sendManyOutputsSendTransaction.mock.calls[0][0]).toHaveLength(4);
   });
 
   it('should throw InvalidParamsError for invalid request parameters', async () => {
