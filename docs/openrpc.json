@@ -312,7 +312,7 @@
         {
           "name": "nc_id",
           "summary": "Id of contract being called",
-          "description": "Should be used for any method different than initialize, to execute a contract. Should not be used with method initialize."
+          "description": "Should be used for any method different than initialize, to execute a contract. Should not be used with method initialize.",
           "schema": {
             "description": "32 bytes encoded in hexadecimal.",
             "type": "string",
@@ -353,11 +353,11 @@
           "type": "object",
           "oneOf": [
             {
-              "description": "If push_tx parameter was false, wallet application returns transaction encoded in hexadecimal, ready to be pushed by any one."
+              "description": "If push_tx parameter was false, wallet application returns transaction encoded in hexadecimal, ready to be pushed by any one.",
               "$ref": "#/components/schemas/TransactionHex"
             },
             {
-              "description": "If push_tx parameter was true, wallet application returns the transaction already registered in the blockchain."
+              "description": "If push_tx parameter was true, wallet application returns the transaction already registered in the blockchain.",
               "$ref": "#/components/schemas/NanoContract"
             }
           ]
@@ -404,9 +404,7 @@
         {
           "name": "amount",
           "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/OutputValueType"
-          }
+          "type": "string"
         },
         {
           "name": "address",
@@ -486,11 +484,11 @@
           "type": "object",
           "oneOf": [
             {
-              "description": "If push_tx parameter was false, wallet application returns transaction encoded in hexadecimal, ready to be pushed by any one."
+              "description": "If push_tx parameter was false, wallet application returns transaction encoded in hexadecimal, ready to be pushed by any one.",
               "$ref": "#/components/schemas/TransactionHex"
             },
             {
-              "description": "If push_tx parameter was true, wallet application returns the transaction already registered in the blockchain."
+              "description": "If push_tx parameter was true, wallet application returns the transaction already registered in the blockchain.",
               "$ref": "#/components/schemas/Transaction"
             }
           ]
@@ -555,6 +553,101 @@
         },
         {
           "$ref": "#/components/errors/PromptRejectedError"
+        }
+      ]
+    },
+    {
+      "name": "htr_sendTransaction",
+      "summary": "Sends a transaction",
+      "description": "Sends tokens to multiple addresses and creates data outputs. This method allows creating transactions with multiple outputs. DApp provides wallet application with output details, and optionally specific inputs to use. Wallet application assembles, signs, and sends the transaction.",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "$ref": "#/components/contentDescriptors/Network"
+        },
+        {
+          "name": "outputs",
+          "summary": "List of transaction outputs to create",
+          "required": true,
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "address": {
+                  "description": "Destination address for the tokens",
+                  "$ref": "#/components/schemas/Address"
+                },
+                "value": {
+                  "description": "Amount of tokens to send",
+                  "type": "string"
+                },
+                "token": {
+                  "description": "Token UID, defaults to HTR if not specified",
+                  "$ref": "#/components/schemas/Token"
+                },
+                "type": {
+                  "description": "Output type, can be 'data' for data outputs",
+                  "type": "string"
+                },
+                "data": {
+                  "description": "Data string for data outputs",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "inputs",
+          "summary": "Optional specific inputs to use in transaction",
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "txId": {
+                  "description": "Transaction ID of the input",
+                  "$ref": "#/components/schemas/TransactionId"
+                },
+                "index": {
+                  "description": "Output index in the transaction",
+                  "type": "number"
+                }
+              },
+              "required": ["txId", "index"]
+            }
+          }
+        },
+        {
+          "name": "changeAddress",
+          "summary": "Address to receive change from the transaction",
+          "schema": {
+            "$ref": "#/components/schemas/Address"
+          }
+        }
+      ],
+      "result": {
+        "name": "SendTransactionResponse",
+        "schema": {
+          "$ref": "#/components/schemas/Transaction"
+        }
+      },
+      "errors": [
+        {
+          "$ref": "#/components/errors/DifferentNetworkError"
+        },
+        {
+          "$ref": "#/components/errors/PromptRejectedError"
+        },
+        {
+          "$ref": "#/components/errors/SendTransactionError"
+        },
+        {
+          "$ref": "#/components/errors/InsufficientFundsError"
+        },
+        {
+          "$ref": "#/components/errors/PrepareSendTransactionError"
         }
       ]
     }
@@ -750,7 +843,7 @@
             "$ref": "#/components/schemas/Token"
           },
           "amount": {
-            "$ref": "#/components/schemas/OutputValueType"
+            "type": "string"
           },
           "address": {
             "description": "When action type is 'withdrawal', address is required and specifies the destination for sending the output. When action type is 'deposit', address is optional and specifies the source from UTXOs.",
@@ -882,7 +975,7 @@
       },
       "Buffer": {
         "type": "string"
-      },
+      }
     },
     "errors":{
       "NotImplementedError": {
@@ -912,6 +1005,18 @@
       "CreateTokenError": {
         "code": -31007,
         "message": "Error creating token"
+      },
+      "SendTransactionError": {
+        "code": -31008,
+        "message": "Error sending transaction"
+      },
+      "InsufficientFundsError": {
+        "code": -31009,
+        "message": "Insufficient funds"
+      },
+      "PrepareSendTransactionError": {
+        "code": -31010,
+        "message": "Error preparing transaction"
       }
     }
   }
