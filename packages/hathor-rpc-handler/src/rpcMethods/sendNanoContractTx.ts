@@ -36,7 +36,7 @@ const sendNanoContractSchema = z.object({
     z.custom<NanoContractActionWithStringAmount>().transform(action => ({
       ...action,
       amount: z.string().regex(/^\d+$/)
-        .pipe(z.coerce.bigint().nonnegative())
+        .pipe(z.coerce.bigint().positive())
         .parse(action.amount)
     }))
   ),

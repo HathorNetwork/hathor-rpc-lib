@@ -315,6 +315,32 @@ describe('sendNanoContractTx', () => {
       type: TriggerTypes.SendNanoContractTxLoadingTrigger,
     }, {});
   });
+
+  it('should reject transactions with zero amount', async () => {
+    // Setup a request with zero amount
+    const zeroAmountAction = {
+      type: 'deposit',
+      address: 'test-address',
+      token: '00',
+      amount: '0',
+    } as NanoContractActionWithStringAmount;
+
+    const requestWithZeroAmount = {
+      ...rpcRequest,
+      params: {
+        ...rpcRequest.params,
+        actions: [zeroAmountAction] as unknown as NanoContractAction[],
+      },
+    } as SendNanoContractRpcRequest;
+
+    // The validation should fail with a specific error
+    await expect(
+      sendNanoContractTx(requestWithZeroAmount, wallet, {}, promptHandler)
+    ).rejects.toThrow(InvalidParamsError);
+
+    // Verify that the promptHandler wasn't called since validation should fail first
+    expect(promptHandler).not.toHaveBeenCalled();
+  });
 });
 
 describe('sendNanoContractTx parameter validation', () => {
