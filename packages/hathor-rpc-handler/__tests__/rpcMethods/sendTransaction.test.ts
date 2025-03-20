@@ -265,4 +265,26 @@ describe('sendTransaction', () => {
 
     expect(promptHandler).not.toHaveBeenCalled();
   });
+
+  it('should reject transactions with zero amount', async () => {
+    const requestWithZeroAmount = {
+      ...rpcRequest,
+      params: {
+        ...rpcRequest.params,
+        outputs: [{
+          address: 'testAddress',
+          value: '0', // Zero amount should be rejected
+          token: '00',
+        }],
+      },
+    };
+
+    // The validation should fail with a specific error
+    await expect(
+      sendTransaction(requestWithZeroAmount, wallet, {}, promptHandler)
+    ).rejects.toThrow(InvalidParamsError);
+
+    // Verify that the promptHandler wasn't called since validation should fail first
+    expect(promptHandler).not.toHaveBeenCalled();
+  });
 });

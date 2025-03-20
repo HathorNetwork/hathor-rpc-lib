@@ -38,7 +38,7 @@ const sendTransactionSchema = z.object({
     outputs: z.array(z.object({
       address: z.string().optional(),
       value: z.string().regex(/^\d+$/)
-        .pipe(z.coerce.bigint())
+        .pipe(z.coerce.bigint().positive())
         .optional(),
       token: z.string().optional(),
       type: z.string().optional(),
