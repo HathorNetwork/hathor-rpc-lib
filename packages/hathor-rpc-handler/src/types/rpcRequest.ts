@@ -114,7 +114,7 @@ export interface SendTransactionRpcRequest {
       value: string | number | bigint;
       token?: string;
       type?: string;
-      data?: string[];
+      data?: string;
     }>;
     inputs?: Array<{
       txId: string;

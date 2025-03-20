@@ -42,7 +42,7 @@ const sendTransactionSchema = z.object({
         .optional(),
       token: z.string().optional(),
       type: z.string().optional(),
-      data: z.array(z.string()).optional(),
+      data: z.string().optional(),
     })
     .transform(output => {
       // If data is present, automatically set type to 'data'
@@ -58,7 +58,7 @@ const sendTransactionSchema = z.object({
       }
       return true;
     }, {
-      message: "Value is required when data is not provided"
+      message: 'Value is required when data is not provided'
     })).min(1),
     inputs: z.array(z.object({
       txId: z.string(),
@@ -105,18 +105,18 @@ export async function sendTransaction(
     value?: bigint;
     token?: string;
     type?: string;
-    data?: string | string[];
+    data?: string;
   }>>((acc, output) => {
     const result = { ...output };
     
-    // Each data should be a data output spending 0.01 HTR
-    if (result.type === 'data' || (result.data && result.data.length > 0)) {
-      return [...acc, ...(result.data ? result.data.map((data) => ({
+    // We should manually set the 0.01 HTR to data output
+    // so it's displayed to the user during confirmation.
+    if (result.type === 'data') {
+      return [...acc, {
         ...output,
         value: 1n,
         token: constants.NATIVE_TOKEN_UID,
-        data,
-      })) : [])];
+      }];
     }
     
     return [...acc, result];
