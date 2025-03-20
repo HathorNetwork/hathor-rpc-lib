@@ -100,16 +100,27 @@ export async function sendTransaction(
   validateNetwork(wallet, params.network);
 
   // Transform outputs before sending to wallet-lib
-  const transformedOutputs = params.outputs.map(output => {
+  const transformedOutputs = params.outputs.reduce<Array<{
+    address?: string;
+    value?: bigint;
+    token?: string;
+    type?: string;
+    data?: string | string[];
+  }>>((acc, output) => {
     const result = { ...output };
     
+    // Each data should be a data output spending 0.01 HTR
     if (result.type === 'data' || (result.data && result.data.length > 0)) {
-      result.value = 1n;
-      result.token = constants.NATIVE_TOKEN_UID;
+      return [...acc, ...(result.data ? result.data.map((data) => ({
+        ...output,
+        value: 1n,
+        token: constants.NATIVE_TOKEN_UID,
+        data,
+      })) : [])];
     }
     
-    return result;
-  });
+    return [...acc, result];
+  }, []);
 
   // sendManyOutputsSendTransaction throws if it doesn't receive a pin,
   // but doesn't use it until prepareTxData is called, so we can just assign
@@ -142,13 +153,7 @@ export async function sendTransaction(
     type: TriggerTypes.SendTransactionConfirmationPrompt,
     method: rpcRequest.method,
     data: {
-      outputs: params.outputs as unknown as Array<{
-        address?: string;
-        value: number;
-        token?: string;
-        type?: string;
-        data?: string[];
-      }>,
+      outputs: preparedTx.outputs,
       inputs: preparedTx.inputs,
       changeAddress: params.changeAddress,
     }
