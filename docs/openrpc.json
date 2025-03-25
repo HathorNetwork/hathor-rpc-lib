@@ -592,10 +592,10 @@
                   "required": ["value", "address"]
                 },
                 {
-                  "description": "Output is a data output. Register arbitrary data on the blockchain."
+                  "description": "Output is a 'data output'. Register arbitrary data on the blockchain."
                   "properties": {
                     "type": {
-                      "description": "Use to mark this output as data output."
+                      "description": "Use to mark this output as a 'data output'."
                       "const": "data"
                     },
                     "data": {
