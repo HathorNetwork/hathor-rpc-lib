@@ -86,7 +86,7 @@
     {
       "name": "htr_getAddress",
       "summary": "Returns an address of the wallet",
-      "description": "Use the param 'type' to define how address should be selected.",
+      "description": "Use parameter 'type' to define how address should be selected.",
       "paramStructure": "by-name",
       "params": [
         {
@@ -131,7 +131,7 @@
           "summary": "Address index in a wallet",
           "description": "Should only be used alongside type 'index'.",
           "schema": {
-            "type": "number"
+            "type": "integer"
           }
         }
       ],
@@ -169,7 +169,7 @@
           "summary": "Limit number of UTXOs to be returned",
           "required": true,
           "schema": {
-            "type": "number"
+            "type": "integer"
           }
         },
         {
@@ -192,28 +192,28 @@
           "name": "authorities",
           "summary": "Selects only UTXOs with specified authority",
           "schema": {
-            "type": "number"
+            "type": "integer"
           }
         },
         {
           "name": "amountSmallerThan",
           "summary": "Selects only UTXOs smaller than specified amount",
           "schema": {
-            "type": "number"
+            "type": "integer"
           }
         },
         {
           "name": "amountBiggerThan",
           "summary": "Selects only UTXOs greater than specified amount",
           "schema": {
-            "type": "number"
+            "type": "integer"
           }
         },
         {
           "name": "maximumAmount",
           "summary": "Limit the maximum total amount to return summing all utxos",
           "schema": {
-            "type": "number"
+            "type": "integer"
           }
         }
       ],
@@ -254,7 +254,7 @@
           "summary": "Address index in a wallet",
           "required": true,
           "schema": {
-            "type": "number"
+            "type": "integer"
           }
         }
       ],
@@ -312,11 +312,9 @@
         {
           "name": "nc_id",
           "summary": "Id of contract being called",
-          "description": "Should be used for any method different than initialize, to execute a contract. Should not be used with method initialize."
+          "description": "Should be used for any method different than initialize, to execute a contract. Should not be used with method initialize.",
           "schema": {
-            "description": "32 bytes encoded in hexadecimal.",
-            "type": "string",
-            "pattern": "^[a-fA-F0-9]{64}$"
+            "$ref": "#/components/schemas/TransactionId"
           }
         },
         {
@@ -353,11 +351,11 @@
           "type": "object",
           "oneOf": [
             {
-              "description": "If push_tx parameter was false, wallet application returns transaction encoded in hexadecimal, ready to be pushed by any one."
+              "description": "If push_tx parameter was false, wallet application returns transaction encoded in hexadecimal, ready to be pushed by any one.",
               "$ref": "#/components/schemas/TransactionHex"
             },
             {
-              "description": "If push_tx parameter was true, wallet application returns the transaction already registered in the blockchain."
+              "description": "If push_tx parameter was true, wallet application returns the transaction already registered in the blockchain.",
               "$ref": "#/components/schemas/NanoContract"
             }
           ]
@@ -404,9 +402,7 @@
         {
           "name": "amount",
           "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/OutputValueType"
-          }
+          "type": "string"
         },
         {
           "name": "address",
@@ -486,11 +482,11 @@
           "type": "object",
           "oneOf": [
             {
-              "description": "If push_tx parameter was false, wallet application returns transaction encoded in hexadecimal, ready to be pushed by any one."
+              "description": "If push_tx parameter was false, wallet application returns transaction encoded in hexadecimal, ready to be pushed by any one.",
               "$ref": "#/components/schemas/TransactionHex"
             },
             {
-              "description": "If push_tx parameter was true, wallet application returns the transaction already registered in the blockchain."
+              "description": "If push_tx parameter was true, wallet application returns the transaction already registered in the blockchain.",
               "$ref": "#/components/schemas/Transaction"
             }
           ]
@@ -511,7 +507,7 @@
     {
       "name": "htr_signOracleData",
       "summary": "Requests oracle to sign data",
-      "description": "Provides an oracle user data to be signed and that a contract requires to work. DApp provides wallet application with data to be signed. Wallet application returns signed data.",
+      "description": "Provides an oracle-user data to be signed and that a contract requires to work. DApp provides wallet application with data to be signed. Wallet application returns signed data.",
       "paramStructure": "by-name",
       "params": [
         {
@@ -557,6 +553,114 @@
           "$ref": "#/components/errors/PromptRejectedError"
         }
       ]
+    },
+    {
+      "name": "htr_sendTransaction",
+      "summary": "Requests user to send transfers and/or record data outputs",
+      "description": "Provides user the details for performing token transfers and/or data registration (via data outputs) on ledger (blockchain). DApp provides wallet application with data that describes a single transaction comprised by token transfers, of multiple tokens, to multiple addresses; and by data outputs. Wallet application assembles and signs transaction, and then pushes it to network.",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "$ref": "#/components/contentDescriptors/Network"
+        },
+        {
+          "name": "outputs",
+          "summary": "Set of token transfers and data outputs of the transaction",
+          "required": true,
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "oneOf": [
+                {
+                  "description": "Output denotes a token transfer."
+                  "properties": {
+                    "value": {
+                      "description": "Amount of tokens to transfer.",
+                      "type": "string"
+                    },
+                    "token": {
+                      "description": "Token to be transferred; if not specified, defaults to HTR.",
+                      "default": "00",
+                      "$ref": "#/components/schemas/Token"
+                    },
+                    "address": {
+                      "description": "Recipient of token transfer.",
+                      "$ref": "#/components/schemas/Address"
+                    },
+                  },
+                  "required": ["value", "address"]
+                },
+                {
+                  "description": "Output is a 'data output'. Register arbitrary data on the blockchain."
+                  "properties": {
+                    "type": {
+                      "description": "Use to mark this output as a 'data output'."
+                      "const": "data"
+                    },
+                    "data": {
+                      "description": "Unit of information or data point to be registered on the ledger (blockchain).",
+                      "type": "string"
+                    },
+                  },
+                  "required": ["data"]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "inputs",
+          "summary": "Optional inputs selection — i.e., UTXOs to be spent.",
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "txId": {
+                  "description": "Transaction hash whose UTXO is being spent.",
+                  "$ref": "#/components/schemas/TransactionId"
+                },
+                "index": {
+                  "description": "Index of outputs array from output being spent.",
+                  "type": "number"
+                }
+              },
+              "required": ["txId", "index"]
+            }
+          }
+        },
+        {
+          "name": "changeAddress",
+          "summary": "Destination for the change output after selecting UTXOs",
+          "schema": {
+            "$ref": "#/components/schemas/Address"
+          }
+        }
+      ],
+      "result": {
+        "name": "SendTransactionResponse",
+        "schema": {
+          "$ref": "#/components/schemas/Transaction"
+        }
+      },
+      "errors": [
+        {
+          "$ref": "#/components/errors/DifferentNetworkError"
+        },
+        {
+          "$ref": "#/components/errors/PromptRejectedError"
+        },
+        {
+          "$ref": "#/components/errors/SendTransactionError"
+        },
+        {
+          "$ref": "#/components/errors/InsufficientFundsError"
+        },
+        {
+          "$ref": "#/components/errors/PrepareSendTransactionError"
+        }
+      ]
     }
   ],
   "components": {
@@ -597,15 +701,15 @@
             "$ref": "#/components/schemas/Balance"
           },
           "tokenAuthorities": {
-            "title": "Authorities mint/melt availability",
+            "description": "Authorities mint/melt availability.",
             "$ref": "#/components/schemas/AuthoritiesBalance"
           },
           "transactions": {
-            "title": "quantity of transactions",
-            "type": "number"
+            "description": "Quantity of transactions.",
+            "type": "integer"
           },
           "lockExpires": {
-            "title": "When next lock expires, if has a timelock",
+            "description": "When next lock expires, if has a timelock.",
             "type": "number"
           }
         }
@@ -634,11 +738,11 @@
         "type": "object",
         "properties": {
           "unlocked": {
-            "title": "Available amount",
+            "description": "Available amount.",
             "$ref": "#/components/schemas/OutputValueType"
           },
           "locked": {
-            "title": "Locked amount",
+            "description": "Locked amount.",
             "$ref": "#/components/schemas/OutputValueType"
           }
         }
@@ -650,11 +754,11 @@
         "type": "object",
         "properties": {
           "unlocked": {
-            "title": "unlocked mint/melt",
+            "description": "Unlocked mint/melt.",
             "$ref": "#/components/schemas/Authority"
           },
           "locked": {
-            "title": "locked mint/melt",
+            "description": "Locked mint/melt.",
             "$ref": "#/components/schemas/Authority"
           }
         }
@@ -663,11 +767,11 @@
         "type": "object",
         "properties": {
           "mint": {
-            "title": "if has mint authority",
+            "description": "If has mint authority.",
             "type": "boolean"
           },
           "melt": {
-            "title": "if has melt authority",
+            "description": "If has melt authority.",
             "type": "boolean"
           }
         }
@@ -727,15 +831,15 @@
             "$ref": "#/components/schemas/Address"
           },
           "index": {
-            "title": "Derivation index of the address",
+            "description": "Derivation index of the address.",
             "type": "number"
           },
           "addressPath": {
-            "title": "Path of the address",
+            "description": "Path of the address.",
             "type": "string"
           },
           "info": {
-            "title": "Optional extra info when getting address info",
+            "description": "Optional extra info when getting address info.",
             "type": "null"
           }
         }
@@ -746,11 +850,11 @@
           "type": {
             "enum": ["deposit", "withdrawal"]
           },
+          "amount": {
+            "type": "string"
+          },
           "token": {
             "$ref": "#/components/schemas/Token"
-          },
-          "amount": {
-            "$ref": "#/components/schemas/OutputValueType"
           },
           "address": {
             "description": "When action type is 'withdrawal', address is required and specifies the destination for sending the output. When action type is 'deposit', address is optional and specifies the source from UTXOs.",
@@ -760,7 +864,8 @@
             "description": "When action type is 'deposit', change addess is optional and specifies the destination for the change output after selecting UTXOs. When action type is 'withdrawal', it is ignored.",
             "$ref": "#/components/schemas/Address"
           }
-        }
+        },
+        "required": ["type", "amount", "token"]
       },
       "TransactionHex": {
         "description": "Transaction encoded in hexadecimal.",
@@ -853,15 +958,15 @@
         "type": "object",
         "properties": {
           "hash": {
-            "title": "Hash of transaction's UTXO being spent",
+            "description": "Transaction hash whose UTXO is being spent.",
             "$ref": "#/components/schemas/TransactionId"
           },
           "index": {
-            "title": "Index of outputs array from output being spent",
+            "description": "Index of outputs array from output being spent.",
             "type": "number"
           },
           "data": {
-            "title": "Input signed data for P2PKH and redeemScript for P2SH",
+            "description": "Input signed data for P2PKH and redeemScript for P2SH.",
             "$ref": "#/components/schemas/Buffer"
           }
         }
@@ -882,7 +987,7 @@
       },
       "Buffer": {
         "type": "string"
-      },
+      }
     },
     "errors":{
       "NotImplementedError": {
@@ -912,6 +1017,18 @@
       "CreateTokenError": {
         "code": -31007,
         "message": "Error creating token"
+      },
+      "SendTransactionError": {
+        "code": -31008,
+        "message": "Error sending transaction"
+      },
+      "InsufficientFundsError": {
+        "code": -31009,
+        "message": "Insufficient funds"
+      },
+      "PrepareSendTransactionError": {
+        "code": -31010,
+        "message": "Error assembling transaction"
       }
     }
   }
