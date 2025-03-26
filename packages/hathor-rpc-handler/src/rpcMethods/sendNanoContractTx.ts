@@ -22,24 +22,30 @@ import {
   SendNanoContractTxLoadingFinishedTrigger,
 } from '../types';
 import { PromptRejectedError, SendNanoContractTxError, InvalidParamsError } from '../errors';
-import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
+import { NanoContractAction, NanoContractActionType } from '@hathor/wallet-lib/lib/nano_contracts/types';
 
 export type NanoContractActionWithStringAmount = Omit<NanoContractAction, 'amount'> & {
   amount: string,
 }
 
+const NanoContractActionSchema = z.object({
+  type: z.nativeEnum(NanoContractActionType),
+  token: z.string(),
+  amount: z.string().regex(/^\d+$/)
+    .pipe(z.coerce.bigint().positive()),
+  address: z.string().nullish(),
+  changeAddress: z.string().nullish(),
+}).transform((data): NanoContractAction => ({
+  ...data,
+  address: data.address ?? null,
+  changeAddress: data.changeAddress ?? null,
+}));
+
 const sendNanoContractSchema = z.object({
   method: z.string().min(1),
   blueprint_id: z.string().nullish(),
   nc_id: z.string().nullish(),
-  actions: z.array(
-    z.custom<NanoContractActionWithStringAmount>().transform(action => ({
-      ...action,
-      amount: z.string().regex(/^\d+$/)
-        .pipe(z.coerce.bigint().positive())
-        .parse(action.amount)
-    }))
-  ),
+  actions: z.array(NanoContractActionSchema),
   args: z.array(z.unknown()).default([]),
   push_tx: z.boolean().default(true),
 }).transform(data => ({
