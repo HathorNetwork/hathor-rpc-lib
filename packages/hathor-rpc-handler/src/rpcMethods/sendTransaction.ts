@@ -104,7 +104,7 @@ export async function sendTransaction(
     const result = { ...output };
     
     if (result.type === 'data' || (result.data && result.data.length > 0)) {
-      result.value = BigInt(1);
+      result.value = 1n;
       result.token = constants.NATIVE_TOKEN_UID;
     }
     

@@ -57,7 +57,7 @@ describe('sendTransaction', () => {
           inputs: [{
             txId: 'testTxId',
             index: 0,
-            value: 100,
+            value: 100n,
             address: 'testAddress',
             token: '00',
           }],
@@ -104,13 +104,13 @@ describe('sendTransaction', () => {
       data: {
         outputs: [{
           address: 'testAddress',
-          value: BigInt(100),
+          value: 100n,
           token: '00',
         }],
         inputs: [{
           txId: 'testTxId',
           index: 0,
-          value: 100,
+          value: 100n,
           address: 'testAddress',
           token: '00',
         }],
@@ -149,7 +149,7 @@ describe('sendTransaction', () => {
       expect.arrayContaining([
         expect.objectContaining({
           type: 'data',
-          value: BigInt(1),
+          value: 1n,
           token: '00',
           data: ['test data'],
         }),
