@@ -4,7 +4,6 @@ services:
   redis:
     image: redis:latest
     ports:
-      # Expose Redis port mainly for debugging if needed, not strictly necessary for relay
       - "6379:6379" 
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -15,11 +14,9 @@ services:
   relay:
     image: reown/relay
     ports:
-      - "5555:5000" # Expose relay port
+      - "5555:5000"
     environment:
-      - REDIS_URL=redis://redis:6379/0 # Use service name 'redis' for internal communication
+      - REDIS_URL=redis://redis:6379/0
     depends_on:
       redis:
         condition: service_healthy # Wait for Redis to be healthy
-    # Add a simple healthcheck if possible (e.g., checking if the port is open)
-    # Or rely on depends_on and --wait in docker-compose up 

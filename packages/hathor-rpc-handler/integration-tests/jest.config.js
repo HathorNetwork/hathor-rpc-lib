@@ -2,10 +2,10 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  rootDir: '.', // Look for tests in the integration-tests directory
+  rootDir: '.',
   roots: [
-    '<rootDir>/__tests__', // Tests are now in __tests__ directory
-    '<rootDir>/utils'      // Utility functions are in utils directory
+    '<rootDir>/__tests__',
+    '<rootDir>/utils'
   ],
   testMatch: [
     '**/__tests__/**/*.+(ts|tsx|js)',
@@ -13,8 +13,7 @@ module.exports = {
   ],
   transform: {
     '^.+.tsx?$': ['ts-jest', {
-      // ts-jest configuration options
-      tsconfig: '<rootDir>/tsconfig.json' // Use integration-tests tsconfig
+      tsconfig: '<rootDir>/tsconfig.json'
     }]
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
