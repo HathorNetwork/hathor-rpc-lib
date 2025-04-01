@@ -68,7 +68,7 @@ describe('sendNanoContractTx', () => {
     const expectedActions = [
       {
         ...(rpcRequest.params.actions[0] as unknown as NanoContractActionWithStringAmount),
-        amount: BigInt(100), // Expected conversion to BigInt
+        amount: 100n, // Expected conversion to BigInt
       }
     ];
 
@@ -147,11 +147,11 @@ describe('sendNanoContractTx', () => {
     const expectedActions = [
       {
         ...stringActions[0],
-        amount: BigInt(100),
+        amount: 100n,
       },
       {
         ...stringActions[1],
-        amount: BigInt(200),
+        amount: 200n,
       },
     ];
 
@@ -268,7 +268,7 @@ describe('sendNanoContractTx', () => {
       args: rpcRequest.params.args,
       actions: [{
         ...originalAction,
-        amount: BigInt(100), // Convert amount to BigInt
+        amount: 100n, // Convert amount to BigInt
       }],
     };
 

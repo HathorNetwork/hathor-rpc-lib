@@ -42,7 +42,7 @@ const sendTransactionSchema = z.object({
         .optional(),
       token: z.string().optional(),
       type: z.string().optional(),
-      data: z.array(z.string()).optional(),
+      data: z.string().optional(),
     })
     .transform(output => {
       // If data is present, automatically set type to 'data'
@@ -58,7 +58,7 @@ const sendTransactionSchema = z.object({
       }
       return true;
     }, {
-      message: "Value is required when data is not provided"
+      message: 'Value is required when data is not provided'
     })).min(1),
     inputs: z.array(z.object({
       txId: z.string(),
@@ -100,16 +100,27 @@ export async function sendTransaction(
   validateNetwork(wallet, params.network);
 
   // Transform outputs before sending to wallet-lib
-  const transformedOutputs = params.outputs.map(output => {
+  const transformedOutputs = params.outputs.reduce<Array<{
+    address?: string;
+    value?: bigint;
+    token?: string;
+    type?: string;
+    data?: string;
+  }>>((acc, output) => {
     const result = { ...output };
     
-    if (result.type === 'data' || (result.data && result.data.length > 0)) {
-      result.value = BigInt(1);
-      result.token = constants.NATIVE_TOKEN_UID;
+    // We should manually set the 0.01 HTR to data output
+    // so it's displayed to the user during confirmation.
+    if (result.type === 'data') {
+      return [...acc, {
+        ...output,
+        value: 1n,
+        token: constants.NATIVE_TOKEN_UID,
+      }];
     }
     
-    return result;
-  });
+    return [...acc, result];
+  }, []);
 
   // sendManyOutputsSendTransaction throws if it doesn't receive a pin,
   // but doesn't use it until prepareTxData is called, so we can just assign
@@ -142,13 +153,7 @@ export async function sendTransaction(
     type: TriggerTypes.SendTransactionConfirmationPrompt,
     method: rpcRequest.method,
     data: {
-      outputs: params.outputs as unknown as Array<{
-        address?: string;
-        value: number;
-        token?: string;
-        type?: string;
-        data?: string[];
-      }>,
+      outputs: preparedTx.outputs,
       inputs: preparedTx.inputs,
       changeAddress: params.changeAddress,
     }
