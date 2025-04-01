@@ -33,13 +33,9 @@ const NanoContractActionSchema = z.object({
   token: z.string(),
   amount: z.string().regex(/^\d+$/)
     .pipe(z.coerce.bigint().positive()),
-  address: z.string().nullish(),
-  changeAddress: z.string().nullish(),
-}).transform((data): NanoContractAction => ({
-  ...data,
-  address: data.address ?? null,
-  changeAddress: data.changeAddress ?? null,
-}));
+  address: z.string().nullish().default(null),
+  changeAddress: z.string().nullish().default(null),
+});
 
 const sendNanoContractSchema = z.object({
   method: z.string().min(1),
