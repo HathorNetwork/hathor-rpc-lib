@@ -20,6 +20,7 @@ import {
   SendTransactionError,
   InsufficientFundsError,
   DifferentNetworkError,
+  PrepareSendTransactionError,
 } from '../../src/errors';
 
 describe('sendTransaction', () => {
@@ -220,15 +221,15 @@ describe('sendTransaction', () => {
   });
 
   it('should throw SendTransactionError when transaction preparation fails', async () => {
-    wallet.sendManyOutputsSendTransaction.mockResolvedValue({
-      prepareTxData: jest.fn().mockRejectedValue(
-        new Error('Failed to prepare transaction')
-      ),
+    (wallet.sendManyOutputsSendTransaction as jest.Mock).mockImplementation(() => {
+      return {
+        prepareTxData: jest.fn().mockRejectedValue(new Error('Failed to prepare transaction')),
+      };
     });
 
     await expect(sendTransaction(rpcRequest, wallet, {}, promptHandler))
       .rejects
-      .toThrow(SendTransactionError);
+      .toThrow(PrepareSendTransactionError);
 
     expect(promptHandler).not.toHaveBeenCalled();
   });
@@ -264,4 +265,26 @@ describe('sendTransaction', () => {
 
     expect(promptHandler).not.toHaveBeenCalled();
   });
-}); 
+
+  it('should reject transactions with zero amount', async () => {
+    const requestWithZeroAmount = {
+      ...rpcRequest,
+      params: {
+        ...rpcRequest.params,
+        outputs: [{
+          address: 'testAddress',
+          value: '0', // Zero amount should be rejected
+          token: '00',
+        }],
+      },
+    };
+
+    // The validation should fail with a specific error
+    await expect(
+      sendTransaction(requestWithZeroAmount, wallet, {}, promptHandler)
+    ).rejects.toThrow(InvalidParamsError);
+
+    // Verify that the promptHandler wasn't called since validation should fail first
+    expect(promptHandler).not.toHaveBeenCalled();
+  });
+});

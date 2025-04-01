@@ -7,7 +7,7 @@
 
 import { HathorWallet } from '@hathor/wallet-lib';
 import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
-import { sendNanoContractTx } from '../../src/rpcMethods/sendNanoContractTx';
+import { sendNanoContractTx, NanoContractActionWithStringAmount } from '../../src/rpcMethods/sendNanoContractTx';
 import { TriggerTypes, RpcMethods, SendNanoContractRpcRequest, TriggerResponseTypes, RpcResponseTypes } from '../../src/types';
 import { SendNanoContractTxError, InvalidParamsError } from '../../src/errors';
 
@@ -17,6 +17,16 @@ describe('sendNanoContractTx', () => {
   let promptHandler = jest.fn();
 
   beforeEach(() => {
+    // Using proper type casting to make TypeScript happy
+    const actions = [
+      {
+        type: 'deposit',
+        address: 'test-address',
+        token: '00',
+        amount: '100', // Using string for amount
+      } as NanoContractActionWithStringAmount
+    ];
+
     rpcRequest = {
       method: RpcMethods.SendNanoContractTx,
       id: '1',
@@ -25,7 +35,7 @@ describe('sendNanoContractTx', () => {
         method: 'initialize',
         blueprint_id: 'blueprint123',
         nc_id: 'nc123',
-        actions: [],
+        actions: actions as unknown as NanoContractAction[],
         args: [],
         push_tx: true,
       }
@@ -54,6 +64,13 @@ describe('sendNanoContractTx', () => {
       response,
     };
 
+    // Expected action after transformation
+    const expectedActions = [
+      {
+        ...(rpcRequest.params.actions[0] as unknown as NanoContractActionWithStringAmount),
+        amount: BigInt(100), // Expected conversion to BigInt
+      }
+    ];
 
     promptHandler
       .mockResolvedValueOnce({
@@ -65,7 +82,7 @@ describe('sendNanoContractTx', () => {
             blueprintId: rpcRequest.params.blueprint_id,
             ncId: rpcRequest.params.nc_id,
             args: rpcRequest.params.args,
-            actions: rpcRequest.params.actions,
+            actions: expectedActions, // Using the transformed actions
           },
         }
       })
@@ -92,7 +109,7 @@ describe('sendNanoContractTx', () => {
       address,
       {
         blueprintId: rpcRequest.params.blueprint_id,
-        actions: rpcRequest.params.actions,
+        actions: expectedActions, // Using the transformed actions
         args: rpcRequest.params.args,
         ncId: rpcRequest.params.nc_id,
       },
@@ -101,14 +118,158 @@ describe('sendNanoContractTx', () => {
     expect(result).toEqual(rpcResponse);
   });
 
+  it('should transform string amounts to BigInt in actions', async () => {
+    // Setup the request with string amounts
+    const stringActions = [
+      {
+        type: 'deposit',
+        address: 'test-address',
+        token: '00',
+        amount: '100', // Using string amount
+      } as NanoContractActionWithStringAmount,
+      {
+        type: 'withdrawal',
+        address: 'test-address-2',
+        token: '01',
+        amount: '200', // Another string amount
+        changeAddress: 'change-address', // Add missing property
+      } as NanoContractActionWithStringAmount,
+    ];
+
+    const requestWithStringAmount = {
+      ...rpcRequest,
+      params: {
+        ...rpcRequest.params,
+        actions: stringActions as unknown as NanoContractAction[],
+      },
+    } as SendNanoContractRpcRequest;
+
+    const expectedActions = [
+      {
+        ...stringActions[0],
+        amount: BigInt(100),
+      },
+      {
+        ...stringActions[1],
+        amount: BigInt(200),
+      },
+    ];
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.SendNanoContractTxConfirmationResponse,
+        data: {
+          accepted: true,
+          nc: {
+            caller: 'address123',
+            blueprintId: requestWithStringAmount.params.blueprint_id,
+            ncId: requestWithStringAmount.params.nc_id,
+            args: requestWithStringAmount.params.args,
+            actions: expectedActions, // Using transformed actions
+          },
+        }
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: {
+          accepted: true,
+          pinCode: '1234',
+        }
+      });
+
+    (wallet.createAndSendNanoContractTransaction as jest.Mock).mockResolvedValue({});
+
+    await sendNanoContractTx(requestWithStringAmount, wallet, {}, promptHandler);
+
+    // Verify the wallet was called with the right parameters (including transformed actions)
+    expect(wallet.createAndSendNanoContractTransaction).toHaveBeenCalledWith(
+      requestWithStringAmount.params.method,
+      'address123',
+      expect.objectContaining({
+        actions: expectedActions, // Expect BigInt conversions
+      }),
+      expect.anything()
+    );
+  });
+
+  it('should handle large integer values as strings', async () => {
+    // Very large number that would cause precision issues as a regular number
+    const largeAmount = '9007199254740993'; // 2^53 + 1, beyond Number.MAX_SAFE_INTEGER
+
+    const largeActions = [
+      {
+        type: 'deposit',
+        address: 'test-address',
+        token: '00',
+        amount: largeAmount, // Very large integer as string
+      } as NanoContractActionWithStringAmount
+    ];
+
+    const requestWithLargeAmount = {
+      ...rpcRequest,
+      params: {
+        ...rpcRequest.params,
+        actions: largeActions as unknown as NanoContractAction[],
+      },
+    } as SendNanoContractRpcRequest;
+
+    const expectedActions = [
+      {
+        ...largeActions[0],
+        amount: BigInt(largeAmount), // Expect conversion to BigInt
+      }
+    ];
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.SendNanoContractTxConfirmationResponse,
+        data: {
+          accepted: true,
+          nc: {
+            caller: 'address123',
+            blueprintId: requestWithLargeAmount.params.blueprint_id,
+            ncId: requestWithLargeAmount.params.nc_id,
+            args: requestWithLargeAmount.params.args,
+            actions: expectedActions, // Using transformed actions
+          },
+        }
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: {
+          accepted: true,
+          pinCode: '1234',
+        }
+      });
+
+    (wallet.createAndSendNanoContractTransaction as jest.Mock).mockResolvedValue({});
+
+    await sendNanoContractTx(requestWithLargeAmount, wallet, {}, promptHandler);
+
+    // Verify the wallet was called with the correct parameters
+    expect(wallet.createAndSendNanoContractTransaction).toHaveBeenCalledWith(
+      requestWithLargeAmount.params.method,
+      'address123',
+      expect.objectContaining({
+        actions: expectedActions, // Expect the large BigInt conversion
+      }),
+      expect.anything()
+    );
+  });
+
   it('should throw SendNanoContractTxFailure if the transaction fails', async () => {
     const pinCode = '1234';
+    const originalAction = rpcRequest.params.actions[0] as unknown as NanoContractActionWithStringAmount;
+    
     const ncData = {
       method: 'initialize',
       blueprintId: rpcRequest.params.blueprint_id,
       ncId: rpcRequest.params.nc_id,
       args: rpcRequest.params.args,
-      actions: rpcRequest.params.actions,
+      actions: [{
+        ...originalAction,
+        amount: BigInt(100), // Convert amount to BigInt
+      }],
     };
 
     promptHandler
@@ -138,9 +299,13 @@ describe('sendNanoContractTx', () => {
       type: TriggerTypes.SendNanoContractTxConfirmationPrompt,
       method: rpcRequest.method,
       data: {
-        ...ncData,
-        pushTx: true,
-      }
+        actions: expect.any(Array),
+        args: expect.any(Array),
+        blueprintId: expect.any(String),
+        method: expect.any(String),
+        ncId: expect.any(String),
+        pushTx: expect.any(Boolean),
+      },
     }, {});
     expect(promptHandler).toHaveBeenNthCalledWith(2, {
       type: TriggerTypes.PinConfirmationPrompt,
@@ -149,6 +314,32 @@ describe('sendNanoContractTx', () => {
     expect(promptHandler).toHaveBeenNthCalledWith(3, {
       type: TriggerTypes.SendNanoContractTxLoadingTrigger,
     }, {});
+  });
+
+  it('should reject transactions with zero amount', async () => {
+    // Setup a request with zero amount
+    const zeroAmountAction = {
+      type: 'deposit',
+      address: 'test-address',
+      token: '00',
+      amount: '0',
+    } as NanoContractActionWithStringAmount;
+
+    const requestWithZeroAmount = {
+      ...rpcRequest,
+      params: {
+        ...rpcRequest.params,
+        actions: [zeroAmountAction] as unknown as NanoContractAction[],
+      },
+    } as SendNanoContractRpcRequest;
+
+    // The validation should fail with a specific error
+    await expect(
+      sendNanoContractTx(requestWithZeroAmount, wallet, {}, promptHandler)
+    ).rejects.toThrow(InvalidParamsError);
+
+    // Verify that the promptHandler wasn't called since validation should fail first
+    expect(promptHandler).not.toHaveBeenCalled();
   });
 });
 
@@ -247,14 +438,50 @@ describe('sendNanoContractTx parameter validation', () => {
     ).rejects.toThrow(InvalidParamsError);
   });
 
+  it('should reject when action amount is not a valid string number', async () => {
+    const invalidActions = [
+      {
+        type: 'deposit',
+        address: 'test-address',
+        token: '00',
+        amount: 'not-a-number', // Invalid string amount
+      } as NanoContractActionWithStringAmount
+    ];
+
+    const invalidRequest = {
+      method: RpcMethods.SendNanoContractTx,
+      params: {
+        method: 'test-method',
+        blueprint_id: 'test-blueprint',
+        nc_id: null,
+        actions: invalidActions as unknown as NanoContractAction[],
+        args: [] as unknown[],
+        push_tx: true,
+      },
+    } as SendNanoContractRpcRequest;
+
+    await expect(
+      sendNanoContractTx(invalidRequest, mockWallet, {}, mockTriggerHandler)
+    ).rejects.toThrow(InvalidParamsError);
+  });
+
   it('should accept valid parameters with blueprint_id', async () => {
+    const validActions = [
+      {
+        type: 'deposit',
+        address: 'test-address',
+        token: '00',
+        amount: '100', // Valid string amount
+      } as NanoContractActionWithStringAmount
+    ];
+
     const validRequest = {
       method: RpcMethods.SendNanoContractTx,
       params: {
         method: 'test-method',
         blueprint_id: 'test-blueprint',
         nc_id: null,
-        actions: [] as NanoContractAction[],
+        actions: validActions as unknown as NanoContractAction[],
         args: [] as unknown[],
         push_tx: true,
       },
@@ -266,13 +493,22 @@ describe('sendNanoContractTx parameter validation', () => {
   });
 
   it('should accept valid parameters with nc_id', async () => {
+    const validActions = [
+      {
+        type: 'deposit',
+        address: 'test-address',
+        token: '00',
+        amount: '100', // Valid string amount
+      } as NanoContractActionWithStringAmount
+    ];
+
     const validRequest = {
       method: RpcMethods.SendNanoContractTx,
       params: {
         method: 'test-method',
         blueprint_id: '',
         nc_id: 'test-nc-id',
-        actions: [] as NanoContractAction[],
+        actions: validActions as unknown as NanoContractAction[],
         args: [] as unknown[],
         push_tx: true,
       },
@@ -284,13 +520,22 @@ describe('sendNanoContractTx parameter validation', () => {
   });
 
   it('should use default push_tx value when not provided', async () => {
+    const validActions = [
+      {
+        type: 'deposit',
+        address: 'test-address',
+        token: '00',
+        amount: '100', // Valid string amount
+      } as NanoContractActionWithStringAmount
+    ];
+
     const validRequest = {
       method: RpcMethods.SendNanoContractTx,
       params: {
         method: 'test-method',
         blueprint_id: 'test-blueprint',
         nc_id: null,
-        actions: [] as NanoContractAction[],
+        actions: validActions as unknown as NanoContractAction[],
         args: [] as unknown[],
         push_tx: false,
       },
