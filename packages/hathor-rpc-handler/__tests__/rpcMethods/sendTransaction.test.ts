@@ -57,8 +57,13 @@ describe('sendTransaction', () => {
           inputs: [{
             txId: 'testTxId',
             index: 0,
-            value: 100,
+            value: 100n,
             address: 'testAddress',
+            token: '00',
+          }],
+          outputs: [{
+            address: 'testAddress',
+            value: BigInt(100),
             token: '00',
           }],
         }),
@@ -104,13 +109,13 @@ describe('sendTransaction', () => {
       data: {
         outputs: [{
           address: 'testAddress',
-          value: BigInt(100),
+          value: 100n,
           token: '00',
         }],
         inputs: [{
           txId: 'testTxId',
           index: 0,
-          value: 100,
+          value: 100n,
           address: 'testAddress',
           token: '00',
         }],
@@ -127,7 +132,7 @@ describe('sendTransaction', () => {
     rpcRequest.params.outputs = [{
       type: 'data',
       value: '100',
-      data: ['test data'],
+      data: 'test data',
     }];
 
     promptHandler
@@ -149,13 +154,73 @@ describe('sendTransaction', () => {
       expect.arrayContaining([
         expect.objectContaining({
           type: 'data',
-          value: BigInt(1),
+          value: 1n,
           token: '00',
-          data: ['test data'],
+          data: 'test data',
         }),
       ]),
       expect.any(Object),
     );
+  });
+
+  it('should handle mix of data and regular outputs correctly', async () => {
+    rpcRequest.params.outputs = [
+      {
+        address: 'testAddress1',
+        value: '100',
+        token: '00',
+      },
+      {
+        type: 'data',
+        data: 'data item',
+        value: '1',
+      },
+      {
+        address: 'testAddress2',
+        value: '200',
+        token: '00',
+      }
+    ];
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.SendTransactionConfirmationResponse,
+        data: { accepted: true },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: { accepted: true, pinCode: '1234' },
+      });
+
+    sendTransactionMock.mockResolvedValue({ hash: 'txHash123' });
+
+    await sendTransaction(rpcRequest, wallet, {}, promptHandler);
+
+    // Verify the transformation preserves regular outputs and handles data output
+    expect(wallet.sendManyOutputsSendTransaction).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          address: 'testAddress1',
+          value: BigInt(100),
+          token: '00',
+        }),
+        expect.objectContaining({
+          type: 'data',
+          value: BigInt(1),
+          token: '00',
+          data: 'data item',
+        }),
+        expect.objectContaining({
+          address: 'testAddress2',
+          value: BigInt(200),
+          token: '00',
+        }),
+      ]),
+      expect.any(Object),
+    );
+    
+    // Verify the array length matches the expected number of outputs (2 regular + 1 data output)
+    expect(wallet.sendManyOutputsSendTransaction.mock.calls[0][0]).toHaveLength(3);
   });
 
   it('should throw InvalidParamsError for invalid request parameters', async () => {
