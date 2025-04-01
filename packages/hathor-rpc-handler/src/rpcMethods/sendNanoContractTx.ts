@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import type { HathorWallet, SendTransaction } from '@hathor/wallet-lib';
+import type { HathorWallet } from '@hathor/wallet-lib';
 import {
   TriggerTypes,
   PinConfirmationPrompt,
