@@ -23,6 +23,7 @@ import {
 } from '../types';
 import { PromptRejectedError, SendNanoContractTxError, InvalidParamsError } from '../errors';
 import { NanoContractAction, NanoContractActionType } from '@hathor/wallet-lib/lib/nano_contracts/types';
+import NanoContract from '@hathor/wallet-lib/lib/nano_contracts/nano_contract';
 
 export type NanoContractActionWithStringAmount = Omit<NanoContractAction, 'amount'> & {
   amount: string,
@@ -128,7 +129,7 @@ export async function sendNanoContractTx(
         args: confirmedArgs,
       };
 
-      let response: SendTransaction | string;
+      let response: NanoContract | string;
 
       if (params.pushTx) {
         // If pushTx is true, create and send the transaction directly
