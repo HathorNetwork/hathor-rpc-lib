@@ -33,7 +33,7 @@ export interface GetAddressResponse extends BaseRpcResponse {
 
 export interface SendNanoContractTxResponse extends BaseRpcResponse {
   type: RpcResponseTypes.SendNanoContractTxResponse;
-  response: SendTransaction | NanoContract;
+  response: NanoContract | string;
 }
 
 export interface CreateTokenResponse extends BaseRpcResponse {

@@ -23,6 +23,7 @@ import {
 } from '../types';
 import { PromptRejectedError, SendNanoContractTxError, InvalidParamsError } from '../errors';
 import { NanoContractAction, NanoContractActionType } from '@hathor/wallet-lib/lib/nano_contracts/types';
+import NanoContract from '@hathor/wallet-lib/lib/nano_contracts/nano_contract';
 
 export type NanoContractActionWithStringAmount = Omit<NanoContractAction, 'amount'> & {
   amount: string,
@@ -115,10 +116,6 @@ export async function sendNanoContractTx(
       throw new PromptRejectedError('Pin prompt rejected');
     }
 
-    const sendMethod = params.pushTx 
-      ? wallet.createAndSendNanoContractTransaction.bind(wallet)
-      : wallet.createNanoContractTransaction.bind(wallet);
-
     try {
       const sendNanoContractLoadingTrigger: SendNanoContractTxLoadingTrigger = {
         type: TriggerTypes.SendNanoContractTxLoadingTrigger,
@@ -132,14 +129,36 @@ export async function sendNanoContractTx(
         args: confirmedArgs,
       };
 
-      const response = await sendMethod(
-        params.method,
-        caller, 
-        txData, 
-        {
-          pinCode: pinCodeResponse.data.pinCode,
+      let response: NanoContract | string;
+
+      if (params.pushTx) {
+        // If pushTx is true, create and send the transaction directly
+        response = await wallet.createAndSendNanoContractTransaction(
+          params.method,
+          caller,
+          txData,
+          {
+            pinCode: pinCodeResponse.data.pinCode,
+          },
+        );
+      } else {
+        // Otherwise, just create the transaction object
+        const sendTransactionObj = await wallet.createNanoContractTransaction(
+          params.method,
+          caller,
+          txData,
+          {
+            pinCode: pinCodeResponse.data.pinCode,
+          },
+        );
+
+        if (!sendTransactionObj.transaction) {
+          // This should never happen, but we'll check anyway
+          throw new SendNanoContractTxError('Unable to create transaction object');
         }
-      );
+        // Convert the transaction object to hex format for the response
+        response = sendTransactionObj.transaction.toHex();
+      }
 
       const sendNanoContractLoadingFinishedTrigger: SendNanoContractTxLoadingFinishedTrigger = {
         type: TriggerTypes.SendNanoContractTxLoadingFinishedTrigger,

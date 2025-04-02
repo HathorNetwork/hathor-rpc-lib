@@ -346,7 +346,11 @@ describe('sendNanoContractTx', () => {
 describe('sendNanoContractTx parameter validation', () => {
   const mockWallet = {
     createAndSendNanoContractTransaction: jest.fn(),
-    createNanoContractTransaction: jest.fn(),
+    createNanoContractTransaction: jest.fn().mockImplementation(() => ({
+      transaction: {
+        toHex: jest.fn().mockReturnValue('tx-hex'),
+      },
+    })),
   } as unknown as HathorWallet;
 
   const mockTriggerHandler = jest.fn().mockResolvedValue({
@@ -537,11 +541,66 @@ describe('sendNanoContractTx parameter validation', () => {
         nc_id: null,
         actions: validActions as unknown as NanoContractAction[],
         args: [] as unknown[],
+      },
+    } as SendNanoContractRpcRequest;
+
+    await sendNanoContractTx(validRequest, mockWallet, {}, mockTriggerHandler);
+    expect(mockWallet.createAndSendNanoContractTransaction).toHaveBeenCalled();
+  });
+
+  it('should call createNanoContractTransaction when push_tx is false', async () => {
+    const validActions = [
+      {
+        type: 'deposit',
+        address: 'test-address',
+        token: '00',
+        amount: '100', // Valid string amount
+      } as NanoContractActionWithStringAmount
+    ];
+
+    const validRequest = {
+      method: RpcMethods.SendNanoContractTx,
+      params: {
+        method: 'test-method',
+        blueprint_id: 'test-blueprint',
+        nc_id: null,
+        actions: validActions as unknown as NanoContractAction[],
+        args: [] as unknown[],
         push_tx: false,
       },
     } as SendNanoContractRpcRequest;
 
     await sendNanoContractTx(validRequest, mockWallet, {}, mockTriggerHandler);
     expect(mockWallet.createNanoContractTransaction).toHaveBeenCalled();
+  });
+
+  it('should call return a txHex when push_tx is false', async () => {
+    const validActions = [
+      {
+        type: 'deposit',
+        address: 'test-address',
+        token: '00',
+        amount: '100', // Valid string amount
+      } as NanoContractActionWithStringAmount
+    ];
+
+    const validRequest = {
+      method: RpcMethods.SendNanoContractTx,
+      params: {
+        method: 'test-method',
+        blueprint_id: 'test-blueprint',
+        nc_id: null,
+        actions: validActions as unknown as NanoContractAction[],
+        args: [] as unknown[],
+        push_tx: false,
+      },
+    } as SendNanoContractRpcRequest;
+
+    const response = await sendNanoContractTx(validRequest, mockWallet, {}, mockTriggerHandler);
+    expect(mockWallet.createNanoContractTransaction).toHaveBeenCalled();
+    expect(response).toStrictEqual({
+      type: RpcResponseTypes.SendNanoContractTxResponse,
+      response: 'tx-hex',
+    });
   });
 });
