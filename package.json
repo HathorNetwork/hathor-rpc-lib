@@ -16,7 +16,7 @@
     "@metamask/eslint-config-typescript": "^12.1.0",
     "@typescript-eslint/eslint-plugin": "^5.42.1",
     "@typescript-eslint/parser": "^5.42.1",
-    "eslint": "^8.45.0",
+    "eslint": "^8.56.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-import": "~2.26.0",
     "eslint-plugin-jest": "^27.1.5",
@@ -27,12 +27,14 @@
     "prettier": "^2.7.1",
     "prettier-plugin-packagejson": "^2.2.18",
     "sharp": "^0.32.6",
-    "typescript": "^4.7.4"
+    "typescript": "4.8.4"
   },
   "lavamoat": {
     "allowScripts": {
       "@lavamoat/preinstall-always-fail": false,
-      "sharp": true
+      "sharp": true,
+      "@swc/core": true,
+      "classic-level": true
     }
   }
 }
