@@ -24,11 +24,11 @@
     "test": "jest"
   },
   "dependencies": {
+    "@hathor/hathor-rpc-handler": "workspace:^",
+    "@hathor/wallet-lib": "^1.15.0",
     "@metamask/snaps-sdk": "6.9.0"
   },
   "devDependencies": {
-    "@hathor/hathor-rpc-handler": "latest",
-    "@hathor/wallet-lib": "latest",
     "@jest/globals": "^29.5.0",
     "@metamask/auto-changelog": "^3.4.4",
     "@metamask/eslint-config": "^12.2.0",

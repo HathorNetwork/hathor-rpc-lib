@@ -1,4 +1,5 @@
 .yarn/*
+!.yarn/patches/
 node_modules/
 .pnp.*
 .direnv/
