@@ -20,7 +20,6 @@ const network = 'mainnet';
  * @returns The result of `snap_dialog`.
  * @throws If the request method is not valid for this snap.
  */
-
 export const onRpcRequest: OnRpcRequestHandler = async ({
   origin,
   request,
