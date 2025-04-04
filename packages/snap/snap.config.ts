@@ -20,7 +20,7 @@ const config: SnapConfig = {
         path: require.resolve('path-browserify'),
         fs: false,
         util: require.resolve('util'),
-        assert: require.resolve('assert'),
+        assert: require.resolve('assert/'),
       },
     },
     plugins: [
