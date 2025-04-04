@@ -1,0 +1,12 @@
+diff --git a/index.js b/index.js
+index 4cbe6bf2ac69202558e0cfb8457fec21c2d48017..98cad3a403bacc0ebd2d1223d3c17adc23a53bc7 100644
+--- a/index.js
++++ b/index.js
+@@ -5,6 +5,7 @@ var bitcore = module.exports;
+ // module information
+ bitcore.version = 'v' + require('./package.json').version;
+ bitcore.versionGuard = function(version) {
++  return;
+   if (version !== undefined) {
+     var message = 'More than one instance of bitcore-lib found. ' +
+       'Please make sure to require bitcore-lib and check that submodules do' +

@@ -36,5 +36,9 @@
       "@swc/core": true,
       "classic-level": true
     }
+  },
+  "resolutions": {
+    "bitcore-lib@npm:8.25.10": "patch:bitcore-lib@npm%3A8.25.47#~/.yarn/patches/bitcore-lib-npm-8.25.47-62066b9183.patch",
+    "bitcore-lib@npm:^8.25.10": "patch:bitcore-lib@npm%3A8.25.47#~/.yarn/patches/bitcore-lib-npm-8.25.47-62066b9183.patch"
   }
 }
