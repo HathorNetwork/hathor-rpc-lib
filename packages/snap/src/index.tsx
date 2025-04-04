@@ -65,7 +65,6 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
       const accountPathXpriv = walletUtils.xprivFromData(Buffer.from(hathorNode.privateKey.substring(2), 'hex'), Buffer.from(hathorNode.chainCode.substring(2), 'hex'), hathorNode.parentFingerprint, hathorNode.depth, hathorNode.index, 'mainnet')
       const authPathXpriv = walletUtils.xprivFromData(Buffer.from(hathorNode.privateKey.substring(2), 'hex'), Buffer.from(hathorNode.chainCode.substring(2), 'hex'), hathorNode.parentFingerprint, hathorNode.depth, hathorNode.index, 'mainnet')
 
-      /*
       wallet = new HathorWalletServiceWallet({
         requestPassword: () => Promise.resolve('123'),
         xpriv: accountPathXpriv,
@@ -100,8 +99,6 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
       }
 
       return address;
-      */
-      return 'wat';
     default:
       throw new Error('Invalid request');
   }
