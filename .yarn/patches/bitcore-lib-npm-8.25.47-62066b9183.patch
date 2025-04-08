@@ -10,3 +10,16 @@ index 4cbe6bf2ac69202558e0cfb8457fec21c2d48017..98cad3a403bacc0ebd2d1223d3c17adc
    if (version !== undefined) {
      var message = 'More than one instance of bitcore-lib found. ' +
        'Please make sure to require bitcore-lib and check that submodules do' +
+diff --git a/lib/crypto/ecdsa.js b/lib/crypto/ecdsa.js
+index 6bea796b8a174a1ecb24d3c745fc32edf83bf4c2..7002d96c2e5571ca8097f286190f937aae5b4be0 100644
+--- a/lib/crypto/ecdsa.js
++++ b/lib/crypto/ecdsa.js
+@@ -211,7 +211,7 @@ ECDSA.prototype._findSignature = function(d, e) {
+     badrs++;
+     k = this.k;
+     Q = G.mul(k);
+-    r = Q.x.umod(N);
++    r = Q.getX().umod(N);
+     s = k.invm(N).mul(e.add(d.mul(r))).umod(N);
+   } while (r.cmp(BN.Zero) <= 0 || s.cmp(BN.Zero) <= 0);
+ 
