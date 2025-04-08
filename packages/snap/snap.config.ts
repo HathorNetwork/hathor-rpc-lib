@@ -26,7 +26,6 @@ const config: SnapConfig = {
     plugins: [
       ...(config.plugins || []),
       new webpack.ProvidePlugin({
-        process: 'process/browser',
         Buffer: ['buffer', 'Buffer'],
       }),
       new webpack.DefinePlugin({
