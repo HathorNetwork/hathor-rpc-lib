@@ -1,7 +1,7 @@
 import type {
+  EIP6963AnnounceProviderEvent,
   MetaMaskInpageProvider,
 } from '@metamask/providers';
-import type { EIP6963AnnounceProviderEvent } from '@metamask/providers/dist/types/EIP6963';
 
 /**
  * Check if the current provider supports snaps by calling `wallet_getSnaps`.
@@ -11,7 +11,6 @@ import type { EIP6963AnnounceProviderEvent } from '@metamask/providers/dist/type
  * @returns True if the provider supports snaps, false otherwise.
  */
 export async function hasSnapsSupport(
-  // @ts-ignore
   provider: MetaMaskInpageProvider = window.ethereum,
 ) {
   try {
@@ -47,7 +46,6 @@ export async function getMetaMaskEIP6963Provider() {
     function resolve(provider: MetaMaskInpageProvider | null) {
       window.removeEventListener(
         'eip6963:announceProvider',
-        // @ts-ignore
         onAnnounceProvider,
       );
       clearTimeout(timeout);
@@ -62,18 +60,18 @@ export async function getMetaMaskEIP6963Provider() {
      * @param event - The EIP6963 announceProvider event.
      * @param event.detail - The details of the EIP6963 announceProvider event.
      */
-    function onAnnounceProvider(ev: EIP6963AnnounceProviderEvent) {
-      const { detail } = ev;
-
-      if (!detail) return;
+    function onAnnounceProvider({ detail }: EIP6963AnnounceProviderEvent) {
+      if (!detail) {
+        return;
+      }
 
       const { info, provider } = detail;
+
       if (info.rdns.includes('io.metamask')) {
         resolve(provider);
       }
     }
 
-    // @ts-ignore
     window.addEventListener('eip6963:announceProvider', onAnnounceProvider);
 
     window.dispatchEvent(new Event('eip6963:requestProvider'));
@@ -96,7 +94,7 @@ export async function getSnapsProvider() {
   }
 
   if (window.ethereum?.detected) {
-    for (const provider of window.ethereum?.detected) {
+    for (const provider of window.ethereum.detected) {
       if (await hasSnapsSupport(provider)) {
         return provider;
       }
@@ -104,7 +102,7 @@ export async function getSnapsProvider() {
   }
 
   if (window.ethereum?.providers) {
-    for (const provider of window.ethereum?.providers) {
+    for (const provider of window.ethereum.providers) {
       if (await hasSnapsSupport(provider)) {
         return provider;
       }

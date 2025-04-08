@@ -1,4 +1,3 @@
-import React from 'react';
 import type { MetaMaskInpageProvider } from '@metamask/providers';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
@@ -7,7 +6,7 @@ import type { Snap } from '../types';
 import { getSnapsProvider } from '../utils';
 
 type MetaMaskContextType = {
-  provider: MetaMaskInpageProvider | null | undefined;
+  provider: MetaMaskInpageProvider | null;
   installedSnap: Snap | null;
   error: Error | null;
   setInstalledSnap: (snap: Snap | null) => void;
@@ -39,9 +38,22 @@ export const MetaMaskProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    // @ts-ignore
     getSnapsProvider().then(setProvider).catch(console.error);
   }, []);
+
+  useEffect(() => {
+    if (error) {
+      const timeout = setTimeout(() => {
+        setError(null);
+      }, 10000);
+
+      return () => {
+        clearTimeout(timeout);
+      };
+    }
+
+    return undefined;
+  }, [error]);
 
   return (
     <MetaMaskContext.Provider
