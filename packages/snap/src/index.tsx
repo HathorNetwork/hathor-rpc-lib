@@ -15,14 +15,13 @@ import { Box, Text, Bold, Heading, Spinner } from '@metamask/snaps-sdk/jsx';
  */
 
 const walletServiceURL = 'https://wallet-service.hathor.network/';
-//const network = new Network('mainnet');
+const network = new Network('mainnet');
 let wallet;
 
 export const onRpcRequest: OnRpcRequestHandler = async ({
   origin,
   request,
 }) => {
-  console.log('AQUIIIIIII', request.method);
   // eslint-disable-next-line
   switch (request.method) {
     case 'address':
