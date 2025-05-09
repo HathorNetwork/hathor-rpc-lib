@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "sourceMap": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "outDir": "dist",
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "lib": ["ES2016", "DOM"],
+    "types": ["node", "jest"]
+  },
+  "include": [
+    "src/**/*.ts",
+    "jest.config.js",
+    "jest.globalSetup.ts",
+    "jest.globalTeardown.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+} 
