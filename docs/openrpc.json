@@ -402,7 +402,9 @@
         {
           "name": "amount",
           "required": true,
-          "type": "string"
+          "schema": {
+            "type": "string"
+          }
         },
         {
           "name": "address",
@@ -573,7 +575,7 @@
               "type": "object",
               "oneOf": [
                 {
-                  "description": "Output denotes a token transfer."
+                  "description": "Output denotes a token transfer.",
                   "properties": {
                     "value": {
                       "description": "Amount of tokens to transfer.",
@@ -587,21 +589,21 @@
                     "address": {
                       "description": "Recipient of token transfer.",
                       "$ref": "#/components/schemas/Address"
-                    },
+                    }
                   },
                   "required": ["value", "address"]
                 },
                 {
-                  "description": "Output is a 'data output'. Register arbitrary data on the blockchain."
+                  "description": "Output is a 'data output'. Register arbitrary data on the blockchain.",
                   "properties": {
                     "type": {
-                      "description": "Use to mark this output as a 'data output'."
+                      "description": "Use to mark this output as a 'data output'.",
                       "const": "data"
                     },
                     "data": {
                       "description": "Unit of information or data point to be registered on the ledger (blockchain).",
                       "type": "string"
-                    },
+                    }
                   },
                   "required": ["data"]
                 }
