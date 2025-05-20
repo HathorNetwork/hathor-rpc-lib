@@ -30,6 +30,7 @@ export enum TriggerTypes {
   SendTransactionConfirmationPrompt,
   SendTransactionLoadingTrigger,
   SendTransactionLoadingFinishedTrigger,
+  CreateNanoContractCreateTokenTxConfirmationPrompt,
 }
 
 export enum TriggerResponseTypes {
@@ -41,6 +42,7 @@ export enum TriggerResponseTypes {
   CreateTokenConfirmationResponse,
   SignOracleDataConfirmationResponse,
   SendTransactionConfirmationResponse,
+  CreateNanoContractCreateTokenTxConfirmationResponse,
 }
 
 export type Trigger =
@@ -64,7 +66,8 @@ export type Trigger =
   | SignOracleDataConfirmationPrompt
   | SendTransactionConfirmationPrompt
   | SendTransactionLoadingTrigger
-  | SendTransactionLoadingFinishedTrigger;
+  | SendTransactionLoadingFinishedTrigger
+  | CreateNanoContractCreateTokenTxConfirmationPrompt;
 
 export interface BaseLoadingTrigger {
   type: TriggerTypes;
@@ -271,6 +274,27 @@ export interface SendTransactionConfirmationResponse {
   }
 }
 
+export interface CreateNanoContractCreateTokenTxParams {
+  nano: NanoContractParams;
+  token: CreateTokenParams;
+}
+
+export interface CreateNanoContractCreateTokenTxConfirmationPrompt extends BaseConfirmationPrompt {
+  type: TriggerTypes.CreateNanoContractCreateTokenTxConfirmationPrompt;
+  data: CreateNanoContractCreateTokenTxParams;
+}
+
+export interface CreateNanoContractCreateTokenTxConfirmationResponse {
+  type: TriggerResponseTypes.CreateNanoContractCreateTokenTxConfirmationResponse;
+  data: {
+    accepted: true;
+    nano: NanoContractParams & { caller: string };
+    token: CreateTokenParams;
+  } | {
+    accepted: false;
+  }
+}
+
 export type TriggerResponse =
   AddressRequestClientResponse
   | GetUtxosConfirmationResponse
@@ -279,7 +303,8 @@ export type TriggerResponse =
   | SendNanoContractTxConfirmationResponse
   | CreateTokenConfirmationResponse
   | SignOracleDataConfirmationResponse
-  | SendTransactionConfirmationResponse;
+  | SendTransactionConfirmationResponse
+  | CreateNanoContractCreateTokenTxConfirmationResponse;
 
 export type TriggerHandler = (prompt: Trigger, requestMetadata: RequestMetadata) => Promise<TriggerResponse | void>;
 
