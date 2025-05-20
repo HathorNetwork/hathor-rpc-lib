@@ -15,13 +15,14 @@ describe('createNanoContractCreateTokenTx', () => {
   let wallet: HathorWallet;
   let promptHandler = jest.fn();
 
-  const nanoActions: NanoContractAction[] = [
+  const nanoActions = [
     {
       type: 'deposit',
       address: 'test-address',
       token: '00',
-      amount: 100n,
-    } as NanoContractAction,
+      amount: '100',
+      changeAddress: null,
+    },
   ];
 
   const createTokenOptions = {

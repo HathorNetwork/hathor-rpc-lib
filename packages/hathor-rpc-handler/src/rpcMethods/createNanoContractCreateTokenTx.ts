@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import type { HathorWallet } from '@hathor/wallet-lib';
-import type { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
 import {
   TriggerTypes,
   PinConfirmationPrompt,
@@ -53,6 +52,21 @@ const createNanoContractCreateTokenTxSchema = z.object({
   push_tx: z.boolean().default(true),
 });
 
+/**
+ * Creates and optionally sends a nano contract transaction that creates a new token.
+ * This function handles the entire flow including parameter validation, user confirmation,
+ * PIN verification, and transaction creation/sending.
+ * 
+ * @param rpcRequest - The RPC request containing parameters for the nano contract and token creation
+ * @param wallet - The Hathor wallet instance to use for transaction creation
+ * @param requestMetadata - Metadata about the request for context in prompts
+ * @param promptHandler - Handler function for user interaction prompts (confirmation and PIN)
+ * 
+ * @returns A promise that resolves to a CreateNanoContractCreateTokenTxResponse containing the transaction response
+ * 
+ * @throws {InvalidParamsError} If the request parameters fail validation
+ * @throws {PromptRejectedError} If the user rejects either the confirmation or PIN prompt
+ */
 export async function createNanoContractCreateTokenTx(
   rpcRequest: CreateNanoContractCreateTokenTxRpcRequest,
   wallet: HathorWallet,
@@ -69,7 +83,7 @@ export async function createNanoContractCreateTokenTx(
   const nanoParams: NanoContractParams = {
     blueprintId: data?.blueprintId ?? null,
     ncId: data?.ncId ?? null,
-    actions: (data?.actions as NanoContractAction[]) ?? [],
+    actions: data?.actions ?? [],
     method,
     args: data?.args ?? [],
     pushTx: push_tx,
@@ -98,7 +112,9 @@ export async function createNanoContractCreateTokenTx(
       token: tokenParams,
     },
   };
-  const confirmationResponse = await promptHandler(confirmationPrompt, requestMetadata) as CreateNanoContractCreateTokenTxConfirmationResponse;
+  const confirmationResponse = await promptHandler(
+    confirmationPrompt, requestMetadata,
+  ) as CreateNanoContractCreateTokenTxConfirmationResponse;
   if (!confirmationResponse.data.accepted) {
     throw new PromptRejectedError('User rejected nano contract create token transaction prompt');
   }
