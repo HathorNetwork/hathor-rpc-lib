@@ -28,8 +28,8 @@ const createNanoContractCreateTokenTxSchema = z.object({
   method: z.string().min(1),
   address: z.string().min(1),
   data: z.object({
-    blueprintId: z.string().nullable().optional(),
-    ncId: z.string().nullable().optional(),
+    blueprint_id: z.string().nullable().optional(),
+    nc_id: z.string().nullable().optional(),
     actions: z.array(INanoContractActionSchema).optional(),
     args: z.array(z.unknown()).optional(),
   }).optional(),
@@ -80,8 +80,8 @@ export async function createNanoContractCreateTokenTx(
 
   // Prepare nano and token params for the confirmation prompt
   const nanoParams: NanoContractParams = {
-    blueprintId: data?.blueprintId ?? null,
-    ncId: data?.ncId ?? null,
+    blueprintId: data?.blueprint_id ?? null,
+    ncId: data?.nc_id ?? null,
     actions: data?.actions ?? [],
     method,
     args: data?.args ?? [],
