@@ -23,6 +23,7 @@ import {
 } from '../types';
 import { PromptRejectedError, InvalidParamsError } from '../errors';
 import { INanoContractActionSchema } from '@hathor/wallet-lib';
+import { createTokenBaseSchema } from '../schemas';
 
 const createNanoContractCreateTokenTxSchema = z.object({
   method: z.string().min(1),
@@ -33,20 +34,8 @@ const createNanoContractCreateTokenTxSchema = z.object({
     actions: z.array(INanoContractActionSchema).optional(),
     args: z.array(z.unknown()).optional(),
   }).optional(),
-  createTokenOptions: z.object({
-    name: z.string(),
-    symbol: z.string(),
-    amount: z.union([z.string(), z.bigint()]),
-    address: z.string().nullable().optional(),
-    changeAddress: z.string().nullable().optional(),
-    createMint: z.boolean().optional(),
-    mintAuthorityAddress: z.string().nullable().optional(),
-    allowExternalMintAuthorityAddress: z.boolean().optional(),
-    createMelt: z.boolean().optional(),
-    meltAuthorityAddress: z.string().nullable().optional(),
-    allowExternalMeltAuthorityAddress: z.boolean().optional(),
-    data: z.array(z.string()).nullable().optional(),
-    contractPaysTokenDeposit: z.boolean(),
+  createTokenOptions: createTokenBaseSchema.extend({
+    contractPaysTokenDeposit: z.boolean().optional(),
   }).optional(),
   push_tx: z.boolean().default(true),
 });

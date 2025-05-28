@@ -22,37 +22,7 @@ import {
 } from '../types';
 import { CreateTokenError, PromptRejectedError, InvalidParamsError } from '../errors';
 import { z } from 'zod';
-
-const createTokenSchema = z.object({
-  name: z.string().min(1),
-  symbol: z.string().min(1),
-  amount: z.string().regex(/^\d+$/)
-    .pipe(z.coerce.bigint().positive()),
-  address: z.string().nullish().default(null),
-  change_address: z.string().nullish().default(null),
-  create_mint: z.boolean().default(true),
-  mint_authority_address: z.string().nullish().default(null),
-  allow_external_mint_authority_address: z.boolean().default(false),
-  create_melt: z.boolean().default(true),
-  melt_authority_address: z.string().nullish().default(null),
-  allow_external_melt_authority_address: z.boolean().default(false),
-  data: z.string().array().nullish().default(null),
-}).transform(data => ({
-  name: data.name,
-  symbol: data.symbol,
-  amount: data.amount,
-  options: {
-    address: data.address,
-    changeAddress: data.change_address,
-    createMint: data.create_mint,
-    mintAuthorityAddress: data.mint_authority_address,
-    allowExternalMintAuthorityAddress: data.allow_external_mint_authority_address,
-    createMelt: data.create_melt,
-    meltAuthorityAddress: data.melt_authority_address,
-    allowExternalMeltAuthorityAddress: data.allow_external_melt_authority_address,
-    data: data.data,
-  }
-}));
+import { createTokenRpcSchema } from '../schemas';
 
 /**
  * Handles the creation of a new token on the Hathor blockchain.
@@ -80,8 +50,8 @@ export async function createToken(
   triggerHandler: TriggerHandler,
 ) {
   try {
-    const params = createTokenSchema.parse(rpcRequest.params);
-    
+    const params = createTokenRpcSchema.parse(rpcRequest.params);
+
     if (params.options.changeAddress && !await wallet.isAddressMine(params.options.changeAddress)) {
       throw new Error('Change address is not from this wallet');
     }
