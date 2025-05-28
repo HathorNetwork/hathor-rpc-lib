@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import type { HathorWallet } from '@hathor/wallet-lib';
+import type { HathorWallet, SendTransaction } from '@hathor/wallet-lib';
 import {
   TriggerTypes,
   PinConfirmationPrompt,
@@ -22,27 +22,17 @@ import {
   SendNanoContractTxLoadingFinishedTrigger,
 } from '../types';
 import { PromptRejectedError, SendNanoContractTxError, InvalidParamsError } from '../errors';
-import { NanoContractAction, NanoContractActionType } from '@hathor/wallet-lib/lib/nano_contracts/types';
-import NanoContract from '@hathor/wallet-lib/lib/nano_contracts/nano_contract';
+import { INanoContractActionSchema, NanoContractAction } from '@hathor/wallet-lib';
 
 export type NanoContractActionWithStringAmount = Omit<NanoContractAction, 'amount'> & {
   amount: string,
 }
 
-const NanoContractActionSchema = z.object({
-  type: z.nativeEnum(NanoContractActionType),
-  token: z.string(),
-  amount: z.string().regex(/^\d+$/)
-    .pipe(z.coerce.bigint().positive()),
-  address: z.string().nullish().default(null),
-  changeAddress: z.string().nullish().default(null),
-});
-
 const sendNanoContractSchema = z.object({
   method: z.string().min(1),
   blueprint_id: z.string().nullish(),
   nc_id: z.string().nullish(),
-  actions: z.array(NanoContractActionSchema),
+  actions: z.array(INanoContractActionSchema),
   args: z.array(z.unknown()).default([]),
   push_tx: z.boolean().default(true),
 }).transform(data => ({
@@ -78,7 +68,7 @@ export async function sendNanoContractTx(
 ) {
   try {
     const params = sendNanoContractSchema.parse(rpcRequest.params);
-    
+
     const pinPrompt: PinConfirmationPrompt = {
       type: TriggerTypes.PinConfirmationPrompt,
       method: rpcRequest.method,
@@ -129,7 +119,7 @@ export async function sendNanoContractTx(
         args: confirmedArgs,
       };
 
-      let response: NanoContract | string;
+      let response: SendTransaction | string;
 
       if (params.pushTx) {
         // If pushTx is true, create and send the transaction directly

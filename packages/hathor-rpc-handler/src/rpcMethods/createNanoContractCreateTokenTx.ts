@@ -22,15 +22,7 @@ import {
   CreateTokenParams,
 } from '../types';
 import { PromptRejectedError, InvalidParamsError } from '../errors';
-import { NanoContractActionType } from '@hathor/wallet-lib/lib/nano_contracts/types';
-
-const NanoContractActionSchema = z.object({
-  type: z.nativeEnum(NanoContractActionType),
-  token: z.string(),
-  amount: z.string().regex(/^[0-9]+$/).pipe(z.coerce.bigint().positive()),
-  address: z.string().nullish().default(null),
-  changeAddress: z.string().nullish().default(null),
-});
+import { INanoContractActionSchema } from '@hathor/wallet-lib';
 
 const createNanoContractCreateTokenTxSchema = z.object({
   method: z.string().min(1),
@@ -38,7 +30,7 @@ const createNanoContractCreateTokenTxSchema = z.object({
   data: z.object({
     blueprintId: z.string().nullable().optional(),
     ncId: z.string().nullable().optional(),
-    actions: z.array(NanoContractActionSchema).optional(),
+    actions: z.array(INanoContractActionSchema).optional(),
     args: z.array(z.unknown()).optional(),
   }).optional(),
   createTokenOptions: z.object({
@@ -54,8 +46,8 @@ const createNanoContractCreateTokenTxSchema = z.object({
     meltAuthorityAddress: z.string().nullable().optional(),
     allowExternalMeltAuthorityAddress: z.boolean().optional(),
     data: z.array(z.string()).nullable().optional(),
+    contractPaysTokenDeposit: z.boolean(),
   }).optional(),
-  options: z.unknown().optional(),
   push_tx: z.boolean().default(true),
 });
 
@@ -84,7 +76,7 @@ export async function createNanoContractCreateTokenTx(
   if (!validationResult.success) {
     throw new InvalidParamsError(validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
   }
-  const { method, address, data, createTokenOptions, options, push_tx } = validationResult.data;
+  const { method, address, data, createTokenOptions, push_tx } = validationResult.data;
 
   // Prepare nano and token params for the confirmation prompt
   const nanoParams: NanoContractParams = {
@@ -138,9 +130,6 @@ export async function createNanoContractCreateTokenTx(
     throw new PromptRejectedError('User rejected PIN prompt');
   }
 
-  // Ensure options is always an object
-  const optionsObj = options && typeof options === 'object' ? options : {};
-
   // Call the wallet method
   let response;
   if (push_tx) {
@@ -149,7 +138,7 @@ export async function createNanoContractCreateTokenTx(
       address,
       nano,
       token,
-      { ...optionsObj, pinCode: pinResponse.data.pinCode }
+      { pinCode: pinResponse.data.pinCode }
     );
   } else {
     response = await wallet.createNanoContractCreateTokenTransaction(
@@ -157,7 +146,7 @@ export async function createNanoContractCreateTokenTx(
       address,
       nano,
       token,
-      { ...optionsObj, pinCode: pinResponse.data.pinCode }
+      { pinCode: pinResponse.data.pinCode }
     );
   }
 

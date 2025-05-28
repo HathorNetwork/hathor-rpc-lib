@@ -6,7 +6,6 @@
  */
 
 import { CreateTokenTransaction, SendTransaction } from '@hathor/wallet-lib';
-import NanoContract from '@hathor/wallet-lib/lib/nano_contracts/nano_contract';
 import { AddressInfoObject, GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { UtxoDetails } from './prompt';
 
@@ -34,7 +33,7 @@ export interface GetAddressResponse extends BaseRpcResponse {
 
 export interface SendNanoContractTxResponse extends BaseRpcResponse {
   type: RpcResponseTypes.SendNanoContractTxResponse;
-  response: NanoContract | string;
+  response: SendTransaction | string;
 }
 
 export interface CreateTokenResponse extends BaseRpcResponse {
