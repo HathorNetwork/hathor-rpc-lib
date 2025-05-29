@@ -45,11 +45,12 @@ describe('createNanoContractCreateTokenTx', () => {
     meltAuthorityAddress: 'wallet1',
     allowExternalMeltAuthorityAddress: false,
     data: ['test'],
+    contractPaysTokenDeposit: true,
   };
 
   type NanoData = {
-    blueprintId?: string;
-    ncId?: string;
+    blueprint_id?: string;
+    nc_id?: string;
     actions?: NanoContractAction[];
     args?: unknown[];
   };
@@ -61,13 +62,12 @@ describe('createNanoContractCreateTokenTx', () => {
         method: 'initialize',
         address: 'wallet1',
         data: {
-          blueprintId: 'blueprint123',
-          ncId: 'nc123',
+          blueprint_id: 'blueprint123',
+          nc_id: 'nc123',
           actions: nanoActions,
           args: [],
         },
         createTokenOptions,
-        options: {},
         push_tx: true,
       },
     };
@@ -94,8 +94,8 @@ describe('createNanoContractCreateTokenTx', () => {
         data: {
           accepted: true,
           nano: {
-            blueprintId: (rpcRequest.params.data as NanoData).blueprintId,
-            ncId: (rpcRequest.params.data as NanoData).ncId,
+            blueprintId: (rpcRequest.params.data as NanoData).blueprint_id,
+            ncId: (rpcRequest.params.data as NanoData).nc_id,
             actions: (rpcRequest.params.data as NanoData).actions,
             args: (rpcRequest.params.data as NanoData).args,
             method: rpcRequest.params.method,
@@ -156,8 +156,8 @@ describe('createNanoContractCreateTokenTx', () => {
         data: {
           accepted: true,
           nano: {
-            blueprintId: (rpcRequest.params.data as NanoData).blueprintId,
-            ncId: (rpcRequest.params.data as NanoData).ncId,
+            blueprintId: (rpcRequest.params.data as NanoData).blueprint_id,
+            ncId: (rpcRequest.params.data as NanoData).nc_id,
             actions: (rpcRequest.params.data as NanoData).actions,
             args: (rpcRequest.params.data as NanoData).args,
             method: rpcRequest.params.method,
@@ -208,8 +208,8 @@ describe('createNanoContractCreateTokenTx', () => {
         data: {
           accepted: true,
           nano: {
-            blueprintId: (rpcRequest.params.data as NanoData).blueprintId,
-            ncId: (rpcRequest.params.data as NanoData).ncId,
+            blueprintId: (rpcRequest.params.data as NanoData).blueprint_id,
+            ncId: (rpcRequest.params.data as NanoData).nc_id,
             actions: (rpcRequest.params.data as NanoData).actions,
             args: (rpcRequest.params.data as NanoData).args,
             method: rpcRequest.params.method,
@@ -234,10 +234,55 @@ describe('createNanoContractCreateTokenTx', () => {
         address: '', // Invalid: empty address
         data: {},
         createTokenOptions: {},
-        options: {},
         push_tx: true,
       },
     } as unknown as CreateNanoContractCreateTokenTxRpcRequest;
     await expect(createNanoContractCreateTokenTx(invalidRequest, wallet, {}, promptHandler)).rejects.toThrow(InvalidParamsError);
+  });
+
+  it('should validate nano contract actions using wallet-lib schema', async () => {
+    const invalidActionRequest = {
+      method: RpcMethods.CreateNanoContractCreateTokenTx,
+      params: {
+        method: 'initialize',
+        address: 'wallet1',
+        data: {
+          blueprint_id: 'blueprint123',
+          actions: [
+            {
+              type: 'invoke_authority',
+              token: '00',
+              address: 'test-address',
+              // Missing required 'authority' field for invoke_authority action
+            },
+          ],
+        },
+        createTokenOptions,
+        push_tx: true,
+      },
+    } as unknown as CreateNanoContractCreateTokenTxRpcRequest;
+
+    await expect(createNanoContractCreateTokenTx(invalidActionRequest, wallet, {}, promptHandler)).rejects.toThrow(InvalidParamsError);
+  });
+
+  it('should validate token options using shared schema', async () => {
+    const invalidTokenRequest = {
+      method: RpcMethods.CreateNanoContractCreateTokenTx,
+      params: {
+        method: 'initialize',
+        address: 'wallet1',
+        data: {
+          blueprint_id: 'blueprint123',
+        },
+        createTokenOptions: {
+          name: '', // Invalid: empty name
+          symbol: 'A', // Invalid: too short
+          amount: '100',
+        },
+        push_tx: true,
+      },
+    } as unknown as CreateNanoContractCreateTokenTxRpcRequest;
+
+    await expect(createNanoContractCreateTokenTx(invalidTokenRequest, wallet, {}, promptHandler)).rejects.toThrow(InvalidParamsError);
   });
 }); 
