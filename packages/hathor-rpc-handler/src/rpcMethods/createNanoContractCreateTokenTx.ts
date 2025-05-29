@@ -40,7 +40,7 @@ const createNanoContractCreateTokenTxSchema = z.object({
     args: z.array(z.unknown()).optional(),
   }).optional(),
   createTokenOptions: createTokenBaseSchema.extend({
-    contractPaysTokenDeposit: z.boolean().optional(),
+    contractPaysTokenDeposit: z.boolean(),
   }).optional(),
   push_tx: z.boolean().default(true),
 });
