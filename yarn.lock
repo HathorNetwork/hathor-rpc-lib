@@ -449,7 +449,7 @@ __metadata:
   resolution: "@hathor/hathor-rpc-handler@workspace:packages/hathor-rpc-handler"
   dependencies:
     "@eslint/js": "npm:9.4.0"
-    "@hathor/wallet-lib": "npm:2.0.1"
+    "@hathor/wallet-lib": "npm:2.4.0"
     "@types/eslint__js": "npm:8.42.3"
     "@types/jest": "npm:29.5.12"
     "@types/node": "npm:20.14.2"
@@ -458,28 +458,25 @@ __metadata:
     ts-jest: "npm:29.1.4"
     typescript: "npm:5.4.5"
     typescript-eslint: "npm:7.13.0"
-    zod: "npm:3.24.1"
+    zod: "npm:3.23.8"
   languageName: unknown
   linkType: soft
 
-"@hathor/wallet-lib@npm:2.0.1":
-  version: 2.0.1
-  resolution: "@hathor/wallet-lib@npm:2.0.1"
+"@hathor/wallet-lib@npm:2.4.0":
+  version: 2.4.0
+  resolution: "@hathor/wallet-lib@npm:2.4.0"
   dependencies:
-    abstract-level: "npm:1.0.4"
     axios: "npm:1.7.7"
     bitcore-lib: "npm:8.25.10"
     bitcore-mnemonic: "npm:8.25.10"
     buffer: "npm:6.0.3"
     crypto-js: "npm:4.2.0"
     isomorphic-ws: "npm:5.0.0"
-    level: "npm:8.0.1"
-    level-transcoder: "npm:1.0.1"
     lodash: "npm:4.17.21"
     queue-microtask: "npm:1.2.3"
     ws: "npm:8.17.1"
     zod: "npm:3.23.8"
-  checksum: 10c0/92d9aa9319a21e67b7619b7ef0d90b78b71f4f34efeea28b4328b0cc00ab4d4e6c957ea4f850127a8c309d29d50cf9e34c24d931ebcbb996dfd6f9343f8776d9
+  checksum: 10c0/f62564e6476f8791f3103a03f7d81785023538d4eed626b299cbd8a0f5155d70ca19a0369a430d38db04510baf6f76ca2e898e876adcae102a6c476c3605915e
   languageName: node
   linkType: hard
 
@@ -1177,21 +1174,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"abstract-level@npm:1.0.4, abstract-level@npm:^1.0.2, abstract-level@npm:^1.0.4":
-  version: 1.0.4
-  resolution: "abstract-level@npm:1.0.4"
-  dependencies:
-    buffer: "npm:^6.0.3"
-    catering: "npm:^2.1.0"
-    is-buffer: "npm:^2.0.5"
-    level-supports: "npm:^4.0.0"
-    level-transcoder: "npm:^1.0.1"
-    module-error: "npm:^1.0.1"
-    queue-microtask: "npm:^1.2.3"
-  checksum: 10c0/e89fad8924888b597ca84e6d003a424a670f225fd595ad1f4c2e2d38a5cea3c92877a44f5104cdede1717eb262dd6e7fbf7ef2375569c7395066521170b8d761
-  languageName: node
-  linkType: hard
-
 "acorn-jsx@npm:^5.3.2":
   version: 5.3.2
   resolution: "acorn-jsx@npm:5.3.2"
@@ -1554,18 +1536,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"browser-level@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "browser-level@npm:1.0.1"
-  dependencies:
-    abstract-level: "npm:^1.0.2"
-    catering: "npm:^2.1.1"
-    module-error: "npm:^1.0.2"
-    run-parallel-limit: "npm:^1.1.0"
-  checksum: 10c0/10f874b05fb06092c4dc3f7b02c1bcff9b01b8eee2a7066837a10c4b0179d40dd9ecef03bfecb9acbd0b61abf67ccd250766ee18b48464cd9a4eeddda1b069b9
-  languageName: node
-  linkType: hard
-
 "browserslist@npm:^4.24.0":
   version: 4.24.5
   resolution: "browserslist@npm:4.24.5"
@@ -1621,7 +1591,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"buffer@npm:6.0.3, buffer@npm:^6.0.3":
+"buffer@npm:6.0.3":
   version: 6.0.3
   resolution: "buffer@npm:6.0.3"
   dependencies:
@@ -1689,13 +1659,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"catering@npm:^2.1.0, catering@npm:^2.1.1":
-  version: 2.1.1
-  resolution: "catering@npm:2.1.1"
-  checksum: 10c0/a69f946f82cba85509abcb399759ed4c39d2cc9e33ba35674f242130c1b3c56673da3c3e85804db6898dfd966c395aa128ba484b31c7b906cc2faca6a581e133
-  languageName: node
-  linkType: hard
-
 "chalk@npm:^4.0.0":
   version: 4.1.2
   resolution: "chalk@npm:4.1.2"
@@ -1731,20 +1694,6 @@ __metadata:
   version: 1.4.3
   resolution: "cjs-module-lexer@npm:1.4.3"
   checksum: 10c0/076b3af85adc4d65dbdab1b5b240fe5b45d44fcf0ef9d429044dd94d19be5589376805c44fb2d4b3e684e5fe6a9b7cf3e426476a6507c45283c5fc6ff95240be
-  languageName: node
-  linkType: hard
-
-"classic-level@npm:^1.2.0":
-  version: 1.4.1
-  resolution: "classic-level@npm:1.4.1"
-  dependencies:
-    abstract-level: "npm:^1.0.2"
-    catering: "npm:^2.1.0"
-    module-error: "npm:^1.0.1"
-    napi-macros: "npm:^2.2.2"
-    node-gyp: "npm:latest"
-    node-gyp-build: "npm:^4.3.0"
-  checksum: 10c0/ba769e0b558ab466cef9468f7494b67d8f0139768630ba184d67b33201e67aad274718f3b1b78aaf3c5f5ab4cc526971edf82c7060741031bbad357952e7304d
   languageName: node
   linkType: hard
 
@@ -2778,13 +2727,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"is-buffer@npm:^2.0.5":
-  version: 2.0.5
-  resolution: "is-buffer@npm:2.0.5"
-  checksum: 10c0/e603f6fced83cf94c53399cff3bda1a9f08e391b872b64a73793b0928be3e5f047f2bcece230edb7632eaea2acdbfcb56c23b33d8a20c820023b230f1485679a
-  languageName: node
-  linkType: hard
-
 "is-core-module@npm:^2.16.0":
   version: 2.16.1
   resolution: "is-core-module@npm:2.16.1"
@@ -3491,34 +3433,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"level-supports@npm:^4.0.0":
-  version: 4.0.1
-  resolution: "level-supports@npm:4.0.1"
-  checksum: 10c0/a94aa591786845d17c9c62ad075ae33e0fce5be714baa6e16305ed14e2d3638d09e724247fa3f63951e36de57ffd168d63e159e79d03944ee648054b8c7c1684
-  languageName: node
-  linkType: hard
-
-"level-transcoder@npm:1.0.1, level-transcoder@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "level-transcoder@npm:1.0.1"
-  dependencies:
-    buffer: "npm:^6.0.3"
-    module-error: "npm:^1.0.1"
-  checksum: 10c0/25936330676325f22c5143aff5c7fe3f1db156db99f9efb07a2642045c2c6ee565fcbfccbadc0600b3abf8bbe595632cacc3dd334009214069d1857daa57987e
-  languageName: node
-  linkType: hard
-
-"level@npm:8.0.1":
-  version: 8.0.1
-  resolution: "level@npm:8.0.1"
-  dependencies:
-    abstract-level: "npm:^1.0.4"
-    browser-level: "npm:^1.0.1"
-    classic-level: "npm:^1.2.0"
-  checksum: 10c0/52e3c18a3372f22b7c0c96a998a24099454f51952ba2b8f25eabc72b1f7bbc15a3ab480c92c94d3c931be370be5a235b804b16e565b73b22bea52cca4029a625
-  languageName: node
-  linkType: hard
-
 "leven@npm:^3.1.0":
   version: 3.1.0
   resolution: "leven@npm:3.1.0"
@@ -3813,24 +3727,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"module-error@npm:^1.0.1, module-error@npm:^1.0.2":
-  version: 1.0.2
-  resolution: "module-error@npm:1.0.2"
-  checksum: 10c0/584a43a1bb2720c6c6c771e257a308af4f042a17c17b1472a2c855130a1ad93ba516a82ae7ac2ce2d03062e521cc53c03ec0ce153795d895312d7747fb3bb99b
-  languageName: node
-  linkType: hard
-
 "ms@npm:^2.1.3":
   version: 2.1.3
   resolution: "ms@npm:2.1.3"
   checksum: 10c0/d924b57e7312b3b63ad21fc5b3dc0af5e78d61a1fc7cfb5457edaf26326bf62be5307cc87ffb6862ef1c2b33b0233cdb5d4f01c4c958cc0d660948b65a287a48
-  languageName: node
-  linkType: hard
-
-"napi-macros@npm:^2.2.2":
-  version: 2.2.2
-  resolution: "napi-macros@npm:2.2.2"
-  checksum: 10c0/cc85daaf82a4f585d30561047cef0f3e702be769b5cf2ffadc6242bc5a1033f6b8269012e54178baf66f022bd18aa9ebb619f1b530cc19c1f9b96f9689affd50
   languageName: node
   linkType: hard
 
@@ -3845,17 +3745,6 @@ __metadata:
   version: 1.0.0
   resolution: "negotiator@npm:1.0.0"
   checksum: 10c0/4c559dd52669ea48e1914f9d634227c561221dd54734070791f999c52ed0ff36e437b2e07d5c1f6e32909fc625fe46491c16e4a8f0572567d4dd15c3a4fda04b
-  languageName: node
-  linkType: hard
-
-"node-gyp-build@npm:^4.3.0":
-  version: 4.8.4
-  resolution: "node-gyp-build@npm:4.8.4"
-  bin:
-    node-gyp-build: bin.js
-    node-gyp-build-optional: optional.js
-    node-gyp-build-test: build-test.js
-  checksum: 10c0/444e189907ece2081fe60e75368784f7782cfddb554b60123743dfb89509df89f1f29c03bbfa16b3a3e0be3f48799a4783f487da6203245fa5bed239ba7407e1
   languageName: node
   linkType: hard
 
@@ -4178,7 +4067,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"queue-microtask@npm:1.2.3, queue-microtask@npm:^1.2.2, queue-microtask@npm:^1.2.3":
+"queue-microtask@npm:1.2.3, queue-microtask@npm:^1.2.2":
   version: 1.2.3
   resolution: "queue-microtask@npm:1.2.3"
   checksum: 10c0/900a93d3cdae3acd7d16f642c29a642aea32c2026446151f0778c62ac089d4b8e6c986811076e1ae180a694cedf077d453a11b58ff0a865629a4f82ab558e102
@@ -4275,15 +4164,6 @@ __metadata:
   version: 1.1.0
   resolution: "reusify@npm:1.1.0"
   checksum: 10c0/4eff0d4a5f9383566c7d7ec437b671cc51b25963bd61bf127c3f3d3f68e44a026d99b8d2f1ad344afff8d278a8fe70a8ea092650a716d22287e8bef7126bb2fa
-  languageName: node
-  linkType: hard
-
-"run-parallel-limit@npm:^1.1.0":
-  version: 1.1.0
-  resolution: "run-parallel-limit@npm:1.1.0"
-  dependencies:
-    queue-microtask: "npm:^1.2.2"
-  checksum: 10c0/9c78eb77e788d0ed803a7e80921412f6f6accfb2006de8c21699d9ebf7696df9cefaa313fe14d6169a3fc9f564b34fe91bfd9948cc3a58e2d24136a2390523ae
   languageName: node
   linkType: hard
 
@@ -4933,12 +4813,5 @@ __metadata:
   version: 3.23.8
   resolution: "zod@npm:3.23.8"
   checksum: 10c0/8f14c87d6b1b53c944c25ce7a28616896319d95bc46a9660fe441adc0ed0a81253b02b5abdaeffedbeb23bdd25a0bf1c29d2c12dd919aef6447652dd295e3e69
-  languageName: node
-  linkType: hard
-
-"zod@npm:3.24.1":
-  version: 3.24.1
-  resolution: "zod@npm:3.24.1"
-  checksum: 10c0/0223d21dbaa15d8928fe0da3b54696391d8e3e1e2d0283a1a070b5980a1dbba945ce631c2d1eccc088fdbad0f2dfa40155590bf83732d3ac4fcca2cc9237591b
   languageName: node
   linkType: hard

@@ -131,9 +131,9 @@ export interface CreateNanoContractCreateTokenTxRpcRequest {
   params: {
     method: string;
     address: string;
-    data?: unknown; // Use unknown for CreateNanoTxData for now
-    createTokenOptions?: unknown; // Use unknown for CreateTokenTxOptions for now
-    options?: unknown; // Use unknown for CreateNanoTxOptions for now
+    data?: unknown;
+    createTokenOptions?: unknown;
+    options?: unknown;
     push_tx: boolean;
   }
 }
