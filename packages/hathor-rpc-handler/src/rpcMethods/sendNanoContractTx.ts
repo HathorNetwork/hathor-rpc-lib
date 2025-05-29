@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import type { HathorWallet, SendTransaction } from '@hathor/wallet-lib';
+import type { HathorWallet, SendTransaction, Transaction } from '@hathor/wallet-lib';
 import {
   TriggerTypes,
   PinConfirmationPrompt,
@@ -119,7 +119,7 @@ export async function sendNanoContractTx(
         args: confirmedArgs,
       };
 
-      let response: SendTransaction | string;
+      let response: Transaction | string;
 
       if (params.pushTx) {
         // If pushTx is true, create and send the transaction directly

@@ -14,10 +14,12 @@ export function signOracleDataRpcRequest(
   network: string,
   data: string,
   oracle: string,
+  ncId: string,
 ): SignOracleDataRpcRequest {
   return {
     method: RpcMethods.SignOracleData,
     params: {
+      nc_id: ncId,
       network,
       data,
       oracle,

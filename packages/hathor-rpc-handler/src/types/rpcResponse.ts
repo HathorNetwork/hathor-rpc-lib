@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { CreateTokenTransaction, SendTransaction } from '@hathor/wallet-lib';
+import { CreateTokenTransaction, SendTransaction, Transaction } from '@hathor/wallet-lib';
 import { AddressInfoObject, GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { UtxoDetails } from './prompt';
 
@@ -33,7 +33,7 @@ export interface GetAddressResponse extends BaseRpcResponse {
 
 export interface SendNanoContractTxResponse extends BaseRpcResponse {
   type: RpcResponseTypes.SendNanoContractTxResponse;
-  response: SendTransaction | string;
+  response: Transaction | string;
 }
 
 export interface CreateTokenResponse extends BaseRpcResponse {
@@ -84,7 +84,7 @@ export interface SendTransactionResponse extends BaseRpcResponse {
 
 export interface CreateNanoContractCreateTokenTxResponse extends BaseRpcResponse {
   type: RpcResponseTypes.CreateNanoContractCreateTokenTxResponse;
-  response: unknown; // Use unknown for now, will be the transaction or result
+  response: Transaction;
 }
 
 export type RpcResponse = GetAddressResponse
