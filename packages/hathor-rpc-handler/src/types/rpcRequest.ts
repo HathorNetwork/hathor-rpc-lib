@@ -88,6 +88,7 @@ export interface SignWithAddressRpcRequest {
 export interface SignOracleDataRpcRequest {
   method: RpcMethods.SignOracleData,
   params: {
+    nc_id: string;
     network: string;
     data: string;
     oracle: string;

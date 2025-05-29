@@ -28,7 +28,7 @@ describe('createNanoContractCreateTokenTx', () => {
       address: 'test-address',
       token: '00',
       amount: '100',
-      changeAddress: null,
+      changeAddress: 'test-change-address',
     },
   ];
 

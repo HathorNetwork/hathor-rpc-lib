@@ -170,6 +170,10 @@ export async function sendNanoContractTx(
     if (err instanceof z.ZodError) {
       throw new InvalidParamsError(err.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
     }
+    // Convert BigInt conversion errors to consistent InvalidParamsError for better API error handling
+    if (err instanceof SyntaxError && err.message.includes('Cannot convert')) {
+      throw new InvalidParamsError(`Invalid number format: ${err.message}`);
+    }
     throw err;
   }
 }
