@@ -25,6 +25,11 @@ import { PromptRejectedError, InvalidParamsError } from '../errors';
 import { INanoContractActionSchema } from '@hathor/wallet-lib';
 import { createTokenBaseSchema } from '../schemas';
 
+// Extend CreateTokenParams to include nano contract specific fields
+type NanoContractCreateTokenParams = CreateTokenParams & {
+  contractPaysTokenDeposit: boolean;
+};
+
 const createNanoContractCreateTokenTxSchema = z.object({
   method: z.string().min(1),
   address: z.string().min(1),
@@ -77,7 +82,7 @@ export async function createNanoContractCreateTokenTx(
     pushTx: push_tx,
   };
   // Only pass CreateTokenParams fields, fallback to null/empty for missing
-  const tokenParams: CreateTokenParams = {
+  const tokenParams: NanoContractCreateTokenParams = {
     name: createTokenOptions?.name ?? '',
     symbol: createTokenOptions?.symbol ?? '',
     amount: typeof createTokenOptions?.amount === 'string' ? BigInt(createTokenOptions.amount) : (createTokenOptions?.amount ?? 0n),
@@ -90,6 +95,7 @@ export async function createNanoContractCreateTokenTx(
     meltAuthorityAddress: createTokenOptions?.meltAuthorityAddress ?? null,
     allowExternalMeltAuthorityAddress: createTokenOptions?.allowExternalMeltAuthorityAddress ?? false,
     data: createTokenOptions?.data ?? null,
+    contractPaysTokenDeposit: createTokenOptions?.contractPaysTokenDeposit ?? false,
   };
 
   const confirmationPrompt: CreateNanoContractCreateTokenTxConfirmationPrompt = {
