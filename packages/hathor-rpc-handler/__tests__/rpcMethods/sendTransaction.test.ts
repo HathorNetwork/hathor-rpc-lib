@@ -218,7 +218,7 @@ describe('sendTransaction', () => {
       ]),
       expect.any(Object),
     );
-    
+
     // Verify the array length matches the expected number of outputs (2 regular + 1 data output)
     expect(wallet.sendManyOutputsSendTransaction.mock.calls[0][0]).toHaveLength(3);
   });

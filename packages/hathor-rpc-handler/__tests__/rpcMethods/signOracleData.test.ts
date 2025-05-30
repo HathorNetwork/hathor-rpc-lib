@@ -204,6 +204,7 @@ describe('signOracleData parameter validation', () => {
     const validRequest = {
       method: RpcMethods.SignOracleData,
       params: {
+        nc_id: 'test-nc-id',
         network: 'testnet',
         oracle: 'test-oracle',
         data: 'test-data',

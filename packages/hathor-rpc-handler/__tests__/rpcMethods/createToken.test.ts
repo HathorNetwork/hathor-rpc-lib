@@ -14,7 +14,7 @@ function toCamelCase(params: Pick<CreateTokenRpcRequest, 'params'>['params']) {
     name: params.name,
     symbol: params.symbol,
     changeAddress: params.change_address,
-    address: params.address,
+    mintAddress: params.address,
     amount: params.amount,
     createMint: params.create_mint,
     mintAuthorityAddress: params.mint_authority_address,

@@ -19,6 +19,7 @@ export enum RpcMethods {
   SendNanoContractTx = 'htr_sendNanoContractTx',
   SignOracleData = 'htr_signOracleData',
   SendTransaction = 'htr_sendTransaction',
+  CreateNanoContractCreateTokenTx = 'htr_createNanoContractCreateTokenTx',
 }
 
 export interface CreateTokenRpcRequest {
@@ -87,6 +88,7 @@ export interface SignWithAddressRpcRequest {
 export interface SignOracleDataRpcRequest {
   method: RpcMethods.SignOracleData,
   params: {
+    nc_id: string;
     network: string;
     data: string;
     oracle: string;
@@ -124,6 +126,18 @@ export interface SendTransactionRpcRequest {
   }
 }
 
+export interface CreateNanoContractCreateTokenTxRpcRequest {
+  method: RpcMethods.CreateNanoContractCreateTokenTx,
+  params: {
+    method: string;
+    address: string;
+    data?: unknown;
+    createTokenOptions?: unknown;
+    options?: unknown;
+    push_tx: boolean;
+  }
+}
+
 export type RequestMetadata = {
   [key: string]: string,
 };
@@ -145,5 +159,6 @@ export type RpcRequest = GetAddressRpcRequest
   | GetConnectedNetworkRpcRequest
   | GenericRpcRequest
   | SignOracleDataRpcRequest
-  | SendTransactionRpcRequest;
+  | SendTransactionRpcRequest
+  | CreateNanoContractCreateTokenTxRpcRequest;
 

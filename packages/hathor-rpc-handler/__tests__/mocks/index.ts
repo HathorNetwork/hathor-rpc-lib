@@ -52,6 +52,7 @@ export const mockSignWithAddressRequest: SignWithAddressRpcRequest = {
 export const mockSignOracleDataRequest: SignOracleDataRpcRequest = {
   method: RpcMethods.SignOracleData,
   params: {
+    nc_id: 'test-nc-id',
     network: 'mainnet',
     oracle: 'address1',
     data: 'Test oracle data',
