@@ -11,7 +11,6 @@ export const createTokenBaseSchema = z.object({
   name: z.string().min(1).max(30),
   symbol: z.string().min(2).max(5),
   amount: z.union([z.string(), z.bigint()]),
-  address: z.string().nullable().optional(),
   changeAddress: z.string().nullable().optional(),
   createMint: z.boolean().optional(),
   mintAuthorityAddress: z.string().nullable().optional(),
@@ -20,6 +19,7 @@ export const createTokenBaseSchema = z.object({
   meltAuthorityAddress: z.string().nullable().optional(),
   allowExternalMeltAuthorityAddress: z.boolean().optional(),
   data: z.array(z.string()).nullable().optional(),
+  mintAddress: z.string().nullable().optional(),
 });
 
 // Schema for the original createToken RPC method with snake_case fields
@@ -42,7 +42,6 @@ export const createTokenRpcSchema = z.object({
   symbol: data.symbol,
   amount: data.amount,
   options: {
-    address: data.address,
     changeAddress: data.change_address,
     createMint: data.create_mint,
     mintAuthorityAddress: data.mint_authority_address,
@@ -51,5 +50,6 @@ export const createTokenRpcSchema = z.object({
     meltAuthorityAddress: data.melt_authority_address,
     allowExternalMeltAuthorityAddress: data.allow_external_melt_authority_address,
     data: data.data,
+    mintAddress: data.address,
   }
 })); 

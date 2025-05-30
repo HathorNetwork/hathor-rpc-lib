@@ -86,7 +86,7 @@ export async function createNanoContractCreateTokenTx(
     name: createTokenOptions?.name ?? '',
     symbol: createTokenOptions?.symbol ?? '',
     amount: typeof createTokenOptions?.amount === 'string' ? BigInt(createTokenOptions.amount) : (createTokenOptions?.amount ?? 0n),
-    address: createTokenOptions?.address ?? null,
+    mintAddress: createTokenOptions?.mintAddress ?? null,
     changeAddress: createTokenOptions?.changeAddress ?? null,
     createMint: createTokenOptions?.createMint ?? true,
     mintAuthorityAddress: createTokenOptions?.mintAuthorityAddress ?? null,

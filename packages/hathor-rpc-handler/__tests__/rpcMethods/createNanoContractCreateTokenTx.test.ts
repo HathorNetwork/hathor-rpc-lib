@@ -36,7 +36,7 @@ describe('createNanoContractCreateTokenTx', () => {
     name: 'TestToken',
     symbol: 'TT',
     amount: '100',
-    address: 'wallet1',
+    mintAddress: 'wallet1',
     changeAddress: 'wallet1',
     createMint: true,
     mintAuthorityAddress: 'wallet1',

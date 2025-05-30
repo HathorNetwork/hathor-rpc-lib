@@ -68,7 +68,6 @@ export async function createToken(
         name: params.name,
         symbol: params.symbol,
         amount: params.amount,
-        address: params.options.address,
         changeAddress: params.options.changeAddress,
         createMint: params.options.createMint,
         mintAuthorityAddress: params.options.mintAuthorityAddress,
@@ -77,6 +76,7 @@ export async function createToken(
         meltAuthorityAddress: params.options.meltAuthorityAddress,
         allowExternalMeltAuthorityAddress: params.options.allowExternalMeltAuthorityAddress,
         data: params.options.data,
+        mintAddress: params.options.mintAddress,
       },
     };
 

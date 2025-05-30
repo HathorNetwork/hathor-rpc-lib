@@ -166,7 +166,7 @@ export interface CreateTokenParams {
   name: string,
   symbol: string,
   amount: bigint,
-  address: string | null,
+  mintAddress: string | null,
   changeAddress: string | null,
   createMint: boolean,
   mintAuthorityAddress: string | null,
