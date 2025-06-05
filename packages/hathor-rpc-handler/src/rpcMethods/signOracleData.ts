@@ -10,6 +10,7 @@ import {
   nanoUtils,
   bufferUtils,
   NanoContractSerializer,
+  Network,
 } from '@hathor/wallet-lib';
 import {
   TriggerHandler,
@@ -28,6 +29,7 @@ import { PromptRejectedError, InvalidParamsError } from '../errors';
 import { z } from 'zod';
 
 const signOracleDataSchema = z.object({
+  nc_id: z.string(),
   network: z.string().min(1),
   oracle: z.string().min(1),
   data: z.string().min(1),
@@ -40,7 +42,7 @@ export async function signOracleData(
   promptHandler: TriggerHandler,
 ) {
   const parseResult = signOracleDataSchema.safeParse(rpcRequest.params);
-  
+
   if (!parseResult.success) {
     throw new InvalidParamsError(parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
   }
@@ -75,12 +77,12 @@ export async function signOracleData(
   }
 
   const oracleData = nanoUtils.getOracleBuffer(params.oracle, wallet.getNetworkObject());
-  const nanoSerializer = new NanoContractSerializer();
+  const nanoSerializer = new NanoContractSerializer(new Network(params.network));
   const dataSerialized = nanoSerializer.serializeFromType(params.data, 'str');
 
   // TODO getOracleInputData method should be able to receive the PIN as optional parameter as well
   wallet.pinCode = pinResponse.data.pinCode;
-  const inputData = await nanoUtils.getOracleInputData(oracleData, dataSerialized, wallet);
+  const inputData = await nanoUtils.getOracleInputData(oracleData, params.nc_id, dataSerialized, wallet);
   const signature = `${bufferUtils.bufferToHex(inputData)},${params.data},str`;
 
   return {

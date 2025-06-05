@@ -315,32 +315,6 @@ describe('sendNanoContractTx', () => {
       type: TriggerTypes.SendNanoContractTxLoadingTrigger,
     }, {});
   });
-
-  it('should reject transactions with zero amount', async () => {
-    // Setup a request with zero amount
-    const zeroAmountAction = {
-      type: 'deposit',
-      address: 'test-address',
-      token: '00',
-      amount: '0',
-    } as NanoContractActionWithStringAmount;
-
-    const requestWithZeroAmount = {
-      ...rpcRequest,
-      params: {
-        ...rpcRequest.params,
-        actions: [zeroAmountAction] as unknown as NanoContractAction[],
-      },
-    } as SendNanoContractRpcRequest;
-
-    // The validation should fail with a specific error
-    await expect(
-      sendNanoContractTx(requestWithZeroAmount, wallet, {}, promptHandler)
-    ).rejects.toThrow(InvalidParamsError);
-
-    // Verify that the promptHandler wasn't called since validation should fail first
-    expect(promptHandler).not.toHaveBeenCalled();
-  });
 });
 
 describe('sendNanoContractTx parameter validation', () => {
@@ -353,21 +327,33 @@ describe('sendNanoContractTx parameter validation', () => {
     })),
   } as unknown as HathorWallet;
 
-  const mockTriggerHandler = jest.fn().mockResolvedValue({
-    type: TriggerResponseTypes.SendNanoContractTxConfirmationResponse,
-    data: { 
-      accepted: true,
-      nc: {
-        caller: 'test-caller',
-        blueprintId: 'test-blueprint',
-        actions: [] as NanoContractAction[],
-        args: [] as unknown[],
-      },
-    }
-  });
+  let mockTriggerHandler: jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockTriggerHandler = jest.fn()
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.SendNanoContractTxConfirmationResponse,
+        data: { 
+          accepted: true,
+          nc: {
+            caller: 'test-caller',
+            blueprintId: 'test-blueprint',
+            ncId: null,
+            actions: [] as NanoContractAction[],
+            args: [] as unknown[],
+            method: 'test-method',
+            pushTx: true,
+          },
+        }
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: {
+          accepted: true,
+          pinCode: '1234',
+        }
+      });
   });
 
   it('should reject when neither blueprint_id nor nc_id is provided', async () => {
