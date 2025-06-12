@@ -12,3 +12,6 @@ coverage/
 *.swo
 .claude
 playwright-report/
+
+.yalc/
+yalc.lock

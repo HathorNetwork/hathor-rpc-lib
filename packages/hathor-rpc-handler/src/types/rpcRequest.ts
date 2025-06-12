@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { TokenVersion } from '@hathor/wallet-lib';
 import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
 
 export enum RpcMethods {
@@ -31,6 +32,7 @@ export interface CreateTokenRpcRequest {
     name: string;
     symbol: string;
     amount: string;
+    version?: TokenVersion
     address?: string;
     change_address?: string;
     create_mint: boolean;
@@ -101,12 +103,17 @@ export interface SignOracleDataRpcRequest {
 export interface SendNanoContractRpcRequest {
   method: RpcMethods.SendNanoContractTx,
   params: {
+    network: string;
     method: string;
-    blueprint_id: string;
-    nc_id: string | null;
+    blueprint_id?: string | null;
+    nc_id?: string | null;
     actions: NanoContractAction[],
-    args: unknown[];
-    push_tx: boolean;
+    args?: unknown[];
+    push_tx?: boolean;
+    /** Maximum fee the user is willing to pay */
+    max_fee?: string;
+    /** Whether the contract pays the transaction fees */
+    contract_pays_fees?: boolean;
   }
 }
 
@@ -139,7 +146,10 @@ export interface CreateNanoContractCreateTokenTxRpcRequest {
     address: string;
     data?: unknown;
     createTokenOptions?: unknown;
-    options?: unknown;
+    /** Maximum fee the user is willing to pay */
+    max_fee?: string;
+    /** Whether the contract pays the transaction fees */
+    contract_pays_fees?: boolean;
     push_tx: boolean;
   }
 }

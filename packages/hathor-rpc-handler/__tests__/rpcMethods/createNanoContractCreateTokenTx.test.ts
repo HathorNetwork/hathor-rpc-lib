@@ -12,10 +12,11 @@ import {
   TriggerTypes,
   RpcMethods,
   CreateNanoContractCreateTokenTxRpcRequest,
+  CreateNanoContractCreateTokenTxConfirmationPrompt,
   TriggerResponseTypes,
   RpcResponseTypes,
 } from '../../src/types';
-import { PromptRejectedError, InvalidParamsError } from '../../src/errors';
+import { PromptRejectedError, InvalidParamsError, SendNanoContractTxError } from '../../src/errors';
 
 describe('createNanoContractCreateTokenTx', () => {
   let rpcRequest: CreateNanoContractCreateTokenTxRpcRequest;
@@ -36,6 +37,7 @@ describe('createNanoContractCreateTokenTx', () => {
     name: 'TestToken',
     symbol: 'TT',
     amount: '100',
+    version: 1, // TokenVersion.DEPOSIT - tests that version is forwarded
     mintAddress: 'wallet1',
     changeAddress: 'wallet1',
     createMint: true,
@@ -55,7 +57,26 @@ describe('createNanoContractCreateTokenTx', () => {
     args?: unknown[];
   };
 
+  // Mock fees returned by pre-build transaction
+  const mockFees = [{ tokenIndex: 0, amount: 100n }];
+
+  // Create mock transaction object
+  const createMockTransaction = (fees = mockFees) => ({
+    getFeeHeader: jest.fn().mockReturnValue({ entries: fees }),
+    getNanoHeaders: jest.fn().mockReturnValue([{ address: null, seqnum: 0 }]),
+    prepareToSend: jest.fn(),
+    toHex: jest.fn().mockReturnValue('mock-tx-hex'),
+  });
+
+  // Create mock SendTransaction result
+  const createMockSendTransactionResult = (mockTransaction: ReturnType<typeof createMockTransaction>) => ({
+    transaction: mockTransaction,
+    runFromMining: jest.fn().mockResolvedValue({ tx_id: 'mock-tx-id' }),
+  });
+
   beforeEach(() => {
+    jest.clearAllMocks();
+
     rpcRequest = {
       method: RpcMethods.CreateNanoContractCreateTokenTx,
       params: {
@@ -72,10 +93,19 @@ describe('createNanoContractCreateTokenTx', () => {
       },
     };
 
+    const mockTransaction = createMockTransaction();
+    const mockSendTxResult = createMockSendTransactionResult(mockTransaction);
+
     wallet = {
-      createAndSendNanoContractCreateTokenTransaction: jest.fn(),
-      createNanoContractCreateTokenTransaction: jest.fn(),
-    } as Partial<IHathorWallet> as IHathorWallet;
+      createNanoContractCreateTokenTransaction: jest.fn().mockResolvedValue(mockSendTxResult),
+      getNanoHeaderSeqnum: jest.fn().mockResolvedValue(1),
+      getNetworkObject: jest.fn().mockReturnValue({ name: 'testnet' }),
+      setNanoHeaderCaller: jest.fn().mockResolvedValue(undefined),
+      signTx: jest.fn().mockResolvedValue(undefined),
+      storage: {
+        // Mock storage for signTransaction
+      },
+    } as unknown as IHathorWallet;
 
     promptHandler = jest.fn();
   });
@@ -101,6 +131,8 @@ describe('createNanoContractCreateTokenTx', () => {
             method: rpcRequest.params.method,
             pushTx: true,
             caller: 'wallet1',
+            fee: 100n,
+            parsedArgs: [],
           },
           token: createTokenOptions,
         },
@@ -112,8 +144,6 @@ describe('createNanoContractCreateTokenTx', () => {
           pinCode,
         },
       });
-
-    (wallet.createAndSendNanoContractCreateTokenTransaction as jest.Mock).mockResolvedValue(response);
 
     const result = await createNanoContractCreateTokenTx(rpcRequest, wallet, {}, promptHandler);
 
@@ -142,19 +172,18 @@ describe('createNanoContractCreateTokenTx', () => {
       }),
       {}
     );
-    expect(wallet.createAndSendNanoContractCreateTokenTransaction).toHaveBeenCalledWith(
+
+    // Verify the pre-build was called with signTx: false
+    expect(wallet.createNanoContractCreateTokenTransaction).toHaveBeenCalledWith(
       rpcRequest.params.method,
       rpcRequest.params.address,
       expect.objectContaining({
         blueprintId: 'blueprint123',
         ncId: 'nc123',
-        actions: nanoActions,
-        method: rpcRequest.params.method,
         args: [],
-        pushTx: true,
       }),
-      createTokenOptions,
-      expect.objectContaining({ pinCode })
+      expect.anything(),
+      expect.objectContaining({ signTx: false })
     );
     expect(result).toEqual(rpcResponse);
   });
@@ -175,6 +204,8 @@ describe('createNanoContractCreateTokenTx', () => {
             method: rpcRequest.params.method,
             pushTx: false,
             caller: 'wallet1',
+            fee: 100n,
+            parsedArgs: [],
           },
           token: createTokenOptions,
         },
@@ -186,11 +217,7 @@ describe('createNanoContractCreateTokenTx', () => {
           pinCode,
         },
       });
-    (wallet.createNanoContractCreateTokenTransaction as jest.Mock).mockResolvedValue({
-      transaction: {
-        toHex: jest.fn().mockReturnValue('mock-tx-hex'),
-      },
-    });
+
     const result = await createNanoContractCreateTokenTx(rpcRequest, wallet, {}, promptHandler);
 
     expect(promptHandler).toHaveBeenCalledTimes(4); // Confirmation, PIN, Loading, LoadingFinished
@@ -206,25 +233,22 @@ describe('createNanoContractCreateTokenTx', () => {
       }),
       {}
     );
-    
+
+    // Verify the pre-build was called with signTx: false
     expect(wallet.createNanoContractCreateTokenTransaction).toHaveBeenCalledWith(
       rpcRequest.params.method,
       rpcRequest.params.address,
       expect.objectContaining({
         blueprintId: 'blueprint123',
         ncId: 'nc123',
-        actions: nanoActions,
-        method: rpcRequest.params.method,
         args: [],
-        pushTx: false,
       }),
       expect.objectContaining({
         name: createTokenOptions.name,
         symbol: createTokenOptions.symbol,
-        mintAddress: createTokenOptions.mintAddress,
         contractPaysTokenDeposit: createTokenOptions.contractPaysTokenDeposit,
       }),
-      expect.objectContaining({ pinCode })
+      expect.objectContaining({ signTx: false })
     );
     expect(result).toHaveProperty('type', RpcResponseTypes.CreateNanoContractCreateTokenTxResponse);
     expect(result).toHaveProperty('response', 'mock-tx-hex');
@@ -252,6 +276,8 @@ describe('createNanoContractCreateTokenTx', () => {
             method: rpcRequest.params.method,
             pushTx: true,
             caller: 'wallet1',
+            fee: 100n,
+            parsedArgs: [],
           },
           token: createTokenOptions,
         },
@@ -322,4 +348,286 @@ describe('createNanoContractCreateTokenTx', () => {
 
     await expect(createNanoContractCreateTokenTx(invalidTokenRequest, wallet, {}, promptHandler)).rejects.toThrow(InvalidParamsError);
   });
-}); 
+
+  it('should include fees and preparedTx in confirmation prompt', async () => {
+    const feesForTest = [{ tokenIndex: 0, amount: 200n }];
+    const mockTransaction = createMockTransaction(feesForTest);
+    const mockSendTxResult = createMockSendTransactionResult(mockTransaction);
+
+    (wallet.createNanoContractCreateTokenTransaction as jest.Mock).mockResolvedValue(mockSendTxResult);
+
+    // Capture the prompt data
+    let capturedPrompt: CreateNanoContractCreateTokenTxConfirmationPrompt | undefined;
+    promptHandler.mockImplementation((prompt: CreateNanoContractCreateTokenTxConfirmationPrompt) => {
+      if (prompt.type === TriggerTypes.CreateNanoContractCreateTokenTxConfirmationPrompt) {
+        capturedPrompt = prompt;
+        return {
+          type: TriggerResponseTypes.CreateNanoContractCreateTokenTxConfirmationResponse,
+          data: { accepted: false },
+        }; // Reject to end early
+      }
+    });
+
+    await expect(createNanoContractCreateTokenTx(rpcRequest, wallet, {}, promptHandler)).rejects.toThrow(PromptRejectedError);
+
+    // Verify fees and preparedTx are included in the prompt
+    expect(capturedPrompt).toBeDefined();
+    expect(capturedPrompt!.type).toBe(TriggerTypes.CreateNanoContractCreateTokenTxConfirmationPrompt);
+    expect(capturedPrompt!.data.nano.fee).toBe(200n);
+    expect(capturedPrompt!.data.nano.preparedTx).toBe(mockTransaction);
+  });
+
+  it('should handle transaction without fee header', async () => {
+    const mockTransaction = {
+      getFeeHeader: jest.fn().mockReturnValue(null), // No fee header
+      getNanoHeaders: jest.fn().mockReturnValue([{ address: null, seqnum: 0 }]),
+      prepareToSend: jest.fn(),
+      toHex: jest.fn().mockReturnValue('mock-tx-hex'),
+    };
+    const mockSendTxResult = {
+      transaction: mockTransaction,
+      runFromMining: jest.fn().mockResolvedValue({ tx_id: 'mock-tx-id' }),
+    };
+
+    (wallet.createNanoContractCreateTokenTransaction as jest.Mock).mockResolvedValue(mockSendTxResult);
+
+    let capturedPrompt: CreateNanoContractCreateTokenTxConfirmationPrompt | undefined;
+    promptHandler.mockImplementation((prompt: CreateNanoContractCreateTokenTxConfirmationPrompt) => {
+      if (prompt.type === TriggerTypes.CreateNanoContractCreateTokenTxConfirmationPrompt) {
+        capturedPrompt = prompt;
+        return {
+          type: TriggerResponseTypes.CreateNanoContractCreateTokenTxConfirmationResponse,
+          data: { accepted: false },
+        }; // Reject to end early
+      }
+    });
+
+    await expect(createNanoContractCreateTokenTx(rpcRequest, wallet, {}, promptHandler)).rejects.toThrow(PromptRejectedError);
+
+    // Should default to empty array when no fee header
+    expect(capturedPrompt!.data.nano.fee).toBe(0n);
+  });
+
+  it('should call wallet.signTx with correct parameters', async () => {
+    const pinCode = '1234';
+    const mockTransaction = createMockTransaction();
+    const mockSendTxResult = createMockSendTransactionResult(mockTransaction);
+
+    (wallet.createNanoContractCreateTokenTransaction as jest.Mock).mockResolvedValue(mockSendTxResult);
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.CreateNanoContractCreateTokenTxConfirmationResponse,
+        data: {
+          accepted: true,
+          nano: {
+            blueprintId: (rpcRequest.params.data as NanoData).blueprint_id,
+            ncId: (rpcRequest.params.data as NanoData).nc_id,
+            actions: (rpcRequest.params.data as NanoData).actions,
+            args: (rpcRequest.params.data as NanoData).args,
+            method: rpcRequest.params.method,
+            pushTx: true,
+            caller: 'wallet1',
+            fee: 100n,
+            parsedArgs: [],
+          },
+          token: createTokenOptions,
+        },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: {
+          accepted: true,
+          pinCode,
+        },
+      });
+
+    await createNanoContractCreateTokenTx(rpcRequest, wallet, {}, promptHandler);
+
+    expect(wallet.signTx).toHaveBeenCalledWith(
+      mockTransaction,
+      { pinCode }
+    );
+  });
+
+  it('should call runFromMining when push_tx is true', async () => {
+    const pinCode = '1234';
+    const mockTransaction = createMockTransaction();
+    const mockSendTxResult = createMockSendTransactionResult(mockTransaction);
+
+    (wallet.createNanoContractCreateTokenTransaction as jest.Mock).mockResolvedValue(mockSendTxResult);
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.CreateNanoContractCreateTokenTxConfirmationResponse,
+        data: {
+          accepted: true,
+          nano: {
+            blueprintId: (rpcRequest.params.data as NanoData).blueprint_id,
+            ncId: (rpcRequest.params.data as NanoData).nc_id,
+            actions: (rpcRequest.params.data as NanoData).actions,
+            args: (rpcRequest.params.data as NanoData).args,
+            method: rpcRequest.params.method,
+            pushTx: true,
+            caller: 'wallet1',
+            fee: 100n,
+            parsedArgs: [],
+          },
+          token: createTokenOptions,
+        },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: {
+          accepted: true,
+          pinCode,
+        },
+      });
+
+    await createNanoContractCreateTokenTx(rpcRequest, wallet, {}, promptHandler);
+
+    expect(mockSendTxResult.runFromMining).toHaveBeenCalled();
+    expect(mockTransaction.toHex).not.toHaveBeenCalled();
+  });
+
+  it('should call toHex when push_tx is false', async () => {
+    rpcRequest.params.push_tx = false;
+    const pinCode = '1234';
+    const mockTransaction = createMockTransaction();
+    const mockSendTxResult = createMockSendTransactionResult(mockTransaction);
+
+    (wallet.createNanoContractCreateTokenTransaction as jest.Mock).mockResolvedValue(mockSendTxResult);
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.CreateNanoContractCreateTokenTxConfirmationResponse,
+        data: {
+          accepted: true,
+          nano: {
+            blueprintId: (rpcRequest.params.data as NanoData).blueprint_id,
+            ncId: (rpcRequest.params.data as NanoData).nc_id,
+            actions: (rpcRequest.params.data as NanoData).actions,
+            args: (rpcRequest.params.data as NanoData).args,
+            method: rpcRequest.params.method,
+            pushTx: false,
+            caller: 'wallet1',
+            fee: 100n,
+            parsedArgs: [],
+          },
+          token: createTokenOptions,
+        },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: {
+          accepted: true,
+          pinCode,
+        },
+      });
+
+    await createNanoContractCreateTokenTx(rpcRequest, wallet, {}, promptHandler);
+
+    expect(mockTransaction.toHex).toHaveBeenCalled();
+    expect(mockSendTxResult.runFromMining).not.toHaveBeenCalled();
+  });
+
+  it('should update caller when changed in confirmation', async () => {
+    const pinCode = '1234';
+    const newCaller = 'wallet2';
+
+    // Create a mock transaction with trackable nanoHeaders
+    const mockNanoHeaders = [{ address: null, seqnum: 0 }];
+    const mockTransaction = {
+      getFeeHeader: jest.fn().mockReturnValue({ entries: mockFees }),
+      getNanoHeaders: jest.fn().mockReturnValue(mockNanoHeaders),
+      prepareToSend: jest.fn(),
+      toHex: jest.fn().mockReturnValue('mock-tx-hex'),
+    };
+    const mockSendTxResult = {
+      transaction: mockTransaction,
+      runFromMining: jest.fn().mockResolvedValue({ tx_id: 'mock-tx-id' }),
+    };
+
+    (wallet.createNanoContractCreateTokenTransaction as jest.Mock).mockResolvedValue(mockSendTxResult);
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.CreateNanoContractCreateTokenTxConfirmationResponse,
+        data: {
+          accepted: true,
+          nano: {
+            blueprintId: 'blueprint123',
+            ncId: 'nc123',
+            actions: nanoActions,
+            args: [],
+            method: 'initialize',
+            pushTx: true,
+            caller: newCaller,  // Different from original address 'wallet1'
+            parsedArgs: [],
+            fee: 100n,
+          },
+          token: createTokenOptions,
+        },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: { accepted: true, pinCode },
+      });
+
+    await createNanoContractCreateTokenTx(rpcRequest, wallet, {}, promptHandler);
+
+    // Verify getNanoHeaders was called to get the headers to update
+    expect(mockTransaction.getNanoHeaders).toHaveBeenCalled();
+
+    // Verify setNanoHeaderCaller was called with the header and new caller
+    expect(wallet.setNanoHeaderCaller).toHaveBeenCalledWith(mockNanoHeaders[0], newCaller);
+  });
+
+  it('should throw SendNanoContractTxError when caller is missing in confirmation response', async () => {
+    promptHandler.mockResolvedValueOnce({
+      type: TriggerResponseTypes.CreateNanoContractCreateTokenTxConfirmationResponse,
+      data: {
+        accepted: true,
+        nano: {
+          blueprintId: 'blueprint123',
+          ncId: 'nc123',
+          actions: nanoActions,
+          args: [],
+          method: 'initialize',
+          pushTx: true,
+          // caller is missing
+          parsedArgs: [],
+          fee: 100n,
+        },
+        token: createTokenOptions,
+      },
+    });
+
+    await expect(createNanoContractCreateTokenTx(rpcRequest, wallet, {}, promptHandler))
+      .rejects.toThrow(SendNanoContractTxError);
+  });
+
+  it('should throw SendNanoContractTxError when caller is empty string in confirmation response', async () => {
+    promptHandler.mockResolvedValueOnce({
+      type: TriggerResponseTypes.CreateNanoContractCreateTokenTxConfirmationResponse,
+      data: {
+        accepted: true,
+        nano: {
+          blueprintId: 'blueprint123',
+          ncId: 'nc123',
+          actions: nanoActions,
+          args: [],
+          method: 'initialize',
+          pushTx: true,
+          caller: '',  // Empty string
+          parsedArgs: [],
+          fee: 100n,
+        },
+        token: createTokenOptions,
+      },
+    });
+
+    await expect(createNanoContractCreateTokenTx(rpcRequest, wallet, {}, promptHandler))
+      .rejects.toThrow(SendNanoContractTxError);
+  });
+});

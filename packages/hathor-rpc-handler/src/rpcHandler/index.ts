@@ -29,9 +29,9 @@ import {
 import {
   getAddress,
   getBalance,
+  getConnectedNetwork,
   getUtxos,
   sendNanoContractTx,
-  getConnectedNetwork,
   signOracleData,
   signWithAddress,
   createToken,
@@ -47,7 +47,7 @@ export const handleRpcRequest = async (
   request: RpcRequest,
   wallet: IHathorWallet,
   requestMetadata: RequestMetadata,
-  promptHandler: TriggerHandler,
+  promptHandler: TriggerHandler
 ): Promise<RpcResponse> => {
   switch (request.method) {
     case RpcMethods.SignWithAddress: return signWithAddress(
