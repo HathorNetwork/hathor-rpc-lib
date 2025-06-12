@@ -14,7 +14,7 @@
           inherit (packages) node-packages;
         in
         {
-          nodejs = final.nodejs_20;
+          nodejs = final.nodejs_22;
           nodePackages = prev.nodePackages;
         };
     in
@@ -32,7 +32,7 @@
         pkgs.devshell.mkShell {
           packages = with pkgs; [
             nixpkgs-fmt
-            nodejs_20
+            nodejs_22
             yarn-berry
           ];
         };
