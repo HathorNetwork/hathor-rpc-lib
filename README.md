@@ -4,27 +4,57 @@
 
 **Hathor RPC library** is the official and reference library for implementing the client and server sides of JSON-RPC APIs for communication between dApps and wallet applications on Hathor platform.
 
-## Installation
+## Running
 
-TO DO
+### Local environment
 
-## Usage
+#### System dependencies
 
-TO DO
+```
+Node: 20x
+yarn: v4 (yarn-berry)
+```
+
+#### Install nix (preferred)
+
+For a better developer experience we suggest nix usage for mananing the enviroment. Visit this [link](https://nixos.org/download/#download-nix) to download it.
+
+To enable the commands `nix develop` and `nix build` using flakes, add the following to your `/etc/nix/nix.conf` file:
+
+```
+experimental-features = nix-command flakes
+```
+
+#### Clone the project and install dependencies
+
+```sh
+$ git clone https://github.com/HathorNetwork/hathor-rpc-lib.git
+```
+
+To initialize nix dev environment:
+
+```sh
+$ nix develop
+```
+
+then, install the depencies:
+
+```sh
+yarn
+```
+
+### Tests
+After installing the packages, tests can be started from the workspace level by running: 
+
+```sh
+yarn tests
+```
 
 ## Support
 
 If after consulting the documentation, you still need **help to use Hathor RPC library**, [send a message to the `#development` channel on Hathor Discord server for assistance from Hathor team and community members](https://discord.com/channels/566500848570466316/663785995082268713).
 
 If you observe an incorrect behavior while using Hathor RPC library, see [the "Issues" subsection in "Contributing"](#issues).
-
-Tests
-
-TO DO
-
-Development
-
-TO DO
 
 ## Contributing
 
