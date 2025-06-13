@@ -4,57 +4,64 @@
 
 **Hathor RPC library** is the official and reference library for implementing the client and server sides of JSON-RPC APIs for communication between dApps and wallet applications on Hathor platform.
 
-## Running
+## Installation
 
-### Local environment
-
-#### System dependencies
-
-```
-Node: 20x
-yarn: v4 (yarn-berry)
+```bash
+npm i @hathor/hathor-rpc-handler
 ```
 
-#### Install nix (preferred)
+Package released at https://www.npmjs.com/package/@hathor/hathor-rpc-handler .
 
-For a better developer experience we suggest nix usage for mananing the enviroment. Visit this [link](https://nixos.org/download/#download-nix) to download it.
+## Usage
 
-To enable the commands `nix develop` and `nix build` using flakes, add the following to your `/etc/nix/nix.conf` file:
+For how to integrate a DApp front end with Hathor wallets, see https://docs.hathor.network/pathways/journeys/build-dapp#integrating-dapp-with-wallets .
 
-```
-experimental-features = nix-command flakes
-```
+For the API reference, see [`./docs/openrpc.json`](./docs/openrpc.json)
 
-#### Clone the project and install dependencies
-
-```sh
-$ git clone https://github.com/HathorNetwork/hathor-rpc-lib.git
-```
-
-To initialize nix dev environment:
-
-```sh
-$ nix develop
-```
-
-then, install the depencies:
-
-```sh
-yarn
-```
-
-### Tests
-After installing the packages, tests can be started from the workspace level by running: 
-
-```sh
-yarn tests
-```
+For how to implement the integration, see https://docs.hathor.network/references/sdk/dapp/wallet-integration-development .
 
 ## Support
 
 If after consulting the documentation, you still need **help to use Hathor RPC library**, [send a message to the `#development` channel on Hathor Discord server for assistance from Hathor team and community members](https://discord.com/channels/566500848570466316/663785995082268713).
 
 If you observe an incorrect behavior while using Hathor RPC library, see [the "Issues" subsection in "Contributing"](#issues).
+
+## Development
+
+Prerequisites:
+- Node.js >= 20
+- Yarn v4
+- [NixOS](https://nixos.org/download/#download-nix)
+
+1. To enable commands `nix develop` and `nix build` using flakes, add to the configuration file `/etc/nix/nix.conf`:
+
+```bash
+experimental-features = nix-command flakes
+```
+
+2. Clone the repository:
+
+```bash
+$ git clone https://github.com/HathorNetwork/hathor-rpc-lib.git
+```
+
+3. Initialize nix development environment:
+
+```bash
+$ nix develop
+```
+
+4. Install the dependencies:
+
+```bash
+yarn
+```
+
+## Tests
+
+```bash
+yarn tests
+```
 
 ## Contributing
 
