@@ -5,9 +5,10 @@
   "files": [
     "dist"
   ],
+  "main": "dist/index.js",
   "scripts": {
     "allow-scripts": "yarn workspace root allow-scripts",
-    "build": "babel src --out-dir dist --extensions \".ts,.tsx\"",
+    "build": "tsc",
     "lint": "yarn lint:eslint && yarn lint:misc --check",
     "lint:eslint": "eslint . --cache --ext js,ts",
     "lint:fix": "yarn lint:eslint --fix && yarn lint:misc --write",
@@ -20,17 +21,13 @@
     "react": "^18.2.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.27.0",
-    "@babel/core": "^7.26.10",
-    "@babel/preset-env": "^7.26.9",
-    "@babel/preset-react": "^7.26.3",
-    "@babel/preset-typescript": "^7.27.0",
     "@metamask/eslint-config": "^12.2.0",
     "@metamask/eslint-config-browser": "^12.1.0",
     "@metamask/eslint-config-jest": "^12.1.0",
     "@metamask/eslint-config-nodejs": "^12.1.0",
     "@metamask/eslint-config-typescript": "^12.1.0",
     "@types/jest": "^27.5.2",
+    "@types/node": "^22.14.0",
     "@types/react": "^18.0.15",
     "@types/react-dom": "^18.0.6",
     "@types/styled-components": "^5.1.25",
