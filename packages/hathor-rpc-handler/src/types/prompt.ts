@@ -7,6 +7,7 @@
 import { AddressInfoObject, GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
 import { RequestMetadata } from './rpcRequest';
+import { TokenInfoVersion } from '@hathor/wallet-lib';
 
 export enum TriggerTypes {
   GetBalanceConfirmationPrompt,
@@ -166,6 +167,7 @@ export interface CreateTokenParams {
   name: string,
   symbol: string,
   amount: bigint,
+  version: TokenInfoVersion | null,
   mintAddress: string | null,
   changeAddress: string | null,
   createMint: boolean,
