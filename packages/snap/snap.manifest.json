@@ -3,7 +3,7 @@
   "description": "Hathor Network Snap integration",
   "proposedName": "Hathor Wallet",
   "source": {
-    "shasum": "qWvg7yJZorR2hLBY8BjeyLY4XH7KWLAOIVSuXFbbBDY=",
+    "shasum": "5eA4mLwvbXlH1uezgmIhQvO43TNICSRz0bVYDMLxhW8=",
     "location": {
       "npm": {
         "filePath": "dist/bundle.js",
@@ -14,6 +14,9 @@
   },
   "initialPermissions": {
     "snap_dialog": {},
+    "snap_manageState": {},
+    "endowment:lifecycle-hooks": {},
+    "endowment:page-home": {},
     "endowment:rpc": {
       "dapps": true,
       "snaps": false
