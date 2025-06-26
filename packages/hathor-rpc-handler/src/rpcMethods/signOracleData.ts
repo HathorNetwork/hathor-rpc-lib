@@ -9,8 +9,6 @@ import {
   HathorWallet,
   nanoUtils,
   bufferUtils,
-  NanoContractSerializer,
-  Network,
 } from '@hathor/wallet-lib';
 import {
   TriggerHandler,
@@ -76,20 +74,28 @@ export async function signOracleData(
     throw new PromptRejectedError('User rejected PIN prompt');
   }
 
-  const oracleData = nanoUtils.getOracleBuffer(params.oracle, wallet.getNetworkObject());
-  const nanoSerializer = new NanoContractSerializer(new Network(params.network));
-  const dataSerialized = nanoSerializer.serializeFromType(params.data, 'str');
+  // We only support strings from the RPC
+  const type = 'str';
+  const resultPreSerialized = params.data;
 
-  // TODO getOracleInputData method should be able to receive the PIN as optional parameter as well
+  const oracleDataBuffer = bufferUtils.hexToBuffer(params.oracle);
+  
+  // TODO: getOracleSignedDataFromUser method should be able to receive the PIN as optional parameter as well
   wallet.pinCode = pinResponse.data.pinCode;
-  const inputData = await nanoUtils.getOracleInputData(oracleData, params.nc_id, dataSerialized, wallet);
-  const signature = `${bufferUtils.bufferToHex(inputData)},${params.data},str`;
+  
+  const signedResult = await nanoUtils.getOracleSignedDataFromUser(
+    oracleDataBuffer,
+    params.nc_id,
+    `SignedData[${type}]`,
+    resultPreSerialized,
+    wallet
+  );
 
   return {
     type: RpcResponseTypes.SignOracleDataResponse,
     response: {
       data: params.data,
-      signature,
+      signature: String(signedResult),
       oracle: params.oracle,
     }
   } as SignOracleDataResponse;

@@ -21,12 +21,8 @@ import { InvalidParamsError } from '../../src/errors';
 jest.mock('@hathor/wallet-lib', () => ({
   ...jest.requireActual('@hathor/wallet-lib'),
   nanoUtils: {
-    getOracleBuffer: jest.fn().mockReturnValue(Buffer.from('oracle-data')),
-    getOracleInputData: jest.fn().mockResolvedValue(Buffer.from('oracle-data')),
+    getOracleSignedDataFromUser: jest.fn().mockResolvedValue('mock-signed-result'),
   },
-  NanoContractSerializer: jest.fn().mockImplementation(() => ({
-    serializeFromType: jest.fn(),
-  })),
 }));
 
 describe('signOracleData', () => {
@@ -57,7 +53,7 @@ describe('signOracleData', () => {
       },
     }, {});
 
-    expect(nanoUtils.getOracleBuffer).not.toHaveBeenCalled();
+    expect(nanoUtils.getOracleSignedDataFromUser).not.toHaveBeenCalled();
   });
 
   it('should throw PromptRejectedError if user rejects the PIN prompt', async () => {
@@ -89,7 +85,7 @@ describe('signOracleData', () => {
       method: mockSignOracleDataRequest.method,
     }, {});
 
-    expect(nanoUtils.getOracleBuffer).not.toHaveBeenCalled();
+    expect(nanoUtils.getOracleSignedDataFromUser).not.toHaveBeenCalled();
   });
 
   it('should return signed oracle data if user confirms and provides PIN', async () => {
@@ -122,14 +118,20 @@ describe('signOracleData', () => {
       method: mockSignOracleDataRequest.method,
     }, {});
 
-    const oracleDataBuf = Buffer.from('oracle-data');
-    const signature = `${bufferUtils.bufferToHex(oracleDataBuf)},${mockSignOracleDataRequest.params.data},str`;
+    // Verify the new API is called with correct parameters
+    expect(nanoUtils.getOracleSignedDataFromUser).toHaveBeenCalledWith(
+      bufferUtils.hexToBuffer(mockSignOracleDataRequest.params.oracle),
+      mockSignOracleDataRequest.params.nc_id,
+      'SignedData[str]',
+      mockSignOracleDataRequest.params.data,
+      wallet
+    );
 
     expect(result).toStrictEqual({
       type: RpcResponseTypes.SignOracleDataResponse,
       response: {
         data: mockSignOracleDataRequest.params.data,
-        signature,
+        signature: 'mock-signed-result',
         oracle: mockSignOracleDataRequest.params.oracle,
       }
     });
