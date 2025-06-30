@@ -449,7 +449,7 @@ __metadata:
   resolution: "@hathor/hathor-rpc-handler@workspace:packages/hathor-rpc-handler"
   dependencies:
     "@eslint/js": "npm:9.4.0"
-    "@hathor/wallet-lib": "npm:^2.5.1"
+    "@hathor/wallet-lib": "npm:2.5.1"
     "@types/eslint__js": "npm:8.42.3"
     "@types/jest": "npm:29.5.12"
     "@types/node": "npm:20.14.2"
@@ -462,7 +462,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@hathor/wallet-lib@npm:^2.5.1":
+"@hathor/wallet-lib@npm:2.5.1":
   version: 2.5.1
   resolution: "@hathor/wallet-lib@npm:2.5.1"
   dependencies:
