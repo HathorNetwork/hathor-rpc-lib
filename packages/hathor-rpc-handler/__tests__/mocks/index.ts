@@ -54,7 +54,7 @@ export const mockSignOracleDataRequest: SignOracleDataRpcRequest = {
   params: {
     nc_id: 'test-nc-id',
     network: 'mainnet',
-    oracle: 'address1',
+    oracle: '76a9140b4671452484138af42caf9c9676d951a075232c88ac',
     data: 'Test oracle data',
   },
 };

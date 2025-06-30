@@ -6,9 +6,9 @@
  */
 
 import { HathorWallet, Network, bufferUtils, nanoUtils } from '@hathor/wallet-lib';
-import { 
-  TriggerTypes, 
-  TriggerResponseTypes, 
+import {
+  TriggerTypes,
+  TriggerResponseTypes,
   RpcResponseTypes,
   RpcMethods,
   SignOracleDataRpcRequest,
@@ -21,7 +21,11 @@ import { InvalidParamsError } from '../../src/errors';
 jest.mock('@hathor/wallet-lib', () => ({
   ...jest.requireActual('@hathor/wallet-lib'),
   nanoUtils: {
-    getOracleSignedDataFromUser: jest.fn().mockResolvedValue('mock-signed-result'),
+    getOracleSignedDataFromUser: jest.fn().mockResolvedValue({
+      type: 'str',
+      signature: 'mock-signed-result',
+      value: 'yes',
+    }),
   },
 }));
 
@@ -131,7 +135,11 @@ describe('signOracleData', () => {
       type: RpcResponseTypes.SignOracleDataResponse,
       response: {
         data: mockSignOracleDataRequest.params.data,
-        signature: 'mock-signed-result',
+        signedData: {
+          value: 'yes',
+          signature: 'mock-signed-result',
+          type: 'str',
+        },
         oracle: mockSignOracleDataRequest.params.oracle,
       }
     });
@@ -147,7 +155,7 @@ describe('signOracleData parameter validation', () => {
 
   const mockTriggerHandler = jest.fn().mockResolvedValue({
     type: TriggerResponseTypes.SignOracleDataConfirmationResponse,
-    data: { 
+    data: {
       accepted: true,
       pinCode: '1234'
     }
@@ -208,7 +216,7 @@ describe('signOracleData parameter validation', () => {
       params: {
         nc_id: 'test-nc-id',
         network: 'testnet',
-        oracle: 'test-oracle',
+        oracle: '76a9140b4671452484138af42caf9c9676d951a075232c88ac',
         data: 'test-data',
       },
     } as SignOracleDataRpcRequest;
