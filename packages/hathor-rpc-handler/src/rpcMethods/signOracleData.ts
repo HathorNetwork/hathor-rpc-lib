@@ -79,11 +79,11 @@ export async function signOracleData(
   const resultPreSerialized = params.data;
 
   const oracleDataBuffer = bufferUtils.hexToBuffer(params.oracle);
-  
+
   // TODO: getOracleSignedDataFromUser method should be able to receive the PIN as optional parameter as well
   wallet.pinCode = pinResponse.data.pinCode;
-  
-  const signedResult = await nanoUtils.getOracleSignedDataFromUser(
+
+  const signedData = await nanoUtils.getOracleSignedDataFromUser(
     oracleDataBuffer,
     params.nc_id,
     `SignedData[${type}]`,
@@ -95,7 +95,7 @@ export async function signOracleData(
     type: RpcResponseTypes.SignOracleDataResponse,
     response: {
       data: params.data,
-      signature: String(signedResult),
+      signedData,
       oracle: params.oracle,
     }
   } as SignOracleDataResponse;
