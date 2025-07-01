@@ -8,6 +8,7 @@
 import { CreateTokenTransaction, SendTransaction, Transaction } from '@hathor/wallet-lib';
 import { AddressInfoObject, GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { UtxoDetails } from './prompt';
+import { IUserSignedData } from '@hathor/wallet-lib/lib/nano_contracts/fields/signedData';
 
 export enum RpcResponseTypes {
   SendNanoContractTxResponse,
@@ -67,7 +68,7 @@ export interface SignOracleDataResponse extends BaseRpcResponse {
   type: RpcResponseTypes.SignOracleDataResponse;
   response: {
     data: string;
-    signature: string;
+    signedData: IUserSignedData,
     oracle: string;
   }
 }

@@ -6,9 +6,9 @@
  */
 
 import { HathorWallet, Network, bufferUtils, nanoUtils } from '@hathor/wallet-lib';
-import { 
-  TriggerTypes, 
-  TriggerResponseTypes, 
+import {
+  TriggerTypes,
+  TriggerResponseTypes,
   RpcResponseTypes,
   RpcMethods,
   SignOracleDataRpcRequest,
@@ -21,12 +21,12 @@ import { InvalidParamsError } from '../../src/errors';
 jest.mock('@hathor/wallet-lib', () => ({
   ...jest.requireActual('@hathor/wallet-lib'),
   nanoUtils: {
-    getOracleBuffer: jest.fn().mockReturnValue(Buffer.from('oracle-data')),
-    getOracleInputData: jest.fn().mockResolvedValue(Buffer.from('oracle-data')),
+    getOracleSignedDataFromUser: jest.fn().mockResolvedValue({
+      type: 'str',
+      signature: 'mock-signed-result',
+      value: 'yes',
+    }),
   },
-  NanoContractSerializer: jest.fn().mockImplementation(() => ({
-    serializeFromType: jest.fn(),
-  })),
 }));
 
 describe('signOracleData', () => {
@@ -57,7 +57,7 @@ describe('signOracleData', () => {
       },
     }, {});
 
-    expect(nanoUtils.getOracleBuffer).not.toHaveBeenCalled();
+    expect(nanoUtils.getOracleSignedDataFromUser).not.toHaveBeenCalled();
   });
 
   it('should throw PromptRejectedError if user rejects the PIN prompt', async () => {
@@ -89,7 +89,7 @@ describe('signOracleData', () => {
       method: mockSignOracleDataRequest.method,
     }, {});
 
-    expect(nanoUtils.getOracleBuffer).not.toHaveBeenCalled();
+    expect(nanoUtils.getOracleSignedDataFromUser).not.toHaveBeenCalled();
   });
 
   it('should return signed oracle data if user confirms and provides PIN', async () => {
@@ -122,14 +122,24 @@ describe('signOracleData', () => {
       method: mockSignOracleDataRequest.method,
     }, {});
 
-    const oracleDataBuf = Buffer.from('oracle-data');
-    const signature = `${bufferUtils.bufferToHex(oracleDataBuf)},${mockSignOracleDataRequest.params.data},str`;
+    // Verify the new API is called with correct parameters
+    expect(nanoUtils.getOracleSignedDataFromUser).toHaveBeenCalledWith(
+      bufferUtils.hexToBuffer(mockSignOracleDataRequest.params.oracle),
+      mockSignOracleDataRequest.params.nc_id,
+      'SignedData[str]',
+      mockSignOracleDataRequest.params.data,
+      wallet
+    );
 
     expect(result).toStrictEqual({
       type: RpcResponseTypes.SignOracleDataResponse,
       response: {
         data: mockSignOracleDataRequest.params.data,
-        signature,
+        signedData: {
+          value: 'yes',
+          signature: 'mock-signed-result',
+          type: 'str',
+        },
         oracle: mockSignOracleDataRequest.params.oracle,
       }
     });
@@ -145,7 +155,7 @@ describe('signOracleData parameter validation', () => {
 
   const mockTriggerHandler = jest.fn().mockResolvedValue({
     type: TriggerResponseTypes.SignOracleDataConfirmationResponse,
-    data: { 
+    data: {
       accepted: true,
       pinCode: '1234'
     }
@@ -206,7 +216,7 @@ describe('signOracleData parameter validation', () => {
       params: {
         nc_id: 'test-nc-id',
         network: 'testnet',
-        oracle: 'test-oracle',
+        oracle: '76a9140b4671452484138af42caf9c9676d951a075232c88ac',
         data: 'test-data',
       },
     } as SignOracleDataRpcRequest;
