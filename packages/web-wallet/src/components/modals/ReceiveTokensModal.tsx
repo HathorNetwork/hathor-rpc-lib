@@ -33,7 +33,7 @@ export default function ReceiveTokensModal({ onClose }: ReceiveTokensModalProps)
   return (
     <Modal isOpen onClose={onClose}>
       <div className="p-8 text-center">
-        <h2 className="text-2xl font-bold text-white mb-2">Receive Tokens</h2>
+        <h2 className="text-2xl font-bold text-primary mb-2">Receive Tokens</h2>
         <p className="text-text-secondary mb-8">
           Send HTR or custom tokens to this address.
         </p>

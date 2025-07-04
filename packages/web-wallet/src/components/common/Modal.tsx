@@ -35,14 +35,14 @@ export default function Modal({ isOpen, onClose, children, className }: ModalPro
       />
       <div
         className={clsx(
-          'relative bg-card border border-card-border rounded-2xl shadow-2xl',
-          'max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto',
+          'relative bg-[#1E1E2A] border border-card-border rounded-3xl shadow-2xl',
+          'max-w-xl w-full mx-4 max-h-[90vh] overflow-y-auto',
           className
         )}
       >
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 text-text-secondary hover:text-white transition-colors"
+          className="absolute right-6 top-6 text-text-secondary hover:text-white transition-colors"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
