@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { t } from 'ttag'
+import { Copy } from 'lucide-react'
+import Icon from '../common/Icon'
 
 export default function Header() {
   const [isCopied, setIsCopied] = useState(false)
@@ -16,7 +19,7 @@ export default function Header() {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <img src="/hathor_logo.svg" alt="Hathor" className="h-7" />
-            <span className="text-sm text-text-secondary uppercase tracking-wider">Web Wallet</span>
+            <span className="text-sm text-text-secondary uppercase tracking-wider">{t`Web Wallet`}</span>
           </div>
           
           <button
@@ -24,21 +27,9 @@ export default function Header() {
             className="flex items-center space-x-2 bg-card px-4 py-2 rounded-lg hover:bg-card-border transition-colors"
           >
             <span className="text-sm text-text-secondary">
-              {isCopied ? 'Copied!' : address}
+              {isCopied ? t`Copied!` : address}
             </span>
-            <svg
-              className="w-4 h-4 text-text-secondary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-2M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
-              />
-            </svg>
+            <Icon icon={Copy} size="sm" className="text-text-secondary" />
           </button>
         </div>
       </div>

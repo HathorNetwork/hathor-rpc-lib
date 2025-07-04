@@ -1,5 +1,7 @@
 import { SelectHTMLAttributes, forwardRef } from 'react'
 import clsx from 'clsx'
+import { ChevronDown } from 'lucide-react'
+import Icon from './Icon'
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string
@@ -30,19 +32,10 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
           >
             {children}
           </select>
-          <svg
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary pointer-events-none"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
+          <Icon 
+            icon={ChevronDown} 
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" 
+          />
         </div>
         {error && (
           <p className="text-sm text-error">{error}</p>

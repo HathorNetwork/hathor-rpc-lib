@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react'
 import QRCode from 'qrcode'
+import { t } from 'ttag'
+import { Copy } from 'lucide-react'
 import Modal from '../common/Modal'
 import Button from '../common/Button'
+import Icon from '../common/Icon'
 import { useWalletStore } from '../../store/walletStore'
 
 interface ReceiveTokensModalProps {
@@ -33,9 +36,9 @@ export default function ReceiveTokensModal({ onClose }: ReceiveTokensModalProps)
   return (
     <Modal isOpen onClose={onClose}>
       <div className="p-8 text-center">
-        <h2 className="text-2xl font-bold text-primary mb-2">Receive Tokens</h2>
+        <h2 className="text-2xl font-bold text-primary mb-2">{t`Receive Tokens`}</h2>
         <p className="text-text-secondary mb-8">
-          Send HTR or custom tokens to this address.
+          {t`Send HTR or custom tokens to this address.`}
         </p>
         
         <div className="bg-white p-4 rounded-xl inline-block mb-6">
@@ -49,20 +52,8 @@ export default function ReceiveTokensModal({ onClose }: ReceiveTokensModalProps)
         </div>
         
         <Button onClick={handleCopyAddress} className="w-full">
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-2M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
-            />
-          </svg>
-          <span>{isCopied ? 'Copied!' : 'Copy address'}</span>
+          <Icon icon={Copy} />
+          <span>{isCopied ? t`Copied!` : t`Copy address`}</span>
         </Button>
       </div>
     </Modal>

@@ -1,0 +1,13 @@
+{
+  "sources": {
+    "src/**/*.ts": {},
+    "src/**/*.tsx": {}
+  },
+  "extract": {
+    "output": "src/i18n/messages.pot"
+  },
+  "update": {
+    "locales": ["en"],
+    "defaultLocale": "en"
+  }
+}
