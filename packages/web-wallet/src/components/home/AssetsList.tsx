@@ -1,5 +1,8 @@
+import { t } from 'ttag'
+import { ArrowRight } from 'lucide-react'
 import { useWalletStore } from '../../store/walletStore'
 import { formatNumber } from '../../utils/formatters'
+import Icon from '../common/Icon'
 import EmptyState from './EmptyState'
 
 interface AssetsListProps {
@@ -44,20 +47,8 @@ export default function AssetsList({ onReceiveClick, onSendClick }: AssetsListPr
                 onClick={onSendClick}
                 className="ml-4 text-text-secondary hover:text-white transition-colors"
               >
-                <span className="text-sm">Send</span>
-                <svg
-                  className="w-4 h-4 inline-block ml-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 8l4 4m0 0l-4 4m4-4H3"
-                  />
-                </svg>
+                <span className="text-sm">{t`Send`}</span>
+                <Icon icon={ArrowRight} size="sm" className="inline-block ml-1" />
               </button>
             </div>
           </div>

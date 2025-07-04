@@ -34,6 +34,7 @@
             nixpkgs-fmt
             nodejs_20
             yarn-berry
+            nodePackages.ttag-cli
           ];
           devshell = {
             startup.shell-hook.text = ''

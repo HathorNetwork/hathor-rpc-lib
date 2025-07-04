@@ -1,0 +1,11 @@
+# Translation template for Hathor Web Wallet
+# Copyright (C) 2024 Hathor Network
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Hathor Web Wallet\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
