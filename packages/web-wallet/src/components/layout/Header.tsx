@@ -14,8 +14,8 @@ export default function Header() {
     <header className="border-b border-card-border bg-card/50 backdrop-blur-sm">
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <h1 className="text-3xl font-bold text-white">hathor</h1>
+          <div className="flex items-center space-x-3">
+            <img src="/hathor_logo.svg" alt="Hathor" className="h-7" />
             <span className="text-sm text-text-secondary uppercase tracking-wider">Web Wallet</span>
           </div>
           

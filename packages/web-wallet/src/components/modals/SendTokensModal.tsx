@@ -11,6 +11,8 @@ interface SendFormData {
   tokenId: string
   amount: string
   address: string
+  timelock?: string
+  dataOutput?: string
 }
 
 interface SendTokensModalProps {
@@ -73,8 +75,8 @@ export default function SendTokensModal({ onClose }: SendTokensModalProps) {
 
   return (
     <Modal isOpen onClose={onClose}>
-      <div className="p-8">
-        <h2 className="text-2xl font-bold text-white mb-6">Send Tokens</h2>
+      <div className="p-10">
+        <h2 className="text-xl font-semibold text-primary mb-8 text-center">Send Tokens</h2>
         
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <Select
@@ -99,8 +101,8 @@ export default function SendTokensModal({ onClose }: SendTokensModalProps) {
               {...register('amount', { validate: validateAmount })}
             />
             {selectedToken && (
-              <p className="text-xs text-text-secondary mt-1">
-                BALANCE AVAILABLE: {formatNumber(selectedToken.balance)} {selectedToken.symbol}
+              <p className="text-xs text-text-muted mt-2 uppercase">
+                Balance Available: {formatNumber(selectedToken.balance)} {selectedToken.symbol}
               </p>
             )}
           </div>
@@ -115,11 +117,11 @@ export default function SendTokensModal({ onClose }: SendTokensModalProps) {
           <button
             type="button"
             onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
-            className="flex items-center space-x-2 text-text-secondary hover:text-white transition-colors"
+            className="flex items-center justify-between w-full text-white font-medium"
           >
             <span>Advanced options</span>
             <svg
-              className={`w-4 h-4 transition-transform ${isAdvancedOpen ? 'rotate-180' : ''}`}
+              className={`w-5 h-5 transition-transform ${isAdvancedOpen ? 'rotate-180' : ''}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -134,35 +136,70 @@ export default function SendTokensModal({ onClose }: SendTokensModalProps) {
           </button>
 
           {isAdvancedOpen && (
-            <div className="p-4 bg-background rounded-lg">
-              <p className="text-sm text-text-secondary">
-                Advanced options will be available in future versions
-              </p>
+            <div className="space-y-6 pt-6">
+              <div>
+                <label className="text-base font-medium text-white block mb-3">
+                  Timelock (optional)
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="MM / DD / YYYY"
+                    className="w-full bg-background border border-card-border rounded-lg px-4 py-3 text-white placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors duration-200"
+                    {...register('timelock')}
+                  />
+                  <svg
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary pointer-events-none"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-base font-medium text-white block mb-3">
+                  Data output (optional)
+                </label>
+                <textarea
+                  placeholder="Optional message or metadata"
+                  rows={3}
+                  className="w-full bg-background border border-card-border rounded-lg px-4 py-3 text-white placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors duration-200 resize-none"
+                  {...register('dataOutput')}
+                />
+              </div>
             </div>
           )}
 
-          <Button
+          <button
             type="submit"
-            className="w-full"
+            className="w-full mt-8 bg-[#4A4A5A] text-text-muted py-3 rounded-xl font-medium hover:bg-[#5A5A6A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isSending || isSuccess}
           >
             {isSuccess ? (
               <>
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
                   <path
                     fillRule="evenodd"
                     d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                     clipRule="evenodd"
                   />
                 </svg>
-                <span>Transaction sent</span>
+                Transaction sent
               </>
             ) : isSending ? (
-              <span>Sending...</span>
+              'Sending...'
             ) : (
-              <span>Send token</span>
+              'Send token'
             )}
-          </Button>
+          </button>
         </form>
       </div>
     </Modal>
