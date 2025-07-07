@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { HathorWallet } from '@hathor/wallet-lib';
+import { constants, HathorWallet } from '@hathor/wallet-lib';
 import { sendTransaction } from '../../src/rpcMethods/sendTransaction';
 import {
   RpcMethods,
@@ -351,5 +351,40 @@ describe('sendTransaction', () => {
 
     // Verify that the promptHandler wasn't called since validation should fail first
     expect(promptHandler).not.toHaveBeenCalled();
+  });
+
+  it('should default to native token UID when no token is specified', async () => {
+    // Remove token from the output to simulate the simple case
+    rpcRequest.params.outputs = [{
+      address: 'testAddress',
+      value: '100',
+      // No token specified
+    }];
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.SendTransactionConfirmationResponse,
+        data: { accepted: true },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: { accepted: true, pinCode: '1234' },
+      });
+
+    sendTransactionMock.mockResolvedValue({ hash: 'txHash123' });
+
+    await sendTransaction(rpcRequest, wallet, {}, promptHandler);
+
+    // Verify that the wallet is called with the native token UID
+    expect(wallet.sendManyOutputsSendTransaction).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          address: 'testAddress',
+          value: BigInt(100),
+          token: constants.NATIVE_TOKEN_UID,
+        }),
+      ]),
+      expect.any(Object),
+    );
   });
 });
