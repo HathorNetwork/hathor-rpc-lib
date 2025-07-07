@@ -40,26 +40,26 @@ const sendTransactionSchema = z.object({
       value: z.string().regex(/^\d+$/)
         .pipe(z.coerce.bigint().positive())
         .optional(),
-      token: z.string().optional(),
+      token: z.string().default(constants.NATIVE_TOKEN_UID),
       type: z.string().optional(),
       data: z.string().optional(),
     })
-    .transform(output => {
-      // If data is present, automatically set type to 'data'
-      if (output.data && output.data.length > 0 && !output.type) {
-        output.type = 'data';
-      }
-      return output;
-    })
-    .refine((output) => {
-      // If data is undefined, value must be defined
-      if (output.data === undefined && output.value === undefined) {
-        return false;
-      }
-      return true;
-    }, {
-      message: 'Value is required when data is not provided'
-    })).min(1),
+      .transform(output => {
+        // If data is present, automatically set type to 'data'
+        if (output.data && output.data.length > 0 && !output.type) {
+          output.type = 'data';
+        }
+        return output;
+      })
+      .refine((output) => {
+        // If data is undefined, value must be defined
+        if (output.data === undefined && output.value === undefined) {
+          return false;
+        }
+        return true;
+      }, {
+        message: 'Value is required when data is not provided'
+      })).min(1),
     inputs: z.array(z.object({
       txId: z.string(),
       index: z.number().nonnegative(),
@@ -91,7 +91,7 @@ export async function sendTransaction(
   promptHandler: TriggerHandler,
 ): Promise<RpcResponse> {
   const validationResult = sendTransactionSchema.safeParse(rpcRequest);
-  
+
   if (!validationResult.success) {
     throw new InvalidParamsError(validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
   }
@@ -108,7 +108,7 @@ export async function sendTransaction(
     data?: string;
   }>>((acc, output) => {
     const result = { ...output };
-    
+
     // We should manually set the 0.01 HTR to data output
     // so it's displayed to the user during confirmation.
     if (result.type === 'data') {
