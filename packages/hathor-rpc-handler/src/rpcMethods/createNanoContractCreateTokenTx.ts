@@ -18,6 +18,8 @@ import {
   CreateNanoContractCreateTokenTxResponse,
   CreateNanoContractCreateTokenTxConfirmationPrompt,
   CreateNanoContractCreateTokenTxConfirmationResponse,
+  CreateNanoContractCreateTokenTxLoadingTrigger,
+  CreateNanoContractCreateTokenTxLoadingFinishedTrigger,
   NanoContractParams,
   CreateTokenParams,
 } from '../types';
@@ -125,6 +127,12 @@ export async function createNanoContractCreateTokenTx(
     throw new PromptRejectedError('User rejected PIN prompt');
   }
 
+  // Emit loading trigger
+  const loadingTrigger: CreateNanoContractCreateTokenTxLoadingTrigger = {
+    type: TriggerTypes.CreateNanoContractCreateTokenTxLoadingTrigger,
+  };
+  promptHandler(loadingTrigger, requestMetadata);
+
   // Call the wallet method
   let response;
   if (push_tx) {
@@ -144,6 +152,12 @@ export async function createNanoContractCreateTokenTx(
       { pinCode: pinResponse.data.pinCode }
     );
   }
+
+  // Emit loading finished trigger
+  const loadingFinishedTrigger: CreateNanoContractCreateTokenTxLoadingFinishedTrigger = {
+    type: TriggerTypes.CreateNanoContractCreateTokenTxLoadingFinishedTrigger,
+  };
+  promptHandler(loadingFinishedTrigger, requestMetadata);
 
   return {
     type: RpcResponseTypes.CreateNanoContractCreateTokenTxResponse,
