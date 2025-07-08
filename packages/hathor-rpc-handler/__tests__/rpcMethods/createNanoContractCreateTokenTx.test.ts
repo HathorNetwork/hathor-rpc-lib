@@ -117,15 +117,28 @@ describe('createNanoContractCreateTokenTx', () => {
 
     const result = await createNanoContractCreateTokenTx(rpcRequest, wallet, {}, promptHandler);
 
-    expect(promptHandler).toHaveBeenCalledWith(
+    expect(promptHandler).toHaveBeenCalledTimes(4); // Confirmation, PIN, Loading, LoadingFinished
+    expect(promptHandler).toHaveBeenNthCalledWith(1,
       expect.objectContaining({
         type: TriggerTypes.CreateNanoContractCreateTokenTxConfirmationPrompt,
       }),
       {}
     );
-    expect(promptHandler).toHaveBeenCalledWith(
+    expect(promptHandler).toHaveBeenNthCalledWith(2,
       expect.objectContaining({
         type: TriggerTypes.PinConfirmationPrompt,
+      }),
+      {}
+    );
+    expect(promptHandler).toHaveBeenNthCalledWith(3,
+      expect.objectContaining({
+        type: TriggerTypes.CreateNanoContractCreateTokenTxLoadingTrigger,
+      }),
+      {}
+    );
+    expect(promptHandler).toHaveBeenNthCalledWith(4,
+      expect.objectContaining({
+        type: TriggerTypes.CreateNanoContractCreateTokenTxLoadingFinishedTrigger,
       }),
       {}
     );
@@ -176,6 +189,21 @@ describe('createNanoContractCreateTokenTx', () => {
       });
     (wallet.createNanoContractCreateTokenTransaction as jest.Mock).mockResolvedValue(response);
     const result = await createNanoContractCreateTokenTx(rpcRequest, wallet, {}, promptHandler);
+    
+    expect(promptHandler).toHaveBeenCalledTimes(4); // Confirmation, PIN, Loading, LoadingFinished
+    expect(promptHandler).toHaveBeenNthCalledWith(3,
+      expect.objectContaining({
+        type: TriggerTypes.CreateNanoContractCreateTokenTxLoadingTrigger,
+      }),
+      {}
+    );
+    expect(promptHandler).toHaveBeenNthCalledWith(4,
+      expect.objectContaining({
+        type: TriggerTypes.CreateNanoContractCreateTokenTxLoadingFinishedTrigger,
+      }),
+      {}
+    );
+    
     expect(wallet.createNanoContractCreateTokenTransaction).toHaveBeenCalledWith(
       rpcRequest.params.method,
       rpcRequest.params.address,
