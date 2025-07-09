@@ -68,6 +68,7 @@ export async function createToken(
         name: params.name,
         symbol: params.symbol,
         amount: params.amount,
+        version: params.options.tokenInfoVersion,
         changeAddress: params.options.changeAddress,
         createMint: params.options.createMint,
         mintAuthorityAddress: params.options.mintAuthorityAddress,
