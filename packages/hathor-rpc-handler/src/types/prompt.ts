@@ -45,6 +45,7 @@ export enum TriggerResponseTypes {
   SignOracleDataConfirmationResponse,
   SendTransactionConfirmationResponse,
   CreateNanoContractCreateTokenTxConfirmationResponse,
+  GetBalanceConfirmationResponse
 }
 
 export type Trigger =
@@ -209,7 +210,7 @@ export interface SendNanoContractTxConfirmationResponse {
     accepted: true;
     nc: NanoContractParams & {
       caller: string;
-    } 
+    }
   } | {
     accepted: false;
   }
@@ -233,6 +234,11 @@ export interface PinRequestResponse {
   } | {
     accepted: false;
   }
+}
+
+export interface GetBalanceConfirmationResponse {
+  type: TriggerResponseTypes.GetBalanceConfirmationResponse;
+  data: boolean;
 }
 
 export interface GetUtxosConfirmationResponse {
@@ -308,7 +314,8 @@ export type TriggerResponse =
   | CreateTokenConfirmationResponse
   | SignOracleDataConfirmationResponse
   | SendTransactionConfirmationResponse
-  | CreateNanoContractCreateTokenTxConfirmationResponse;
+  | CreateNanoContractCreateTokenTxConfirmationResponse
+  | GetBalanceConfirmationResponse;
 
 export type TriggerHandler = (prompt: Trigger, requestMetadata: RequestMetadata) => Promise<TriggerResponse | void>;
 
