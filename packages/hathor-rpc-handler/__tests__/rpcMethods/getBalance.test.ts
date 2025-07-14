@@ -6,9 +6,11 @@
  */
 
 import { HathorWallet } from '@hathor/wallet-lib';
-import { 
+import {
   RpcMethods,
   GetBalanceRpcRequest,
+  TriggerResponseTypes,
+  GetBalanceResponse,
 } from '../../src/types';
 import { getBalance } from '../../src/rpcMethods/getBalance';
 import { InvalidParamsError, NotImplementedError } from '../../src/errors';
@@ -39,7 +41,10 @@ describe('getBalance parameter validation', () => {
     }]),
   } as unknown as HathorWallet;
 
-  const mockTriggerHandler = jest.fn().mockResolvedValue(true);
+  const mockTriggerHandler = jest.fn().mockResolvedValue({
+    type: TriggerResponseTypes.GetBalanceConfirmationResponse,
+    data: true,
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -193,8 +198,8 @@ describe('getBalance parameter validation', () => {
     const result = await getBalance(validRequest, mockWallet, {}, mockTriggerHandler);
 
     expect(result.response).toHaveLength(2);
-    expect((result.response as any)[0].token.id).toBe('00');
-    expect((result.response as any)[1].token.id).toBe('000003521effbc8efd7b746a118cdc7d41d7cc1bf9c5d1fa5de4f8453f14ba4f');
+    expect((result as GetBalanceResponse).response[0].token.id).toBe('00');
+    expect((result as GetBalanceResponse).response[1].token.id).toBe('000003521effbc8efd7b746a118cdc7d41d7cc1bf9c5d1fa5de4f8453f14ba4f');
     expect(mockWallet.getBalance).toHaveBeenCalledTimes(2);
     expect(mockWallet.getBalance).toHaveBeenCalledWith('00');
     expect(mockWallet.getBalance).toHaveBeenCalledWith('000003521effbc8efd7b746a118cdc7d41d7cc1bf9c5d1fa5de4f8453f14ba4f');

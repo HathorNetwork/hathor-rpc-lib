@@ -16,6 +16,7 @@ import {
   RequestMetadata,
   RpcResponseTypes,
   RpcResponse,
+  GetBalanceConfirmationResponse,
 } from '../types';
 import { NotImplementedError, PromptRejectedError, InvalidParamsError } from '../errors';
 import { validateNetwork } from '../helpers';
@@ -70,9 +71,12 @@ export async function getBalance(
     data: balances
   };
 
-  const confirmed = await promptHandler(prompt, requestMetadata);
+  const confirmed = await promptHandler(
+    prompt,
+    requestMetadata
+  ) as GetBalanceConfirmationResponse;
 
-  if (!confirmed) {
+  if (!confirmed.data) {
     throw new PromptRejectedError();
   }
 
