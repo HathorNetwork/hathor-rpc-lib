@@ -47,7 +47,7 @@ export async function getBalance(
   promptHandler: TriggerHandler,
 ) {
   const parseResult = getBalanceSchema.safeParse(rpcRequest.params);
-  
+
   if (!parseResult.success) {
     throw new InvalidParamsError(parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
   }
@@ -60,9 +60,9 @@ export async function getBalance(
 
   validateNetwork(wallet, params.network);
 
-  const balances: GetBalanceObject[] = await Promise.all(
+  const balances: GetBalanceObject[] = (await Promise.all(
     params.tokens.map(token => wallet.getBalance(token)),
-  );
+  )).flat();
 
   const prompt: GetBalanceConfirmationPrompt = {
     type: TriggerTypes.GetBalanceConfirmationPrompt,
