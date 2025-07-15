@@ -1526,13 +1526,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@hathor/hathor-rpc-handler@npm:2.2.0":
-  version: 2.2.0
-  resolution: "@hathor/hathor-rpc-handler@npm:2.2.0"
+"@hathor/hathor-rpc-handler@npm:2.3.0":
+  version: 2.3.0
+  resolution: "@hathor/hathor-rpc-handler@npm:2.3.0"
   dependencies:
     "@hathor/wallet-lib": "npm:2.5.1"
     zod: "npm:3.23.8"
-  checksum: 10/6383d1e178ee7d3a7d1c96d91cad9f06dbed087a33fda66d0e7d057a1fe05621cdb48988f145ad083a33f48ca9c37b7d5d0ae17f9ef1ba923f5c8c8898014aa2
+  checksum: 10/1de96d0f87f4ee873ac6cd757ddfa4cd73f58c5afaba08313ab3746adb58542612d91c84841e10ed026874003eaf1ddcfe12669cffabcbc04e303aab05695386
   languageName: node
   linkType: hard
 
@@ -1572,9 +1572,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@hathor/wallet-lib@npm:2.6.0":
-  version: 2.6.0
-  resolution: "@hathor/wallet-lib@npm:2.6.0"
+"@hathor/wallet-lib@npm:2.6.1":
+  version: 2.6.1
+  resolution: "@hathor/wallet-lib@npm:2.6.1"
   dependencies:
     axios: "npm:1.7.7"
     bitcore-lib: "npm:8.25.10"
@@ -1586,7 +1586,7 @@ __metadata:
     queue-microtask: "npm:1.2.3"
     ws: "npm:8.17.1"
     zod: "npm:3.23.8"
-  checksum: 10/884395109c99179aad2f906ea70f7a8cc8d819b13bd0ba168a0bbb9cebf7929b81b9fb9063bfca13b887da0afa1f77eeac64cff67ce33fc013c041d79559c562
+  checksum: 10/958415d6884d267fd3167285e99a30c69ec84efa3c7066d17784245cff237a5d19e8ba2abd57f2197d9b7b2b3b7ab4527145599e39dabdc393f52639cd0da690
   languageName: node
   linkType: hard
 
@@ -10704,8 +10704,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "snap@workspace:packages/snap"
   dependencies:
-    "@hathor/hathor-rpc-handler": "npm:2.2.0"
-    "@hathor/wallet-lib": "npm:2.6.0"
+    "@hathor/hathor-rpc-handler": "npm:2.3.0"
+    "@hathor/wallet-lib": "npm:2.6.1"
     "@jest/globals": "npm:29.7.0"
     "@metamask/auto-changelog": "npm:3.4.4"
     "@metamask/eslint-config": "npm:12.2.0"
