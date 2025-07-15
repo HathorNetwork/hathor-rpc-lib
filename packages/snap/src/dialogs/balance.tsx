@@ -1,6 +1,6 @@
 import { Box, Text } from '@metamask/snaps-sdk/jsx';
 
-export const balancePage = async (tokens, origin) => (
+export const balancePage = async (data) => (
   await snap.request({
     method: 'snap_dialog',
     params: {
@@ -8,10 +8,10 @@ export const balancePage = async (tokens, origin) => (
       content: (
         <Box>
           <Text>
-            The dApp {origin} wants to get the balance of the following tokens:
+            The dApp wants to get the balance of the following tokens:
           </Text>
           <Text>
-            {tokens.join(", ")}
+            Tokens from data
           </Text>
           <Text>
             Confirm the action below to continue.

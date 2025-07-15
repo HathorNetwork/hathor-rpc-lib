@@ -16,8 +16,7 @@ export const getHathorWallet = async (network: string): HathorWalletServiceWalle
   let authPathXpriv = persistedData.authPathXpriv;
 
   // If the xpriv is not in the persisted data, we create and save it
-  if (!accountPathXpriv || !authPathXpriv || true) {
-    console.log('Waaaaaat aqui gerando tudo');
+  if (!accountPathXpriv || !authPathXpriv) {
     // Get the Hathor node, corresponding to the path m/44'/280'/0'.
     const hathorNode = await snap.request({
       method: "snap_getBip32Entropy",
