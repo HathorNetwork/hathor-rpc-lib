@@ -116,6 +116,7 @@ describe('createToken', () => {
         amount: undefined,
         name: undefined,
         symbol: undefined,
+        tokenInfoVersion: null,
         pinCode,
       }
     );
