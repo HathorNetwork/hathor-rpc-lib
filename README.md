@@ -6,11 +6,19 @@
 
 ## Installation
 
-TO DO
+```bash
+npm i @hathor/hathor-rpc-handler
+```
+
+Package released at https://www.npmjs.com/package/@hathor/hathor-rpc-handler .
 
 ## Usage
 
-TO DO
+For how to integrate a DApp front end with Hathor wallets, see https://docs.hathor.network/pathways/journeys/build-dapp#integrating-dapp-with-wallets .
+
+For the API reference, see [`./docs/openrpc.json`](./docs/openrpc.json)
+
+For how to implement the integration, see https://docs.hathor.network/references/sdk/dapp/wallet-integration-development .
 
 ## Support
 
@@ -18,13 +26,42 @@ If after consulting the documentation, you still need **help to use Hathor RPC l
 
 If you observe an incorrect behavior while using Hathor RPC library, see [the "Issues" subsection in "Contributing"](#issues).
 
-Tests
+## Development
 
-TO DO
+Prerequisites:
+- Node.js >= 20
+- Yarn v4
+- [NixOS](https://nixos.org/download/#download-nix)
 
-Development
+1. To enable commands `nix develop` and `nix build` using flakes, add to the configuration file `/etc/nix/nix.conf`:
 
-TO DO
+```bash
+experimental-features = nix-command flakes
+```
+
+2. Clone the repository:
+
+```bash
+$ git clone https://github.com/HathorNetwork/hathor-rpc-lib.git
+```
+
+3. Initialize nix development environment:
+
+```bash
+$ nix develop
+```
+
+4. Install the dependencies:
+
+```bash
+yarn
+```
+
+## Tests
+
+```bash
+yarn tests
+```
 
 ## Contributing
 
