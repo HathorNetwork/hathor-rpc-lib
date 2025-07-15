@@ -1,10 +1,12 @@
 import type { OnHomePageHandler, OnInstallHandler, OnRpcRequestHandler } from '@metamask/snaps-sdk';
 import { Box, Text, Bold, Heading, Link } from '@metamask/snaps-sdk/jsx';
 import { getHathorWallet } from './utils/wallet';
+import { promptHandler } from './utils/prompt';
 import { homePage } from './dialogs/home';
 import { installPage } from './dialogs/install';
 import { balanceHandler } from './methods/balance';
 import { addressHandler } from './methods/address';
+import { handleRpcRequest } from '@hathor/hathor-rpc-handler';
 
 const network = 'mainnet';
 
@@ -29,14 +31,9 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
   origin,
   request,
 }) => {
-  // eslint-disable-next-line
+  // Almost all RPC requests need the network, so I add it here
+  request.params = { ...request.params, network };
   const wallet = await getHathorWallet(network);
-  switch (request.method) {
-    case 'balance':
-      return balanceHandler(request, wallet, origin);
-    case 'address':
-      return addressHandler(request, wallet, origin);
-    default:
-      throw new Error('Invalid request');
-  }
+  const ret = await handleRpcRequest(request, wallet, null, promptHandler);
+  return ret;
 };

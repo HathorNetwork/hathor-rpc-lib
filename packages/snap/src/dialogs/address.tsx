@@ -1,6 +1,6 @@
 import { Box, Text } from '@metamask/snaps-sdk/jsx';
 
-export const addressPage = async (origin) => (
+export const addressPage = async () => (
   await snap.request({
     method: 'snap_dialog',
     params: {
@@ -8,7 +8,7 @@ export const addressPage = async (origin) => (
       content: (
         <Box>
           <Text>
-            The dApp {origin} wants to get your first empty address.
+            The dApp wants to get your first empty address.
           </Text>
           <Text>
             Confirm the action below to continue.
