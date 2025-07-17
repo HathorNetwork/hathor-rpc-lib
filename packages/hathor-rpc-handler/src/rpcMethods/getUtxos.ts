@@ -89,8 +89,8 @@ export async function getUtxos(
     const utxoDetails: UtxoDetails[] = await wallet.getUtxos(options);
 
     const confirmed = await promptHandler({
+      ...rpcRequest,
       type: TriggerTypes.GetUtxosConfirmationPrompt,
-      method: rpcRequest.method,
       data: utxoDetails
     }, requestMetadata) as GetUtxosConfirmationResponse;
 

@@ -57,13 +57,13 @@ export async function createToken(
     }
 
     const pinPrompt: PinConfirmationPrompt = {
+      ...rpcRequest,
       type: TriggerTypes.PinConfirmationPrompt,
-      method: rpcRequest.method,
     };
 
     const createTokenPrompt: CreateTokenConfirmationPrompt = {
+      ...rpcRequest,
       type: TriggerTypes.CreateTokenConfirmationPrompt,
-      method: rpcRequest.method,
       data: {
         name: params.name,
         symbol: params.symbol,

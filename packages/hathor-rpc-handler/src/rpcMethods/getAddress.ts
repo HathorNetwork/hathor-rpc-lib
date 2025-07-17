@@ -88,8 +88,8 @@ export async function getAddress(
         break;
       case 'client': {
         const response = (await promptHandler({
+          ...rpcRequest,
           type: TriggerTypes.AddressRequestClientPrompt,
-          method: rpcRequest.method,
         }, requestMetadata)) as AddressRequestClientResponse;
 
         address = response.data.address;
@@ -101,8 +101,8 @@ export async function getAddress(
     // to share. No need to double check
     if (params.type !== 'client') {
       const confirmed = await promptHandler({
+        ...rpcRequest,
         type: TriggerTypes.AddressRequestPrompt,
-        method: rpcRequest.method,
         data: {
           address,
         }

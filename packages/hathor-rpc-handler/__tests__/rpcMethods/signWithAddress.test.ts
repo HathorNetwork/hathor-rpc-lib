@@ -161,8 +161,8 @@ describe('signWithAddress', () => {
       });
 
       expect(mockTriggerHandler).toHaveBeenCalledWith({
+        ...validRequest,
         type: TriggerTypes.SignMessageWithAddressConfirmationPrompt,
-        method: validRequest.method,
         data: {
           address: {
             address: 'test-address',

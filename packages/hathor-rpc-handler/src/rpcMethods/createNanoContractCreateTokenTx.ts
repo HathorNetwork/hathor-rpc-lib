@@ -101,8 +101,8 @@ export async function createNanoContractCreateTokenTx(
   };
 
   const confirmationPrompt: CreateNanoContractCreateTokenTxConfirmationPrompt = {
+    ...rpcRequest,
     type: TriggerTypes.CreateNanoContractCreateTokenTxConfirmationPrompt,
-    method: rpcRequest.method,
     data: {
       nano: nanoParams,
       token: tokenParams,
@@ -119,8 +119,8 @@ export async function createNanoContractCreateTokenTx(
 
   // Prompt for PIN
   const pinPrompt: PinConfirmationPrompt = {
+    ...rpcRequest,
     type: TriggerTypes.PinConfirmationPrompt,
-    method: rpcRequest.method,
   };
   const pinResponse = await promptHandler(pinPrompt, requestMetadata) as PinRequestResponse;
   if (!pinResponse.data.accepted) {

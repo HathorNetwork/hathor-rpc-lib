@@ -70,13 +70,13 @@ export async function sendNanoContractTx(
     const params = sendNanoContractSchema.parse(rpcRequest.params);
 
     const pinPrompt: PinConfirmationPrompt = {
+      ...rpcRequest,
       type: TriggerTypes.PinConfirmationPrompt,
-      method: rpcRequest.method,
     };
 
     const sendNanoContractTxPrompt: SendNanoContractTxConfirmationPrompt = {
+      ...rpcRequest,
       type: TriggerTypes.SendNanoContractTxConfirmationPrompt,
-      method: rpcRequest.method,
       data: {
         blueprintId: params.blueprintId,
         ncId: params.ncId,
