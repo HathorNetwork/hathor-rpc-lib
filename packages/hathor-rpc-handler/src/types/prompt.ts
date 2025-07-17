@@ -6,7 +6,7 @@
  */
 import { AddressInfoObject, GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
-import { RequestMetadata } from './rpcRequest';
+import { RequestMetadata, RpcRequest } from './rpcRequest';
 
 export enum TriggerTypes {
   GetBalanceConfirmationPrompt,
@@ -106,28 +106,27 @@ export interface LoadingFinishedTrigger {
   type: TriggerTypes.LoadingFinishedTrigger;
 }
 
-export interface BaseConfirmationPrompt {
+export type BaseConfirmationPrompt = RpcRequest & {
   type: TriggerTypes;
-  method: string;
 }
 
-export interface GetAddressConfirmationPrompt extends BaseConfirmationPrompt {
+export type GetAddressConfirmationPrompt = BaseConfirmationPrompt & {
   data: {
     address: string;
   }
 }
 
-export interface GetBalanceConfirmationPrompt extends BaseConfirmationPrompt {
+export type GetBalanceConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.GetBalanceConfirmationPrompt;
   data: GetBalanceObject[];
 }
 
-export interface GetUtxosConfirmationPrompt extends BaseConfirmationPrompt {
+export type GetUtxosConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.GetUtxosConfirmationPrompt;
   data: UtxoDetails[];
 }
 
-export interface SignOracleDataConfirmationPrompt extends BaseConfirmationPrompt {
+export type SignOracleDataConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.SignOracleDataConfirmationPrompt;
   data: {
     oracle: string;
@@ -135,7 +134,7 @@ export interface SignOracleDataConfirmationPrompt extends BaseConfirmationPrompt
   }
 }
 
-export interface SignMessageWithAddressConfirmationPrompt extends BaseConfirmationPrompt {
+export type SignMessageWithAddressConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.SignMessageWithAddressConfirmationPrompt;
   data: {
     address: AddressInfoObject;
@@ -143,18 +142,18 @@ export interface SignMessageWithAddressConfirmationPrompt extends BaseConfirmati
   }
 }
 
-export interface PinConfirmationPrompt extends BaseConfirmationPrompt {
+export type PinConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.PinConfirmationPrompt;
 }
 
-export interface AddressRequestPrompt extends BaseConfirmationPrompt {
+export type AddressRequestPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.AddressRequestPrompt;
   data?: {
     address: string;
   }
 }
 
-export interface AddressRequestClientPrompt extends BaseConfirmationPrompt {
+export type AddressRequestClientPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.AddressRequestClientPrompt;
 }
 
@@ -182,17 +181,17 @@ export interface CreateTokenParams {
   data: string[] | null,
 }
 
-export interface CreateTokenConfirmationPrompt extends BaseConfirmationPrompt {
+export type CreateTokenConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.CreateTokenConfirmationPrompt;
   data: CreateTokenParams;
 }
 
-export interface SendNanoContractTxConfirmationPrompt extends BaseConfirmationPrompt {
+export type SendNanoContractTxConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.SendNanoContractTxConfirmationPrompt;
   data: NanoContractParams;
 }
 
-export interface GenericConfirmationPrompt extends BaseConfirmationPrompt {
+export type GenericConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.GenericConfirmationPrompt;
   data: unknown;
 }
@@ -256,7 +255,7 @@ export interface SignOracleDataConfirmationResponse {
   data: boolean;
 }
 
-export interface SendTransactionConfirmationPrompt extends BaseConfirmationPrompt {
+export type SendTransactionConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.SendTransactionConfirmationPrompt;
   data: {
     outputs: Array<{
@@ -289,7 +288,7 @@ export interface CreateNanoContractCreateTokenTxParams {
   token: CreateTokenParams;
 }
 
-export interface CreateNanoContractCreateTokenTxConfirmationPrompt extends BaseConfirmationPrompt {
+export type CreateNanoContractCreateTokenTxConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.CreateNanoContractCreateTokenTxConfirmationPrompt;
   data: CreateNanoContractCreateTokenTxParams;
 }

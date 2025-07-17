@@ -49,8 +49,8 @@ export async function signOracleData(
   validateNetwork(wallet, params.network);
 
   const prompt: SignOracleDataConfirmationPrompt = {
+    ...rpcRequest,
     type: TriggerTypes.SignOracleDataConfirmationPrompt,
-    method: rpcRequest.method,
     data: {
       oracle: params.oracle,
       data: params.data,
@@ -64,8 +64,8 @@ export async function signOracleData(
   }
 
   const pinPrompt: PinConfirmationPrompt = {
+    ...rpcRequest,
     type: TriggerTypes.PinConfirmationPrompt,
-    method: rpcRequest.method,
   };
 
   const pinResponse = await promptHandler(pinPrompt, requestMetadata) as PinRequestResponse;

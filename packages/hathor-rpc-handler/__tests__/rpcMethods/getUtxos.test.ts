@@ -129,8 +129,8 @@ describe('getUtxos', () => {
     });
 
     expect(mockPromptHandler).toHaveBeenCalledWith({
+      ...mockGetUtxosRequest,
       type: TriggerTypes.GetUtxosConfirmationPrompt,
-      method: mockGetUtxosRequest.method,
       data: mockResponse,
     }, {});
 
@@ -156,8 +156,8 @@ describe('getUtxos', () => {
     });
 
     expect(mockPromptHandler).toHaveBeenCalledWith({
+      ...mockGetUtxosRequest,
       type: TriggerTypes.GetUtxosConfirmationPrompt,
-      method: mockGetUtxosRequest.method,
       data: mockResponse,
     }, {});
   });

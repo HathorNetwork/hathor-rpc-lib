@@ -91,8 +91,8 @@ describe('createToken', () => {
     expect(triggerHandler).toHaveBeenCalledTimes(4);
     expect(triggerHandler).toHaveBeenCalledWith(
       {
+        ...rpcRequest,
         type: TriggerTypes.CreateTokenConfirmationPrompt,
-        method: rpcRequest.method,
         data: expect.objectContaining({
           amount: BigInt(rpcRequest.params.amount),
         }),
@@ -101,8 +101,8 @@ describe('createToken', () => {
     );
     expect(triggerHandler).toHaveBeenCalledWith(
       {
+        ...rpcRequest,
         type: TriggerTypes.PinConfirmationPrompt,
-        method: rpcRequest.method,
       },
       {}
     );
@@ -137,8 +137,8 @@ describe('createToken', () => {
     expect(triggerHandler).toHaveBeenCalledTimes(1);
     expect(triggerHandler).toHaveBeenCalledWith(
       {
+        ...rpcRequest,
         type: TriggerTypes.CreateTokenConfirmationPrompt,
-        method: rpcRequest.method,
         data: expect.objectContaining({
           amount: BigInt(rpcRequest.params.amount),
           name: rpcRequest.params.name,

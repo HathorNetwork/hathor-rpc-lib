@@ -150,8 +150,8 @@ export async function sendTransaction(
 
   // Show the complete transaction (with all inputs) to the user
   const prompt: SendTransactionConfirmationPrompt = {
+    ...rpcRequest,
     type: TriggerTypes.SendTransactionConfirmationPrompt,
-    method: rpcRequest.method,
     data: {
       outputs: preparedTx.outputs,
       inputs: preparedTx.inputs,
@@ -166,8 +166,8 @@ export async function sendTransaction(
   }
 
   const pinPrompt: PinConfirmationPrompt = {
+    ...rpcRequest,
     type: TriggerTypes.PinConfirmationPrompt,
-    method: rpcRequest.method,
   };
 
   // Actually request the pin from the client
