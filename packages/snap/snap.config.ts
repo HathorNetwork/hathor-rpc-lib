@@ -2,6 +2,7 @@ import type { SnapConfig } from '@metamask/snaps-cli';
 import { merge } from '@metamask/snaps-cli';
 import { resolve } from 'path';
 import * as webpack from 'webpack';
+import stdLibBrowser from 'node-stdlib-browser';
 
 const config: SnapConfig = {
   bundler: 'webpack',
@@ -13,14 +14,14 @@ const config: SnapConfig = {
     },
     resolve: {
       fallback: {
-        crypto: require.resolve('crypto-browserify'),
-        stream: require.resolve('stream-browserify'),
+        crypto: stdLibBrowser.crypto,
+        stream: stdLibBrowser.stream,
         buffer: require.resolve('buffer'),
-        process: require.resolve('process/browser'),
-        path: require.resolve('path-browserify'),
+        process: stdLibBrowser.process,
+        path: stdLibBrowser.path,
         fs: false,
-        util: require.resolve('util'),
-        assert: require.resolve('assert/'),
+        util: stdLibBrowser.util,
+        assert: stdLibBrowser.assert,
       },
     },
     plugins: [
