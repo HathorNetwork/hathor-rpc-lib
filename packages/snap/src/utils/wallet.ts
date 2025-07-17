@@ -8,8 +8,8 @@ export const getHathorWallet = async (network: string): HathorWalletServiceWalle
   // key and automatically decrypted when retrieved
   // https://docs.metamask.io/snaps/reference/snaps-api/#snap_managestate
   const persistedData = await snap.request({
-    method: "snap_manageState",
-    params: { operation: "get" },
+    method: 'snap_manageState',
+    params: { operation: 'get' },
   }) ?? {};
 
   let accountPathXpriv = persistedData.accountPathXpriv;
@@ -19,7 +19,7 @@ export const getHathorWallet = async (network: string): HathorWalletServiceWalle
   if (!accountPathXpriv || !authPathXpriv) {
     // Get the Hathor node, corresponding to the path m/44'/280'/0'.
     const hathorNode = await snap.request({
-      method: "snap_getBip32Entropy",
+      method: 'snap_getBip32Entropy',
       params: {
         curve: 'secp256k1',
         path: ['m', '44\'', '280\'', '0\''],
@@ -27,7 +27,7 @@ export const getHathorWallet = async (network: string): HathorWalletServiceWalle
     })
 
     const authHathorNode = await snap.request({
-      method: "snap_getBip32Entropy",
+      method: 'snap_getBip32Entropy',
       params: {
         curve: 'secp256k1',
         path: ['m', '280\'', '280\''],
@@ -52,9 +52,9 @@ export const getHathorWallet = async (network: string): HathorWalletServiceWalle
     );
 
     await snap.request({
-      method: "snap_manageState",
+      method: 'snap_manageState',
       params: {
-        operation: "update",
+        operation: 'update',
         newState: { accountPathXpriv, authPathXpriv },
       },
     })
