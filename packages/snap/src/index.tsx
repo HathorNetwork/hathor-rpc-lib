@@ -28,5 +28,5 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
   // Almost all RPC requests need the network, so I add it here
   request.params = { ...request.params, network };
   const wallet = await getHathorWallet(network);
-  return await handleRpcRequest(request, wallet, null, promptHandler(origin));
+  return handleRpcRequest(request, wallet, null, promptHandler(origin));
 };
