@@ -1,4 +1,4 @@
-import type { OnHomePageHandler, OnInstallHandler, OnRpcRequestHandler } from '@metamask/snaps-sdk';
+import type { OnRpcRequestHandler } from '@metamask/snaps-sdk';
 import { Box, Text, Bold, Heading, Link } from '@metamask/snaps-sdk/jsx';
 import { getHathorWallet } from './utils/wallet';
 import { promptHandler } from './utils/prompt';
@@ -9,12 +9,6 @@ import { addressHandler } from './methods/address';
 import { handleRpcRequest } from '@hathor/hathor-rpc-handler';
 
 const network = 'mainnet';
-
-// This is the snap home page
-export const onHomePage: OnHomePageHandler = homePage;
-
-// This page is shown after the snap is installed
-export const onInstall: OnInstallHandler = installPage;
 
 /**
  * Handle incoming JSON-RPC requests, sent through `wallet_invokeSnap`.
@@ -34,6 +28,5 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
   // Almost all RPC requests need the network, so I add it here
   request.params = { ...request.params, network };
   const wallet = await getHathorWallet(network);
-  const ret = await handleRpcRequest(request, wallet, null, promptHandler);
-  return ret;
+  return await handleRpcRequest(request, wallet, null, promptHandler(origin));
 };
