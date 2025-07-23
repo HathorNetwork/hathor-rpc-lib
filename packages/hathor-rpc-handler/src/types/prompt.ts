@@ -37,6 +37,7 @@ export enum TriggerTypes {
 
 export enum TriggerResponseTypes {
   AddressRequestClientResponse,
+  AddressRequestConfirmationResponse,
   PinRequestResponse,
   GetUtxosConfirmationResponse,
   SignMessageWithAddressConfirmationResponse,
@@ -236,6 +237,11 @@ export interface PinRequestResponse {
   }
 }
 
+export interface AddressRequestConfirmationResponse {
+  type: TriggerResponseTypes.AddressRequestConfirmationResponse;
+  data: boolean;
+}
+
 export interface GetBalanceConfirmationResponse {
   type: TriggerResponseTypes.GetBalanceConfirmationResponse;
   data: boolean;
@@ -307,6 +313,7 @@ export interface CreateNanoContractCreateTokenTxConfirmationResponse {
 
 export type TriggerResponse =
   AddressRequestClientResponse
+  | AddressRequestConfirmationResponse
   | GetUtxosConfirmationResponse
   | PinRequestResponse
   | SignMessageWithAddressConfirmationResponse
