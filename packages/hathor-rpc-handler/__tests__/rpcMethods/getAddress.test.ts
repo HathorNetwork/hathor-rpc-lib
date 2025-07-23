@@ -22,7 +22,7 @@ describe('getAddress parameter validation', () => {
     getAddressAtIndex: jest.fn().mockResolvedValue('test-address'),
   } as unknown as HathorWallet;
 
-  const mockTriggerHandler = jest.fn().mockResolvedValue(true);
+  const mockTriggerHandler = jest.fn().mockResolvedValue({ data: true });
 
   beforeEach(() => {
     jest.clearAllMocks();
