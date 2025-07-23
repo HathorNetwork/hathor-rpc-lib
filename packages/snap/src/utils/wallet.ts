@@ -1,4 +1,5 @@
 import { config, walletUtils, HathorWalletServiceWallet, Network } from '@hathor/wallet-lib';
+import { REQUEST_METHODS } from '../constants';
 
 export const getHathorWallet = async (network: string): HathorWalletServiceWallet => {
   const walletServiceURL = 'https://wallet-service.hathor.network/';
@@ -8,7 +9,7 @@ export const getHathorWallet = async (network: string): HathorWalletServiceWalle
   // key and automatically decrypted when retrieved
   // https://docs.metamask.io/snaps/reference/snaps-api/#snap_managestate
   const persistedData = await snap.request({
-    method: 'snap_manageState',
+    method: REQUEST_METHODS.MANAGE_STATE,
     params: { operation: 'get' },
   }) ?? {};
 
@@ -19,7 +20,7 @@ export const getHathorWallet = async (network: string): HathorWalletServiceWalle
   if (!accountPathXpriv || !authPathXpriv) {
     // Get the Hathor node, corresponding to the path m/44'/280'/0'.
     const hathorNode = await snap.request({
-      method: 'snap_getBip32Entropy',
+      method: REQUEST_METHODS.GET_BIP32_ENTROPY,
       params: {
         curve: 'secp256k1',
         path: ['m', '44\'', '280\'', '0\''],
@@ -27,7 +28,7 @@ export const getHathorWallet = async (network: string): HathorWalletServiceWalle
     })
 
     const authHathorNode = await snap.request({
-      method: 'snap_getBip32Entropy',
+      method: REQUEST_METHODS.GET_BIP32_ENTROPY,
       params: {
         curve: 'secp256k1',
         path: ['m', '280\'', '280\''],
@@ -52,7 +53,7 @@ export const getHathorWallet = async (network: string): HathorWalletServiceWalle
     );
 
     await snap.request({
-      method: 'snap_manageState',
+      method: REQUEST_METHODS.MANAGE_STATE,
       params: {
         operation: 'update',
         newState: { accountPathXpriv, authPathXpriv },

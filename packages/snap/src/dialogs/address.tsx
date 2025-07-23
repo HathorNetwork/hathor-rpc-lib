@@ -1,10 +1,11 @@
 import { Box, Text } from '@metamask/snaps-sdk/jsx';
+import { REQUEST_METHODS, DIALOG_TYPES } from '../constants';
 
 export const addressPage = async () => (
   await snap.request({
-    method: 'snap_dialog',
+    method: REQUEST_METHODS.DIALOG,
     params: {
-      type: 'confirmation',
+      type: DIALOG_TYPES.CONFIRMATION,
       content: (
         <Box>
           <Text>
