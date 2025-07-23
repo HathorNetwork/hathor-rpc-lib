@@ -100,8 +100,8 @@ describe('sendNanoContractTx', () => {
 
     expect(promptHandler).toHaveBeenCalledTimes(4);
     expect(promptHandler).toHaveBeenCalledWith({
+      ...rpcRequest,
       type: TriggerTypes.PinConfirmationPrompt,
-      method: rpcRequest.method,
     }, {});
 
     expect(wallet.createAndSendNanoContractTransaction).toHaveBeenCalledWith(
@@ -296,8 +296,8 @@ describe('sendNanoContractTx', () => {
 
     expect(promptHandler).toHaveBeenCalledTimes(3);
     expect(promptHandler).toHaveBeenNthCalledWith(1, {
+      ...rpcRequest,
       type: TriggerTypes.SendNanoContractTxConfirmationPrompt,
-      method: rpcRequest.method,
       data: {
         actions: expect.any(Array),
         args: expect.any(Array),
@@ -308,8 +308,8 @@ describe('sendNanoContractTx', () => {
       },
     }, {});
     expect(promptHandler).toHaveBeenNthCalledWith(2, {
+      ...rpcRequest,
       type: TriggerTypes.PinConfirmationPrompt,
-      method: rpcRequest.method,
     }, {});
     expect(promptHandler).toHaveBeenNthCalledWith(3, {
       type: TriggerTypes.SendNanoContractTxLoadingTrigger,

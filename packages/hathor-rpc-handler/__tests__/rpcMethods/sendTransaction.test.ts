@@ -104,8 +104,8 @@ describe('sendTransaction', () => {
     // Verify all prompts were shown in correct order
     expect(promptHandler).toHaveBeenCalledTimes(4); // Confirmation, PIN, Loading, LoadingFinished
     expect(promptHandler).toHaveBeenNthCalledWith(1, {
+      ...rpcRequest,
       type: TriggerTypes.SendTransactionConfirmationPrompt,
-      method: rpcRequest.method,
       data: {
         outputs: [{
           address: 'testAddress',
@@ -123,8 +123,8 @@ describe('sendTransaction', () => {
       },
     }, {});
     expect(promptHandler).toHaveBeenNthCalledWith(2, {
+      ...rpcRequest,
       type: TriggerTypes.PinConfirmationPrompt,
-      method: rpcRequest.method,
     }, {});
   });
 

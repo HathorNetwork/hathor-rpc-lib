@@ -73,8 +73,8 @@ export async function signWithAddress(
   };
 
   const prompt: SignMessageWithAddressConfirmationPrompt = {
+    ...rpcRequest,
     type: TriggerTypes.SignMessageWithAddressConfirmationPrompt,
-    method: rpcRequest.method,
     data: {
       address,
       message: params.message,
@@ -88,8 +88,8 @@ export async function signWithAddress(
   }
 
   const pinPrompt: PinConfirmationPrompt = {
+    ...rpcRequest,
     type: TriggerTypes.PinConfirmationPrompt,
-    method: rpcRequest.method,
   };
 
   const pinResponse = await promptHandler(pinPrompt, requestMetadata) as PinRequestResponse;

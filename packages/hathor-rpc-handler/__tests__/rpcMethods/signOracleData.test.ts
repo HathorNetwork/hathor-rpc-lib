@@ -49,8 +49,8 @@ describe('signOracleData', () => {
     await expect(signOracleData(mockSignOracleDataRequest, wallet, {}, mockPromptHandler)).rejects.toThrow(PromptRejectedError);
 
     expect(mockPromptHandler).toHaveBeenNthCalledWith(1, {
+      ...mockSignOracleDataRequest,
       type: TriggerTypes.SignOracleDataConfirmationPrompt,
-      method: mockSignOracleDataRequest.method,
       data: {
         oracle: mockSignOracleDataRequest.params.oracle,
         data: mockSignOracleDataRequest.params.data,
@@ -76,8 +76,8 @@ describe('signOracleData', () => {
     await expect(signOracleData(mockSignOracleDataRequest, wallet, {}, mockPromptHandler)).rejects.toThrow(PromptRejectedError);
 
     expect(mockPromptHandler).toHaveBeenNthCalledWith(1, {
+      ...mockSignOracleDataRequest,
       type: TriggerTypes.SignOracleDataConfirmationPrompt,
-      method: mockSignOracleDataRequest.method,
       data: {
         oracle: mockSignOracleDataRequest.params.oracle,
         data: mockSignOracleDataRequest.params.data,
@@ -85,8 +85,8 @@ describe('signOracleData', () => {
     }, {});
 
     expect(mockPromptHandler).toHaveBeenNthCalledWith(2, {
+      ...mockSignOracleDataRequest,
       type: TriggerTypes.PinConfirmationPrompt,
-      method: mockSignOracleDataRequest.method,
     }, {});
 
     expect(nanoUtils.getOracleSignedDataFromUser).not.toHaveBeenCalled();
@@ -109,8 +109,8 @@ describe('signOracleData', () => {
     const result = await signOracleData(mockSignOracleDataRequest, wallet, {}, mockPromptHandler);
 
     expect(mockPromptHandler).toHaveBeenNthCalledWith(1, {
+      ...mockSignOracleDataRequest,
       type: TriggerTypes.SignOracleDataConfirmationPrompt,
-      method: mockSignOracleDataRequest.method,
       data: {
         oracle: mockSignOracleDataRequest.params.oracle,
         data: mockSignOracleDataRequest.params.data,
@@ -118,8 +118,8 @@ describe('signOracleData', () => {
     }, {});
 
     expect(mockPromptHandler).toHaveBeenNthCalledWith(2, {
+      ...mockSignOracleDataRequest,
       type: TriggerTypes.PinConfirmationPrompt,
-      method: mockSignOracleDataRequest.method,
     }, {});
 
     // Verify the new API is called with correct parameters

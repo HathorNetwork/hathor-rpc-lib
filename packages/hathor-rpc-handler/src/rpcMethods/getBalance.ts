@@ -66,8 +66,8 @@ export async function getBalance(
   )).flat();
 
   const prompt: GetBalanceConfirmationPrompt = {
+    ...rpcRequest,
     type: TriggerTypes.GetBalanceConfirmationPrompt,
-    method: rpcRequest.method,
     data: balances
   };
 
