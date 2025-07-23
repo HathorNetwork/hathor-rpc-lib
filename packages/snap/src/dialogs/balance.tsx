@@ -1,23 +1,32 @@
-import { Box, Text } from '@metamask/snaps-sdk/jsx';
 import { REQUEST_METHODS, DIALOG_TYPES } from '../constants';
+import { Box, Card, Container, Divider, Heading, Section, Text } from '@metamask/snaps-sdk/jsx';
+import { numberUtils } from '@hathor/wallet-lib';
 
-export const balancePage = async (data) => (
+const renderBalances = (data) => {
+  return data.map((tokenData) => (
+    <Card title={tokenData.token.symbol} value={numberUtils.prettyValue(tokenData.balance.unlocked)} />
+  ))
+}
+
+export const balancePage = async (data, params, origin) => (
   await snap.request({
     method: REQUEST_METHODS.DIALOG,
     params: {
       type: DIALOG_TYPES.CONFIRMATION,
       content: (
-        <Box>
-          <Text>
-            The dApp wants to get the balance of the following tokens:
-          </Text>
-          <Text>
-            Tokens from data
-          </Text>
-          <Text>
-            Confirm the action below to continue.
-          </Text>
-        </Box>
+        <Container backgroundColor="alternative">
+          <Box>
+            <Heading>Check balance</Heading>
+            <Text>
+              The dApp {origin} is requesting permission to view the current balance of the following tokens in your Hathor wallet:
+            </Text>
+            <Section>
+              <Card title="Token" value="Balance" />
+              <Divider />
+              {renderBalances(data)} 
+            </Section>
+          </Box>
+        </Container>
       ),
     },
   })
