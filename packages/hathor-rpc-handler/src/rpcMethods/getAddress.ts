@@ -9,6 +9,7 @@ import { z } from 'zod';
 import type { HathorWallet } from '@hathor/wallet-lib';
 import {
   AddressRequestClientResponse,
+  AddressRequestConfirmationResponse,
   TriggerTypes,
   GetAddressRpcRequest,
   TriggerHandler,
@@ -106,9 +107,9 @@ export async function getAddress(
         data: {
           address,
         }
-      }, requestMetadata);
+      }, requestMetadata) as AddressRequestConfirmationResponse;
 
-      if (!confirmed) {
+      if (!confirmed.data) {
         throw new PromptRejectedError();
       }
     }
