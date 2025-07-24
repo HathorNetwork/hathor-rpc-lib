@@ -4,5 +4,8 @@
   "packageManager": "yarn@4.2.2",
   "workspaces": [
     "packages/hathor-rpc-handler"
-  ]
+  ],
+  "scripts": {
+    "test": "yarn workspace @hathor/hathor-rpc-handler test"
+  }
 }
