@@ -1,8 +1,7 @@
-import { config, walletUtils, HathorWalletServiceWallet, Network } from '@hathor/wallet-lib';
-import { REQUEST_METHODS } from '../constants';
+import { constants as libConstants, config, walletUtils, HathorWalletServiceWallet, Network } from '@hathor/wallet-lib';
+import { REQUEST_METHODS, walletServiceURL } from '../constants';
 
 export const getHathorWallet = async (network: string): HathorWalletServiceWallet => {
-  const walletServiceURL = 'https://wallet-service.hathor.network/';
   const networkObject = new Network(network);
   // First we try to get the xpriv data from the persisted data
   // By default, the data is automatically encrypted using a Snap-specific
@@ -23,7 +22,7 @@ export const getHathorWallet = async (network: string): HathorWalletServiceWalle
       method: REQUEST_METHODS.GET_BIP32_ENTROPY,
       params: {
         curve: 'secp256k1',
-        path: ['m', '44\'', '280\'', '0\''],
+        path: libConstants.P2PKH_ACCT_PATH.split('/'),
       },
     })
 
@@ -31,7 +30,7 @@ export const getHathorWallet = async (network: string): HathorWalletServiceWalle
       method: REQUEST_METHODS.GET_BIP32_ENTROPY,
       params: {
         curve: 'secp256k1',
-        path: ['m', '280\'', '280\''],
+        path: libConstants.WALLET_SERVICE_AUTH_DERIVATION_PATH.split('/'),
       },
     })
 
