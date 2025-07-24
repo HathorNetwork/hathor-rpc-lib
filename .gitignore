@@ -1,4 +1,13 @@
 .yarn/*
+!.yarn/patches/
 node_modules/
 .pnp.*
 .direnv/
+.DS_Store
+dist/
+build/
+coverage/
+.cache/
+public/
+*.swp
+*.swo
