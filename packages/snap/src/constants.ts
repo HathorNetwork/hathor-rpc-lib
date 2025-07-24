@@ -7,3 +7,5 @@ export enum REQUEST_METHODS {
 export enum DIALOG_TYPES {
   CONFIRMATION = 'confirmation',
 }
+
+export const walletServiceURL = 'https://wallet-service.hathor.network/';
