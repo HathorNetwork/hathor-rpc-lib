@@ -1,39 +1,96 @@
-import { Bold, Box, Container, Heading, Section, Text } from '@metamask/snaps-sdk/jsx';
-import { numberUtils } from '@hathor/wallet-lib';
+import { constants as libConstants, numberUtils } from '@hathor/wallet-lib';
+import { Bold, Box, Container, Divider, Heading, Section, Text } from '@metamask/snaps-sdk/jsx';
 
-export const sendTransactionPage = async (data, params, origin) => (
-  await snap.request({
+const renderTokenFilterParam = (token) => {
+  if (!token || token === libConstants.NATIVE_TOKEN_UID) {
+    return libConstants.DEFAULT_NATIVE_TOKEN_CONFIG.symbol;
+  }
+
+  return token;
+}
+
+// We show the symbol only if it's HTR in the list
+const renderTokenSymbol = (token) => {
+  if (!token || token === libConstants.NATIVE_TOKEN_UID) {
+    return libConstants.DEFAULT_NATIVE_TOKEN_CONFIG.symbol;
+  }
+
+  return '';
+}
+
+const renderAmountSummary = (data, params) => {
+  if (params.authorities) {
+    let authority = '';
+    if (params.authorities === 1) {
+      authority = 'mint';
+    } else if (params.authorities === 2) {
+      authority = 'melt';
+    }
+
+    return (
+      <Text>{`Authority: ${authority}`}</Text>
+    );
+  }
+
+  return (
+    <Text>{`Amount: ${numberUtils.prettyValue(data.total_amount_available)} ${renderTokenSymbol(params.token)}`}</Text>
+  );
+}
+
+export const utxosPage = async (data, params, origin) => {
+  const content = (
+    <Container backgroundColor='alternative'>
+      <Box>
+        <Heading>UTXO Details</Heading>
+        <Text>
+          {`${origin} requests access to ${data.utxos?.length || 0} UTXOs`}
+        </Text>
+
+        <Section>
+          <Text><Bold>Filter parameters</Bold></Text>
+          <Divider />
+          <Text>Token: {renderTokenFilterParam(params.token)}</Text>
+          {params.filterAddress ? <Text>{`Address: ${params.filterAddress}`}</Text> : null}
+          {params.maxUtxos ? <Text>{`Maximum quantity: ${params.maxUtxos}`}</Text> : null}
+          {params.authorities ? <Text>{`Authority: ${params.authorities}`}</Text> : null}
+          {params.amountSmallerThan ? <Text>{`Amount smaller than: ${numberUtils.prettyValue(params.amountSmallerThan)}`}</Text> : null}
+          {params.amountBiggerThan ? <Text>{`Amount bigger than: ${numberUtils.prettyValue(params.amountBiggerThan)}`}</Text> : null}
+          {params.maximumAmount ? <Text>{`Maximum total amount: ${numberUtils.prettyValue(params.maximumAmount)}`}</Text> : null}
+        </Section>
+
+        <Section>
+          <Text><Bold>Summary</Bold></Text>
+          <Divider />
+          <Text>{`Total: ${data.total_utxos_available.toString()} UTXOs`}</Text>
+          {renderAmountSummary(data, params)}
+        </Section>
+
+        {data.utxos && data.utxos.length > 0 ? (
+          <Section>
+            <Text><Bold>All UTXOs</Bold></Text>
+            <Divider />
+            {data.utxos.map((utxo, index) => (
+              <Box key={`utxo-${index}`}>
+                {params.authorities ? null : <Text>{`${numberUtils.prettyValue(utxo.amount)} ${renderTokenSymbol(params.token)}`}</Text>}
+                <Text>{utxo.address}</Text>
+                {index < data.utxos.length - 1 ? <Divider /> : null}
+              </Box>
+            ))}
+          </Section>
+        ) : (
+          <Section>
+            <Text>No UTXOs found</Text>
+          </Section>
+        )}
+      </Box>
+    </Container>
+  );
+
+  return await snap.request({
     method: 'snap_dialog',
     params: {
       type: 'confirmation',
-      content: (
-        <Container backgroundColor='alternative'>
-          <Box>
-            <Heading>Send transaction</Heading>
-            <Text>
-              The dApp {origin} is requesting permission to view the list of unspent transaction outputs (UTXOs) of your Hathor wallet with the following parameters:
-            </Text>
-            <Section>
-              <Text><Bold>Parameters</Bold></Text>
-              <Divider />
-              <Card title='Address' value={params.filter_address} />
-              <Card title='Token' value={params.token} />
-              <Card title='Authorities' value={params.authorities} />
-              <Card title='Maximum count' value={params.max_utxos} />
-              <Card title='Maximum amount' value={params.max_amount} />
-              <Card title='Amount smaller than' value={params.amount_smaller_than} />
-              <Card title='Amount bigger than' value={params.amount_bigger_than} />
-              <Card title='Only available?' value={params.only_available_utxos ? 'Yes' : 'No'} />
-            </Section>
-            <Section>
-              <Text><Bold>UTXOs Summary</Bold></Text>
-              <Divider />
-              <Card title='Total count of utxos available' value={data.total_utxos_available} />
-              <Card title='Total amount in the utxos' value={data.total_amount_available} />
-            </Section>
-          </Box>
-        </Container>
-      ),
+      content,
     },
-  })
-)
+  });
+};

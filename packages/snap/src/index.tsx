@@ -7,8 +7,7 @@ import { installPage } from './dialogs/install';
 import { balanceHandler } from './methods/balance';
 import { addressHandler } from './methods/address';
 import { handleRpcRequest } from '@hathor/hathor-rpc-handler';
-
-const network = 'mainnet';
+import { network } from './constants';
 
 /**
  * Handle incoming JSON-RPC requests, sent through `wallet_invokeSnap`.
@@ -27,5 +26,5 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
   // Almost all RPC requests need the network, so I add it here
   request.params = { ...request.params, network };
   const wallet = await getHathorWallet(network);
-  return handleRpcRequest(request, wallet, null, promptHandler(origin));
+  return handleRpcRequest(request, wallet, null, promptHandler(origin, wallet));
 };
