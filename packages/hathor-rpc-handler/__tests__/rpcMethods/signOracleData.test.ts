@@ -32,7 +32,7 @@ describe('signOracleData', () => {
       type: 'str',
       signature: 'mock-signed-result',
       value: 'yes',
-    } as any);
+    });
 
     wallet = {
       getNetwork: jest.fn().mockReturnValue('mainnet'),

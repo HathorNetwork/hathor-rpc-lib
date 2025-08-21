@@ -12,7 +12,7 @@ import { TriggerTypes, RpcMethods, SendNanoContractRpcRequest, TriggerResponseTy
 import { SendNanoContractTxError, InvalidParamsError } from '../../src/errors';
 
 
-jest.spyOn(nanoUtils, 'validateAndParseBlueprintMethodArgs').mockResolvedValue([] as any);
+jest.spyOn(nanoUtils, 'validateAndParseBlueprintMethodArgs').mockResolvedValue([]);
 
 describe('sendNanoContractTx', () => {
   let rpcRequest: SendNanoContractRpcRequest;

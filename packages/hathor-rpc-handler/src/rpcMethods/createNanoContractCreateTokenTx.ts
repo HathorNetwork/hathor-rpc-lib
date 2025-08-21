@@ -40,7 +40,7 @@ const createNanoContractCreateTokenTxSchema = z.object({
     nc_id: z.string().nullable().optional(),
     actions: z.array(INanoContractActionSchema).optional(),
     args: z.array(z.unknown()).optional(),
-  }).optional(),,
+  }).optional(),
   createTokenOptions: createTokenBaseSchema.extend({
     contractPaysTokenDeposit: z.boolean(),
   }).optional(),
@@ -81,6 +81,7 @@ export async function createNanoContractCreateTokenTx(
     actions: data?.actions ?? [],
     method,
     args: data?.args ?? [],
+    parsedArgs: [],
     pushTx: push_tx,
   };
   // Only pass CreateTokenParams fields, fallback to null/empty for missing
