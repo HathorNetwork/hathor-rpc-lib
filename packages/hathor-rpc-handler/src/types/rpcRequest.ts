@@ -20,6 +20,7 @@ export enum RpcMethods {
   SignOracleData = 'htr_signOracleData',
   SendTransaction = 'htr_sendTransaction',
   CreateNanoContractCreateTokenTx = 'htr_createNanoContractCreateTokenTx',
+  ChangeNetwork = 'htr_changeNetwork',
 }
 
 export interface CreateTokenRpcRequest {
@@ -146,6 +147,14 @@ export interface GetConnectedNetworkRpcRequest {
   method: RpcMethods.GetConnectedNetwork,
 }
 
+export interface ChangeNetworkRpcRequest {
+  method: RpcMethods.ChangeNetwork,
+  params: {
+    network: string;
+    newNetwork: string;
+  }
+}
+
 export interface GenericRpcRequest {
   method: string;
   params?: unknown | null;
@@ -160,5 +169,6 @@ export type RpcRequest = GetAddressRpcRequest
   | GenericRpcRequest
   | SignOracleDataRpcRequest
   | SendTransactionRpcRequest
-  | CreateNanoContractCreateTokenTxRpcRequest;
+  | CreateNanoContractCreateTokenTxRpcRequest
+  | ChangeNetworkRpcRequest;
 

@@ -22,6 +22,7 @@ import {
   SignOracleDataRpcRequest,
   SendTransactionRpcRequest,
   CreateNanoContractCreateTokenTxRpcRequest,
+  ChangeNetworkRpcRequest,
 } from '../types';
 import {
   getAddress,
@@ -34,6 +35,7 @@ import {
   createToken,
   sendTransaction,
   createNanoContractCreateTokenTx,
+  changeNetwork,
 } from '../rpcMethods';
 import { InvalidRpcMethod } from '../errors';
 
@@ -100,6 +102,12 @@ export const handleRpcRequest = async (
     );
     case RpcMethods.CreateNanoContractCreateTokenTx: return createNanoContractCreateTokenTx(
       request as CreateNanoContractCreateTokenTxRpcRequest,
+      wallet,
+      requestMetadata,
+      promptHandler,
+    );
+    case RpcMethods.ChangeNetwork: return changeNetwork(
+      request as ChangeNetworkRpcRequest,
       wallet,
       requestMetadata,
       promptHandler,
