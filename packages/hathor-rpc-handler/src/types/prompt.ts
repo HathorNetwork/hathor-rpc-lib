@@ -174,7 +174,6 @@ export interface NanoContractParams {
   actions: NanoContractAction[],
   method: string;
   args: unknown[];
-  parsedArgs: unknown[];
   pushTx: boolean;
 }
 
