@@ -7,7 +7,7 @@ const renderConditionalCard = (title, value, parsedValue = null) => {
     return null;
   }
 
-  return <Card title={title} value={parsedValue ?? value} description=" " extra=' ' />
+  return <Card title={title} value="" description={parsedValue ?? value} />
 }
 
 const boolToString = (bool) => {
@@ -27,9 +27,9 @@ export const createTokenPage = async (data, params, origin) => (
               The dApp {origin} is requesting permission to create a new token on the Hathor Network with the following details:
             </Text>
             <Section>
-              <Card title="Name" value={params.name} />
-              <Card title="Symbol" value={params.symbol} />
-              <Card title="Amount" value={numberUtils.prettyValue(params.amount)} />
+              <Card title="Name" value="" description={params.name} />
+              <Card title="Symbol" value="" description={params.symbol} />
+              <Card title="Amount" value="" description={numberUtils.prettyValue(params.amount)} />
               {renderConditionalCard('Address', params.address)}
               {renderConditionalCard('Change address', params.change_address)}
               {renderConditionalCard('Create mint authority', params.create_mint, boolToString(params.create_mint))}

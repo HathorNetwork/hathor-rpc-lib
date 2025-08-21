@@ -1,6 +1,6 @@
 import { REQUEST_METHODS, DIALOG_TYPES } from '../constants';
 import { Bold, Box, Card, Container, Copyable, Divider, Heading, Section, Text } from '@metamask/snaps-sdk/jsx';
-import { constants as libConstants, NanoContractActionType, numberUtils } from '@hathor/wallet-lib';
+import { constants as libConstants, bigIntUtils, dateUtils, NanoContractActionType, numberUtils } from '@hathor/wallet-lib';
 
 const renderOptionalContractDetail = (param, title) => {
   if (!param) return null;
@@ -26,7 +26,17 @@ const renderArguments = (args) => {
 
 const renderArgsMap = (args) => {
   return args.map((arg) => {
-    return <Card title={arg.name} value="" description={arg.parsed.toString()} />
+    let parsed;
+
+    if (arg.type === 'Timestamp') {
+      parsed = dateUtils.parseTimestamp(arg.parsed);
+    } else if (arg.type === 'Amount') {
+      parsed = numberUtils.prettyValue(arg.parsed);
+    } else {
+      parsed = bigIntUtils.JSONBigInt.stringify(arg.parsed);
+    }
+
+    return <Card title={arg.name} value="" description={parsed} />
   });
 }
 
@@ -56,16 +66,15 @@ const actionTitleMap = {
 
 const renderAmount = (action) => {
   if (action.type === NanoContractActionType.DEPOSIT || action.type === NanoContractActionType.WITHDRAWAL) {
-    return <Card title="Amount" value={numberUtils.prettyValue(action.amount)} />
+    return <Card title="Amount" value="" description={numberUtils.prettyValue(action.amount)} />
   }
 
-  return <Card title="Authority" value={action.authority.upperCase()} />
+  return <Card title="Authority" value="" description={action.authority.toUpperCase()} />
 }
 
 const renderToken = (action) => {
-  const token = action.token === libConstants.NATIVE_TOKEN_UID ? libConstants.DEFAULT_NATIVE_TOKEN_CONFIG.symbol : action.token;
-  if (action.token === action.token === libConstants.NATIVE_TOKEN_UID) {
-    return <Card title="Token" value={libConstants.DEFAULT_NATIVE_TOKEN_CONFIG.symbol} />
+  if (action.token === libConstants.NATIVE_TOKEN_UID) {
+    return <Card title="Token" value="" description={libConstants.DEFAULT_NATIVE_TOKEN_CONFIG.symbol} />
   }
 
   return (
@@ -131,12 +140,12 @@ const renderAddresses = (action) => {
 
 const renderAction = (action) => {
   return (
-    <Box>
+    <Section>
       <Bold>{actionTitleMap[action.type]}</Bold>
       {renderAmount(action)} 
       {renderToken(action)}
       {renderAddresses(action)}
-    </Box>
+    </Section>
   );
 }
 

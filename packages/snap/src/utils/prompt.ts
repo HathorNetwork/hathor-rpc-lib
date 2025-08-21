@@ -1,4 +1,5 @@
-import { addressPage, balancePage, createNanoPage, createTokenPage, sendTransactionPage, signWithAddressPage, utxosPage } from '../dialogs';
+import { addressPage, balancePage, changeNetworkPage, createNanoPage, createTokenPage, oracleDataPage, sendTransactionPage, signWithAddressPage, utxosPage } from '../dialogs';
+import { setNetwork } from '../utils/network';
 import { RpcMethods, TriggerTypes } from '@hathor/hathor-rpc-handler';
 
 export const promptHandler = (origin, wallet) => async (promptRequest) => {
@@ -24,6 +25,12 @@ export const promptHandler = (origin, wallet) => async (promptRequest) => {
       return { data: approved };
     case TriggerTypes.GetUtxosConfirmationPrompt:
       approved = await utxosPage(data, params, origin);
+      return { data: approved };
+    case TriggerTypes.ChangeNetworkConfirmationPrompt:
+      approved = await changeNetworkPage(data, params, origin);
+      if (approved) {
+        await setNetwork(data.newNetwork);
+      }
       return { data: approved };
     case TriggerTypes.SendTransactionConfirmationPrompt:
       approved = await sendTransactionPage(data, params, origin);
@@ -60,6 +67,9 @@ export const promptHandler = (origin, wallet) => async (promptRequest) => {
         args: params.args,
       };
       return response;
+    case TriggerTypes.SignOracleDataConfirmationPrompt:
+      approved = await oracleDataPage(data, params, origin);
+      return { data: approved };
     case TriggerTypes.SendNanoContractTxLoadingTrigger:
     case TriggerTypes.SendNanoContractTxLoadingFinishedTrigger:
     case TriggerTypes.CreateTokenLoadingTrigger:

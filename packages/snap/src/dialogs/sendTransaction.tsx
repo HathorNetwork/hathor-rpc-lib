@@ -44,11 +44,11 @@ const renderTokenId = (token) => {
 
 const renderOutputs = (outputs) => {
   return outputs.map((output, index) => {
-    if (output.type === 'data') {
+    if (output.data) {
       return (
         <Box key={`output-${index}`}>
           <Text>Data output</Text>
-          <Text>{output.data.join('\n')}</Text>
+          <Text>{output.data}</Text>
         </Box>
       );
     }
