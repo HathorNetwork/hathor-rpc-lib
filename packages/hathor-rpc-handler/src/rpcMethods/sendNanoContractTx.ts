@@ -22,7 +22,11 @@ import {
   SendNanoContractTxLoadingFinishedTrigger,
 } from '../types';
 import { PromptRejectedError, SendNanoContractTxError, InvalidParamsError } from '../errors';
-import { INanoContractActionSchema, nanoUtils, Network, config } from '@hathor/wallet-lib';
+import { INanoContractActionSchema, NanoContractAction, nanoUtils, Network, config } from '@hathor/wallet-lib';
+
+export type NanoContractActionWithStringAmount = Omit<NanoContractAction, 'amount'> & {
+  amount: string,
+}
 
 const sendNanoContractSchema = z.object({
   network: z.string().min(1),
