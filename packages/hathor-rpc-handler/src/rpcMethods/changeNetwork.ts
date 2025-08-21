@@ -11,7 +11,6 @@ import {
   ChangeNetworkRequestConfirmationResponse,
   ChangeNetworkRpcRequest,
   TriggerTypes,
-  GetAddressRpcRequest,
   TriggerHandler,
   RequestMetadata,
   RpcResponse,
