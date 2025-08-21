@@ -23,8 +23,8 @@ import {
   NanoContractParams,
   CreateTokenParams,
 } from '../types';
-import { PromptRejectedError, InvalidParamsError } from '../errors';
-import { INanoContractActionSchema } from '@hathor/wallet-lib';
+import { PromptRejectedError, SendNanoContractTxError, InvalidParamsError } from '../errors';
+import { INanoContractActionSchema, nanoUtils, Network, config } from '@hathor/wallet-lib';
 import { createTokenBaseSchema } from '../schemas';
 
 // Extend CreateTokenParams to include nano contract specific fields
@@ -33,6 +33,7 @@ type NanoContractCreateTokenParams = CreateTokenParams & {
 };
 
 const createNanoContractCreateTokenTxSchema = z.object({
+  network: z.string().min(1),
   method: z.string().min(1),
   address: z.string().min(1),
   data: z.object({
@@ -40,7 +41,7 @@ const createNanoContractCreateTokenTxSchema = z.object({
     nc_id: z.string().nullable().optional(),
     actions: z.array(INanoContractActionSchema).optional(),
     args: z.array(z.unknown()).optional(),
-  }).optional(),
+  }),
   createTokenOptions: createTokenBaseSchema.extend({
     contractPaysTokenDeposit: z.boolean(),
   }).optional(),
@@ -72,7 +73,34 @@ export async function createNanoContractCreateTokenTx(
   if (!validationResult.success) {
     throw new InvalidParamsError(validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
   }
-  const { method, address, data, createTokenOptions, push_tx } = validationResult.data;
+  const { network, method, address, data, createTokenOptions, push_tx } = validationResult.data;
+
+  let blueprintId = data.blueprint_id;
+  if (!blueprintId) {
+    let response;
+    try {
+      response = await wallet.getFullTxById(data.nc_id);
+    } catch {
+      // Error getting nano contract transaction data from the full node
+      throw new SendNanoContractTxError(
+        `Error getting nano contract transaction data with id ${data.nc_id} from the full node`
+      );
+    }
+
+    if (!response.tx.nc_id) {
+      throw new SendNanoContractTxError(
+        `Transaction with id ${data.nc_id} is not a nano contract transaction.`
+      );
+    }
+
+    blueprintId = response.tx.nc_blueprint_id;
+  }
+
+    config.setServerUrl(wallet.getServerUrl());
+    const result = await nanoUtils.validateAndParseBlueprintMethodArgs(blueprintId!, method, data.args ?? [], new Network(network));
+    const parsedArgs = result.map((data) => {
+      return { ...data, parsed: data.field.toUser() };
+    });
 
   // Prepare nano and token params for the confirmation prompt
   const nanoParams: NanoContractParams = {
@@ -81,6 +109,7 @@ export async function createNanoContractCreateTokenTx(
     actions: data?.actions ?? [],
     method,
     args: data?.args ?? [],
+    parsedArgs,
     pushTx: push_tx,
   };
   // Only pass CreateTokenParams fields, fallback to null/empty for missing

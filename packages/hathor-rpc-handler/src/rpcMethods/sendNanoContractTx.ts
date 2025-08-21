@@ -22,13 +22,10 @@ import {
   SendNanoContractTxLoadingFinishedTrigger,
 } from '../types';
 import { PromptRejectedError, SendNanoContractTxError, InvalidParamsError } from '../errors';
-import { INanoContractActionSchema, NanoContractAction } from '@hathor/wallet-lib';
-
-export type NanoContractActionWithStringAmount = Omit<NanoContractAction, 'amount'> & {
-  amount: string,
-}
+import { INanoContractActionSchema, nanoUtils, Network, config } from '@hathor/wallet-lib';
 
 const sendNanoContractSchema = z.object({
+  network: z.string().min(1),
   method: z.string().min(1),
   blueprint_id: z.string().nullish(),
   nc_id: z.string().nullish(),
@@ -74,6 +71,33 @@ export async function sendNanoContractTx(
       type: TriggerTypes.PinConfirmationPrompt,
     };
 
+    let blueprintId = params.blueprintId;
+    if (!blueprintId) {
+      let response;
+      try {
+        response = await wallet.getFullTxById(params.ncId);
+      } catch {
+        // Error getting nano contract transaction data from the full node
+        throw new SendNanoContractTxError(
+          `Error getting nano contract transaction data with id ${params.ncId} from the full node`
+        );
+      }
+
+      if (!response.tx.nc_id) {
+        throw new SendNanoContractTxError(
+          `Transaction with id ${params.ncId} is not a nano contract transaction.`
+        );
+      }
+
+      blueprintId = response.tx.nc_blueprint_id;
+    }
+
+    config.setServerUrl(wallet.getServerUrl());
+    const result = await nanoUtils.validateAndParseBlueprintMethodArgs(blueprintId!, params.method, params.args, new Network(params.network));
+    const parsedArgs = result.map((data) => {
+      return { ...data, parsed: data.field.toUser() };
+    });
+
     const sendNanoContractTxPrompt: SendNanoContractTxConfirmationPrompt = {
       ...rpcRequest,
       type: TriggerTypes.SendNanoContractTxConfirmationPrompt,
@@ -83,6 +107,7 @@ export async function sendNanoContractTx(
         actions: params.actions,
         method: params.method,
         args: params.args,
+        parsedArgs,
         pushTx: params.pushTx,
       },
     };

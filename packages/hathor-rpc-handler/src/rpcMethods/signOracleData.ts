@@ -8,7 +8,7 @@
 import {
   HathorWallet,
   nanoUtils,
-  bufferUtils,
+  Network,
 } from '@hathor/wallet-lib';
 import {
   TriggerHandler,
@@ -78,7 +78,7 @@ export async function signOracleData(
   const type = 'str';
   const resultPreSerialized = params.data;
 
-  const oracleDataBuffer = bufferUtils.hexToBuffer(params.oracle);
+  const oracleDataBuffer = nanoUtils.getOracleBuffer(params.oracle, new Network(params.network))
 
   // TODO: getOracleSignedDataFromUser method should be able to receive the PIN as optional parameter as well
   wallet.pinCode = pinResponse.data.pinCode;
