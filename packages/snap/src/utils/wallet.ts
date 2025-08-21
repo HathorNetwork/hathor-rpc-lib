@@ -1,7 +1,11 @@
-import { constants as libConstants, config, walletUtils, HathorWalletServiceWallet, Network } from '@hathor/wallet-lib';
+import { constants as libConstants, walletUtils, HathorWalletServiceWallet, Network } from '@hathor/wallet-lib';
 import { REQUEST_METHODS, nodeURL, txMiningURL, walletServiceURL } from '../constants';
+import { getNetworkData, configNetwork } from './network';
 
-export const getHathorWallet = async (network: string): HathorWalletServiceWallet => {
+export const getHathorWallet = async (): HathorWalletServiceWallet => {
+  // Get network data from persistent storage
+  const networkData = await getNetworkData();
+  const network = networkData.network;
   const networkObject = new Network(network);
   // First we try to get the xpriv data from the persisted data
   // By default, the data is automatically encrypted using a Snap-specific
@@ -55,7 +59,7 @@ export const getHathorWallet = async (network: string): HathorWalletServiceWalle
       method: REQUEST_METHODS.MANAGE_STATE,
       params: {
         operation: 'update',
-        newState: { accountPathXpriv, authPathXpriv },
+        newState: { ...persistedData, accountPathXpriv, authPathXpriv },
       },
     })
   }
@@ -69,10 +73,8 @@ export const getHathorWallet = async (network: string): HathorWalletServiceWalle
     enableWs: false,
   });
 
-  config.setServerUrl(nodeURL);
-  config.setNetwork(network);
-  config.setWalletServiceBaseUrl(walletServiceURL);
-  config.setTxMiningUrl(txMiningURL);
+  // Set lib config data and start the wallet
+  await configNetwork();
 
   await wallet.start({ pinCode: pin, password: pin });
 
