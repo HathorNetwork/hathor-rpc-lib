@@ -1,13 +1,14 @@
 import type { OnRpcRequestHandler } from '@metamask/snaps-sdk';
 import { Box, Text, Bold, Heading, Link } from '@metamask/snaps-sdk/jsx';
 import { getHathorWallet } from './utils/wallet';
+import { getNetworkData } from './utils/network';
 import { promptHandler } from './utils/prompt';
 import { homePage } from './dialogs/home';
 import { installPage } from './dialogs/install';
 import { balanceHandler } from './methods/balance';
 import { addressHandler } from './methods/address';
 import { handleRpcRequest } from '@hathor/hathor-rpc-handler';
-import { network } from './constants';
+import { bigIntUtils } from '@hathor/wallet-lib';
 
 /**
  * Handle incoming JSON-RPC requests, sent through `wallet_invokeSnap`.
@@ -24,7 +25,12 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
   request,
 }) => {
   // Almost all RPC requests need the network, so I add it here
-  request.params = { ...request.params, network };
-  const wallet = await getHathorWallet(network);
-  return handleRpcRequest(request, wallet, null, promptHandler(origin, wallet));
+  const networkData = await getNetworkData();
+  request.params = { ...request.params, network: networkData.network };
+  const wallet = await getHathorWallet();
+  const response = await handleRpcRequest(request, wallet, null, promptHandler(origin, wallet));
+  // We must return the stringified response because there are some JSON responses
+  // that include bigint values, which are not supported by snap
+  // so we use the bigint util from the wallet lib to stringify the return
+  return bigIntUtils.JSONBigInt.stringify(response);
 };
