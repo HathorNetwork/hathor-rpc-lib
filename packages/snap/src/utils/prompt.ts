@@ -1,5 +1,6 @@
 import { addressPage, balancePage, changeNetworkPage, createNanoPage, createTokenPage, oracleDataPage, sendTransactionPage, signWithAddressPage, utxosPage } from '../dialogs';
 import { setNetwork } from '../utils/network';
+import { NETWORK_MAP } from '../constants';
 import { RpcMethods, TriggerTypes } from '@hathor/hathor-rpc-handler';
 
 export const promptHandler = (origin, wallet) => async (promptRequest) => {
@@ -27,6 +28,11 @@ export const promptHandler = (origin, wallet) => async (promptRequest) => {
       approved = await utxosPage(data, params, origin);
       return { data: approved };
     case TriggerTypes.ChangeNetworkConfirmationPrompt:
+      if (!(params.newNetwork in NETWORK_MAP)) {
+        // Reject if the newNetwork is not a valid option
+        return { data: false };
+      }
+
       approved = await changeNetworkPage(data, params, origin);
       if (approved) {
         await setNetwork(data.newNetwork);
