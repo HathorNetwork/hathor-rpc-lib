@@ -44,7 +44,7 @@ export const utxosPage = async (data, params, origin) => {
       <Box>
         <Heading>UTXO Details</Heading>
         <Text>
-          {`${origin} requests access to ${data.utxos?.length || 0} UTXOs`}
+          {`${origin} requests information about ${data.utxos?.length || 0} UTXOs`}
         </Text>
 
         <Section>
