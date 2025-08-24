@@ -81,6 +81,7 @@ export async function createNanoContractCreateTokenTx(
     actions: data?.actions ?? [],
     method,
     args: data?.args ?? [],
+    parsedArgs: [],
     pushTx: push_tx,
   };
   // Only pass CreateTokenParams fields, fallback to null/empty for missing

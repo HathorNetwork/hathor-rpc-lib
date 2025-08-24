@@ -5,11 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { HathorWallet } from '@hathor/wallet-lib';
+import { HathorWallet, nanoUtils } from '@hathor/wallet-lib';
 import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
 import { sendNanoContractTx, NanoContractActionWithStringAmount } from '../../src/rpcMethods/sendNanoContractTx';
 import { TriggerTypes, RpcMethods, SendNanoContractRpcRequest, TriggerResponseTypes, RpcResponseTypes } from '../../src/types';
 import { SendNanoContractTxError, InvalidParamsError } from '../../src/errors';
+
+
+jest.spyOn(nanoUtils, 'validateAndParseBlueprintMethodArgs').mockResolvedValue([]);
 
 describe('sendNanoContractTx', () => {
   let rpcRequest: SendNanoContractRpcRequest;
@@ -32,6 +35,7 @@ describe('sendNanoContractTx', () => {
       id: '1',
       jsonrpc: '2.0',
       params: {
+        network: 'mainnet',
         method: 'initialize',
         blueprint_id: 'blueprint123',
         nc_id: 'nc123',
@@ -44,6 +48,7 @@ describe('sendNanoContractTx', () => {
     wallet = {
       createAndSendNanoContractTransaction: jest.fn(),
       createNanoContractTransaction: jest.fn(),
+      getServerUrl: jest.fn(),
     } as unknown as HathorWallet;
 
     promptHandler = jest.fn();
@@ -301,6 +306,7 @@ describe('sendNanoContractTx', () => {
       data: {
         actions: expect.any(Array),
         args: expect.any(Array),
+        parsedArgs: expect.any(Array),
         blueprintId: expect.any(String),
         method: expect.any(String),
         ncId: expect.any(String),
@@ -323,6 +329,12 @@ describe('sendNanoContractTx parameter validation', () => {
     createNanoContractTransaction: jest.fn().mockImplementation(() => ({
       transaction: {
         toHex: jest.fn().mockReturnValue('tx-hex'),
+      },
+    })),
+    getServerUrl: jest.fn(),
+    getFullTxById: jest.fn().mockImplementation(() => ({
+      tx: {
+        nc_id: 'nc-id'
       },
     })),
   } as unknown as HathorWallet;
@@ -360,6 +372,7 @@ describe('sendNanoContractTx parameter validation', () => {
     const invalidRequest = {
       method: RpcMethods.SendNanoContractTx,
       params: {
+        network: 'mainnet',
         method: 'test-method',
         blueprint_id: '',
         nc_id: null,
@@ -378,6 +391,7 @@ describe('sendNanoContractTx parameter validation', () => {
     const invalidRequest = {
       method: RpcMethods.SendNanoContractTx,
       params: {
+        network: 'mainnet',
         method: '',
         blueprint_id: 'test-blueprint',
         nc_id: null,
@@ -396,6 +410,7 @@ describe('sendNanoContractTx parameter validation', () => {
     const invalidRequest = {
       method: RpcMethods.SendNanoContractTx,
       params: {
+        network: 'mainnet',
         method: '',
         blueprint_id: 'test-blueprint',
         nc_id: null,
@@ -414,6 +429,7 @@ describe('sendNanoContractTx parameter validation', () => {
     const invalidRequest = {
       method: RpcMethods.SendNanoContractTx,
       params: {
+        network: 'mainnet',
         method: 'test-method',
         blueprint_id: 'test-blueprint',
         nc_id: null,
@@ -441,6 +457,7 @@ describe('sendNanoContractTx parameter validation', () => {
     const invalidRequest = {
       method: RpcMethods.SendNanoContractTx,
       params: {
+        network: 'mainnet',
         method: 'test-method',
         blueprint_id: 'test-blueprint',
         nc_id: null,
@@ -468,6 +485,7 @@ describe('sendNanoContractTx parameter validation', () => {
     const validRequest = {
       method: RpcMethods.SendNanoContractTx,
       params: {
+        network: 'mainnet',
         method: 'test-method',
         blueprint_id: 'test-blueprint',
         nc_id: null,
@@ -495,6 +513,7 @@ describe('sendNanoContractTx parameter validation', () => {
     const validRequest = {
       method: RpcMethods.SendNanoContractTx,
       params: {
+        network: 'mainnet',
         method: 'test-method',
         blueprint_id: '',
         nc_id: 'test-nc-id',
@@ -522,11 +541,13 @@ describe('sendNanoContractTx parameter validation', () => {
     const validRequest = {
       method: RpcMethods.SendNanoContractTx,
       params: {
+        network: 'mainnet',
         method: 'test-method',
         blueprint_id: 'test-blueprint',
         nc_id: null,
         actions: validActions as unknown as NanoContractAction[],
         args: [] as unknown[],
+        push_tx: true,
       },
     } as SendNanoContractRpcRequest;
 
@@ -547,6 +568,7 @@ describe('sendNanoContractTx parameter validation', () => {
     const validRequest = {
       method: RpcMethods.SendNanoContractTx,
       params: {
+        network: 'mainnet',
         method: 'test-method',
         blueprint_id: 'test-blueprint',
         nc_id: null,
@@ -573,6 +595,7 @@ describe('sendNanoContractTx parameter validation', () => {
     const validRequest = {
       method: RpcMethods.SendNanoContractTx,
       params: {
+        network: 'mainnet',
         method: 'test-method',
         blueprint_id: 'test-blueprint',
         nc_id: null,

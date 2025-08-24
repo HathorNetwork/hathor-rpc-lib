@@ -71,12 +71,12 @@ describe('getUtxos', () => {
       ).rejects.toThrow(InvalidParamsError);
     });
 
-    it('should reject when filterAddress is missing', async () => {
+    it('should reject when network is missing', async () => {
       const invalidRequest = {
         method: RpcMethods.GetUtxos,
         params: {
           ...mockGetUtxosRequest.params,
-          filterAddress: undefined,
+          network: undefined,
         },
       } as unknown as GetUtxosRpcRequest;
 
@@ -102,9 +102,13 @@ describe('getUtxos', () => {
       await getUtxos(request, wallet, {}, mockPromptHandler);
 
       expect(wallet.getUtxos).toHaveBeenCalledWith(expect.objectContaining({
-        token: 'HTR',
-        max_utxos: 255,
-        only_available_utxos: true,
+        amount_bigger_than: undefined,
+        amount_smaller_than: undefined,
+        authorities: undefined,
+        max_amount: undefined,
+        max_utxos: undefined,
+        only_available_utxos: undefined,
+        token: undefined
       }));
     });
   });
@@ -119,7 +123,7 @@ describe('getUtxos', () => {
 
     expect(wallet.getUtxos).toHaveBeenCalledWith({
       token: 'mock_token',
-      authorities: 0,
+      authorities: undefined,
       max_utxos: 10,
       filter_address: 'mock_address',
       amount_smaller_than: 1000,
@@ -146,7 +150,7 @@ describe('getUtxos', () => {
     await expect(getUtxos(mockGetUtxosRequest, wallet, {}, mockPromptHandler)).rejects.toThrow(PromptRejectedError);
     expect(wallet.getUtxos).toHaveBeenCalledWith({
       token: 'mock_token',
-      authorities: 0,
+      authorities: undefined,
       max_utxos: 10,
       filter_address: 'mock_address',
       amount_smaller_than: 1000,

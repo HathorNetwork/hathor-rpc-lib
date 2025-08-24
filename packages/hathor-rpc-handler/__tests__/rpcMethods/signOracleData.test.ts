@@ -18,17 +18,6 @@ import { signOracleData } from '../../src/rpcMethods/signOracleData';
 import { PromptRejectedError } from '../../src/errors';
 import { InvalidParamsError } from '../../src/errors';
 
-jest.mock('@hathor/wallet-lib', () => ({
-  ...jest.requireActual('@hathor/wallet-lib'),
-  nanoUtils: {
-    getOracleSignedDataFromUser: jest.fn().mockResolvedValue({
-      type: 'str',
-      signature: 'mock-signed-result',
-      value: 'yes',
-    }),
-  },
-}));
-
 describe('signOracleData', () => {
   let wallet: jest.Mocked<HathorWallet>;
 
@@ -37,6 +26,14 @@ describe('signOracleData', () => {
   });
 
   beforeEach(() => {
+    const returnValue = bufferUtils.hexToBuffer(mockSignOracleDataRequest.params.oracle);
+    jest.spyOn(nanoUtils, 'getOracleBuffer').mockReturnValue(returnValue);
+    jest.spyOn(nanoUtils, 'getOracleSignedDataFromUser').mockResolvedValue({
+      type: 'str',
+      signature: 'mock-signed-result',
+      value: 'yes',
+    });
+
     wallet = {
       getNetwork: jest.fn().mockReturnValue('mainnet'),
       getNetworkObject: jest.fn().mockReturnValue(new Network('mainnet')),
