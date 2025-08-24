@@ -1,5 +1,5 @@
 import { constants as libConstants, walletUtils, HathorWalletServiceWallet, Network } from '@hathor/wallet-lib';
-import { DEFAULT_PIN_CODE, REQUEST_METHODS, nodeURL, txMiningURL, walletServiceURL } from '../constants';
+import { DEFAULT_PIN_CODE, REQUEST_METHODS } from '../constants';
 import { getNetworkData, configNetwork } from './network';
 
 export const getHathorWallet = async (): HathorWalletServiceWallet => {
