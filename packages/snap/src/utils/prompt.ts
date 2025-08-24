@@ -1,6 +1,6 @@
 import { addressPage, balancePage, changeNetworkPage, createNanoPage, createTokenPage, oracleDataPage, sendTransactionPage, signWithAddressPage, utxosPage } from '../dialogs';
 import { setNetwork } from '../utils/network';
-import { NETWORK_MAP } from '../constants';
+import { DEFAULT_PIN_CODE, NETWORK_MAP } from '../constants';
 import { RpcMethods, TriggerTypes } from '@hathor/hathor-rpc-handler';
 
 export const promptHandler = (origin, wallet) => async (promptRequest) => {
@@ -15,7 +15,7 @@ export const promptHandler = (origin, wallet) => async (promptRequest) => {
       return {
         data: {
           accepted: true,
-          pinCode: '123',
+          pinCode: DEFAULT_PIN_CODE,
         }
       };
     case TriggerTypes.GetBalanceConfirmationPrompt:

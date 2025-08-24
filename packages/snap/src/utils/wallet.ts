@@ -1,5 +1,5 @@
 import { constants as libConstants, walletUtils, HathorWalletServiceWallet, Network } from '@hathor/wallet-lib';
-import { REQUEST_METHODS, nodeURL, txMiningURL, walletServiceURL } from '../constants';
+import { DEFAULT_PIN_CODE, REQUEST_METHODS, nodeURL, txMiningURL, walletServiceURL } from '../constants';
 import { getNetworkData, configNetwork } from './network';
 
 export const getHathorWallet = async (): HathorWalletServiceWallet => {
@@ -64,9 +64,8 @@ export const getHathorWallet = async (): HathorWalletServiceWallet => {
     })
   }
 
-  const pin = '123';
   const wallet = new HathorWalletServiceWallet({
-    requestPassword: () => Promise.resolve(pin),
+    requestPassword: () => Promise.resolve(DEFAULT_PIN_CODE),
     xpriv: accountPathXpriv,
     authxpriv: authPathXpriv,
     network: networkObject,
@@ -76,7 +75,7 @@ export const getHathorWallet = async (): HathorWalletServiceWallet => {
   // Set lib config data and start the wallet
   await configNetwork();
 
-  await wallet.start({ pinCode: pin, password: pin });
+  await wallet.start({ pinCode: DEFAULT_PIN_CODE, password: DEFAULT_PIN_CODE });
 
   return wallet;
 }

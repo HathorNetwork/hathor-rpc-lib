@@ -37,3 +37,5 @@ export const NETWORK_MAP = {
 }
 
 export const DEFAULT_NETWORK = 'mainnet';
+
+export const DEFAULT_PIN_CODE = '123';
