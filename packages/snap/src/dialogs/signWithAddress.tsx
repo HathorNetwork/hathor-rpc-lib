@@ -1,10 +1,11 @@
+import { REQUEST_METHODS, DIALOG_TYPES } from '../constants';
 import { Bold, Box, Copyable, Container, Heading, Section, Text } from '@metamask/snaps-sdk/jsx';
 
 export const signWithAddressPage = async (data, params, origin) => (
   await snap.request({
-    method: 'snap_dialog',
+    method: REQUEST_METHODS.DIALOG,
     params: {
-      type: 'confirmation',
+      type: DIALOG_TYPES.CONFIRMATION,
       content: (
         <Container backgroundColor='alternative'>
           <Box>

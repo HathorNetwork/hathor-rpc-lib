@@ -1,3 +1,4 @@
+import { REQUEST_METHODS, DIALOG_TYPES } from '../constants';
 import { Bold, Box, Card, Container, Divider, Heading, Section, Text } from '@metamask/snaps-sdk/jsx';
 import { constants as libConstants, numberUtils, helpersUtils } from '@hathor/wallet-lib';
 
@@ -80,9 +81,9 @@ const renderChangeAddress = (changeAddress) => {
 
 export const sendTransactionPage = async (data, params, origin) => (
   await snap.request({
-    method: 'snap_dialog',
+    method: REQUEST_METHODS.DIALOG,
     params: {
-      type: 'confirmation',
+      type: DIALOG_TYPES.CONFIRMATION,
       content: (
         <Container backgroundColor='alternative'>
           <Box>

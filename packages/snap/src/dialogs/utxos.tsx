@@ -1,3 +1,4 @@
+import { REQUEST_METHODS, DIALOG_TYPES } from '../constants';
 import { constants as libConstants, numberUtils } from '@hathor/wallet-lib';
 import { Bold, Box, Container, Divider, Heading, Section, Text } from '@metamask/snaps-sdk/jsx';
 
@@ -87,9 +88,9 @@ export const utxosPage = async (data, params, origin) => {
   );
 
   return await snap.request({
-    method: 'snap_dialog',
+    method: REQUEST_METHODS.DIALOG,
     params: {
-      type: 'confirmation',
+      type: DIALOG_TYPES.CONFIRMATION,
       content,
     },
   });
