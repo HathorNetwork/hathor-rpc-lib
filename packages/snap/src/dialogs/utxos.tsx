@@ -22,9 +22,9 @@ const renderTokenSymbol = (token) => {
 const renderAmountSummary = (data, params) => {
   if (params.authorities) {
     let authority = '';
-    if (params.authorities === 1) {
+    if (params.authorities === Number(libConstants.TOKEN_MINT_MASK)) {
       authority = 'mint';
-    } else if (params.authorities === 2) {
+    } else if (params.authorities === Number(libConstants.TOKEN_MELT_MASK)) {
       authority = 'melt';
     }
 
