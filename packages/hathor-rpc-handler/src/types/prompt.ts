@@ -33,6 +33,7 @@ export enum TriggerTypes {
   CreateNanoContractCreateTokenTxConfirmationPrompt,
   CreateNanoContractCreateTokenTxLoadingTrigger,
   CreateNanoContractCreateTokenTxLoadingFinishedTrigger,
+  ChangeNetworkConfirmationPrompt,
 }
 
 export enum TriggerResponseTypes {
@@ -46,7 +47,8 @@ export enum TriggerResponseTypes {
   SignOracleDataConfirmationResponse,
   SendTransactionConfirmationResponse,
   CreateNanoContractCreateTokenTxConfirmationResponse,
-  GetBalanceConfirmationResponse
+  GetBalanceConfirmationResponse,
+  ChangeNetworkRequestConfirmationResponse,
 }
 
 export type Trigger =
@@ -73,7 +75,8 @@ export type Trigger =
   | SendTransactionLoadingFinishedTrigger
   | CreateNanoContractCreateTokenTxConfirmationPrompt
   | CreateNanoContractCreateTokenTxLoadingTrigger
-  | CreateNanoContractCreateTokenTxLoadingFinishedTrigger;
+  | CreateNanoContractCreateTokenTxLoadingFinishedTrigger
+  | ChangeNetworkConfirmationPrompt;
 
 export interface BaseLoadingTrigger {
   type: TriggerTypes;
@@ -114,6 +117,13 @@ export type BaseConfirmationPrompt = RpcRequest & {
 export type GetAddressConfirmationPrompt = BaseConfirmationPrompt & {
   data: {
     address: string;
+  }
+}
+
+export type ChangeNetworkConfirmationPrompt = BaseConfirmationPrompt & {
+  type: TriggerTypes.ChangeNetworkConfirmationPrompt;
+  data: {
+    newNetwork: string;
   }
 }
 
@@ -242,6 +252,11 @@ export interface AddressRequestConfirmationResponse {
   data: boolean;
 }
 
+export interface ChangeNetworkRequestConfirmationResponse {
+  type: TriggerResponseTypes.ChangeNetworkRequestConfirmationResponse;
+  data: boolean;
+}
+
 export interface GetBalanceConfirmationResponse {
   type: TriggerResponseTypes.GetBalanceConfirmationResponse;
   data: boolean;
@@ -322,7 +337,8 @@ export type TriggerResponse =
   | SignOracleDataConfirmationResponse
   | SendTransactionConfirmationResponse
   | CreateNanoContractCreateTokenTxConfirmationResponse
-  | GetBalanceConfirmationResponse;
+  | GetBalanceConfirmationResponse
+  | ChangeNetworkRequestConfirmationResponse;
 
 export type TriggerHandler = (prompt: Trigger, requestMetadata: RequestMetadata) => Promise<TriggerResponse | void>;
 

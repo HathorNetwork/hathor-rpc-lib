@@ -21,6 +21,7 @@ export enum RpcResponseTypes {
   SignOracleDataResponse,
   SendTransactionResponse,
   CreateNanoContractCreateTokenTxResponse,
+  ChangeNetworkResponse,
 }
 
 export interface BaseRpcResponse {
@@ -88,6 +89,13 @@ export interface CreateNanoContractCreateTokenTxResponse extends BaseRpcResponse
   response: Transaction;
 }
 
+export interface ChangeNetworkResponse extends BaseRpcResponse {
+  type: RpcResponseTypes.ChangeNetworkResponse;
+  response: {
+    newNetwork: string;
+  }
+}
+
 export type RpcResponse = GetAddressResponse
   | SendNanoContractTxResponse
   | SignWithAddressResponse
@@ -97,4 +105,5 @@ export type RpcResponse = GetAddressResponse
   | SignOracleDataResponse
   | GetUtxosResponse
   | SendTransactionResponse
-  | CreateNanoContractCreateTokenTxResponse;
+  | CreateNanoContractCreateTokenTxResponse
+  | ChangeNetworkResponse;
