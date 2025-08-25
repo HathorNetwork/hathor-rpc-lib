@@ -8,4 +8,34 @@ export enum DIALOG_TYPES {
   CONFIRMATION = 'confirmation',
 }
 
-export const walletServiceURL = 'https://wallet-service.hathor.network/';
+const MAINNET_URLS = {
+  nodeURL: 'https://node1.mainnet.hathor.network/v1a/',
+  walletServiceURL: 'https://wallet-service.hathor.network',
+  txMiningURL: 'https://txmining.mainnet.hathor.network/',
+  network: 'mainnet',
+}
+
+const NANO_BRAVO_URLS = {
+  nodeURL: 'https://node1.bravo.nano-testnet.hathor.network/v1a/',
+  walletServiceURL: 'https://wallet-service.bravo.nano-testnet.hathor.network',
+  txMiningURL: 'https://txmining.bravo.nano-testnet.hathor.network/',
+  network: 'testnet',
+}
+
+const TESTNET_URLS = {
+  nodeURL: 'https://node1.testnet.hathor.network/v1a/',
+  walletServiceURL: 'https://wallet-service.testnet.hathor.network',
+  txMiningURL: 'https://txmining.testnet.hathor.network/',
+  network: 'testnet',
+}
+
+export const NETWORK_MAP = {
+  'mainnet': MAINNET_URLS,
+  'nano-bravo-testnet': NANO_BRAVO_URLS,
+  'testnet': TESTNET_URLS,
+  'testnet-hotel': TESTNET_URLS,
+}
+
+export const DEFAULT_NETWORK = 'mainnet';
+
+export const DEFAULT_PIN_CODE = '123';
