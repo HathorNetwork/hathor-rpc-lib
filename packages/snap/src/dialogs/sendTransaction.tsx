@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) Hathor Labs and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 import { REQUEST_METHODS, DIALOG_TYPES } from '../constants';
 import { Bold, Box, Card, Container, Divider, Heading, Section, Text } from '@metamask/snaps-sdk/jsx';
 import { constants as libConstants, numberUtils, helpersUtils } from '@hathor/wallet-lib';
