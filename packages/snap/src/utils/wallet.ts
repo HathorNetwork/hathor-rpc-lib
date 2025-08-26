@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) Hathor Labs and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 import { constants as libConstants, walletUtils, HathorWalletServiceWallet, Network } from '@hathor/wallet-lib';
 import { DEFAULT_PIN_CODE, REQUEST_METHODS } from '../constants';
 import { getNetworkData, configNetwork } from './network';
