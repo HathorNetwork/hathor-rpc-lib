@@ -84,11 +84,12 @@ export async function getAddress(
         break;
       case 'full_path':
         throw new NotImplementedError();
-      case 'index':
+      case 'index': {
         const address = await wallet.getAddressAtIndex(params.index);
         const addressPath = await wallet.getAddressPathForIndex(params.index);
         addressInfo = { address, index: params.index, addressPath };
         break;
+      }
       case 'client': {
         const response = (await promptHandler({
           ...rpcRequest,
@@ -112,9 +113,7 @@ export async function getAddress(
       const confirmed = await promptHandler({
         ...rpcRequest,
         type: TriggerTypes.AddressRequestPrompt,
-        data: {
-          address: addressInfo.address,
-        }
+        data: addressInfo,
       }, requestMetadata) as AddressRequestConfirmationResponse;
 
       if (!confirmed.data) {

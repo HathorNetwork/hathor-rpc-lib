@@ -7,7 +7,7 @@
 
 import { z } from 'zod';
 import { constants } from '@hathor/wallet-lib';
-import type { DataScriptOutputRequestObj, OutputRequestObj, IHathorWallet } from '@hathor/wallet-lib';
+import type { DataScriptOutputRequestObj, IHathorWallet } from '@hathor/wallet-lib';
 import {
   TriggerTypes,
   PinConfirmationPrompt,

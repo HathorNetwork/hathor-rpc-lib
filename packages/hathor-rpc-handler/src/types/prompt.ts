@@ -160,9 +160,7 @@ export type PinConfirmationPrompt = BaseConfirmationPrompt & {
 
 export type AddressRequestPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.AddressRequestPrompt;
-  data?: {
-    address: string;
-  }
+  data: AddressInfoObject;
 }
 
 export type AddressRequestClientPrompt = BaseConfirmationPrompt & {
