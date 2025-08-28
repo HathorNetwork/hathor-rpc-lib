@@ -19,32 +19,6 @@ const renderParamText = (params) => {
   }
 }
 
-const getAddressIndex = (data, params) => {
-  if (params.type === 'index') {
-    return params.index.toString();
-  }
-
-  if (params.type === 'first_empty') {
-    return data.address.index.toString();
-  }
-
-  // We currently don't support client and full_path types
-  return '';
-}
-
-const getAddress = (data, params) => {
-  if (params.type === 'index') {
-    return data.address;
-  }
-
-  if (params.type === 'first_empty') {
-    return data.address.address;
-  }
-
-  // We currently don't support client and full_path types
-  return '';
-}
-
 const renderAddressIndex = (data, params) => {
   if (params.type === 'index') {
     // We already show the address index at the params box
@@ -53,7 +27,7 @@ const renderAddressIndex = (data, params) => {
 
   return (
     <Text>
-      Address at index {getAddressIndex(data, params)}
+      Address at index {data.index.toString()}
     </Text>
   );
 }
@@ -78,7 +52,7 @@ export const addressPage = async (data, params, origin) => (
             </Text>
             <Section>
               {renderAddressIndex(data, params)}
-              <Copyable value={getAddress(data, params)} />
+              <Copyable value={data.address} />
             </Section>
           </Box>
         </Container>

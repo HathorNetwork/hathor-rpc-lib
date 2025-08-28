@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import type { HathorWallet } from '@hathor/wallet-lib';
+import type { IHathorWallet } from '@hathor/wallet-lib';
 import type { GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 import {
   TriggerTypes,
@@ -43,7 +43,7 @@ const getBalanceSchema = z.object({
  */
 export async function getBalance(
   rpcRequest: GetBalanceRpcRequest,
-  wallet: HathorWallet,
+  wallet: IHathorWallet,
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
 ) {

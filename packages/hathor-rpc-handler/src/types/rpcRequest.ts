@@ -113,11 +113,12 @@ export interface SendTransactionRpcRequest {
   params: {
     network: string;
     outputs: Array<{
-      address?: string;
-      value: string | number | bigint;
+      address: string;
+      value: string;
       token?: string;
+    } | {
       type?: string;
-      data?: string;
+      data: string;
     }>;
     inputs?: Array<{
       txId: string;

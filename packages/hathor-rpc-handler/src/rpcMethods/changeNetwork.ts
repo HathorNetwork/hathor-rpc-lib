@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import type { HathorWallet } from '@hathor/wallet-lib';
+import type { IHathorWallet } from '@hathor/wallet-lib';
 import {
   ChangeNetworkRequestConfirmationResponse,
   ChangeNetworkRpcRequest,
@@ -40,7 +40,7 @@ const schema = z.object({
  */
 export async function changeNetwork(
   rpcRequest: ChangeNetworkRpcRequest,
-  wallet: HathorWallet,
+  wallet: IHathorWallet,
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
 ) {

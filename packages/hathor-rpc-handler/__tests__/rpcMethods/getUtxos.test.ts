@@ -12,13 +12,13 @@ import { getUtxos } from '../../src/rpcMethods/getUtxos';
 import { TriggerTypes, TriggerResponseTypes, UtxoDetails, RpcMethods, GetUtxosRpcRequest } from '../../src/types';
 
 const mockResponse: UtxoDetails = {
-  total_amount_available: 50,
-  total_utxos_available: 100,
-  total_amount_locked: 0,
-  total_utxos_locked: 0,
+  total_amount_available: 50n,
+  total_utxos_available: 100n,
+  total_amount_locked: 0n,
+  total_utxos_locked: 0n,
   utxos: [{
     address: 'address1',
-    amount: 5,
+    amount: 5n,
     tx_id: 'txId1',
     locked: false,
     index: 0,

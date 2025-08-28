@@ -20,6 +20,8 @@ describe('getAddress parameter validation', () => {
     getNetwork: jest.fn().mockReturnValue('testnet'),
     getCurrentAddress: jest.fn().mockResolvedValue('test-address'),
     getAddressAtIndex: jest.fn().mockResolvedValue('test-address'),
+    getAddressPathForIndex: jest.fn().mockResolvedValue('m\'/44\'/0\'/0/1'),
+    getAddressIndex: jest.fn().mockResolvedValue(1),
   } as unknown as HathorWallet;
 
   const mockTriggerHandler = jest.fn().mockResolvedValue({ data: true });

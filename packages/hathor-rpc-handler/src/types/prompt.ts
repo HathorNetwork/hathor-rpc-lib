@@ -6,6 +6,7 @@
  */
 import { AddressInfoObject, GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
+import { IDataInput, IDataOutput } from '@hathor/wallet-lib/lib/types';
 import { RequestMetadata, RpcRequest } from './rpcRequest';
 
 export enum TriggerTypes {
@@ -134,7 +135,7 @@ export type GetBalanceConfirmationPrompt = BaseConfirmationPrompt & {
 
 export type GetUtxosConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.GetUtxosConfirmationPrompt;
-  data: UtxoDetails[];
+  data: UtxoDetails;
 }
 
 export type SignOracleDataConfirmationPrompt = BaseConfirmationPrompt & {
@@ -159,9 +160,7 @@ export type PinConfirmationPrompt = BaseConfirmationPrompt & {
 
 export type AddressRequestPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.AddressRequestPrompt;
-  data?: {
-    address: string;
-  }
+  data: AddressInfoObject;
 }
 
 export type AddressRequestClientPrompt = BaseConfirmationPrompt & {
@@ -280,20 +279,8 @@ export interface SignOracleDataConfirmationResponse {
 export type SendTransactionConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.SendTransactionConfirmationPrompt;
   data: {
-    outputs: Array<{
-      address?: string;
-      value: number;
-      token?: string;
-      type?: string;
-      data?: string[];
-    }>;
-    inputs: Array<{
-      txId: string;
-      index: number;
-      value: number;
-      address: string;
-      token: string;
-    }>;
+    outputs: IDataOutput[],
+    inputs: IDataInput[],
     changeAddress?: string;
   }
 }
@@ -346,17 +333,17 @@ export type TriggerHandler = (prompt: Trigger, requestMetadata: RequestMetadata)
 // be common for both facades.
 export interface UtxoInfo {
   address: string;
-  amount: number;
+  amount: bigint;
   tx_id: string;
   locked: boolean;
   index: number;
 }
 
 export interface UtxoDetails {
-  total_amount_available: number;
-  total_utxos_available: number;
-  total_amount_locked: number;
-  total_utxos_locked: number;
+  total_amount_available: bigint;
+  total_utxos_available: bigint;
+  total_amount_locked: bigint;
+  total_utxos_locked: bigint;
   utxos: UtxoInfo[];
 }
 

@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import type { HathorWallet, Transaction } from '@hathor/wallet-lib';
+import type { IHathorWallet, Transaction } from '@hathor/wallet-lib';
 import {
   TriggerTypes,
   PinConfirmationPrompt,
@@ -63,7 +63,7 @@ const sendNanoContractSchema = z.object({
  */
 export async function sendNanoContractTx(
   rpcRequest: SendNanoContractRpcRequest,
-  wallet: HathorWallet,
+  wallet: IHathorWallet,
   requestMetadata: RequestMetadata,
   triggerHandler: TriggerHandler,
 ) {
@@ -79,7 +79,7 @@ export async function sendNanoContractTx(
     if (!blueprintId) {
       let response;
       try {
-        response = await wallet.getFullTxById(params.ncId);
+        response = await wallet.getFullTxById(params.ncId!);
       } catch {
         // Error getting nano contract transaction data from the full node
         throw new SendNanoContractTxError(
@@ -93,7 +93,7 @@ export async function sendNanoContractTx(
         );
       }
 
-      blueprintId = response.tx.nc_blueprint_id;
+      blueprintId = response.tx.nc_blueprint_id!;
     }
 
     config.setServerUrl(wallet.getServerUrl());

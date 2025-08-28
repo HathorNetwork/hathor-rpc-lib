@@ -125,7 +125,8 @@ describe('signOracleData', () => {
       mockSignOracleDataRequest.params.nc_id,
       'SignedData[str]',
       mockSignOracleDataRequest.params.data,
-      wallet
+      wallet,
+      { pinCode: 'mock_pin' }
     );
 
     expect(result).toStrictEqual({

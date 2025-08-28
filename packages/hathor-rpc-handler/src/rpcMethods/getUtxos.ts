@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 import { z } from 'zod';
-import type { HathorWallet } from '@hathor/wallet-lib';
+import type { IHathorWallet } from '@hathor/wallet-lib';
 import {
   GetUtxosConfirmationResponse,
   GetUtxosRpcRequest,
@@ -60,7 +60,7 @@ const getUtxosSchema = z.object({
  */
 export async function getUtxos(
   rpcRequest: GetUtxosRpcRequest,
-  wallet: HathorWallet,
+  wallet: IHathorWallet,
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
 ) {
@@ -86,7 +86,7 @@ export async function getUtxos(
     // TODO: Memory usage enhancements are required here as wallet.getUtxos can cause issues on
     // wallets with a huge amount of utxos.
     // TODO: This needs to be paginated.
-    const utxoDetails: UtxoDetails[] = await wallet.getUtxos(options);
+    const utxoDetails: UtxoDetails = await wallet.getUtxos(options);
 
     const confirmed = await promptHandler({
       ...rpcRequest,
