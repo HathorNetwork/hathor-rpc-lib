@@ -153,12 +153,9 @@ export async function sendTransaction(
   };
   promptHandler(loadingTrigger, requestMetadata);
 
-  // And then mutate the instance
-  sendTransaction.pin = pinResponse.data.pinCode;
-
   try {
     // Now execute the prepared transaction
-    const response = await sendTransaction.run();
+    const response = await sendTransaction.run(null, pinResponse.data.pinCode);
 
     const loadingFinishedTrigger: SendTransactionLoadingFinishedTrigger = {
       type: TriggerTypes.SendTransactionLoadingFinishedTrigger,
