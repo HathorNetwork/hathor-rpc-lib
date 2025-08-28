@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { HathorWallet } from '@hathor/wallet-lib';
+import type { IHathorWallet } from '@hathor/wallet-lib';
 import {
   GetAddressRpcRequest,
   GetBalanceRpcRequest,
@@ -41,7 +41,7 @@ import { InvalidRpcMethod } from '../errors';
 
 export const handleRpcRequest = async (
   request: RpcRequest,
-  wallet: HathorWallet,
+  wallet: IHathorWallet,
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
 ): Promise<RpcResponse> => {

@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { HathorWallet } from '@hathor/wallet-lib';
+import { IHathorWallet } from '@hathor/wallet-lib';
 import {
   TriggerTypes,
   PinConfirmationPrompt,
@@ -49,7 +49,7 @@ const signWithAddressSchema = z.object({
  */
 export async function signWithAddress(
   rpcRequest: SignWithAddressRpcRequest,
-  wallet: HathorWallet,
+  wallet: IHathorWallet,
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
 ) {

@@ -6,7 +6,7 @@
  */
 
 import {
-  HathorWallet,
+  IHathorWallet,
   nanoUtils,
   Network,
 } from '@hathor/wallet-lib';
@@ -35,7 +35,7 @@ const signOracleDataSchema = z.object({
 
 export async function signOracleData(
   rpcRequest: SignOracleDataRpcRequest,
-  wallet: HathorWallet,
+  wallet: IHathorWallet,
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
 ) {

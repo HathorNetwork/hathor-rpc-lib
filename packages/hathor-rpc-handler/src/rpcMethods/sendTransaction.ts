@@ -6,7 +6,8 @@
  */
 
 import { z } from 'zod';
-import { constants, type HathorWallet } from '@hathor/wallet-lib';
+import { constants } from '@hathor/wallet-lib';
+import type { DataScriptOutputRequestObj, OutputRequestObj, IHathorWallet } from '@hathor/wallet-lib';
 import {
   TriggerTypes,
   PinConfirmationPrompt,
@@ -31,35 +32,28 @@ import {
 } from '../errors';
 import { validateNetwork } from '../helpers';
 
+const OutputValueSchema = z.object({
+  address: z.string(),
+  value: z.string().regex(/^\d+$/)
+    .pipe(z.coerce.bigint().positive()),
+  token: z.string().default(constants.NATIVE_TOKEN_UID),
+});
+
+const OutputDataSchema = z.object({
+  type: z.string().optional(),
+  data: z.string().min(1),
+}).transform((output): DataScriptOutputRequestObj => ({
+  type: 'data',
+  data: output.data,
+}));
+
+const OutputSchema = z.union([OutputValueSchema, OutputDataSchema]);
+
 const sendTransactionSchema = z.object({
   method: z.literal(RpcMethods.SendTransaction),
   params: z.object({
     network: z.string().min(1),
-    outputs: z.array(z.object({
-      address: z.string().optional(),
-      value: z.string().regex(/^\d+$/)
-        .pipe(z.coerce.bigint().positive())
-        .optional(),
-      token: z.string().default(constants.NATIVE_TOKEN_UID),
-      type: z.string().optional(),
-      data: z.string().optional(),
-    })
-      .transform(output => {
-        // If data is present, automatically set type to 'data'
-        if (output.data && output.data.length > 0 && !output.type) {
-          output.type = 'data';
-        }
-        return output;
-      })
-      .refine((output) => {
-        // If data is undefined, value must be defined
-        if (output.data === undefined && output.value === undefined) {
-          return false;
-        }
-        return true;
-      }, {
-        message: 'Value is required when data is not provided'
-      })).min(1),
+    outputs: z.array(OutputSchema).min(1),
     inputs: z.array(z.object({
       txId: z.string(),
       index: z.number().nonnegative(),
@@ -86,7 +80,7 @@ const sendTransactionSchema = z.object({
  */
 export async function sendTransaction(
   rpcRequest: SendTransactionRpcRequest,
-  wallet: HathorWallet,
+  wallet: IHathorWallet,
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
 ): Promise<RpcResponse> {
@@ -99,29 +93,6 @@ export async function sendTransaction(
   const { params } = validationResult.data;
   validateNetwork(wallet, params.network);
 
-  // Transform outputs before sending to wallet-lib
-  const transformedOutputs = params.outputs.reduce<Array<{
-    address?: string;
-    value?: bigint;
-    token?: string;
-    type?: string;
-    data?: string;
-  }>>((acc, output) => {
-    const result = { ...output };
-
-    // We should manually set the 0.01 HTR to data output
-    // so it's displayed to the user during confirmation.
-    if (result.type === 'data') {
-      return [...acc, {
-        ...output,
-        value: 1n,
-        token: constants.NATIVE_TOKEN_UID,
-      }];
-    }
-    
-    return [...acc, result];
-  }, []);
-
   // sendManyOutputsSendTransaction throws if it doesn't receive a pin,
   // but doesn't use it until prepareTxData is called, so we can just assign
   // an arbitrary value to it and then mutate the instance after we get the
@@ -129,7 +100,7 @@ export async function sendTransaction(
   const stubPinCode = '111111';
 
   // Create the transaction service but don't run it yet
-  const sendTransaction = await wallet.sendManyOutputsSendTransaction(transformedOutputs, {
+  const sendTransaction = await wallet.sendManyOutputsSendTransaction(params.outputs, {
     inputs: params.inputs || [],
     changeAddress: params.changeAddress,
     pinCode: stubPinCode,

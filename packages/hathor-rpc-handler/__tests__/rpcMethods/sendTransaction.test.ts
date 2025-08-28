@@ -131,7 +131,6 @@ describe('sendTransaction', () => {
   it('should handle data outputs correctly', async () => {
     rpcRequest.params.outputs = [{
       type: 'data',
-      value: '100',
       data: 'test data',
     }];
 
@@ -154,8 +153,6 @@ describe('sendTransaction', () => {
       expect.arrayContaining([
         expect.objectContaining({
           type: 'data',
-          value: 1n,
-          token: '00',
           data: 'test data',
         }),
       ]),
@@ -173,7 +170,6 @@ describe('sendTransaction', () => {
       {
         type: 'data',
         data: 'data item',
-        value: '1',
       },
       {
         address: 'testAddress2',
@@ -206,8 +202,6 @@ describe('sendTransaction', () => {
         }),
         expect.objectContaining({
           type: 'data',
-          value: BigInt(1),
-          token: '00',
           data: 'data item',
         }),
         expect.objectContaining({
