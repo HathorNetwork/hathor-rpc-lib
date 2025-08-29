@@ -33,7 +33,7 @@ export async function parseNanoArgs(
   if (!blueprintId) {
     let response;
     try {
-      response = await wallet.getFullTxById(ncId);
+      response = await wallet.getFullTxById(ncId!);
     } catch {
       // Error getting nano contract transaction data from the full node
       throw new SendNanoContractTxError(
