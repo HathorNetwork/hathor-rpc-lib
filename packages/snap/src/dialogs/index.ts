@@ -12,5 +12,6 @@ export * from './sendTransaction';
 export * from './signWithAddress';
 export * from './createToken';
 export * from './createNano';
+export * from './createNanoCreateToken';
 export * from './changeNetwork';
 export * from './oracleData';

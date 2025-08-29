@@ -25,7 +25,8 @@ import {
 } from '../types';
 import { PromptRejectedError, InvalidParamsError } from '../errors';
 import { INanoContractActionSchema } from '@hathor/wallet-lib';
-import { createTokenBaseSchema } from '../schemas';
+import { createNanoCreateTokenRpcSchema } from '../schemas';
+import { parseNanoArgs } from '../helpers';
 
 // Extend CreateTokenParams to include nano contract specific fields
 type NanoContractCreateTokenParams = CreateTokenParams & {
@@ -33,17 +34,15 @@ type NanoContractCreateTokenParams = CreateTokenParams & {
 };
 
 const createNanoContractCreateTokenTxSchema = z.object({
+  network: z.string().min(1),
   method: z.string().min(1),
-  address: z.string().min(1),
   data: z.object({
     blueprint_id: z.string().nullable().optional(),
     nc_id: z.string().nullable().optional(),
-    actions: z.array(INanoContractActionSchema).optional(),
-    args: z.array(z.unknown()).optional(),
-  }).optional(),
-  createTokenOptions: createTokenBaseSchema.extend({
-    contractPaysTokenDeposit: z.boolean(),
-  }).optional(),
+    actions: z.array(INanoContractActionSchema),
+    args: z.array(z.unknown()).default([]),
+  }),
+  createTokenOptions: createNanoCreateTokenRpcSchema,
   push_tx: z.boolean().default(true),
 });
 
@@ -72,33 +71,35 @@ export async function createNanoContractCreateTokenTx(
   if (!validationResult.success) {
     throw new InvalidParamsError(validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
   }
-  const { method, address, data, createTokenOptions, push_tx } = validationResult.data;
+  const { method, data, createTokenOptions, push_tx, network } = validationResult.data;
+
+  const parsedArgs = await parseNanoArgs(wallet, data.blueprint_id, data.nc_id, method, data.args, network);
 
   // Prepare nano and token params for the confirmation prompt
   const nanoParams: NanoContractParams = {
-    blueprintId: data?.blueprint_id ?? null,
-    ncId: data?.nc_id ?? null,
-    actions: data?.actions ?? [],
+    blueprintId: data.blueprint_id ?? null,
+    ncId: data.nc_id ?? null,
+    actions: data.actions ?? [],
     method,
-    args: data?.args ?? [],
-    parsedArgs: [],
+    args: data.args ?? [],
+    parsedArgs,
     pushTx: push_tx,
   };
   // Only pass CreateTokenParams fields, fallback to null/empty for missing
   const tokenParams: NanoContractCreateTokenParams = {
-    name: createTokenOptions?.name ?? '',
-    symbol: createTokenOptions?.symbol ?? '',
-    amount: typeof createTokenOptions?.amount === 'string' ? BigInt(createTokenOptions.amount) : (createTokenOptions?.amount ?? 0n),
-    mintAddress: createTokenOptions?.mintAddress ?? null,
-    changeAddress: createTokenOptions?.changeAddress ?? null,
-    createMint: createTokenOptions?.createMint ?? true,
-    mintAuthorityAddress: createTokenOptions?.mintAuthorityAddress ?? null,
-    allowExternalMintAuthorityAddress: createTokenOptions?.allowExternalMintAuthorityAddress ?? false,
-    createMelt: createTokenOptions?.createMelt ?? true,
-    meltAuthorityAddress: createTokenOptions?.meltAuthorityAddress ?? null,
-    allowExternalMeltAuthorityAddress: createTokenOptions?.allowExternalMeltAuthorityAddress ?? false,
-    data: createTokenOptions?.data ?? null,
-    contractPaysTokenDeposit: createTokenOptions?.contractPaysTokenDeposit ?? false,
+    name: createTokenOptions.name ?? '',
+    symbol: createTokenOptions.symbol ?? '',
+    amount: typeof createTokenOptions.amount === 'string' ? BigInt(createTokenOptions.amount) : (createTokenOptions.amount ?? 0n),
+    mintAddress: createTokenOptions.mintAddress ?? null,
+    changeAddress: createTokenOptions.changeAddress ?? null,
+    createMint: createTokenOptions.createMint ?? true,
+    mintAuthorityAddress: createTokenOptions.mintAuthorityAddress ?? null,
+    allowExternalMintAuthorityAddress: createTokenOptions.allowExternalMintAuthorityAddress ?? false,
+    createMelt: createTokenOptions.createMelt ?? true,
+    meltAuthorityAddress: createTokenOptions.meltAuthorityAddress ?? null,
+    allowExternalMeltAuthorityAddress: createTokenOptions.allowExternalMeltAuthorityAddress ?? false,
+    data: createTokenOptions.data ?? null,
+    contractPaysTokenDeposit: createTokenOptions.contractPaysTokenDeposit ?? false,
   };
 
   const confirmationPrompt: CreateNanoContractCreateTokenTxConfirmationPrompt = {
@@ -139,7 +140,7 @@ export async function createNanoContractCreateTokenTx(
   if (push_tx) {
     response = await wallet.createAndSendNanoContractCreateTokenTransaction(
       nano.method,
-      address,
+      nano.caller,
       nano,
       token,
       { pinCode: pinResponse.data.pinCode }
@@ -147,7 +148,7 @@ export async function createNanoContractCreateTokenTx(
   } else {
     response = await wallet.createNanoContractCreateTokenTransaction(
       nano.method,
-      address,
+      nano.caller,
       nano,
       token,
       { pinCode: pinResponse.data.pinCode }

@@ -5,4 +5,4 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-export { createTokenBaseSchema, createTokenRpcSchema } from './createTokenSchema'; 
+export { createNanoCreateTokenRpcSchema, createTokenRpcSchema } from './createTokenSchema';
