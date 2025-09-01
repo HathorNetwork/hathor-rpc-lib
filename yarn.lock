@@ -1531,7 +1531,7 @@ __metadata:
   resolution: "@hathor/hathor-rpc-handler@workspace:packages/hathor-rpc-handler"
   dependencies:
     "@eslint/js": "npm:9.4.0"
-    "@hathor/wallet-lib": "npm:2.7.0"
+    "@hathor/wallet-lib": "npm:2.7.1"
     "@types/eslint__js": "npm:8.42.3"
     "@types/jest": "npm:29.5.12"
     "@types/node": "npm:20.14.2"
@@ -1544,9 +1544,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@hathor/wallet-lib@npm:2.7.0":
-  version: 2.7.0
-  resolution: "@hathor/wallet-lib@npm:2.7.0"
+"@hathor/wallet-lib@npm:2.7.1":
+  version: 2.7.1
+  resolution: "@hathor/wallet-lib@npm:2.7.1"
   dependencies:
     axios: "npm:1.7.7"
     bitcore-lib: "npm:8.25.10"
@@ -1558,7 +1558,7 @@ __metadata:
     queue-microtask: "npm:1.2.3"
     ws: "npm:8.17.1"
     zod: "npm:3.23.8"
-  checksum: 10/627867bb7874066b6332409e4f0abd465184a78e9aa83b62f045f779fedff4d1791b7d44e887e46efe2ef7735a3cff822647540651ee50539e5656b5f408acbd
+  checksum: 10/6069ef2658373ea12f77fdf4a495e2b3217c1bc805ca5cda8c9dfea4c5d9442a15ccb0e6900853c6875db1890903431c43f7708cadcfae8ce6e2516984705a48
   languageName: node
   linkType: hard
 
@@ -10697,7 +10697,7 @@ __metadata:
   resolution: "snap@workspace:packages/snap"
   dependencies:
     "@hathor/hathor-rpc-handler": "workspace:*"
-    "@hathor/wallet-lib": "npm:2.7.0"
+    "@hathor/wallet-lib": "npm:2.7.1"
     "@jest/globals": "npm:29.7.0"
     "@metamask/auto-changelog": "npm:3.4.4"
     "@metamask/eslint-config": "npm:12.2.0"
