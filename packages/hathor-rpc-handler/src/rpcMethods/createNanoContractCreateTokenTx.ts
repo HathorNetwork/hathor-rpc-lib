@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import type { HathorWallet } from '@hathor/wallet-lib';
+import type { IHathorWallet } from '@hathor/wallet-lib';
 import {
   TriggerTypes,
   PinConfirmationPrompt,
@@ -21,17 +21,12 @@ import {
   CreateNanoContractCreateTokenTxLoadingTrigger,
   CreateNanoContractCreateTokenTxLoadingFinishedTrigger,
   NanoContractParams,
-  CreateTokenParams,
+  NanoContractCreateTokenParams,
 } from '../types';
-import { PromptRejectedError, InvalidParamsError } from '../errors';
-import { INanoContractActionSchema } from '@hathor/wallet-lib';
+import { PromptRejectedError, SendNanoContractTxError, InvalidParamsError } from '../errors';
+import { CreateTokenTransaction, INanoContractActionSchema } from '@hathor/wallet-lib';
 import { createNanoCreateTokenRpcSchema } from '../schemas';
 import { parseNanoArgs } from '../helpers';
-
-// Extend CreateTokenParams to include nano contract specific fields
-type NanoContractCreateTokenParams = CreateTokenParams & {
-  contractPaysTokenDeposit: boolean;
-};
 
 const createNanoContractCreateTokenTxSchema = z.object({
   network: z.string().min(1),
@@ -63,7 +58,7 @@ const createNanoContractCreateTokenTxSchema = z.object({
  */
 export async function createNanoContractCreateTokenTx(
   rpcRequest: CreateNanoContractCreateTokenTxRpcRequest,
-  wallet: HathorWallet,
+  wallet: IHathorWallet,
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
 ): Promise<CreateNanoContractCreateTokenTxResponse> {
@@ -144,15 +139,22 @@ export async function createNanoContractCreateTokenTx(
       nano,
       token,
       { pinCode: pinResponse.data.pinCode }
-    );
+    ) as CreateTokenTransaction;
   } else {
-    response = await wallet.createNanoContractCreateTokenTransaction(
+    const sendTransactionObj = await wallet.createNanoContractCreateTokenTransaction(
       nano.method,
       nano.caller,
       nano,
       token,
       { pinCode: pinResponse.data.pinCode }
     );
+
+    if (!sendTransactionObj.transaction) {
+      // This should never happen, but we'll check anyway
+      throw new SendNanoContractTxError('Unable to create transaction object');
+    }
+    // Convert the transaction object to hex format for the response
+    response = sendTransactionObj.transaction.toHex();
   }
 
   // Emit loading finished trigger
