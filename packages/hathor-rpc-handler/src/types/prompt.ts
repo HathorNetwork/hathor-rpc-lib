@@ -192,6 +192,10 @@ export interface CreateTokenParams {
   data: string[] | null,
 }
 
+export type NanoContractCreateTokenParams = CreateTokenParams & {
+  contractPaysTokenDeposit: boolean;
+};
+
 export type CreateTokenConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.CreateTokenConfirmationPrompt;
   data: CreateTokenParams;
@@ -294,7 +298,7 @@ export interface SendTransactionConfirmationResponse {
 
 export interface CreateNanoContractCreateTokenTxParams {
   nano: NanoContractParams;
-  token: CreateTokenParams;
+  token: NanoContractCreateTokenParams;
 }
 
 export type CreateNanoContractCreateTokenTxConfirmationPrompt = BaseConfirmationPrompt & {
@@ -307,7 +311,7 @@ export interface CreateNanoContractCreateTokenTxConfirmationResponse {
   data: {
     accepted: true;
     nano: NanoContractParams & { caller: string };
-    token: CreateTokenParams;
+    token: NanoContractCreateTokenParams;
   } | {
     accepted: false;
   }

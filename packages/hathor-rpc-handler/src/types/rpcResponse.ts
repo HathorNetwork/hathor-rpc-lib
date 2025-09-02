@@ -86,7 +86,7 @@ export interface SendTransactionResponse extends BaseRpcResponse {
 
 export interface CreateNanoContractCreateTokenTxResponse extends BaseRpcResponse {
   type: RpcResponseTypes.CreateNanoContractCreateTokenTxResponse;
-  response: Transaction;
+  response: CreateTokenTransaction | string;
 }
 
 export interface ChangeNetworkResponse extends BaseRpcResponse {

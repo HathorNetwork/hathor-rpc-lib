@@ -5,7 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { addressPage, balancePage, changeNetworkPage, createNanoPage, createTokenPage, oracleDataPage, sendTransactionPage, signWithAddressPage, utxosPage } from '../dialogs';
+import {
+  addressPage,
+  balancePage,
+  changeNetworkPage,
+  createNanoPage,
+  createTokenPage,
+  createNanoAndTokenPage,
+  oracleDataPage,
+  sendTransactionPage,
+  signWithAddressPage,
+  utxosPage
+} from '../dialogs';
 import { setNetwork } from '../utils/network';
 import { DEFAULT_PIN_CODE, NETWORK_MAP } from '../constants';
 import { RpcMethods, TriggerTypes } from '@hathor/hathor-rpc-handler';
@@ -13,7 +24,7 @@ import { RpcMethods, TriggerTypes } from '@hathor/hathor-rpc-handler';
 export const promptHandler = (origin, wallet) => async (promptRequest) => {
   const data = promptRequest.data;
   const params = promptRequest.params;
-  let approved;
+  let approved, response, address0;
   switch (promptRequest.type) {
     case TriggerTypes.SignMessageWithAddressConfirmationPrompt:
       approved = await signWithAddressPage(data, params, origin);
@@ -61,7 +72,7 @@ export const promptHandler = (origin, wallet) => async (promptRequest) => {
       };
     case TriggerTypes.SendNanoContractTxConfirmationPrompt:
       approved = await createNanoPage(data, params, origin);
-      const response = {
+      response = {
         data: {
           accepted: approved
         }
@@ -72,7 +83,7 @@ export const promptHandler = (origin, wallet) => async (promptRequest) => {
       }
 
       // For the snap, the nano caller is always the address0
-      const address0 = await wallet.getAddressAtIndex(0);
+      address0 = await wallet.getAddressAtIndex(0);
       response['data']['nc'] = {
         caller: address0,
         blueprintId: params.blueprint_id,
@@ -83,12 +94,32 @@ export const promptHandler = (origin, wallet) => async (promptRequest) => {
     case TriggerTypes.SignOracleDataConfirmationPrompt:
       approved = await oracleDataPage(data, params, origin);
       return { data: approved };
+    case TriggerTypes.CreateNanoContractCreateTokenTxConfirmationPrompt:
+      approved = await createNanoAndTokenPage(data, params, origin);
+      response = {
+        data: {
+          accepted: approved
+        }
+      }
+
+      if (!approved) {
+        return response;
+      }
+
+      // For the snap, the nano caller is always the address0
+      address0 = await wallet.getAddressAtIndex(0);
+      response['data']['nano'] = { ...data.nano, caller: address0 };
+      response['data']['token'] = { ...data.token };
+      return response;
+
     case TriggerTypes.SendNanoContractTxLoadingTrigger:
     case TriggerTypes.SendNanoContractTxLoadingFinishedTrigger:
     case TriggerTypes.CreateTokenLoadingTrigger:
     case TriggerTypes.CreateTokenLoadingFinishedTrigger:
     case TriggerTypes.SendTransactionLoadingTrigger:
     case TriggerTypes.SendTransactionLoadingFinishedTrigger:
+    case TriggerTypes.CreateNanoContractCreateTokenTxLoadingTrigger:
+    case TriggerTypes.CreateNanoContractCreateTokenTxLoadingFinishedTrigger:
       break;
     default:
       throw new Error('Invalid request');
