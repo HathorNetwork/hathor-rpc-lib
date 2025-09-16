@@ -35,7 +35,7 @@ export const promptHandler = (origin, wallet) => async (promptRequest) => {
       approved = await utxosPage(data, params, origin);
       return { data: approved };
     case TriggerTypes.ChangeNetworkConfirmationPrompt:
-      if (!(params.newNetwork in NETWORK_MAP)) {
+      if (!(Object.hasOwn(NETWORK_MAP, params.newNetwork))) {
         // Reject if the newNetwork is not a valid option
         return { data: false };
       }
