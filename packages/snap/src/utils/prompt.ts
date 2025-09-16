@@ -42,7 +42,7 @@ export const promptHandler = (origin, wallet) => async (promptRequest) => {
 
       approved = await changeNetworkPage(data, params, origin);
       if (approved) {
-        await setNetwork(data.newNetwork);
+        await setNetwork(params.newNetwork);
       }
       return { data: approved };
     case TriggerTypes.SendTransactionConfirmationPrompt:
