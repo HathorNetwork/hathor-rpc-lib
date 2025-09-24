@@ -11,7 +11,7 @@ type MetaMaskContextType = {
   installedSnap: Snap | null;
   error: Error | null;
   setInstalledSnap: (snap: Snap | null) => void;
-  setError: (error: Error) => void;
+  setError: (error: Error | null) => void;
 };
 
 export const MetaMaskContext = createContext<MetaMaskContextType>({
