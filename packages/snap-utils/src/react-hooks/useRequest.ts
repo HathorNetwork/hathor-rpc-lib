@@ -22,7 +22,6 @@ export const useRequest = () => {
    */
   const request: Request = async ({ method, params }) => {
     try {
-      setError(null);
       const data =
         (await provider?.request({
           method,

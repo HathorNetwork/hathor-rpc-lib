@@ -2,22 +2,25 @@ import type { SnapConfig } from '@metamask/snaps-cli';
 import { merge } from '@metamask/snaps-cli';
 import { resolve } from 'path';
 import * as webpack from 'webpack';
-import stdLibBrowser from 'node-stdlib-browser';
 
 const config: SnapConfig = {
   bundler: 'webpack',
   customizeWebpackConfig: (config) => merge(config, {
-    mode: 'production',
+    mode: 'development',
+    devtool: 'source-map',
+    optimization: {
+       minimize: false
+    },
     resolve: {
       fallback: {
-        crypto: stdLibBrowser.crypto,
-        stream: stdLibBrowser.stream,
+        crypto: require.resolve('crypto-browserify'),
+        stream: require.resolve('stream-browserify'),
         buffer: require.resolve('buffer'),
-        process: stdLibBrowser.process,
-        path: stdLibBrowser.path,
+        process: require.resolve('process/browser'),
+        path: require.resolve('path-browserify'),
         fs: false,
-        util: stdLibBrowser.util,
-        assert: stdLibBrowser.assert,
+        util: require.resolve('util'),
+        assert: require.resolve('assert/'),
       },
     },
     plugins: [
@@ -36,7 +39,7 @@ const config: SnapConfig = {
   },
   polyfills: true,
   environment: {
-    NODE_ENV: 'production',
+    NODE_ENV: 'development',
   },
 };
 
