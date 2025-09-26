@@ -1,16 +1,14 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import Layout from './components/layout/Layout'
-import Home from './pages/Home'
+import { MetaMaskProvider } from 'snap-utils'
+import { WalletProvider } from './contexts/WalletContext'
+import ProperWalletHome from './components/ProperWalletHome'
 
 function App() {
   return (
-    <Router>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Home />} />
-        </Routes>
-      </Layout>
-    </Router>
+    <MetaMaskProvider>
+      <WalletProvider>
+        <ProperWalletHome />
+      </WalletProvider>
+    </MetaMaskProvider>
   )
 }
 
