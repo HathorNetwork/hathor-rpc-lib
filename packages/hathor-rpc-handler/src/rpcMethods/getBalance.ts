@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import type { HathorWallet } from '@hathor/wallet-lib';
+import type { IHathorWallet } from '@hathor/wallet-lib';
 import type { GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 import {
   TriggerTypes,
@@ -16,6 +16,7 @@ import {
   RequestMetadata,
   RpcResponseTypes,
   RpcResponse,
+  GetBalanceConfirmationResponse,
 } from '../types';
 import { NotImplementedError, PromptRejectedError, InvalidParamsError } from '../errors';
 import { validateNetwork } from '../helpers';
@@ -42,12 +43,12 @@ const getBalanceSchema = z.object({
  */
 export async function getBalance(
   rpcRequest: GetBalanceRpcRequest,
-  wallet: HathorWallet,
+  wallet: IHathorWallet,
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
 ) {
   const parseResult = getBalanceSchema.safeParse(rpcRequest.params);
-  
+
   if (!parseResult.success) {
     throw new InvalidParamsError(parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
   }
@@ -60,19 +61,22 @@ export async function getBalance(
 
   validateNetwork(wallet, params.network);
 
-  const balances: GetBalanceObject[] = await Promise.all(
+  const balances: GetBalanceObject[] = (await Promise.all(
     params.tokens.map(token => wallet.getBalance(token)),
-  );
+  )).flat();
 
   const prompt: GetBalanceConfirmationPrompt = {
+    ...rpcRequest,
     type: TriggerTypes.GetBalanceConfirmationPrompt,
-    method: rpcRequest.method,
     data: balances
   };
 
-  const confirmed = await promptHandler(prompt, requestMetadata);
+  const confirmed = await promptHandler(
+    prompt,
+    requestMetadata
+  ) as GetBalanceConfirmationResponse;
 
-  if (!confirmed) {
+  if (!confirmed.data) {
     throw new PromptRejectedError();
   }
 

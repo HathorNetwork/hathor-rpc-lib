@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { HathorWallet } from '@hathor/wallet-lib';
+import { constants, HathorWallet } from '@hathor/wallet-lib';
 import { sendTransaction } from '../../src/rpcMethods/sendTransaction';
 import {
   RpcMethods,
@@ -104,8 +104,8 @@ describe('sendTransaction', () => {
     // Verify all prompts were shown in correct order
     expect(promptHandler).toHaveBeenCalledTimes(4); // Confirmation, PIN, Loading, LoadingFinished
     expect(promptHandler).toHaveBeenNthCalledWith(1, {
+      ...rpcRequest,
       type: TriggerTypes.SendTransactionConfirmationPrompt,
-      method: rpcRequest.method,
       data: {
         outputs: [{
           address: 'testAddress',
@@ -123,15 +123,14 @@ describe('sendTransaction', () => {
       },
     }, {});
     expect(promptHandler).toHaveBeenNthCalledWith(2, {
+      ...rpcRequest,
       type: TriggerTypes.PinConfirmationPrompt,
-      method: rpcRequest.method,
     }, {});
   });
 
   it('should handle data outputs correctly', async () => {
     rpcRequest.params.outputs = [{
       type: 'data',
-      value: '100',
       data: 'test data',
     }];
 
@@ -154,8 +153,6 @@ describe('sendTransaction', () => {
       expect.arrayContaining([
         expect.objectContaining({
           type: 'data',
-          value: 1n,
-          token: '00',
           data: 'test data',
         }),
       ]),
@@ -173,7 +170,6 @@ describe('sendTransaction', () => {
       {
         type: 'data',
         data: 'data item',
-        value: '1',
       },
       {
         address: 'testAddress2',
@@ -206,8 +202,6 @@ describe('sendTransaction', () => {
         }),
         expect.objectContaining({
           type: 'data',
-          value: BigInt(1),
-          token: '00',
           data: 'data item',
         }),
         expect.objectContaining({
@@ -351,5 +345,40 @@ describe('sendTransaction', () => {
 
     // Verify that the promptHandler wasn't called since validation should fail first
     expect(promptHandler).not.toHaveBeenCalled();
+  });
+
+  it('should default to native token UID when no token is specified', async () => {
+    // Remove token from the output to simulate the simple case
+    rpcRequest.params.outputs = [{
+      address: 'testAddress',
+      value: '100',
+      // No token specified
+    }];
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.SendTransactionConfirmationResponse,
+        data: { accepted: true },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: { accepted: true, pinCode: '1234' },
+      });
+
+    sendTransactionMock.mockResolvedValue({ hash: 'txHash123' });
+
+    await sendTransaction(rpcRequest, wallet, {}, promptHandler);
+
+    // Verify that the wallet is called with the native token UID
+    expect(wallet.sendManyOutputsSendTransaction).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          address: 'testAddress',
+          value: BigInt(100),
+          token: constants.NATIVE_TOKEN_UID,
+        }),
+      ]),
+      expect.any(Object),
+    );
   });
 });

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { HathorWallet, Transaction } from '@hathor/wallet-lib';
+import { IHathorWallet, Transaction } from '@hathor/wallet-lib';
 import {
   CreateTokenConfirmationPrompt,
   CreateTokenConfirmationResponse,
@@ -45,7 +45,7 @@ import { createTokenRpcSchema } from '../schemas';
  */
 export async function createToken(
   rpcRequest: CreateTokenRpcRequest,
-  wallet: HathorWallet,
+  wallet: IHathorWallet,
   requestMetadata: RequestMetadata,
   triggerHandler: TriggerHandler,
 ) {
@@ -57,13 +57,13 @@ export async function createToken(
     }
 
     const pinPrompt: PinConfirmationPrompt = {
+      ...rpcRequest,
       type: TriggerTypes.PinConfirmationPrompt,
-      method: rpcRequest.method,
     };
 
     const createTokenPrompt: CreateTokenConfirmationPrompt = {
+      ...rpcRequest,
       type: TriggerTypes.CreateTokenConfirmationPrompt,
-      method: rpcRequest.method,
       data: {
         name: params.name,
         symbol: params.symbol,

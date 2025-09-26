@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { CreateTokenTransaction, SendTransaction, Transaction } from '@hathor/wallet-lib';
+import { CreateTokenTransaction, Transaction } from '@hathor/wallet-lib';
 import { AddressInfoObject, GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { UtxoDetails } from './prompt';
 import { IUserSignedData } from '@hathor/wallet-lib/lib/nano_contracts/fields/signedData';
@@ -21,6 +21,7 @@ export enum RpcResponseTypes {
   SignOracleDataResponse,
   SendTransactionResponse,
   CreateNanoContractCreateTokenTxResponse,
+  ChangeNetworkResponse,
 }
 
 export interface BaseRpcResponse {
@@ -75,17 +76,24 @@ export interface SignOracleDataResponse extends BaseRpcResponse {
 
 export interface GetUtxosResponse extends BaseRpcResponse {
   type: RpcResponseTypes.GetUtxosResponse;
-  response: UtxoDetails[];
+  response: UtxoDetails;
 }
 
 export interface SendTransactionResponse extends BaseRpcResponse {
   type: RpcResponseTypes.SendTransactionResponse;
-  response: SendTransaction;
+  response: Transaction;
 }
 
 export interface CreateNanoContractCreateTokenTxResponse extends BaseRpcResponse {
   type: RpcResponseTypes.CreateNanoContractCreateTokenTxResponse;
   response: Transaction;
+}
+
+export interface ChangeNetworkResponse extends BaseRpcResponse {
+  type: RpcResponseTypes.ChangeNetworkResponse;
+  response: {
+    newNetwork: string;
+  }
 }
 
 export type RpcResponse = GetAddressResponse
@@ -97,4 +105,5 @@ export type RpcResponse = GetAddressResponse
   | SignOracleDataResponse
   | GetUtxosResponse
   | SendTransactionResponse
-  | CreateNanoContractCreateTokenTxResponse;
+  | CreateNanoContractCreateTokenTxResponse
+  | ChangeNetworkResponse;

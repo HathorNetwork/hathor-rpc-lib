@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import type { HathorWallet, Transaction } from '@hathor/wallet-lib';
+import type { IHathorWallet, Transaction } from '@hathor/wallet-lib';
 import {
   TriggerTypes,
   PinConfirmationPrompt,
@@ -22,13 +22,14 @@ import {
   SendNanoContractTxLoadingFinishedTrigger,
 } from '../types';
 import { PromptRejectedError, SendNanoContractTxError, InvalidParamsError } from '../errors';
-import { INanoContractActionSchema, NanoContractAction } from '@hathor/wallet-lib';
+import { INanoContractActionSchema, NanoContractAction, nanoUtils, Network, config } from '@hathor/wallet-lib';
 
 export type NanoContractActionWithStringAmount = Omit<NanoContractAction, 'amount'> & {
   amount: string,
 }
 
 const sendNanoContractSchema = z.object({
+  network: z.string().min(1),
   method: z.string().min(1),
   blueprint_id: z.string().nullish(),
   nc_id: z.string().nullish(),
@@ -62,7 +63,7 @@ const sendNanoContractSchema = z.object({
  */
 export async function sendNanoContractTx(
   rpcRequest: SendNanoContractRpcRequest,
-  wallet: HathorWallet,
+  wallet: IHathorWallet,
   requestMetadata: RequestMetadata,
   triggerHandler: TriggerHandler,
 ) {
@@ -70,19 +71,47 @@ export async function sendNanoContractTx(
     const params = sendNanoContractSchema.parse(rpcRequest.params);
 
     const pinPrompt: PinConfirmationPrompt = {
+      ...rpcRequest,
       type: TriggerTypes.PinConfirmationPrompt,
-      method: rpcRequest.method,
     };
 
+    let blueprintId = params.blueprintId;
+    if (!blueprintId) {
+      let response;
+      try {
+        response = await wallet.getFullTxById(params.ncId!);
+      } catch {
+        // Error getting nano contract transaction data from the full node
+        throw new SendNanoContractTxError(
+          `Error getting nano contract transaction data with id ${params.ncId} from the full node`
+        );
+      }
+
+      if (!response.tx.nc_id) {
+        throw new SendNanoContractTxError(
+          `Transaction with id ${params.ncId} is not a nano contract transaction.`
+        );
+      }
+
+      blueprintId = response.tx.nc_blueprint_id!;
+    }
+
+    config.setServerUrl(wallet.getServerUrl());
+    const result = await nanoUtils.validateAndParseBlueprintMethodArgs(blueprintId!, params.method, params.args, new Network(params.network));
+    const parsedArgs = result.map((data) => {
+      return { ...data, parsed: data.field.toUser() };
+    });
+
     const sendNanoContractTxPrompt: SendNanoContractTxConfirmationPrompt = {
+      ...rpcRequest,
       type: TriggerTypes.SendNanoContractTxConfirmationPrompt,
-      method: rpcRequest.method,
       data: {
         blueprintId: params.blueprintId,
         ncId: params.ncId,
         actions: params.actions,
         method: params.method,
         args: params.args,
+        parsedArgs,
         pushTx: params.pushTx,
       },
     };

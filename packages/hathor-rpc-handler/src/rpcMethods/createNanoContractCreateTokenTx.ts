@@ -18,6 +18,8 @@ import {
   CreateNanoContractCreateTokenTxResponse,
   CreateNanoContractCreateTokenTxConfirmationPrompt,
   CreateNanoContractCreateTokenTxConfirmationResponse,
+  CreateNanoContractCreateTokenTxLoadingTrigger,
+  CreateNanoContractCreateTokenTxLoadingFinishedTrigger,
   NanoContractParams,
   CreateTokenParams,
 } from '../types';
@@ -79,6 +81,7 @@ export async function createNanoContractCreateTokenTx(
     actions: data?.actions ?? [],
     method,
     args: data?.args ?? [],
+    parsedArgs: [],
     pushTx: push_tx,
   };
   // Only pass CreateTokenParams fields, fallback to null/empty for missing
@@ -99,8 +102,8 @@ export async function createNanoContractCreateTokenTx(
   };
 
   const confirmationPrompt: CreateNanoContractCreateTokenTxConfirmationPrompt = {
+    ...rpcRequest,
     type: TriggerTypes.CreateNanoContractCreateTokenTxConfirmationPrompt,
-    method: rpcRequest.method,
     data: {
       nano: nanoParams,
       token: tokenParams,
@@ -117,13 +120,19 @@ export async function createNanoContractCreateTokenTx(
 
   // Prompt for PIN
   const pinPrompt: PinConfirmationPrompt = {
+    ...rpcRequest,
     type: TriggerTypes.PinConfirmationPrompt,
-    method: rpcRequest.method,
   };
   const pinResponse = await promptHandler(pinPrompt, requestMetadata) as PinRequestResponse;
   if (!pinResponse.data.accepted) {
     throw new PromptRejectedError('User rejected PIN prompt');
   }
+
+  // Emit loading trigger
+  const loadingTrigger: CreateNanoContractCreateTokenTxLoadingTrigger = {
+    type: TriggerTypes.CreateNanoContractCreateTokenTxLoadingTrigger,
+  };
+  promptHandler(loadingTrigger, requestMetadata);
 
   // Call the wallet method
   let response;
@@ -144,6 +153,12 @@ export async function createNanoContractCreateTokenTx(
       { pinCode: pinResponse.data.pinCode }
     );
   }
+
+  // Emit loading finished trigger
+  const loadingFinishedTrigger: CreateNanoContractCreateTokenTxLoadingFinishedTrigger = {
+    type: TriggerTypes.CreateNanoContractCreateTokenTxLoadingFinishedTrigger,
+  };
+  promptHandler(loadingFinishedTrigger, requestMetadata);
 
   return {
     type: RpcResponseTypes.CreateNanoContractCreateTokenTxResponse,

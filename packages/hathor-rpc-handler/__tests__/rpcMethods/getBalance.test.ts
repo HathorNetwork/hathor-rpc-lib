@@ -6,9 +6,11 @@
  */
 
 import { HathorWallet } from '@hathor/wallet-lib';
-import { 
+import {
   RpcMethods,
   GetBalanceRpcRequest,
+  TriggerResponseTypes,
+  GetBalanceResponse,
 } from '../../src/types';
 import { getBalance } from '../../src/rpcMethods/getBalance';
 import { InvalidParamsError, NotImplementedError } from '../../src/errors';
@@ -16,13 +18,33 @@ import { InvalidParamsError, NotImplementedError } from '../../src/errors';
 describe('getBalance parameter validation', () => {
   const mockWallet = {
     getNetwork: jest.fn().mockReturnValue('testnet'),
-    getBalance: jest.fn().mockResolvedValue({
-      available: 100,
-      locked: 0,
-    }),
+    getBalance: jest.fn().mockResolvedValue([{
+      token: {
+        id: '000003521effbc8efd7b746a118cdc7d41d7cc1bf9c5d1fa5de4f8453f14ba4f'
+      },
+      balance: {
+        unlocked: '0',
+        locked: '0'
+      },
+      transactions: 0,
+      lockExpires: null,
+      tokenAuthorities: {
+        unlocked: {
+          mint: '0',
+          melt: '0'
+        },
+        locked: {
+          mint: '0',
+          melt: '0'
+        }
+      }
+    }]),
   } as unknown as HathorWallet;
 
-  const mockTriggerHandler = jest.fn().mockResolvedValue(true);
+  const mockTriggerHandler = jest.fn().mockResolvedValue({
+    type: TriggerResponseTypes.GetBalanceConfirmationResponse,
+    data: true,
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -114,5 +136,72 @@ describe('getBalance parameter validation', () => {
     ).resolves.toBeDefined();
 
     expect(mockWallet.getBalance).toHaveBeenCalledWith('HTR');
+  });
+
+  it('should return flat array for multiple tokens', async () => {
+    const token1Balance = [{
+      token: {
+        id: '00'
+      },
+      balance: {
+        unlocked: '100',
+        locked: '0'
+      },
+      transactions: 10,
+      lockExpires: null,
+      tokenAuthorities: {
+        unlocked: {
+          mint: '0',
+          melt: '0'
+        },
+        locked: {
+          mint: '0',
+          melt: '0'
+        }
+      }
+    }];
+
+    const token2Balance = [{
+      token: {
+        id: '000003521effbc8efd7b746a118cdc7d41d7cc1bf9c5d1fa5de4f8453f14ba4f'
+      },
+      balance: {
+        unlocked: '50',
+        locked: '0'
+      },
+      transactions: 5,
+      lockExpires: null,
+      tokenAuthorities: {
+        unlocked: {
+          mint: '0',
+          melt: '0'
+        },
+        locked: {
+          mint: '0',
+          melt: '0'
+        }
+      }
+    }];
+
+    mockWallet.getBalance
+      .mockResolvedValueOnce(token1Balance)
+      .mockResolvedValueOnce(token2Balance);
+
+    const validRequest = {
+      method: RpcMethods.GetBalance,
+      params: {
+        network: 'testnet',
+        tokens: ['00', '000003521effbc8efd7b746a118cdc7d41d7cc1bf9c5d1fa5de4f8453f14ba4f'],
+      },
+    } as GetBalanceRpcRequest;
+
+    const result = await getBalance(validRequest, mockWallet, {}, mockTriggerHandler);
+
+    expect(result.response).toHaveLength(2);
+    expect((result as GetBalanceResponse).response[0].token.id).toBe('00');
+    expect((result as GetBalanceResponse).response[1].token.id).toBe('000003521effbc8efd7b746a118cdc7d41d7cc1bf9c5d1fa5de4f8453f14ba4f');
+    expect(mockWallet.getBalance).toHaveBeenCalledTimes(2);
+    expect(mockWallet.getBalance).toHaveBeenCalledWith('00');
+    expect(mockWallet.getBalance).toHaveBeenCalledWith('000003521effbc8efd7b746a118cdc7d41d7cc1bf9c5d1fa5de4f8453f14ba4f');
   });
 });

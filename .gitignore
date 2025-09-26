@@ -9,3 +9,5 @@ build/
 coverage/
 .cache/
 public/
+*.swp
+*.swo

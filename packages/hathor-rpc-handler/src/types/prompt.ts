@@ -6,7 +6,8 @@
  */
 import { AddressInfoObject, GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
-import { RequestMetadata } from './rpcRequest';
+import { IDataInput, IDataOutput } from '@hathor/wallet-lib/lib/types';
+import { RequestMetadata, RpcRequest } from './rpcRequest';
 
 export enum TriggerTypes {
   GetBalanceConfirmationPrompt,
@@ -31,10 +32,14 @@ export enum TriggerTypes {
   SendTransactionLoadingTrigger,
   SendTransactionLoadingFinishedTrigger,
   CreateNanoContractCreateTokenTxConfirmationPrompt,
+  CreateNanoContractCreateTokenTxLoadingTrigger,
+  CreateNanoContractCreateTokenTxLoadingFinishedTrigger,
+  ChangeNetworkConfirmationPrompt,
 }
 
 export enum TriggerResponseTypes {
   AddressRequestClientResponse,
+  AddressRequestConfirmationResponse,
   PinRequestResponse,
   GetUtxosConfirmationResponse,
   SignMessageWithAddressConfirmationResponse,
@@ -43,6 +48,8 @@ export enum TriggerResponseTypes {
   SignOracleDataConfirmationResponse,
   SendTransactionConfirmationResponse,
   CreateNanoContractCreateTokenTxConfirmationResponse,
+  GetBalanceConfirmationResponse,
+  ChangeNetworkRequestConfirmationResponse,
 }
 
 export type Trigger =
@@ -67,7 +74,10 @@ export type Trigger =
   | SendTransactionConfirmationPrompt
   | SendTransactionLoadingTrigger
   | SendTransactionLoadingFinishedTrigger
-  | CreateNanoContractCreateTokenTxConfirmationPrompt;
+  | CreateNanoContractCreateTokenTxConfirmationPrompt
+  | CreateNanoContractCreateTokenTxLoadingTrigger
+  | CreateNanoContractCreateTokenTxLoadingFinishedTrigger
+  | ChangeNetworkConfirmationPrompt;
 
 export interface BaseLoadingTrigger {
   type: TriggerTypes;
@@ -101,28 +111,34 @@ export interface LoadingFinishedTrigger {
   type: TriggerTypes.LoadingFinishedTrigger;
 }
 
-export interface BaseConfirmationPrompt {
+export type BaseConfirmationPrompt = RpcRequest & {
   type: TriggerTypes;
-  method: string;
 }
 
-export interface GetAddressConfirmationPrompt extends BaseConfirmationPrompt {
+export type GetAddressConfirmationPrompt = BaseConfirmationPrompt & {
   data: {
     address: string;
   }
 }
 
-export interface GetBalanceConfirmationPrompt extends BaseConfirmationPrompt {
+export type ChangeNetworkConfirmationPrompt = BaseConfirmationPrompt & {
+  type: TriggerTypes.ChangeNetworkConfirmationPrompt;
+  data: {
+    newNetwork: string;
+  }
+}
+
+export type GetBalanceConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.GetBalanceConfirmationPrompt;
   data: GetBalanceObject[];
 }
 
-export interface GetUtxosConfirmationPrompt extends BaseConfirmationPrompt {
+export type GetUtxosConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.GetUtxosConfirmationPrompt;
-  data: UtxoDetails[];
+  data: UtxoDetails;
 }
 
-export interface SignOracleDataConfirmationPrompt extends BaseConfirmationPrompt {
+export type SignOracleDataConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.SignOracleDataConfirmationPrompt;
   data: {
     oracle: string;
@@ -130,7 +146,7 @@ export interface SignOracleDataConfirmationPrompt extends BaseConfirmationPrompt
   }
 }
 
-export interface SignMessageWithAddressConfirmationPrompt extends BaseConfirmationPrompt {
+export type SignMessageWithAddressConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.SignMessageWithAddressConfirmationPrompt;
   data: {
     address: AddressInfoObject;
@@ -138,18 +154,16 @@ export interface SignMessageWithAddressConfirmationPrompt extends BaseConfirmati
   }
 }
 
-export interface PinConfirmationPrompt extends BaseConfirmationPrompt {
+export type PinConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.PinConfirmationPrompt;
 }
 
-export interface AddressRequestPrompt extends BaseConfirmationPrompt {
+export type AddressRequestPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.AddressRequestPrompt;
-  data?: {
-    address: string;
-  }
+  data: AddressInfoObject;
 }
 
-export interface AddressRequestClientPrompt extends BaseConfirmationPrompt {
+export type AddressRequestClientPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.AddressRequestClientPrompt;
 }
 
@@ -159,6 +173,7 @@ export interface NanoContractParams {
   actions: NanoContractAction[],
   method: string;
   args: unknown[];
+  parsedArgs: unknown[];
   pushTx: boolean;
 }
 
@@ -177,17 +192,17 @@ export interface CreateTokenParams {
   data: string[] | null,
 }
 
-export interface CreateTokenConfirmationPrompt extends BaseConfirmationPrompt {
+export type CreateTokenConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.CreateTokenConfirmationPrompt;
   data: CreateTokenParams;
 }
 
-export interface SendNanoContractTxConfirmationPrompt extends BaseConfirmationPrompt {
+export type SendNanoContractTxConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.SendNanoContractTxConfirmationPrompt;
   data: NanoContractParams;
 }
 
-export interface GenericConfirmationPrompt extends BaseConfirmationPrompt {
+export type GenericConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.GenericConfirmationPrompt;
   data: unknown;
 }
@@ -205,7 +220,7 @@ export interface SendNanoContractTxConfirmationResponse {
     accepted: true;
     nc: NanoContractParams & {
       caller: string;
-    } 
+    }
   } | {
     accepted: false;
   }
@@ -231,6 +246,21 @@ export interface PinRequestResponse {
   }
 }
 
+export interface AddressRequestConfirmationResponse {
+  type: TriggerResponseTypes.AddressRequestConfirmationResponse;
+  data: boolean;
+}
+
+export interface ChangeNetworkRequestConfirmationResponse {
+  type: TriggerResponseTypes.ChangeNetworkRequestConfirmationResponse;
+  data: boolean;
+}
+
+export interface GetBalanceConfirmationResponse {
+  type: TriggerResponseTypes.GetBalanceConfirmationResponse;
+  data: boolean;
+}
+
 export interface GetUtxosConfirmationResponse {
   type: TriggerResponseTypes.GetUtxosConfirmationResponse;
   data: boolean;
@@ -246,23 +276,11 @@ export interface SignOracleDataConfirmationResponse {
   data: boolean;
 }
 
-export interface SendTransactionConfirmationPrompt extends BaseConfirmationPrompt {
+export type SendTransactionConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.SendTransactionConfirmationPrompt;
   data: {
-    outputs: Array<{
-      address?: string;
-      value: number;
-      token?: string;
-      type?: string;
-      data?: string[];
-    }>;
-    inputs: Array<{
-      txId: string;
-      index: number;
-      value: number;
-      address: string;
-      token: string;
-    }>;
+    outputs: IDataOutput[],
+    inputs: IDataInput[],
     changeAddress?: string;
   }
 }
@@ -279,7 +297,7 @@ export interface CreateNanoContractCreateTokenTxParams {
   token: CreateTokenParams;
 }
 
-export interface CreateNanoContractCreateTokenTxConfirmationPrompt extends BaseConfirmationPrompt {
+export type CreateNanoContractCreateTokenTxConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.CreateNanoContractCreateTokenTxConfirmationPrompt;
   data: CreateNanoContractCreateTokenTxParams;
 }
@@ -297,6 +315,7 @@ export interface CreateNanoContractCreateTokenTxConfirmationResponse {
 
 export type TriggerResponse =
   AddressRequestClientResponse
+  | AddressRequestConfirmationResponse
   | GetUtxosConfirmationResponse
   | PinRequestResponse
   | SignMessageWithAddressConfirmationResponse
@@ -304,7 +323,9 @@ export type TriggerResponse =
   | CreateTokenConfirmationResponse
   | SignOracleDataConfirmationResponse
   | SendTransactionConfirmationResponse
-  | CreateNanoContractCreateTokenTxConfirmationResponse;
+  | CreateNanoContractCreateTokenTxConfirmationResponse
+  | GetBalanceConfirmationResponse
+  | ChangeNetworkRequestConfirmationResponse;
 
 export type TriggerHandler = (prompt: Trigger, requestMetadata: RequestMetadata) => Promise<TriggerResponse | void>;
 
@@ -312,17 +333,17 @@ export type TriggerHandler = (prompt: Trigger, requestMetadata: RequestMetadata)
 // be common for both facades.
 export interface UtxoInfo {
   address: string;
-  amount: number;
+  amount: bigint;
   tx_id: string;
   locked: boolean;
   index: number;
 }
 
 export interface UtxoDetails {
-  total_amount_available: number;
-  total_utxos_available: number;
-  total_amount_locked: number;
-  total_utxos_locked: number;
+  total_amount_available: bigint;
+  total_utxos_available: bigint;
+  total_amount_locked: bigint;
+  total_utxos_locked: bigint;
   utxos: UtxoInfo[];
 }
 
@@ -332,4 +353,12 @@ export interface SendTransactionLoadingTrigger extends BaseLoadingTrigger {
 
 export interface SendTransactionLoadingFinishedTrigger extends BaseLoadingTrigger {
   type: TriggerTypes.SendTransactionLoadingFinishedTrigger;
+}
+
+export interface CreateNanoContractCreateTokenTxLoadingTrigger extends BaseLoadingTrigger {
+  type: TriggerTypes.CreateNanoContractCreateTokenTxLoadingTrigger;
+}
+
+export interface CreateNanoContractCreateTokenTxLoadingFinishedTrigger extends BaseLoadingTrigger {
+  type: TriggerTypes.CreateNanoContractCreateTokenTxLoadingFinishedTrigger;
 }

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 import { z } from 'zod';
-import type { HathorWallet } from '@hathor/wallet-lib';
+import type { IHathorWallet } from '@hathor/wallet-lib';
 import {
   GetUtxosConfirmationResponse,
   GetUtxosRpcRequest,
@@ -24,14 +24,14 @@ const getUtxosSchema = z.object({
   method: z.literal(RpcMethods.GetUtxos),
   params: z.object({
     network: z.string().min(1),
-    maxUtxos: z.number().default(255),
-    token: z.string().default('HTR'),
-    filterAddress: z.string(),
-    authorities: z.number().default(0),
-    amountSmallerThan: z.number().min(0).default(0),
-    amountBiggerThan: z.number().min(0).default(0),
-    maximumAmount: z.number().default(0),
-    onlyAvailableUtxos: z.boolean().default(true),
+    maxUtxos: z.number().max(255).min(1).optional(),
+    token: z.string().optional(),
+    filterAddress: z.string().optional(),
+    authorities: z.number().optional(),
+    amountSmallerThan: z.number().min(0).optional(),
+    amountBiggerThan: z.number().min(0).optional(),
+    maximumAmount: z.number().optional(),
+    onlyAvailableUtxos: z.boolean().optional(),
   }).transform(data => ({
     ...data,
     max_utxos: data.maxUtxos,
@@ -60,7 +60,7 @@ const getUtxosSchema = z.object({
  */
 export async function getUtxos(
   rpcRequest: GetUtxosRpcRequest,
-  wallet: HathorWallet,
+  wallet: IHathorWallet,
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
 ) {
@@ -86,11 +86,11 @@ export async function getUtxos(
     // TODO: Memory usage enhancements are required here as wallet.getUtxos can cause issues on
     // wallets with a huge amount of utxos.
     // TODO: This needs to be paginated.
-    const utxoDetails: UtxoDetails[] = await wallet.getUtxos(options);
+    const utxoDetails: UtxoDetails = await wallet.getUtxos(options);
 
     const confirmed = await promptHandler({
+      ...rpcRequest,
       type: TriggerTypes.GetUtxosConfirmationPrompt,
-      method: rpcRequest.method,
       data: utxoDetails
     }, requestMetadata) as GetUtxosConfirmationResponse;
 

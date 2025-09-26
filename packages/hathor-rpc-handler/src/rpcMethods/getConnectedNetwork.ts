@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import type { HathorWallet } from '@hathor/wallet-lib';
+import type { IHathorWallet } from '@hathor/wallet-lib';
 import { 
   GetConnectedNetworkRpcRequest,
   RequestMetadata,
@@ -36,7 +36,7 @@ const getConnectedNetworkSchema = z.object({
  */
 export async function getConnectedNetwork(
   rpcRequest: GetConnectedNetworkRpcRequest,
-  wallet: HathorWallet,
+  wallet: IHathorWallet,
   _requestMetadata: RequestMetadata,
   _promptHandler: TriggerHandler,
 ) {

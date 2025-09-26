@@ -18,17 +18,6 @@ import { signOracleData } from '../../src/rpcMethods/signOracleData';
 import { PromptRejectedError } from '../../src/errors';
 import { InvalidParamsError } from '../../src/errors';
 
-jest.mock('@hathor/wallet-lib', () => ({
-  ...jest.requireActual('@hathor/wallet-lib'),
-  nanoUtils: {
-    getOracleSignedDataFromUser: jest.fn().mockResolvedValue({
-      type: 'str',
-      signature: 'mock-signed-result',
-      value: 'yes',
-    }),
-  },
-}));
-
 describe('signOracleData', () => {
   let wallet: jest.Mocked<HathorWallet>;
 
@@ -37,6 +26,14 @@ describe('signOracleData', () => {
   });
 
   beforeEach(() => {
+    const returnValue = bufferUtils.hexToBuffer(mockSignOracleDataRequest.params.oracle);
+    jest.spyOn(nanoUtils, 'getOracleBuffer').mockReturnValue(returnValue);
+    jest.spyOn(nanoUtils, 'getOracleSignedDataFromUser').mockResolvedValue({
+      type: 'str',
+      signature: 'mock-signed-result',
+      value: 'yes',
+    });
+
     wallet = {
       getNetwork: jest.fn().mockReturnValue('mainnet'),
       getNetworkObject: jest.fn().mockReturnValue(new Network('mainnet')),
@@ -49,8 +46,8 @@ describe('signOracleData', () => {
     await expect(signOracleData(mockSignOracleDataRequest, wallet, {}, mockPromptHandler)).rejects.toThrow(PromptRejectedError);
 
     expect(mockPromptHandler).toHaveBeenNthCalledWith(1, {
+      ...mockSignOracleDataRequest,
       type: TriggerTypes.SignOracleDataConfirmationPrompt,
-      method: mockSignOracleDataRequest.method,
       data: {
         oracle: mockSignOracleDataRequest.params.oracle,
         data: mockSignOracleDataRequest.params.data,
@@ -76,8 +73,8 @@ describe('signOracleData', () => {
     await expect(signOracleData(mockSignOracleDataRequest, wallet, {}, mockPromptHandler)).rejects.toThrow(PromptRejectedError);
 
     expect(mockPromptHandler).toHaveBeenNthCalledWith(1, {
+      ...mockSignOracleDataRequest,
       type: TriggerTypes.SignOracleDataConfirmationPrompt,
-      method: mockSignOracleDataRequest.method,
       data: {
         oracle: mockSignOracleDataRequest.params.oracle,
         data: mockSignOracleDataRequest.params.data,
@@ -85,8 +82,8 @@ describe('signOracleData', () => {
     }, {});
 
     expect(mockPromptHandler).toHaveBeenNthCalledWith(2, {
+      ...mockSignOracleDataRequest,
       type: TriggerTypes.PinConfirmationPrompt,
-      method: mockSignOracleDataRequest.method,
     }, {});
 
     expect(nanoUtils.getOracleSignedDataFromUser).not.toHaveBeenCalled();
@@ -109,8 +106,8 @@ describe('signOracleData', () => {
     const result = await signOracleData(mockSignOracleDataRequest, wallet, {}, mockPromptHandler);
 
     expect(mockPromptHandler).toHaveBeenNthCalledWith(1, {
+      ...mockSignOracleDataRequest,
       type: TriggerTypes.SignOracleDataConfirmationPrompt,
-      method: mockSignOracleDataRequest.method,
       data: {
         oracle: mockSignOracleDataRequest.params.oracle,
         data: mockSignOracleDataRequest.params.data,
@@ -118,8 +115,8 @@ describe('signOracleData', () => {
     }, {});
 
     expect(mockPromptHandler).toHaveBeenNthCalledWith(2, {
+      ...mockSignOracleDataRequest,
       type: TriggerTypes.PinConfirmationPrompt,
-      method: mockSignOracleDataRequest.method,
     }, {});
 
     // Verify the new API is called with correct parameters
@@ -128,7 +125,8 @@ describe('signOracleData', () => {
       mockSignOracleDataRequest.params.nc_id,
       'SignedData[str]',
       mockSignOracleDataRequest.params.data,
-      wallet
+      wallet,
+      { pinCode: 'mock_pin' }
     );
 
     expect(result).toStrictEqual({

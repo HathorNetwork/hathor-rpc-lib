@@ -6,9 +6,9 @@
  */
 
 import {
-  HathorWallet,
+  IHathorWallet,
   nanoUtils,
-  bufferUtils,
+  Network,
 } from '@hathor/wallet-lib';
 import {
   TriggerHandler,
@@ -35,7 +35,7 @@ const signOracleDataSchema = z.object({
 
 export async function signOracleData(
   rpcRequest: SignOracleDataRpcRequest,
-  wallet: HathorWallet,
+  wallet: IHathorWallet,
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
 ) {
@@ -49,8 +49,8 @@ export async function signOracleData(
   validateNetwork(wallet, params.network);
 
   const prompt: SignOracleDataConfirmationPrompt = {
+    ...rpcRequest,
     type: TriggerTypes.SignOracleDataConfirmationPrompt,
-    method: rpcRequest.method,
     data: {
       oracle: params.oracle,
       data: params.data,
@@ -64,8 +64,8 @@ export async function signOracleData(
   }
 
   const pinPrompt: PinConfirmationPrompt = {
+    ...rpcRequest,
     type: TriggerTypes.PinConfirmationPrompt,
-    method: rpcRequest.method,
   };
 
   const pinResponse = await promptHandler(pinPrompt, requestMetadata) as PinRequestResponse;
@@ -78,17 +78,15 @@ export async function signOracleData(
   const type = 'str';
   const resultPreSerialized = params.data;
 
-  const oracleDataBuffer = bufferUtils.hexToBuffer(params.oracle);
-
-  // TODO: getOracleSignedDataFromUser method should be able to receive the PIN as optional parameter as well
-  wallet.pinCode = pinResponse.data.pinCode;
+  const oracleDataBuffer = nanoUtils.getOracleBuffer(params.oracle, new Network(params.network))
 
   const signedData = await nanoUtils.getOracleSignedDataFromUser(
     oracleDataBuffer,
     params.nc_id,
     `SignedData[${type}]`,
     resultPreSerialized,
-    wallet
+    wallet,
+    { pinCode: pinResponse.data.pinCode }
   );
 
   return {

@@ -6,9 +6,10 @@
  */
 
 import { z } from 'zod';
-import type { HathorWallet } from '@hathor/wallet-lib';
+import type { IHathorWallet } from '@hathor/wallet-lib';
 import {
   AddressRequestClientResponse,
+  AddressRequestConfirmationResponse,
   TriggerTypes,
   GetAddressRpcRequest,
   TriggerHandler,
@@ -67,7 +68,7 @@ const getAddressSchema = z.discriminatedUnion("type", [
  */
 export async function getAddress(
   rpcRequest: GetAddressRpcRequest,
-  wallet: HathorWallet,
+  wallet: IHathorWallet,
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
 ) {
@@ -75,24 +76,33 @@ export async function getAddress(
     const params = getAddressSchema.parse(rpcRequest.params);
     validateNetwork(wallet, params.network);
 
-    let address: string = '';
+    let addressInfo: AddressInfoObject;
 
     switch (params.type) {
       case 'first_empty':
-        address = await wallet.getCurrentAddress();
+        addressInfo = await wallet.getCurrentAddress();
         break;
       case 'full_path':
         throw new NotImplementedError();
-      case 'index':
-        address = await wallet.getAddressAtIndex(params.index);
+      case 'index': {
+        const address = await wallet.getAddressAtIndex(params.index);
+        const addressPath = await wallet.getAddressPathForIndex(params.index);
+        addressInfo = { address, index: params.index, addressPath };
         break;
+      }
       case 'client': {
         const response = (await promptHandler({
+          ...rpcRequest,
           type: TriggerTypes.AddressRequestClientPrompt,
-          method: rpcRequest.method,
         }, requestMetadata)) as AddressRequestClientResponse;
 
-        address = response.data.address;
+        const address = response.data.address;
+        const index = await wallet.getAddressIndex(address);
+        if (index == null) {
+          throw new InvalidParamsError('Client sent an invalid address');
+        }
+        const addressPath = await wallet.getAddressPathForIndex(index);
+        addressInfo = { address, index, addressPath };
         break;
       }
     }
@@ -101,21 +111,19 @@ export async function getAddress(
     // to share. No need to double check
     if (params.type !== 'client') {
       const confirmed = await promptHandler({
+        ...rpcRequest,
         type: TriggerTypes.AddressRequestPrompt,
-        method: rpcRequest.method,
-        data: {
-          address,
-        }
-      }, requestMetadata);
+        data: addressInfo,
+      }, requestMetadata) as AddressRequestConfirmationResponse;
 
-      if (!confirmed) {
+      if (!confirmed.data) {
         throw new PromptRejectedError();
       }
     }
 
     return {
       type: RpcResponseTypes.GetAddressResponse,
-      response: address as unknown as AddressInfoObject,
+      response: addressInfo as AddressInfoObject,
     } as RpcResponse;
   } catch (err) {
     if (err instanceof z.ZodError) {
