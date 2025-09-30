@@ -23,6 +23,7 @@ import {
   SendTransactionRpcRequest,
   CreateNanoContractCreateTokenTxRpcRequest,
   ChangeNetworkRpcRequest,
+  GetHistoryRpcRequest,
 } from '../types';
 import {
   getAddress,
@@ -36,6 +37,7 @@ import {
   sendTransaction,
   createNanoContractCreateTokenTx,
   changeNetwork,
+  getHistory,
 } from '../rpcMethods';
 import { InvalidRpcMethod } from '../errors';
 
@@ -108,6 +110,12 @@ export const handleRpcRequest = async (
     );
     case RpcMethods.ChangeNetwork: return changeNetwork(
       request as ChangeNetworkRpcRequest,
+      wallet,
+      requestMetadata,
+      promptHandler,
+    );
+    case RpcMethods.GetHistory: return getHistory(
+      request as GetHistoryRpcRequest,
       wallet,
       requestMetadata,
       promptHandler,
