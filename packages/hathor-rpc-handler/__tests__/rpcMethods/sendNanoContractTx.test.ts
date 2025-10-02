@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { HathorWallet, nanoUtils } from '@hathor/wallet-lib';
+import { HathorWallet, nanoUtils, ncApi } from '@hathor/wallet-lib';
 import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
 import { sendNanoContractTx, NanoContractActionWithStringAmount } from '../../src/rpcMethods/sendNanoContractTx';
 import { TriggerTypes, RpcMethods, SendNanoContractRpcRequest, TriggerResponseTypes, RpcResponseTypes } from '../../src/types';
@@ -13,6 +13,14 @@ import { SendNanoContractTxError, InvalidParamsError } from '../../src/errors';
 
 
 jest.spyOn(nanoUtils, 'validateAndParseBlueprintMethodArgs').mockResolvedValue([]);
+jest.spyOn(nanoUtils, 'getBlueprintId').mockResolvedValue('test-blueprint');
+jest.spyOn(ncApi, 'getBlueprintInformation').mockResolvedValue({
+  id: 'mock-blueprint-id',
+  name: 'mock-blueprint',
+  attributes: new Map(),
+  public_methods: new Map(),
+  private_methods: new Map(),
+});
 
 describe('sendNanoContractTx', () => {
   let rpcRequest: SendNanoContractRpcRequest;
