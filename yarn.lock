@@ -1544,6 +1544,85 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@hathor/snap-utils@workspace:packages/snap-utils":
+  version: 0.0.0-use.local
+  resolution: "@hathor/snap-utils@workspace:packages/snap-utils"
+  dependencies:
+    "@metamask/eslint-config": "npm:12.2.0"
+    "@metamask/eslint-config-browser": "npm:12.1.0"
+    "@metamask/eslint-config-jest": "npm:12.1.0"
+    "@metamask/eslint-config-nodejs": "npm:12.1.0"
+    "@metamask/eslint-config-typescript": "npm:12.1.0"
+    "@metamask/providers": "npm:16.1.0"
+    "@types/jest": "npm:27.5.2"
+    "@types/node": "npm:22.16.0"
+    "@types/react": "npm:18.3.23"
+    "@types/react-dom": "npm:18.3.7"
+    "@types/styled-components": "npm:5.1.34"
+    "@typescript-eslint/eslint-plugin": "npm:5.62.0"
+    "@typescript-eslint/parser": "npm:5.62.0"
+    eslint: "npm:8.57.1"
+    eslint-config-prettier: "npm:8.10.0"
+    eslint-plugin-import: "npm:2.26.0"
+    eslint-plugin-jest: "npm:27.9.0"
+    eslint-plugin-jsdoc: "npm:41.1.2"
+    eslint-plugin-n: "npm:15.7.0"
+    eslint-plugin-prettier: "npm:4.2.1"
+    eslint-plugin-promise: "npm:6.6.0"
+    prettier: "npm:3.6.2"
+    prettier-plugin-packagejson: "npm:2.5.17"
+    typescript: "npm:4.9.5"
+  peerDependencies:
+    react: ^18.2.0
+  languageName: unknown
+  linkType: soft
+
+"@hathor/snap@workspace:packages/snap":
+  version: 0.0.0-use.local
+  resolution: "@hathor/snap@workspace:packages/snap"
+  dependencies:
+    "@hathor/hathor-rpc-handler": "workspace:*"
+    "@hathor/wallet-lib": "npm:2.8.3"
+    "@jest/globals": "npm:29.7.0"
+    "@metamask/auto-changelog": "npm:3.4.4"
+    "@metamask/eslint-config": "npm:12.2.0"
+    "@metamask/eslint-config-jest": "npm:12.1.0"
+    "@metamask/eslint-config-nodejs": "npm:12.1.0"
+    "@metamask/eslint-config-typescript": "npm:12.1.0"
+    "@metamask/snaps-cli": "npm:6.7.0"
+    "@metamask/snaps-jest": "npm:8.16.0"
+    "@metamask/snaps-sdk": "npm:9.2.0"
+    "@types/path-browserify": "npm:1.0.3"
+    "@types/react": "npm:18.2.4"
+    "@types/react-dom": "npm:18.2.4"
+    "@typescript-eslint/eslint-plugin": "npm:5.62.0"
+    "@typescript-eslint/parser": "npm:5.62.0"
+    assert: "npm:2.1.0"
+    bn.js: "npm:4.11.8"
+    buffer: "npm:6.0.3"
+    crypto-browserify: "npm:3.12.1"
+    eslint: "npm:8.57.1"
+    eslint-config-prettier: "npm:8.10.0"
+    eslint-plugin-import: "npm:2.26.0"
+    eslint-plugin-jest: "npm:27.9.0"
+    eslint-plugin-jsdoc: "npm:41.1.2"
+    eslint-plugin-n: "npm:15.7.0"
+    eslint-plugin-prettier: "npm:4.2.1"
+    eslint-plugin-promise: "npm:6.6.0"
+    jest: "npm:29.7.0"
+    node-stdlib-browser: "npm:1.3.1"
+    path-browserify: "npm:1.0.1"
+    prettier: "npm:3.6.2"
+    prettier-plugin-packagejson: "npm:2.5.17"
+    process: "npm:0.11.10"
+    rimraf: "npm:3.0.2"
+    stream-browserify: "npm:3.0.0"
+    ts-jest: "npm:29.4.0"
+    typescript: "npm:4.8.4"
+    util: "npm:0.12.5"
+  languageName: unknown
+  linkType: soft
+
 "@hathor/wallet-lib@npm:2.8.3":
   version: 2.8.3
   resolution: "@hathor/wallet-lib@npm:2.8.3"
@@ -10658,85 +10737,6 @@ __metadata:
   checksum: 10/927484aa0b1640fd9473cee3e0a0bcad6fce93fd7bbc18bac9ad0c33686f5d2e2c422fba24b5899c184524af01e11dd2bd051c2bf2b07e47aff8ca72cbfc60d2
   languageName: node
   linkType: hard
-
-"snap-utils@workspace:packages/snap-utils":
-  version: 0.0.0-use.local
-  resolution: "snap-utils@workspace:packages/snap-utils"
-  dependencies:
-    "@metamask/eslint-config": "npm:12.2.0"
-    "@metamask/eslint-config-browser": "npm:12.1.0"
-    "@metamask/eslint-config-jest": "npm:12.1.0"
-    "@metamask/eslint-config-nodejs": "npm:12.1.0"
-    "@metamask/eslint-config-typescript": "npm:12.1.0"
-    "@metamask/providers": "npm:16.1.0"
-    "@types/jest": "npm:27.5.2"
-    "@types/node": "npm:22.16.0"
-    "@types/react": "npm:18.3.23"
-    "@types/react-dom": "npm:18.3.7"
-    "@types/styled-components": "npm:5.1.34"
-    "@typescript-eslint/eslint-plugin": "npm:5.62.0"
-    "@typescript-eslint/parser": "npm:5.62.0"
-    eslint: "npm:8.57.1"
-    eslint-config-prettier: "npm:8.10.0"
-    eslint-plugin-import: "npm:2.26.0"
-    eslint-plugin-jest: "npm:27.9.0"
-    eslint-plugin-jsdoc: "npm:41.1.2"
-    eslint-plugin-n: "npm:15.7.0"
-    eslint-plugin-prettier: "npm:4.2.1"
-    eslint-plugin-promise: "npm:6.6.0"
-    prettier: "npm:3.6.2"
-    prettier-plugin-packagejson: "npm:2.5.17"
-    typescript: "npm:4.9.5"
-  peerDependencies:
-    react: ^18.2.0
-  languageName: unknown
-  linkType: soft
-
-"snap@workspace:packages/snap":
-  version: 0.0.0-use.local
-  resolution: "snap@workspace:packages/snap"
-  dependencies:
-    "@hathor/hathor-rpc-handler": "workspace:*"
-    "@hathor/wallet-lib": "npm:2.8.3"
-    "@jest/globals": "npm:29.7.0"
-    "@metamask/auto-changelog": "npm:3.4.4"
-    "@metamask/eslint-config": "npm:12.2.0"
-    "@metamask/eslint-config-jest": "npm:12.1.0"
-    "@metamask/eslint-config-nodejs": "npm:12.1.0"
-    "@metamask/eslint-config-typescript": "npm:12.1.0"
-    "@metamask/snaps-cli": "npm:6.7.0"
-    "@metamask/snaps-jest": "npm:8.16.0"
-    "@metamask/snaps-sdk": "npm:9.2.0"
-    "@types/path-browserify": "npm:1.0.3"
-    "@types/react": "npm:18.2.4"
-    "@types/react-dom": "npm:18.2.4"
-    "@typescript-eslint/eslint-plugin": "npm:5.62.0"
-    "@typescript-eslint/parser": "npm:5.62.0"
-    assert: "npm:2.1.0"
-    bn.js: "npm:4.11.8"
-    buffer: "npm:6.0.3"
-    crypto-browserify: "npm:3.12.1"
-    eslint: "npm:8.57.1"
-    eslint-config-prettier: "npm:8.10.0"
-    eslint-plugin-import: "npm:2.26.0"
-    eslint-plugin-jest: "npm:27.9.0"
-    eslint-plugin-jsdoc: "npm:41.1.2"
-    eslint-plugin-n: "npm:15.7.0"
-    eslint-plugin-prettier: "npm:4.2.1"
-    eslint-plugin-promise: "npm:6.6.0"
-    jest: "npm:29.7.0"
-    node-stdlib-browser: "npm:1.3.1"
-    path-browserify: "npm:1.0.1"
-    prettier: "npm:3.6.2"
-    prettier-plugin-packagejson: "npm:2.5.17"
-    process: "npm:0.11.10"
-    rimraf: "npm:3.0.2"
-    stream-browserify: "npm:3.0.0"
-    ts-jest: "npm:29.4.0"
-    typescript: "npm:4.8.4"
-    util: "npm:0.12.5"
-  languageName: unknown
-  linkType: soft
 
 "socks-proxy-agent@npm:^8.0.3":
   version: 8.0.5
