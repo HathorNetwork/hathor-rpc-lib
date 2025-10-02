@@ -509,6 +509,29 @@ describe('sendNanoContractTx parameter validation', () => {
   });
 
   it('should accept valid parameters with nc_id', async () => {
+    const promptHandler = jest.fn()
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.SendNanoContractTxConfirmationResponse,
+        data: {
+          accepted: true,
+          nc: {
+            caller: 'test-caller',
+            blueprintId: 'test-blueprint',
+            ncId: null,
+            actions: [] as NanoContractAction[],
+            args: [] as unknown[],
+            method: 'test-method',
+            pushTx: true,
+          },
+        }
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: {
+          accepted: true,
+          pinCode: '1234',
+        }
+      });
     const validActions = [
       {
         type: 'deposit',
@@ -523,7 +546,7 @@ describe('sendNanoContractTx parameter validation', () => {
       params: {
         network: 'mainnet',
         method: 'test-method',
-        blueprint_id: '',
+        blueprint_id: '',  // no blueprint id in the parameters
         nc_id: 'test-nc-id',
         actions: validActions as unknown as NanoContractAction[],
         args: [] as unknown[],
@@ -531,9 +554,22 @@ describe('sendNanoContractTx parameter validation', () => {
       },
     } as SendNanoContractRpcRequest;
 
-    await expect(
-      sendNanoContractTx(validRequest, mockWallet, {}, mockTriggerHandler)
-    ).resolves.toBeDefined();
+    await sendNanoContractTx(validRequest, mockWallet, {}, promptHandler);
+    expect(promptHandler).toHaveBeenCalledWith({
+      ...validRequest,
+      type: TriggerTypes.SendNanoContractTxConfirmationPrompt,
+      data: {
+        actions: expect.any(Array),
+        args: expect.any(Array),
+        parsedArgs: expect.any(Array),
+        blueprintId: 'test-blueprint',  // make sure we added the blueprint id in the data object
+        method: expect.any(String),
+        ncId: expect.any(String),
+        pushTx: expect.any(Boolean),
+      }
+    }, {});
+
+    expect(nanoUtils.getBlueprintId).toHaveBeenCalled();
   });
 
   it('should use default push_tx value when not provided', async () => {
