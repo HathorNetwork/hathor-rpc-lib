@@ -6,7 +6,7 @@
  */
 
 import { CreateTokenTransaction, Transaction } from '@hathor/wallet-lib';
-import { AddressInfoObject, GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
+import { AddressInfoObject, GetBalanceObject, GetHistoryObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { UtxoDetails } from './prompt';
 import { IUserSignedData } from '@hathor/wallet-lib/lib/nano_contracts/fields/signedData';
 
@@ -22,6 +22,7 @@ export enum RpcResponseTypes {
   SendTransactionResponse,
   CreateNanoContractCreateTokenTxResponse,
   ChangeNetworkResponse,
+  GetHistoryResponse,
 }
 
 export interface BaseRpcResponse {
@@ -96,6 +97,11 @@ export interface ChangeNetworkResponse extends BaseRpcResponse {
   }
 }
 
+export interface GetHistoryResponse extends BaseRpcResponse {
+  type: RpcResponseTypes.GetHistoryResponse;
+  response: GetHistoryObject[];
+}
+
 export type RpcResponse = GetAddressResponse
   | SendNanoContractTxResponse
   | SignWithAddressResponse
@@ -106,4 +112,5 @@ export type RpcResponse = GetAddressResponse
   | GetUtxosResponse
   | SendTransactionResponse
   | CreateNanoContractCreateTokenTxResponse
-  | ChangeNetworkResponse;
+  | ChangeNetworkResponse
+  | GetHistoryResponse;

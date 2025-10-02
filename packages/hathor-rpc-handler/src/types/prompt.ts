@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import { AddressInfoObject, GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
+import { AddressInfoObject, GetBalanceObject, GetHistoryObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
 import { IDataInput, IDataOutput } from '@hathor/wallet-lib/lib/types';
 import { RequestMetadata, RpcRequest } from './rpcRequest';
@@ -35,6 +35,7 @@ export enum TriggerTypes {
   CreateNanoContractCreateTokenTxLoadingTrigger,
   CreateNanoContractCreateTokenTxLoadingFinishedTrigger,
   ChangeNetworkConfirmationPrompt,
+  GetHistoryConfirmationPrompt,
 }
 
 export enum TriggerResponseTypes {
@@ -50,6 +51,7 @@ export enum TriggerResponseTypes {
   CreateNanoContractCreateTokenTxConfirmationResponse,
   GetBalanceConfirmationResponse,
   ChangeNetworkRequestConfirmationResponse,
+  GetHistoryConfirmationResponse,
 }
 
 export type Trigger =
@@ -77,7 +79,8 @@ export type Trigger =
   | CreateNanoContractCreateTokenTxConfirmationPrompt
   | CreateNanoContractCreateTokenTxLoadingTrigger
   | CreateNanoContractCreateTokenTxLoadingFinishedTrigger
-  | ChangeNetworkConfirmationPrompt;
+  | ChangeNetworkConfirmationPrompt
+  | GetHistoryConfirmationPrompt;
 
 export interface BaseLoadingTrigger {
   type: TriggerTypes;
@@ -131,6 +134,11 @@ export type ChangeNetworkConfirmationPrompt = BaseConfirmationPrompt & {
 export type GetBalanceConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.GetBalanceConfirmationPrompt;
   data: GetBalanceObject[];
+}
+
+export type GetHistoryConfirmationPrompt = BaseConfirmationPrompt & {
+  type: TriggerTypes.GetHistoryConfirmationPrompt;
+  data: GetHistoryObject[];
 }
 
 export type GetUtxosConfirmationPrompt = BaseConfirmationPrompt & {
@@ -261,6 +269,11 @@ export interface GetBalanceConfirmationResponse {
   data: boolean;
 }
 
+export interface GetHistoryConfirmationResponse {
+  type: TriggerResponseTypes.GetHistoryConfirmationResponse;
+  data: boolean;
+}
+
 export interface GetUtxosConfirmationResponse {
   type: TriggerResponseTypes.GetUtxosConfirmationResponse;
   data: boolean;
@@ -325,7 +338,8 @@ export type TriggerResponse =
   | SendTransactionConfirmationResponse
   | CreateNanoContractCreateTokenTxConfirmationResponse
   | GetBalanceConfirmationResponse
-  | ChangeNetworkRequestConfirmationResponse;
+  | ChangeNetworkRequestConfirmationResponse
+  | GetHistoryConfirmationResponse;
 
 export type TriggerHandler = (prompt: Trigger, requestMetadata: RequestMetadata) => Promise<TriggerResponse | void>;
 
