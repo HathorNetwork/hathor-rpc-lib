@@ -86,6 +86,17 @@ const renderChangeAddress = (changeAddress) => {
   );
 }
 
+export const renderSendTransactionContent = (params) => (
+  <Section>
+    <Text><Bold>Transaction preview</Bold></Text>
+    {renderInputs(params.inputs)}
+    <Text><Bold>Outputs</Bold></Text>
+    <Divider />
+    {renderOutputs(params.outputs)}
+    {renderChangeAddress(params.changeAddress)}
+  </Section>
+);
+
 export const sendTransactionPage = async (data, params, origin) => (
   await snap.request({
     method: REQUEST_METHODS.DIALOG,
@@ -98,14 +109,7 @@ export const sendTransactionPage = async (data, params, origin) => (
             <Text>
               The dApp {origin} is requesting permission to send a transaction from your Hathor wallet.
             </Text>
-            <Section>
-              <Text><Bold>Transaction preview</Bold></Text>
-              {renderInputs(params.inputs)}
-              <Text><Bold>Outputs</Bold></Text>
-              <Divider />
-              {renderOutputs(params.outputs)}
-              {renderChangeAddress(params.changeAddress)}
-            </Section>
+            {renderSendTransactionContent(params)}
           </Box>
         </Container>
       ),

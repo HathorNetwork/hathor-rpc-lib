@@ -120,6 +120,7 @@ async function prepareOperation(
         id: request.id,
         method: request.method,
         description: 'Send Transaction',
+        params: request.params,
         details: {
           type: 'sendTransaction',
           outputs: preparedTx.outputs,
@@ -140,6 +141,7 @@ async function prepareOperation(
         id: request.id,
         method: request.method,
         description: `Create Token: ${params.name} (${params.symbol})`,
+        params: request.params,
         details: {
           type: 'createToken',
           name: params.name,
@@ -194,6 +196,7 @@ async function prepareOperation(
         id: request.id,
         method: request.method,
         description: `Nano Contract: ${params.method}`,
+        params: request.params,
         details: {
           type: 'sendNanoContract',
           blueprintId: blueprintId!,
@@ -233,6 +236,7 @@ async function prepareOperation(
         id: request.id,
         method: request.method,
         description: `Sign Message with Address ${params.addressIndex}`,
+        params: request.params,
         details: {
           type: 'signWithAddress',
           address,
@@ -256,6 +260,7 @@ async function prepareOperation(
         id: request.id,
         method: request.method,
         description: `Sign Oracle Data for ${params.oracle}`,
+        params: request.params,
         details: {
           type: 'signOracleData',
           oracle: params.oracle,
@@ -271,6 +276,7 @@ async function prepareOperation(
         id: request.id,
         method: request.method,
         description: `Get Address (${params.type})`,
+        params: request.params,
         details: {
           type: 'getAddress',
           addressType: params.type as 'first_empty' | 'index' | 'client' | 'full_path',
@@ -287,6 +293,7 @@ async function prepareOperation(
         id: request.id,
         method: request.method,
         description: `Get Balance (${params.tokens.length} token${params.tokens.length > 1 ? 's' : ''})`,
+        params: request.params,
         details: {
           type: 'getBalance',
           tokens: params.tokens,
@@ -305,6 +312,7 @@ async function prepareOperation(
         id: request.id,
         method: request.method,
         description: `Get UTXOs${validatedRequest.params.token ? ` for token ${validatedRequest.params.token}` : ''}`,
+        params: request.params,
         details: {
           type: 'getUtxos',
           token: validatedRequest.params.token,
@@ -326,6 +334,7 @@ async function prepareOperation(
         id: request.id,
         method: request.method,
         description: `Change Network to ${params.newNetwork}`,
+        params: request.params,
         details: {
           type: 'changeNetwork',
           newNetwork: params.newNetwork,

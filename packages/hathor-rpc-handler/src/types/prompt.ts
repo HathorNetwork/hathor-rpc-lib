@@ -451,6 +451,7 @@ export interface BatchOperationDetail {
   id: string;
   method: string;
   description: string;
+  params: any; // Original request params to pass to existing snap dialogs
   details:
     | SendTransactionDetails
     | CreateTokenDetails
