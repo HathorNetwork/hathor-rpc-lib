@@ -7,6 +7,7 @@
 
 export * from './address';
 export * from './balance';
+export * from './batchRequests';
 export * from './utxos';
 export * from './sendTransaction';
 export * from './signWithAddress';
