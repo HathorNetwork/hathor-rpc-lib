@@ -11,6 +11,11 @@ import { renderSendTransactionContent } from './sendTransaction';
 import { renderCreateTokenContent } from './createToken';
 import { renderCreateNanoContent } from './createNano';
 import { renderSignWithAddressContent } from './signWithAddress';
+import { renderOracleDataContent } from './oracleData';
+import { renderAddressContent } from './address';
+import { renderBalanceContent } from './balance';
+import { renderUtxosContent } from './utxos';
+import { renderChangeNetworkContent } from './changeNetwork';
 
 const getOperationTitle = (operation) => {
   const methodNames = {
@@ -36,7 +41,7 @@ const renderOperationContent = (operation) => {
   // Use the ORIGINAL params with the existing snap dialog renderers
   switch (details.type) {
     case 'sendTransaction':
-      return renderSendTransactionContent(null, params);
+      return renderSendTransactionContent(params);
 
     case 'createToken':
       return renderCreateTokenContent(params);
@@ -48,41 +53,19 @@ const renderOperationContent = (operation) => {
       return renderSignWithAddressContent({ address: details.address, message: details.message });
 
     case 'signOracleData':
-      return (
-        <Section>
-          <Card title="Oracle" value="" description={params.oracle} />
-          <Card title="Data" value="" description={params.data} />
-        </Section>
-      );
+      return renderOracleDataContent(params);
 
     case 'getAddress':
-      return (
-        <Section>
-          <Card title="Type" value="" description={params.type || (params.index !== undefined ? `Index ${params.index}` : 'Unknown')} />
-        </Section>
-      );
+      return renderAddressContent(params);
 
     case 'getBalance':
-      return (
-        <Section>
-          <Card title="Tokens" value="" description={params.tokens?.join(', ') || 'All tokens'} />
-        </Section>
-      );
+      return renderBalanceContent(params);
 
     case 'getUtxos':
-      return (
-        <Section>
-          {params.token && <Card title="Token" value="" description={params.token} />}
-          {params.maxUtxos && <Card title="Max UTXOs" value="" description={params.maxUtxos.toString()} />}
-        </Section>
-      );
+      return renderUtxosContent(params);
 
     case 'changeNetwork':
-      return (
-        <Section>
-          <Card title="New Network" value="" description={params.newNetwork} />
-        </Section>
-      );
+      return renderChangeNetworkContent(params);
 
     default:
       return null;

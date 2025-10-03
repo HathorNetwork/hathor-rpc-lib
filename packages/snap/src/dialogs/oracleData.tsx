@@ -8,6 +8,15 @@
 import { REQUEST_METHODS, DIALOG_TYPES } from '../constants';
 import { Bold, Box, Card, Container, Copyable, Heading, Section, Text } from '@metamask/snaps-sdk/jsx';
 
+export const renderOracleDataContent = (params) => (
+  <Section>
+    <Bold>Nano Contract ID</Bold>
+    <Copyable value={params.nc_id} />
+    <Card title="Oracle" value="" description={params.oracle} />
+    <Card title="Data" value="" description={params.data} />
+  </Section>
+);
+
 export const oracleDataPage = async (data, params, origin) => (
   await snap.request({
     method: REQUEST_METHODS.DIALOG,
@@ -20,12 +29,7 @@ export const oracleDataPage = async (data, params, origin) => (
             <Text>
               The dApp {origin} is requesting permission to get an oracle signature from your wallet
             </Text>
-            <Section>
-              <Bold>Nano Contract ID</Bold>
-              <Copyable value={params.nc_id} />
-              <Card title="Oracle" value="" description={params.oracle} />
-              <Card title="Data" value="" description={params.data} />
-            </Section>
+            {renderOracleDataContent(params)}
           </Box>
         </Container>
       ),
