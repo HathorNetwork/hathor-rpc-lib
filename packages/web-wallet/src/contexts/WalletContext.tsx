@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { WalletServiceMethods } from '../services/HathorWalletService';
-import { useInvokeSnap, useRequestSnap } from 'snap-utils';
+import { useInvokeSnap, useRequestSnap } from '@hathor/snap-utils';
 
 interface WalletBalance {
   token: string;
