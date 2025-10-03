@@ -28,7 +28,7 @@ export type NanoContractActionWithStringAmount = Omit<NanoContractAction, 'amoun
   amount: string,
 }
 
-const sendNanoContractSchema = z.object({
+export const sendNanoContractSchema = z.object({
   network: z.string().min(1),
   method: z.string().min(1),
   blueprint_id: z.string().nullish(),

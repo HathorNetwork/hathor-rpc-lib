@@ -26,7 +26,7 @@ import { validateNetwork } from '../helpers';
 import { PromptRejectedError, InvalidParamsError } from '../errors';
 import { z } from 'zod';
 
-const signOracleDataSchema = z.object({
+export const signOracleDataSchema = z.object({
   nc_id: z.string(),
   network: z.string().min(1),
   oracle: z.string().min(1),

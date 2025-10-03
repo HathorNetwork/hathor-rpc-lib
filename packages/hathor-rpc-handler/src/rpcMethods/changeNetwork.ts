@@ -19,7 +19,7 @@ import {
 import { PromptRejectedError, InvalidParamsError } from '../errors';
 import { validateNetwork } from '../helpers';
 
-const schema = z.object({
+export const changeNetworkSchema = z.object({
   network: z.string().min(1),
   newNetwork: z.string().min(1),
 });
@@ -45,7 +45,7 @@ export async function changeNetwork(
   promptHandler: TriggerHandler,
 ) {
   try {
-    const params = schema.parse(rpcRequest.params);
+    const params = changeNetworkSchema.parse(rpcRequest.params);
     validateNetwork(wallet, params.network);
 
     const confirmed = await promptHandler({

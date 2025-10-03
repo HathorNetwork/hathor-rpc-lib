@@ -24,7 +24,7 @@ import { PromptRejectedError, InvalidParamsError } from '../errors';
 import { validateNetwork } from '../helpers';
 import { AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
 
-const signWithAddressSchema = z.object({
+export const signWithAddressSchema = z.object({
   method: z.literal(RpcMethods.SignWithAddress),
   params: z.object({
     network: z.string().min(1),

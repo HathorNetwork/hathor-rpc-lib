@@ -32,14 +32,14 @@ import {
 } from '../errors';
 import { validateNetwork } from '../helpers';
 
-const OutputValueSchema = z.object({
+export const OutputValueSchema = z.object({
   address: z.string(),
   value: z.string().regex(/^\d+$/)
     .pipe(z.coerce.bigint().positive()),
   token: z.string().default(constants.NATIVE_TOKEN_UID),
 });
 
-const OutputDataSchema = z.object({
+export const OutputDataSchema = z.object({
   type: z.string().optional(),
   data: z.string().min(1),
 }).transform((output): DataScriptOutputRequestObj => ({
@@ -47,9 +47,9 @@ const OutputDataSchema = z.object({
   data: output.data,
 }));
 
-const OutputSchema = z.union([OutputValueSchema, OutputDataSchema]);
+export const OutputSchema = z.union([OutputValueSchema, OutputDataSchema]);
 
-const sendTransactionSchema = z.object({
+export const sendTransactionSchema = z.object({
   method: z.literal(RpcMethods.SendTransaction),
   params: z.object({
     network: z.string().min(1),

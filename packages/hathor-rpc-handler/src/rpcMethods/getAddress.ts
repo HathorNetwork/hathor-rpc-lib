@@ -25,7 +25,7 @@ const baseSchema = {
   network: z.string().min(1),
 };
 
-const getAddressSchema = z.discriminatedUnion("type", [
+export const getAddressSchema = z.discriminatedUnion("type", [
   z.object(baseSchema).merge(z.object({
     type: z.literal('first_empty'),
   })),
