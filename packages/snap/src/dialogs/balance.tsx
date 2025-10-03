@@ -15,6 +15,12 @@ const renderBalances = (data) => {
   ))
 }
 
+export const renderBalanceContent = (params) => (
+  <Section>
+    <Card title="Tokens" value="" description={params.tokens?.join(', ') || 'All tokens'} />
+  </Section>
+);
+
 export const balancePage = async (data, params, origin) => (
   await snap.request({
     method: REQUEST_METHODS.DIALOG,
@@ -30,7 +36,7 @@ export const balancePage = async (data, params, origin) => (
             <Section>
               <Card title="Token" value="Balance" />
               <Divider />
-              {renderBalances(data)} 
+              {renderBalances(data)}
             </Section>
           </Box>
         </Container>

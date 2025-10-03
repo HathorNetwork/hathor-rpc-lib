@@ -35,6 +35,9 @@ export enum TriggerTypes {
   CreateNanoContractCreateTokenTxLoadingTrigger,
   CreateNanoContractCreateTokenTxLoadingFinishedTrigger,
   ChangeNetworkConfirmationPrompt,
+  BatchRequestsConfirmationPrompt,
+  BatchRequestsLoadingTrigger,
+  BatchRequestsLoadingFinishedTrigger,
 }
 
 export enum TriggerResponseTypes {
@@ -50,6 +53,7 @@ export enum TriggerResponseTypes {
   CreateNanoContractCreateTokenTxConfirmationResponse,
   GetBalanceConfirmationResponse,
   ChangeNetworkRequestConfirmationResponse,
+  BatchRequestsConfirmationResponse,
 }
 
 export type Trigger =
@@ -77,7 +81,10 @@ export type Trigger =
   | CreateNanoContractCreateTokenTxConfirmationPrompt
   | CreateNanoContractCreateTokenTxLoadingTrigger
   | CreateNanoContractCreateTokenTxLoadingFinishedTrigger
-  | ChangeNetworkConfirmationPrompt;
+  | ChangeNetworkConfirmationPrompt
+  | BatchRequestsConfirmationPrompt
+  | BatchRequestsLoadingTrigger
+  | BatchRequestsLoadingFinishedTrigger;
 
 export interface BaseLoadingTrigger {
   type: TriggerTypes;
@@ -325,7 +332,8 @@ export type TriggerResponse =
   | SendTransactionConfirmationResponse
   | CreateNanoContractCreateTokenTxConfirmationResponse
   | GetBalanceConfirmationResponse
-  | ChangeNetworkRequestConfirmationResponse;
+  | ChangeNetworkRequestConfirmationResponse
+  | BatchRequestsConfirmationResponse;
 
 export type TriggerHandler = (prompt: Trigger, requestMetadata: RequestMetadata) => Promise<TriggerResponse | void>;
 
@@ -361,4 +369,126 @@ export interface CreateNanoContractCreateTokenTxLoadingTrigger extends BaseLoadi
 
 export interface CreateNanoContractCreateTokenTxLoadingFinishedTrigger extends BaseLoadingTrigger {
   type: TriggerTypes.CreateNanoContractCreateTokenTxLoadingFinishedTrigger;
+}
+
+// Batch Request Types
+export interface SendTransactionDetails {
+  type: 'sendTransaction';
+  outputs: IDataOutput[];
+  inputs: IDataInput[];
+  changeAddress?: string;
+}
+
+export interface CreateTokenDetails {
+  type: 'createToken';
+  name: string;
+  symbol: string;
+  amount: bigint;
+  mintAddress: string | null;
+  changeAddress: string | null;
+  createMint: boolean;
+  mintAuthorityAddress: string | null;
+  allowExternalMintAuthorityAddress: boolean;
+  createMelt: boolean;
+  meltAuthorityAddress: string | null;
+  allowExternalMeltAuthorityAddress: boolean;
+  data: string[] | null;
+}
+
+export interface SendNanoContractDetails {
+  type: 'sendNanoContract';
+  blueprintId: string;
+  ncId: string | null;
+  actions: NanoContractAction[];
+  method: string;
+  args: unknown[];
+  parsedArgs: unknown[];
+}
+
+export interface SignWithAddressDetails {
+  type: 'signWithAddress';
+  address: AddressInfoObject;
+  message: string;
+}
+
+export interface SignOracleDataDetails {
+  type: 'signOracleData';
+  oracle: string;
+  data: string;
+}
+
+export interface GetAddressDetails {
+  type: 'getAddress';
+  addressType: 'first_empty' | 'index' | 'client' | 'full_path';
+  index?: number;
+  fullPath?: string;
+}
+
+export interface GetBalanceDetails {
+  type: 'getBalance';
+  tokens: string[];
+  addressIndexes?: number[];
+}
+
+export interface GetUtxosDetails {
+  type: 'getUtxos';
+  token?: string;
+  maxUtxos?: number;
+  filterAddress?: string;
+  authorities?: number;
+  amountSmallerThan?: number;
+  amountBiggerThan?: number;
+  maximumAmount?: number;
+  onlyAvailableUtxos?: boolean;
+}
+
+export interface ChangeNetworkDetails {
+  type: 'changeNetwork';
+  newNetwork: string;
+}
+
+export interface BatchOperationDetail {
+  id: string;
+  method: string;
+  description: string;
+  params: any; // Original request params to pass to existing snap dialogs
+  details:
+    | SendTransactionDetails
+    | CreateTokenDetails
+    | SendNanoContractDetails
+    | SignWithAddressDetails
+    | SignOracleDataDetails
+    | GetAddressDetails
+    | GetBalanceDetails
+    | GetUtxosDetails
+    | ChangeNetworkDetails;
+}
+
+export type BatchRequestsConfirmationPrompt = BaseConfirmationPrompt & {
+  type: TriggerTypes.BatchRequestsConfirmationPrompt;
+  data: {
+    network: string;
+    operations: BatchOperationDetail[];
+    errorHandling: 'fail-fast' | 'continue-on-error';
+  };
+};
+
+export interface BatchRequestsConfirmationResponse {
+  type: TriggerResponseTypes.BatchRequestsConfirmationResponse;
+  data: {
+    accepted: boolean;
+  };
+}
+
+export interface BatchRequestsLoadingTrigger extends BaseLoadingTrigger {
+  type: TriggerTypes.BatchRequestsLoadingTrigger;
+  data: {
+    total: number;
+    current: number;
+    currentOperation: string;
+  };
+}
+
+export interface BatchRequestsLoadingFinishedTrigger extends BaseLoadingTrigger {
+  type: TriggerTypes.BatchRequestsLoadingFinishedTrigger;
 }

@@ -591,7 +591,10 @@
                       "$ref": "#/components/schemas/Address"
                     }
                   },
-                  "required": ["value", "address"]
+                  "required": [
+                    "value",
+                    "address"
+                  ]
                 },
                 {
                   "description": "Output is a 'data output'. Register arbitrary data on the blockchain.",
@@ -605,7 +608,9 @@
                       "type": "string"
                     }
                   },
-                  "required": ["data"]
+                  "required": [
+                    "data"
+                  ]
                 }
               ]
             }
@@ -628,7 +633,10 @@
                   "type": "number"
                 }
               },
-              "required": ["txId", "index"]
+              "required": [
+                "txId",
+                "index"
+              ]
             }
           }
         },
@@ -850,7 +858,10 @@
         "type": "object",
         "properties": {
           "type": {
-            "enum": ["deposit", "withdrawal"]
+            "enum": [
+              "deposit",
+              "withdrawal"
+            ]
           },
           "amount": {
             "type": "string"
@@ -867,7 +878,11 @@
             "$ref": "#/components/schemas/Address"
           }
         },
-        "required": ["type", "amount", "token"]
+        "required": [
+          "type",
+          "amount",
+          "token"
+        ]
       },
       "TransactionHex": {
         "description": "Transaction encoded in hexadecimal.",
@@ -991,7 +1006,7 @@
         "type": "string"
       }
     },
-    "errors":{
+    "errors": {
       "NotImplementedError": {
         "code": -31001,
         "message": "Feature not implemented"

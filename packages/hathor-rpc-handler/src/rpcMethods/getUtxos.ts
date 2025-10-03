@@ -20,7 +20,7 @@ import { PromptRejectedError, InvalidParamsError } from '../errors';
 import { TriggerTypes } from '../types';
 import { validateNetwork } from '../helpers';
 
-const getUtxosSchema = z.object({
+export const getUtxosSchema = z.object({
   method: z.literal(RpcMethods.GetUtxos),
   params: z.object({
     network: z.string().min(1),

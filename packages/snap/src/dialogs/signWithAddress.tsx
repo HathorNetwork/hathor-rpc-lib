@@ -8,6 +8,20 @@
 import { REQUEST_METHODS, DIALOG_TYPES } from '../constants';
 import { Bold, Box, Copyable, Container, Heading, Section, Text } from '@metamask/snaps-sdk/jsx';
 
+export const renderSignWithAddressContent = (data) => (
+  <Box>
+    <Section>
+      <Bold>Address</Bold>
+      <Text>Index {data.address.index.toString()}</Text>
+      <Copyable value={data.address.address} />
+    </Section>
+    <Section>
+      <Bold>Message</Bold>
+      <Text>{data.message}</Text>
+    </Section>
+  </Box>
+);
+
 export const signWithAddressPage = async (data, params, origin) => (
   await snap.request({
     method: REQUEST_METHODS.DIALOG,
@@ -20,15 +34,7 @@ export const signWithAddressPage = async (data, params, origin) => (
             <Text>
               The dApp {origin} is requesting your signature on a message using your Hathor wallet address.
             </Text>
-            <Section>
-              <Bold>Address</Bold>
-              <Text>Index {data.address.index.toString()}</Text>
-              <Copyable value={data.address.address} />
-            </Section>
-            <Section>
-              <Bold>Message</Bold>
-              <Text>{data.message}</Text>
-            </Section>
+            {renderSignWithAddressContent(data)}
           </Box>
         </Container>
       ),

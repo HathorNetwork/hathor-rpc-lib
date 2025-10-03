@@ -21,6 +21,7 @@ export enum RpcMethods {
   SendTransaction = 'htr_sendTransaction',
   CreateNanoContractCreateTokenTx = 'htr_createNanoContractCreateTokenTx',
   ChangeNetwork = 'htr_changeNetwork',
+  BatchRequests = 'htr_batchRequests',
 }
 
 export interface CreateTokenRpcRequest {
@@ -161,6 +162,21 @@ export interface GenericRpcRequest {
   params?: unknown | null;
 }
 
+export interface BatchOperationRequest {
+  id: string;
+  method: RpcMethods;
+  params: any;
+}
+
+export interface BatchRequestsRpcRequest {
+  method: RpcMethods.BatchRequests;
+  params: {
+    network: string;
+    requests: BatchOperationRequest[];
+    errorHandling?: 'fail-fast' | 'continue-on-error';
+  };
+}
+
 export type RpcRequest = GetAddressRpcRequest
   | GetBalanceRpcRequest
   | GetUtxosRpcRequest
@@ -171,5 +187,6 @@ export type RpcRequest = GetAddressRpcRequest
   | SignOracleDataRpcRequest
   | SendTransactionRpcRequest
   | CreateNanoContractCreateTokenTxRpcRequest
-  | ChangeNetworkRpcRequest;
+  | ChangeNetworkRpcRequest
+  | BatchRequestsRpcRequest;
 

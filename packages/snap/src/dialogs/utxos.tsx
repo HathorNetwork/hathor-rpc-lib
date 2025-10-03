@@ -45,6 +45,20 @@ const renderAmountSummary = (data, params) => {
   );
 }
 
+export const renderUtxosContent = (params) => (
+  <Section>
+    <Text><Bold>Filter parameters</Bold></Text>
+    <Divider />
+    <Text>Token: {renderTokenFilterParam(params.token)}</Text>
+    {params.filterAddress ? <Text>{`Address: ${params.filterAddress}`}</Text> : null}
+    {params.maxUtxos ? <Text>{`Maximum quantity: ${params.maxUtxos}`}</Text> : null}
+    {params.authorities ? <Text>{`Authority: ${params.authorities}`}</Text> : null}
+    {params.amountSmallerThan ? <Text>{`Amount smaller than: ${numberUtils.prettyValue(params.amountSmallerThan)}`}</Text> : null}
+    {params.amountBiggerThan ? <Text>{`Amount bigger than: ${numberUtils.prettyValue(params.amountBiggerThan)}`}</Text> : null}
+    {params.maximumAmount ? <Text>{`Maximum total amount: ${numberUtils.prettyValue(params.maximumAmount)}`}</Text> : null}
+  </Section>
+);
+
 export const utxosPage = async (data, params, origin) => {
   const content = (
     <Container backgroundColor='alternative'>
@@ -54,17 +68,7 @@ export const utxosPage = async (data, params, origin) => {
           {`${origin} requests information about ${data.utxos?.length || 0} UTXOs`}
         </Text>
 
-        <Section>
-          <Text><Bold>Filter parameters</Bold></Text>
-          <Divider />
-          <Text>Token: {renderTokenFilterParam(params.token)}</Text>
-          {params.filterAddress ? <Text>{`Address: ${params.filterAddress}`}</Text> : null}
-          {params.maxUtxos ? <Text>{`Maximum quantity: ${params.maxUtxos}`}</Text> : null}
-          {params.authorities ? <Text>{`Authority: ${params.authorities}`}</Text> : null}
-          {params.amountSmallerThan ? <Text>{`Amount smaller than: ${numberUtils.prettyValue(params.amountSmallerThan)}`}</Text> : null}
-          {params.amountBiggerThan ? <Text>{`Amount bigger than: ${numberUtils.prettyValue(params.amountBiggerThan)}`}</Text> : null}
-          {params.maximumAmount ? <Text>{`Maximum total amount: ${numberUtils.prettyValue(params.maximumAmount)}`}</Text> : null}
-        </Section>
+        {renderUtxosContent(params)}
 
         <Section>
           <Text><Bold>Summary</Bold></Text>

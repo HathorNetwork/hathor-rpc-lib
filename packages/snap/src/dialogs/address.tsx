@@ -32,6 +32,12 @@ const renderAddressIndex = (data, params) => {
   );
 }
 
+export const renderAddressContent = (params) => (
+  <Section>
+    <Text>{renderParamText(params)}</Text>
+  </Section>
+);
+
 export const addressPage = async (data, params, origin) => (
   await snap.request({
     method: REQUEST_METHODS.DIALOG,
@@ -44,9 +50,7 @@ export const addressPage = async (data, params, origin) => (
             <Text>
               The dApp {origin} is requesting your public address.
             </Text>
-            <Section>
-              <Text>{renderParamText(params)}</Text>
-            </Section>
+            {renderAddressContent(params)}
             <Text>
               The following address will be shared if the request is confirmed.
             </Text>

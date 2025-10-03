@@ -21,7 +21,7 @@ import {
 import { NotImplementedError, PromptRejectedError, InvalidParamsError } from '../errors';
 import { validateNetwork } from '../helpers';
 
-const getBalanceSchema = z.object({
+export const getBalanceSchema = z.object({
   network: z.string().min(1),
   tokens: z.array(z.string().min(1)).min(1),
   addressIndexes: z.array(z.number().int().nonnegative()).optional(),

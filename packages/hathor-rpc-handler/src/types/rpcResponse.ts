@@ -22,6 +22,7 @@ export enum RpcResponseTypes {
   SendTransactionResponse,
   CreateNanoContractCreateTokenTxResponse,
   ChangeNetworkResponse,
+  BatchRequestsResponse,
 }
 
 export interface BaseRpcResponse {
@@ -96,6 +97,24 @@ export interface ChangeNetworkResponse extends BaseRpcResponse {
   }
 }
 
+export interface BatchOperationResult {
+  id: string;
+  status: 'success' | 'failed' | 'skipped';
+  response?: any;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
+export interface BatchRequestsResponse extends BaseRpcResponse {
+  type: RpcResponseTypes.BatchRequestsResponse;
+  response: {
+    status: 'success' | 'partial-success' | 'failed';
+    results: BatchOperationResult[];
+  };
+}
+
 export type RpcResponse = GetAddressResponse
   | SendNanoContractTxResponse
   | SignWithAddressResponse
@@ -106,4 +125,5 @@ export type RpcResponse = GetAddressResponse
   | GetUtxosResponse
   | SendTransactionResponse
   | CreateNanoContractCreateTokenTxResponse
-  | ChangeNetworkResponse;
+  | ChangeNetworkResponse
+  | BatchRequestsResponse;

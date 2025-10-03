@@ -156,6 +156,19 @@ const renderAction = (action) => {
   );
 }
 
+export const renderCreateNanoContent = (data, params) => (
+  <Box>
+    <Section>
+      <Bold>Contract Details:</Bold>
+      {renderOptionalContractDetail(params.nc_id, "Nano Contract ID")}
+      {renderOptionalContractDetail(params.blueprint_id, "Blueprint ID")}
+      <Card title="Blueprint method" value="" description={params.method} />
+    </Section>
+    {renderArguments(data.parsedArgs)}
+    {renderActions(params.actions)}
+  </Box>
+);
+
 export const createNanoPage = async (data, params, origin) => (
   await snap.request({
     method: REQUEST_METHODS.DIALOG,
@@ -168,14 +181,7 @@ export const createNanoPage = async (data, params, origin) => (
             <Text>
               The dApp {origin} is requesting permission to execute a nano contract transaction on the Hathor Network
             </Text>
-            <Section>
-              <Bold>Contract Details:</Bold>
-              {renderOptionalContractDetail(params.nc_id, "Nano Contract ID")}
-              {renderOptionalContractDetail(params.blueprint_id, "Blueprint ID")}
-              <Card title="Blueprint method" value="" description={params.method} />
-            </Section>
-            {renderArguments(data.parsedArgs)}
-            {renderActions(params.actions)}
+            {renderCreateNanoContent(data, params)}
           </Box>
         </Container>
       ),

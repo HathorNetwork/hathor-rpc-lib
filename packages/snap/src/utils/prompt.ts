@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { addressPage, balancePage, changeNetworkPage, createNanoPage, createTokenPage, oracleDataPage, sendTransactionPage, signWithAddressPage, utxosPage } from '../dialogs';
+import { addressPage, balancePage, batchRequestsPage, changeNetworkPage, createNanoPage, createTokenPage, oracleDataPage, sendTransactionPage, signWithAddressPage, utxosPage } from '../dialogs';
 import { setNetwork } from '../utils/network';
 import { DEFAULT_PIN_CODE, NETWORK_MAP } from '../constants';
 import { RpcMethods, TriggerTypes } from '@hathor/hathor-rpc-handler';
@@ -83,12 +83,21 @@ export const promptHandler = (origin, wallet) => async (promptRequest) => {
     case TriggerTypes.SignOracleDataConfirmationPrompt:
       approved = await oracleDataPage(data, params, origin);
       return { data: approved };
+    case TriggerTypes.BatchRequestsConfirmationPrompt:
+      approved = await batchRequestsPage(data, params, origin);
+      return {
+        data: {
+          accepted: approved
+        }
+      };
     case TriggerTypes.SendNanoContractTxLoadingTrigger:
     case TriggerTypes.SendNanoContractTxLoadingFinishedTrigger:
     case TriggerTypes.CreateTokenLoadingTrigger:
     case TriggerTypes.CreateTokenLoadingFinishedTrigger:
     case TriggerTypes.SendTransactionLoadingTrigger:
     case TriggerTypes.SendTransactionLoadingFinishedTrigger:
+    case TriggerTypes.BatchRequestsLoadingTrigger:
+    case TriggerTypes.BatchRequestsLoadingFinishedTrigger:
       break;
     default:
       throw new Error('Invalid request');

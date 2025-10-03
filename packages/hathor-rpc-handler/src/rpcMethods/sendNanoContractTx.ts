@@ -22,13 +22,13 @@ import {
   SendNanoContractTxLoadingFinishedTrigger,
 } from '../types';
 import { PromptRejectedError, SendNanoContractTxError, InvalidParamsError } from '../errors';
-import { INanoContractActionSchema, NanoContractAction, nanoUtils, Network, config } from '@hathor/wallet-lib';
+import { INanoContractActionSchema, NanoContractAction, ncApi, nanoUtils, Network, config } from '@hathor/wallet-lib';
 
 export type NanoContractActionWithStringAmount = Omit<NanoContractAction, 'amount'> & {
   amount: string,
 }
 
-const sendNanoContractSchema = z.object({
+export const sendNanoContractSchema = z.object({
   network: z.string().min(1),
   method: z.string().min(1),
   blueprint_id: z.string().nullish(),
@@ -76,24 +76,27 @@ export async function sendNanoContractTx(
     };
 
     let blueprintId = params.blueprintId;
-    if (!blueprintId) {
-      let response;
+    if (blueprintId) {
+      // Check if the user sent a valid blueprint id
       try {
-        response = await wallet.getFullTxById(params.ncId!);
+        await ncApi.getBlueprintInformation(blueprintId);
+      } catch (e) {
+        // Invalid blueprint id
+        throw new SendNanoContractTxError(
+          `Invalid blueprint ID ${blueprintId}`
+        );
+      }
+    }
+
+    if (!blueprintId) {
+      try {
+        blueprintId = await nanoUtils.getBlueprintId(params.ncId!, wallet);
       } catch {
-        // Error getting nano contract transaction data from the full node
+        // Error getting blueprint ID
         throw new SendNanoContractTxError(
-          `Error getting nano contract transaction data with id ${params.ncId} from the full node`
+          `Error getting blueprint id with nc id ${params.ncId} from the full node`
         );
       }
-
-      if (!response.tx.nc_id) {
-        throw new SendNanoContractTxError(
-          `Transaction with id ${params.ncId} is not a nano contract transaction.`
-        );
-      }
-
-      blueprintId = response.tx.nc_blueprint_id!;
     }
 
     config.setServerUrl(wallet.getServerUrl());
@@ -106,7 +109,7 @@ export async function sendNanoContractTx(
       ...rpcRequest,
       type: TriggerTypes.SendNanoContractTxConfirmationPrompt,
       data: {
-        blueprintId: params.blueprintId,
+        blueprintId,
         ncId: params.ncId,
         actions: params.actions,
         method: params.method,

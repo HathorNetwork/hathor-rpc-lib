@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { WalletServiceMethods } from '../services/HathorWalletService';
-import { useInvokeSnap, useRequestSnap } from 'snap-utils';
+import { useInvokeSnap, useRequestSnap } from '@hathor/snap-utils';
 
 interface WalletBalance {
   token: string;
@@ -66,19 +66,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const checkExistingConnection = async () => {
     try {
       setState(prev => ({ ...prev, loadingStep: 'Checking existing connection...' }));
-      
-      // Try to get address without requesting snap first
-      const address = await WalletServiceMethods.getAddress(invokeSnap, 'index', 0);
-      
-      if (address) {
-        setState(prev => ({ ...prev, loadingStep: 'Loading wallet data...' }));
-        
-        // If we got an address, snap is already connected
-        const [balances, network] = await Promise.all([
-          WalletServiceMethods.getBalance(invokeSnap, ['00']),
-          WalletServiceMethods.getConnectedNetwork(invokeSnap),
-        ]);
 
+      // Use batch request to load all wallet data at once with a single approval
+      const { address, balances, network } = await WalletServiceMethods.batchWalletInit(invokeSnap, ['00']);
+
+      if (address) {
         setState(prev => ({
           ...prev,
           isConnected: true,
@@ -112,19 +104,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     try {
       // Request the snap to install/activate it
       await requestSnap();
-      setState(prev => ({ ...prev, loadingStep: 'Loading address...' }));
+      setState(prev => ({ ...prev, loadingStep: 'Loading wallet data...' }));
 
-      // Get wallet address
-      const address = await WalletServiceMethods.getAddress(invokeSnap, 'index', 0);
-      setState(prev => ({ ...prev, loadingStep: 'Loading balance...' }));
-
-      // Get balance
-      const balances = await WalletServiceMethods.getBalance(invokeSnap, ['00']);
-      console.log('💼 Wallet context received balances:', balances);
-      setState(prev => ({ ...prev, loadingStep: 'Getting network info...' }));
-
-      // Get network
-      const network = await WalletServiceMethods.getConnectedNetwork(invokeSnap);
+      // Use batch request to load all wallet data at once with a single approval
+      const { address, balances, network } = await WalletServiceMethods.batchWalletInit(invokeSnap, ['00']);
 
       setState(prev => ({
         ...prev,
@@ -135,8 +118,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         isConnecting: false,
         loadingStep: '',
       }));
-      
-      console.log('✅ Wallet state updated with balances:', balances);
+
+      console.log('Wallet connected via batch request:', { address, balances, network });
     } catch (error) {
       console.error('Connection error:', error);
       setState(prev => ({
