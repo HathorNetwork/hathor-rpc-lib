@@ -61,8 +61,8 @@ export const WalletServiceMethods = {
 
   async getBalance(invokeSnap: any, tokens: string[] = [TOKEN_IDS.HTR]): Promise<WalletBalance[]> {
     try {
-      console.log('🔍 Getting balance with params:', { network: DEFAULT_NETWORK, tokens });
-      
+      console.log('Getting balance with params:', { network: DEFAULT_NETWORK, tokens });
+
       const response = await invokeSnap({
         method: 'htr_getBalance',
         params: {
@@ -71,19 +71,19 @@ export const WalletServiceMethods = {
         }
       });
 
-      console.log('📡 Raw balance response from snap:', response);
+      console.log('Raw balance response from snap:', response);
 
       // Handle null response when snap is not connected
       if (!response) {
-        console.warn('⚠️ Received null response from snap');
+        console.warn('Received null response from snap');
         return [];
       }
 
-      console.log('📊 Balance response.response:', response.response);
+      console.log('Balance response.response:', response.response);
 
       // Transform the response to match our interface
       const balances = response.response?.map((balance: any) => {
-        console.log('💰 Processing balance item:', balance);
+        console.log('Processing balance item:', balance);
         return {
           token: balance.token_id || balance.token,
           available: balance.available || 0,
@@ -91,10 +91,10 @@ export const WalletServiceMethods = {
         };
       }) || [];
 
-      console.log('✅ Final processed balances:', balances);
+      console.log('Final processed balances:', balances);
       return balances;
     } catch (error) {
-      console.error('❌ Failed to get balance:', error);
+      console.error('Failed to get balance:', error);
       throw error;
     }
   },
@@ -175,6 +175,76 @@ export const WalletServiceMethods = {
       console.error('Failed to get transaction history:', error);
       // Return empty array instead of throwing to avoid breaking the UI
       return [];
+    }
+  },
+
+  async batchWalletInit(invokeSnap: any, tokens: string[] = [TOKEN_IDS.HTR]): Promise<{
+    address: string;
+    balances: WalletBalance[];
+    network: string;
+  }> {
+    try {
+      console.log('Initiating batched wallet load...');
+
+      const response = await invokeSnap({
+        method: 'htr_batchRequests',
+        params: {
+          network: DEFAULT_NETWORK,
+          errorHandling: 'fail-fast',
+          requests: [
+            {
+              id: 'get-address',
+              method: 'htr_getAddress',
+              params: {
+                type: 'index',
+                index: 0,
+              },
+            },
+            {
+              id: 'get-balance',
+              method: 'htr_getBalance',
+              params: {
+                network: DEFAULT_NETWORK,
+                tokens,
+              },
+            },
+            {
+              id: 'get-network',
+              method: 'htr_getConnectedNetwork',
+              params: {},
+            },
+          ],
+        },
+      });
+
+      console.log('Batch response:', response);
+
+      if (!response || response.response.status !== 'success') {
+        throw new Error('Batch request failed');
+      }
+
+      const results = response.response.results;
+
+      // Extract results by ID
+      const addressResult = results.find((r: any) => r.id === 'get-address');
+      const balanceResult = results.find((r: any) => r.id === 'get-balance');
+      const networkResult = results.find((r: any) => r.id === 'get-network');
+
+      const address = addressResult?.response?.response || '';
+      const network = networkResult?.response?.response || DEFAULT_NETWORK;
+
+      const balances = balanceResult?.response?.response?.map((balance: any) => ({
+        token: balance.token_id || balance.token,
+        available: balance.available || 0,
+        locked: balance.locked || 0,
+      })) || [];
+
+      console.log('Batched wallet init complete:', { address, balances, network });
+
+      return { address, balances, network };
+    } catch (error) {
+      console.error('Batch wallet init failed:', error);
+      throw error;
     }
   }
 };
