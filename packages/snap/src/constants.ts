@@ -13,6 +13,7 @@ export enum REQUEST_METHODS {
 
 export enum DIALOG_TYPES {
   CONFIRMATION = 'confirmation',
+  ALERT = 'alert',
 }
 
 const MAINNET_URLS = {

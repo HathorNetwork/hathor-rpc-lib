@@ -9,3 +9,4 @@ export * from './createToken';
 export * from './sendTransaction';
 export * from './createNanoContractCreateTokenTx';
 export * from './changeNetwork';
+export * from './getWalletInformation';
