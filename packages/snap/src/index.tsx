@@ -5,17 +5,22 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { OnRpcRequestHandler } from '@metamask/snaps-sdk';
-import { Box, Text, Bold, Heading, Link } from '@metamask/snaps-sdk/jsx';
+import type { OnRpcRequestHandler, OnInstallHandler } from '@metamask/snaps-sdk';
 import { getHathorWallet } from './utils/wallet';
 import { getNetworkData } from './utils/network';
 import { promptHandler } from './utils/prompt';
-import { homePage } from './dialogs/home';
 import { installPage } from './dialogs/install';
-import { balanceHandler } from './methods/balance';
-import { addressHandler } from './methods/address';
 import { handleRpcRequest } from '@hathor/hathor-rpc-handler';
 import { bigIntUtils } from '@hathor/wallet-lib';
+
+/**
+ * Handle installation of the snap. This handler is called when the snap is installed
+ *
+ * @returns The JSON-RPC response.
+ */
+export const onInstall: OnInstallHandler = async () => {
+  return installPage();
+};
 
 /**
  * Handle incoming JSON-RPC requests, sent through `wallet_invokeSnap`.
