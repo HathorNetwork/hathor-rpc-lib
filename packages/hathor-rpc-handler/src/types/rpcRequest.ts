@@ -21,6 +21,7 @@ export enum RpcMethods {
   SendTransaction = 'htr_sendTransaction',
   CreateNanoContractCreateTokenTx = 'htr_createNanoContractCreateTokenTx',
   ChangeNetwork = 'htr_changeNetwork',
+  GetXpub = 'htr_getXpub',
 }
 
 export interface CreateTokenRpcRequest {
@@ -156,6 +157,13 @@ export interface ChangeNetworkRpcRequest {
   }
 }
 
+export interface GetXpubRpcRequest {
+  method: RpcMethods.GetXpub,
+  params: {
+    network: string;
+  }
+}
+
 export interface GenericRpcRequest {
   method: string;
   params?: unknown | null;
@@ -171,5 +179,6 @@ export type RpcRequest = GetAddressRpcRequest
   | SignOracleDataRpcRequest
   | SendTransactionRpcRequest
   | CreateNanoContractCreateTokenTxRpcRequest
-  | ChangeNetworkRpcRequest;
+  | ChangeNetworkRpcRequest
+  | GetXpubRpcRequest;
 

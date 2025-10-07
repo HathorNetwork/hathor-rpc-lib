@@ -22,6 +22,7 @@ export enum RpcResponseTypes {
   SendTransactionResponse,
   CreateNanoContractCreateTokenTxResponse,
   ChangeNetworkResponse,
+  GetXpubResponse,
 }
 
 export interface BaseRpcResponse {
@@ -96,6 +97,13 @@ export interface ChangeNetworkResponse extends BaseRpcResponse {
   }
 }
 
+export interface GetXpubResponse extends BaseRpcResponse {
+  type: RpcResponseTypes.GetXpubResponse;
+  response: {
+    xpub: string;
+  };
+}
+
 export type RpcResponse = GetAddressResponse
   | SendNanoContractTxResponse
   | SignWithAddressResponse
@@ -106,4 +114,5 @@ export type RpcResponse = GetAddressResponse
   | GetUtxosResponse
   | SendTransactionResponse
   | CreateNanoContractCreateTokenTxResponse
-  | ChangeNetworkResponse;
+  | ChangeNetworkResponse
+  | GetXpubResponse;
