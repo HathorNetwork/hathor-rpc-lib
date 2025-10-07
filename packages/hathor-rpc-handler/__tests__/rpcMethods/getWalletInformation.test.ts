@@ -66,9 +66,11 @@ describe('getWalletInformation parameter validation', () => {
   it('should work with different network', async () => {
     const mockMainnetWallet = {
       getNetwork: jest.fn().mockReturnValue('mainnet'),
-      getAddressAtIndex: jest.fn().mockResolvedValue('HTestAddress123'),
+      getAddressAtIndex: jest.fn().mockImplementation((addressIndex: number) => {
+        if (addressIndex === 0) return 'HTestAddress123';
+        throw new Error('Forbidden');
+      }),
     } as unknown as HathorWallet;
-
     const validRequest = {
       method: RpcMethods.GetWalletInformation,
     } as GetWalletInformationRpcRequest;
