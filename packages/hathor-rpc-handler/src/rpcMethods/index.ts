@@ -10,3 +10,4 @@ export * from './sendTransaction';
 export * from './createNanoContractCreateTokenTx';
 export * from './changeNetwork';
 export * from './getXpub';
+export * from './getWalletInformation';

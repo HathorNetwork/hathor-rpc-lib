@@ -22,6 +22,7 @@ export enum RpcMethods {
   CreateNanoContractCreateTokenTx = 'htr_createNanoContractCreateTokenTx',
   ChangeNetwork = 'htr_changeNetwork',
   GetXpub = 'htr_getXpub',
+  GetWalletInformation = 'htr_getWalletInformation',
 }
 
 export interface CreateTokenRpcRequest {
@@ -164,6 +165,10 @@ export interface GetXpubRpcRequest {
   }
 }
 
+export interface GetWalletInformationRpcRequest {
+  method: RpcMethods.GetWalletInformation,
+}
+
 export interface GenericRpcRequest {
   method: string;
   params?: unknown | null;
@@ -180,5 +185,6 @@ export type RpcRequest = GetAddressRpcRequest
   | SendTransactionRpcRequest
   | CreateNanoContractCreateTokenTxRpcRequest
   | ChangeNetworkRpcRequest
-  | GetXpubRpcRequest;
+  | GetXpubRpcRequest
+  | GetWalletInformationRpcRequest;
 

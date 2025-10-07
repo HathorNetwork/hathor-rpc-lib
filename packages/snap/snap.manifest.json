@@ -15,6 +15,7 @@
   },
   "initialPermissions": {
     "snap_dialog": {},
+    "endowment:lifecycle-hooks": {},
     "snap_manageState": {},
     "endowment:rpc": {
       "dapps": true,
@@ -23,15 +24,24 @@
     "endowment:network-access": {},
     "snap_getBip32Entropy": [
       {
-        "path": ["m", "44'", "280'", "0'"],
+        "path": [
+          "m",
+          "44'",
+          "280'",
+          "0'"
+        ],
         "curve": "secp256k1"
       },
       {
-        "path": ["m", "280'", "280'"],
+        "path": [
+          "m",
+          "280'",
+          "280'"
+        ],
         "curve": "secp256k1"
       }
     ]
   },
-  "platformVersion": "6.9.0",
+  "platformVersion": "9.2.0",
   "manifestVersion": "0.1"
 }

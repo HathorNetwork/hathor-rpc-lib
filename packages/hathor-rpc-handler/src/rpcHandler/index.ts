@@ -24,6 +24,7 @@ import {
   CreateNanoContractCreateTokenTxRpcRequest,
   ChangeNetworkRpcRequest,
   GetXpubRpcRequest,
+  GetWalletInformationRpcRequest,
 } from '../types';
 import {
   getAddress,
@@ -38,6 +39,7 @@ import {
   createNanoContractCreateTokenTx,
   changeNetwork,
   getXpub,
+  getWalletInformation,
 } from '../rpcMethods';
 import { InvalidRpcMethod } from '../errors';
 
@@ -116,6 +118,12 @@ export const handleRpcRequest = async (
     );
     case RpcMethods.GetXpub: return getXpub(
       request as GetXpubRpcRequest,
+      wallet,
+      requestMetadata,
+      promptHandler,
+    );
+    case RpcMethods.GetWalletInformation: return getWalletInformation(
+      request as GetWalletInformationRpcRequest,
       wallet,
       requestMetadata,
       promptHandler,

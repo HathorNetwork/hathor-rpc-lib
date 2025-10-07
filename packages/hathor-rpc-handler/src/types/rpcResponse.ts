@@ -23,6 +23,7 @@ export enum RpcResponseTypes {
   CreateNanoContractCreateTokenTxResponse,
   ChangeNetworkResponse,
   GetXpubResponse,
+  GetWalletInformationResponse,
 }
 
 export interface BaseRpcResponse {
@@ -104,6 +105,14 @@ export interface GetXpubResponse extends BaseRpcResponse {
   };
 }
 
+export interface GetWalletInformationResponse extends BaseRpcResponse {
+  type: RpcResponseTypes.GetWalletInformationResponse;
+  response: {
+    network: string;
+    address0: string;
+  }
+}
+
 export type RpcResponse = GetAddressResponse
   | SendNanoContractTxResponse
   | SignWithAddressResponse
@@ -115,4 +124,5 @@ export type RpcResponse = GetAddressResponse
   | SendTransactionResponse
   | CreateNanoContractCreateTokenTxResponse
   | ChangeNetworkResponse
-  | GetXpubResponse;
+  | GetXpubResponse
+  | GetWalletInformationResponse;
