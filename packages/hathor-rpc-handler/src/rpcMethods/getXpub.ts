@@ -46,6 +46,8 @@ export async function getXpub(
     const params = getXpubSchema.parse(rpcRequest.params);
     validateNetwork(wallet, params.network);
 
+    // @ts-expect-error: IHathorWallet doesn't expose xpub, we need to change
+    // the lib.
     const xpub = wallet.xpub;
 
     if (!xpub) {
