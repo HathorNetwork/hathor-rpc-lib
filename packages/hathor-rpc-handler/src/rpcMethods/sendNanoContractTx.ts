@@ -23,6 +23,7 @@ import {
 } from '../types';
 import { PromptRejectedError, SendNanoContractTxError, InvalidParamsError } from '../errors';
 import { INanoContractActionSchema, NanoContractAction, ncApi, nanoUtils, Network, config } from '@hathor/wallet-lib';
+import { fetchTokenDetails } from '../helpers';
 
 export type NanoContractActionWithStringAmount = Omit<NanoContractAction, 'amount'> & {
   amount: string,
@@ -105,6 +106,12 @@ export async function sendNanoContractTx(
       return { ...data, parsed: data.field.toUser() };
     });
 
+    // Extract token UIDs from actions and fetch their details
+    const tokenUids = params.actions
+      .filter((action): action is NanoContractAction & { token: string } => 'token' in action && typeof action.token === 'string')
+      .map(action => action.token);
+    const tokenDetails = await fetchTokenDetails(wallet, tokenUids);
+
     const sendNanoContractTxPrompt: SendNanoContractTxConfirmationPrompt = {
       ...rpcRequest,
       type: TriggerTypes.SendNanoContractTxConfirmationPrompt,
@@ -116,6 +123,7 @@ export async function sendNanoContractTx(
         args: params.args,
         parsedArgs,
         pushTx: params.pushTx,
+        tokenDetails,
       },
     };
 

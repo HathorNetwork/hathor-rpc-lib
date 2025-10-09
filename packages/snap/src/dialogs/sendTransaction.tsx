@@ -6,7 +6,7 @@
  */
 
 import { REQUEST_METHODS, DIALOG_TYPES } from '../constants';
-import { Bold, Box, Card, Container, Divider, Heading, Section, Text } from '@metamask/snaps-sdk/jsx';
+import { Bold, Box, Card, Container, Divider, Heading, Icon, Section, Text, Tooltip } from '@metamask/snaps-sdk/jsx';
 import { constants as libConstants, numberUtils, helpersUtils } from '@hathor/wallet-lib';
 
 const renderInputs = (inputs) => {
@@ -33,24 +33,36 @@ const renderInputsList = (inputs) => {
   ));
 }
 
-// We show the symbol only if it's HTR in the list
-const renderTokenSymbol = (token) => {
+const renderTokenAmountSymbol = (output, tokenDetails) => {
+  const token = output.token;
   if (!token || token === libConstants.NATIVE_TOKEN_UID) {
-    return libConstants.DEFAULT_NATIVE_TOKEN_CONFIG.symbol;
+    return <Text>{`${numberUtils.prettyValue(output.value)} ${libConstants.DEFAULT_NATIVE_TOKEN_CONFIG.symbol}`}</Text>;
   }
 
-  return '';
-}
-
-const renderTokenId = (token) => {
-  if (!token || token === libConstants.NATIVE_TOKEN_UID) {
-    return null;
+  if (!tokenDetails.has(token)) {
+    return '';
   }
 
-  return <Text>{helpersUtils.getShortHash(token)}</Text>;
+  const tokenInfo = tokenDetails.get(token);
+
+  return (
+    <Tooltip
+      content={
+        <Text>
+          <Bold>{tokenInfo.tokenInfo.name}</Bold>
+          {' '}({token})
+        </Text>
+      }
+    >
+      <Text>
+        {`${numberUtils.prettyValue(output.value)} ${tokenInfo.tokenInfo.symbol} `}
+        <Icon name="info" />
+      </Text>
+    </Tooltip>
+  );
 }
 
-const renderOutputs = (outputs) => {
+const renderOutputs = (outputs, tokenDetails) => {
   return outputs.map((output, index) => {
     if (output.data) {
       return (
@@ -64,8 +76,7 @@ const renderOutputs = (outputs) => {
     return (
       <Box key={`output-${index}`}>
         <Text>{output.address}</Text>
-        <Text>{`${numberUtils.prettyValue(output.value)} ${renderTokenSymbol(output.token)}`}</Text>
-        {renderTokenId(output.token)}
+        {renderTokenAmountSymbol(output, tokenDetails)}
         {index < outputs.length - 1 ? <Divider /> : null}
       </Box>
     );
@@ -103,7 +114,7 @@ export const sendTransactionPage = async (data, params, origin) => (
               {renderInputs(params.inputs)}
               <Text><Bold>Outputs</Bold></Text>
               <Divider />
-              {renderOutputs(params.outputs)}
+              {renderOutputs(params.outputs, data.tokenDetails)}
               {renderChangeAddress(params.changeAddress)}
             </Section>
           </Box>
