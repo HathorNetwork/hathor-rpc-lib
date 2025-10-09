@@ -16,7 +16,7 @@ import {
   RpcResponse,
   RpcResponseTypes,
 } from '../types';
-import { PromptRejectedError, InvalidParamsError } from '../errors';
+import { PromptRejectedError, InvalidParamsError, WalletXpubNotAvailableError } from '../errors';
 import { validateNetwork } from '../helpers';
 
 const getXpubSchema = z.object({
@@ -51,7 +51,7 @@ export async function getXpub(
     const xpub = wallet.xpub;
 
     if (!xpub) {
-      throw new Error('Wallet xpub is not available');
+      throw new WalletXpubNotAvailableError();
     }
 
     const confirmed = await promptHandler({

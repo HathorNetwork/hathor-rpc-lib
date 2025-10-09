@@ -13,7 +13,7 @@ import {
   TriggerTypes,
 } from '../../src/types';
 import { getXpub } from '../../src/rpcMethods/getXpub';
-import { InvalidParamsError, PromptRejectedError, DifferentNetworkError } from '../../src/errors';
+import { InvalidParamsError, PromptRejectedError, DifferentNetworkError, WalletXpubNotAvailableError } from '../../src/errors';
 
 describe('getXpub parameter validation', () => {
   const mockXpub = 'xpub6D4BDPcP2GT577Vvch3R8wDkScZWzQzMMUm3PWbmWvVJrZwQY4VUNgqFJPMM3No2dFDFGTsxxpG5uJh7n7epu4trkrX7x7DogT5Uv6fcLW5';
@@ -83,7 +83,7 @@ describe('getXpub parameter validation', () => {
 
     await expect(
       getXpub(validRequest, walletWithoutXpub, {}, mockTriggerHandler)
-    ).rejects.toThrow('Wallet xpub is not available');
+    ).rejects.toThrow(WalletXpubNotAvailableError);
   });
 
   it('should accept valid request and return xpub', async () => {
