@@ -35,6 +35,7 @@ export enum TriggerTypes {
   CreateNanoContractCreateTokenTxLoadingTrigger,
   CreateNanoContractCreateTokenTxLoadingFinishedTrigger,
   ChangeNetworkConfirmationPrompt,
+  GetXpubConfirmationPrompt,
 }
 
 export enum TriggerResponseTypes {
@@ -50,6 +51,7 @@ export enum TriggerResponseTypes {
   CreateNanoContractCreateTokenTxConfirmationResponse,
   GetBalanceConfirmationResponse,
   ChangeNetworkRequestConfirmationResponse,
+  GetXpubConfirmationResponse,
 }
 
 export type Trigger =
@@ -77,7 +79,8 @@ export type Trigger =
   | CreateNanoContractCreateTokenTxConfirmationPrompt
   | CreateNanoContractCreateTokenTxLoadingTrigger
   | CreateNanoContractCreateTokenTxLoadingFinishedTrigger
-  | ChangeNetworkConfirmationPrompt;
+  | ChangeNetworkConfirmationPrompt
+  | GetXpubConfirmationPrompt;
 
 export interface BaseLoadingTrigger {
   type: TriggerTypes;
@@ -125,6 +128,13 @@ export type ChangeNetworkConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.ChangeNetworkConfirmationPrompt;
   data: {
     newNetwork: string;
+  }
+}
+
+export type GetXpubConfirmationPrompt = BaseConfirmationPrompt & {
+  type: TriggerTypes.GetXpubConfirmationPrompt;
+  data: {
+    xpub: string;
   }
 }
 
@@ -256,6 +266,11 @@ export interface ChangeNetworkRequestConfirmationResponse {
   data: boolean;
 }
 
+export interface GetXpubConfirmationResponse {
+  type: TriggerResponseTypes.GetXpubConfirmationResponse;
+  data: boolean;
+}
+
 export interface GetBalanceConfirmationResponse {
   type: TriggerResponseTypes.GetBalanceConfirmationResponse;
   data: boolean;
@@ -325,7 +340,8 @@ export type TriggerResponse =
   | SendTransactionConfirmationResponse
   | CreateNanoContractCreateTokenTxConfirmationResponse
   | GetBalanceConfirmationResponse
-  | ChangeNetworkRequestConfirmationResponse;
+  | ChangeNetworkRequestConfirmationResponse
+  | GetXpubConfirmationResponse;
 
 export type TriggerHandler = (prompt: Trigger, requestMetadata: RequestMetadata) => Promise<TriggerResponse | void>;
 

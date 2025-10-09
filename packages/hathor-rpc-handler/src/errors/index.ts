@@ -62,3 +62,10 @@ export class SendTransactionError extends Error {
     this.name = 'SendTransactionError';
   }
 }
+
+export class WalletXpubNotAvailableError extends Error {
+  constructor() {
+    super('Wallet xpub is not available');
+    this.name = 'WalletXpubNotAvailableError';
+  }
+}
