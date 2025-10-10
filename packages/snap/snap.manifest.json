@@ -17,6 +17,7 @@
     "snap_dialog": {},
     "endowment:lifecycle-hooks": {},
     "snap_manageState": {},
+    "endowment:page-home": {},
     "endowment:rpc": {
       "dapps": true,
       "snaps": false
@@ -42,6 +43,6 @@
       }
     ]
   },
-  "platformVersion": "9.2.0",
+  "platformVersion": "6.9.0",
   "manifestVersion": "0.1"
 }

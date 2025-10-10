@@ -43,6 +43,20 @@ export const MetaMaskProvider = ({ children }: { children: ReactNode }) => {
     getSnapsProvider().then(setProvider).catch(console.error);
   }, []);
 
+  useEffect(() => {
+    if (error) {
+      const timeout = setTimeout(() => {
+        setError(null);
+      }, 10000);
+
+      return () => {
+        clearTimeout(timeout);
+      };
+    }
+
+    return undefined;
+  }, [error]);
+
   return (
     <MetaMaskContext.Provider
       value={{ provider, error, setError, installedSnap, setInstalledSnap }}
