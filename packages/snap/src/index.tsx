@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { OnRpcRequestHandler, OnInstallHandler } from '@metamask/snaps-sdk';
-import { getHathorWallet } from './utils/wallet';
+import type { OnRpcRequestHandler, OnInstallHandler, OnUpdateHandler } from '@metamask/snaps-sdk';
+import { getHathorWallet, initializeWalletOnService } from './utils/wallet';
 import { getNetworkData } from './utils/network';
 import { promptHandler } from './utils/prompt';
 import { installPage } from './dialogs/install';
@@ -16,10 +16,52 @@ import { bigIntUtils } from '@hathor/wallet-lib';
 /**
  * Handle installation of the snap. This handler is called when the snap is installed
  *
+ * We initialize the wallet on the wallet-service during installation so it's available
+ * for read-only access from the web wallet immediately.
+ *
+ * Using waitReady: false means we don't block the installation waiting for the wallet
+ * to be fully ready. The wallet will be created on the wallet-service in the background
+ * and will be available for read-only access once it's ready.
+ *
  * @returns The JSON-RPC response.
  */
 export const onInstall: OnInstallHandler = async () => {
+  try {
+    console.log('🟡 onInstall: Initializing wallet on wallet-service (non-blocking)...');
+
+    // Initialize wallet on wallet-service without waiting for it to be ready
+    // This uses waitReady: false internally
+    const walletId = await initializeWalletOnService();
+
+    console.log('✅ onInstall: Wallet creation started on wallet-service');
+    console.log('✅ onInstall: Wallet ID:', walletId);
+  } catch (error) {
+    console.error('❌ onInstall: Failed to initialize wallet:', error);
+    // Don't throw - show installation page even if wallet init fails
+  }
+
   return installPage();
+};
+
+/**
+ * Handle snap updates. This handler is called when the snap is updated to a new version.
+ *
+ * We also initialize the wallet here to ensure it exists on the wallet-service after updates.
+ * This is useful for testing and ensures the wallet is available even if onInstall didn't run.
+ */
+export const onUpdate: OnUpdateHandler = async () => {
+  try {
+    console.log('🟡 onUpdate: Initializing wallet on wallet-service (non-blocking)...');
+
+    // Initialize wallet on wallet-service without waiting for it to be ready
+    const walletId = await initializeWalletOnService();
+
+    console.log('✅ onUpdate: Wallet creation started on wallet-service');
+    console.log('✅ onUpdate: Wallet ID:', walletId);
+  } catch (error) {
+    console.error('❌ onUpdate: Failed to initialize wallet:', error);
+    // Don't throw - continue with update even if wallet init fails
+  }
 };
 
 /**
