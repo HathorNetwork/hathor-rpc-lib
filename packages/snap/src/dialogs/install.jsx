@@ -14,7 +14,7 @@ export const installPage = async () => (
     params: {
       type: DIALOG_TYPES.ALERT,
       content: (
-        <Container backgroundColor='alternative'>
+        <Container>
           <Box>
             <Heading>Installation successful</Heading>
             <Text>

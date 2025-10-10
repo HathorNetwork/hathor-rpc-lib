@@ -52,6 +52,13 @@ describe('sendTransaction', () => {
     sendTransactionMock = jest.fn();
     wallet = {
       getNetwork: jest.fn().mockReturnValue('testnet'),
+      getTokenDetails: jest.fn().mockResolvedValue({
+        tokenInfo: {
+          name: 'Test Token',
+          symbol: 'TST',
+          uid: 'test-token-uid',
+        },
+      }),
       sendManyOutputsSendTransaction: jest.fn().mockResolvedValue({
         prepareTxData: jest.fn().mockResolvedValue({
           inputs: [{
@@ -120,6 +127,7 @@ describe('sendTransaction', () => {
           token: '00',
         }],
         changeAddress: 'changeAddress',
+        tokenDetails: new Map(),
       },
     }, {});
     expect(promptHandler).toHaveBeenNthCalledWith(2, {

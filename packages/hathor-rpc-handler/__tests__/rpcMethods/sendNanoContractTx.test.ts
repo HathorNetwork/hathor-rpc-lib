@@ -57,6 +57,13 @@ describe('sendNanoContractTx', () => {
       createAndSendNanoContractTransaction: jest.fn(),
       createNanoContractTransaction: jest.fn(),
       getServerUrl: jest.fn(),
+      getTokenDetails: jest.fn().mockResolvedValue({
+        tokenInfo: {
+          name: 'Test Token',
+          symbol: 'TST',
+          uid: 'test-token-uid',
+        },
+      }),
     } as unknown as HathorWallet;
 
     promptHandler = jest.fn();
@@ -319,6 +326,7 @@ describe('sendNanoContractTx', () => {
         method: expect.any(String),
         ncId: expect.any(String),
         pushTx: expect.any(Boolean),
+        tokenDetails: expect.any(Map),
       },
     }, {});
     expect(promptHandler).toHaveBeenNthCalledWith(2, {
@@ -566,6 +574,7 @@ describe('sendNanoContractTx parameter validation', () => {
         method: expect.any(String),
         ncId: expect.any(String),
         pushTx: expect.any(Boolean),
+        tokenDetails: expect.any(Map),
       }
     }, {});
 
