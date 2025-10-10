@@ -34,23 +34,23 @@ const renderInputsList = (inputs) => {
 }
 
 const renderTokenAmountSymbol = (output, tokenDetails) => {
-  const token = output.token;
-  if (!token || token === libConstants.NATIVE_TOKEN_UID) {
+  const tokenUid = output.token;
+  if (!tokenUid || tokenUid === libConstants.NATIVE_TOKEN_UID) {
     return <Text>{`${numberUtils.prettyValue(output.value)} ${libConstants.DEFAULT_NATIVE_TOKEN_CONFIG.symbol}`}</Text>;
   }
 
-  if (!tokenDetails.has(token)) {
+  if (!tokenDetails.has(tokenUid)) {
     return '';
   }
 
-  const tokenInfo = tokenDetails.get(token);
+  const tokenInfo = tokenDetails.get(tokenUid);
 
   return (
     <Tooltip
       content={
         <Text>
           <Bold>{tokenInfo.tokenInfo.name}</Bold>
-          {' '}({token})
+          {' '}({tokenUid})
         </Text>
       }
     >
