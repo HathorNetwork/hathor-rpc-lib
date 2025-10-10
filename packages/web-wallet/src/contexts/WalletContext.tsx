@@ -3,6 +3,12 @@ import { WalletServiceMethods } from '../services/HathorWalletService';
 import { readOnlyWalletService } from '../services/ReadOnlyWalletService';
 import { useInvokeSnap, useRequestSnap } from '@hathor/snap-utils';
 
+// localStorage keys
+const STORAGE_KEYS = {
+  XPUB: 'hathor_wallet_xpub',
+  NETWORK: 'hathor_wallet_network',
+};
+
 interface WalletBalance {
   token: string;
   available: number;
@@ -43,6 +49,7 @@ interface WalletState {
 
 interface WalletContextType extends WalletState {
   connectWallet: () => Promise<void>;
+  disconnectWallet: () => void;
   refreshBalance: () => Promise<void>;
   refreshAddress: () => Promise<void>;
   getTransactionHistory: (count?: number, skip?: number, tokenId?: string) => Promise<TransactionHistoryItem[]>;
@@ -72,11 +79,37 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const [state, setState] = useState<WalletState>(initialState);
   const invokeSnap = useInvokeSnap();
   const requestSnap = useRequestSnap();
+  const isCheckingRef = React.useRef(false);
 
   // Check for existing connection on mount
   const checkExistingConnection = async () => {
+    // Prevent concurrent calls
+    if (isCheckingRef.current) {
+      console.log('Already checking connection, skipping...');
+      return;
+    }
+
+    isCheckingRef.current = true;
+
     try {
       setState(prev => ({ ...prev, loadingStep: 'Checking existing connection...' }));
+
+      // Check if we have a stored xpub in localStorage
+      const storedXpub = localStorage.getItem(STORAGE_KEYS.XPUB);
+      const storedNetwork = localStorage.getItem(STORAGE_KEYS.NETWORK) || 'dev-testnet';
+
+      if (!storedXpub) {
+        console.log('No stored xpub found, user needs to connect');
+        setState(prev => ({
+          ...prev,
+          isCheckingConnection: false,
+          loadingStep: '',
+        }));
+        return;
+      }
+
+      console.log('✅ Found stored xpub, reconnecting automatically...');
+      setState(prev => ({ ...prev, loadingStep: 'Checking snap network...' }));
 
       // Check snap network and change if needed
       try {
@@ -105,60 +138,63 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         console.error('Failed to check/change network:', networkError);
       }
 
-      // Try to get xpub without requesting snap first
-      const xpubResponse = await invokeSnap({
-        method: 'htr_getXpub',
-        params: {}
-      });
+      setState(prev => ({ ...prev, loadingStep: 'Initializing read-only wallet...' }));
 
-      // Parse the response if it's a string (snap returns stringified JSON)
-      let parsedResponse = xpubResponse;
-      if (typeof xpubResponse === 'string') {
-        parsedResponse = JSON.parse(xpubResponse);
+      // Stop any existing wallet before reinitializing
+      if (readOnlyWalletService.isReady()) {
+        console.log('Stopping existing wallet before reinitializing...');
+        await readOnlyWalletService.stop();
       }
 
-      const xpub = parsedResponse?.response?.xpub;
+      // Initialize read-only wallet with stored xpub
+      await readOnlyWalletService.initialize(storedXpub, storedNetwork);
 
-      if (xpub) {
-        setState(prev => ({ ...prev, loadingStep: 'Initializing read-only wallet...' }));
+      setState(prev => ({ ...prev, loadingStep: 'Loading wallet data...' }));
 
-        // Web wallet always uses dev-testnet
-        const network = 'dev-testnet';
+      // Get data from read-only wallet
+      const addressInfo = readOnlyWalletService.getCurrentAddress();
+      const address = addressInfo?.address || '';
+      const balances = await readOnlyWalletService.getBalance('00');
 
-        // Initialize read-only wallet
-        await readOnlyWalletService.initialize(xpub, network);
-        setState(prev => ({ ...prev, loadingStep: 'Loading wallet data...' }));
+      console.log('✅ Automatically reconnected with stored xpub');
 
-        // Get data from read-only wallet
-        const addressInfo = readOnlyWalletService.getCurrentAddress();
-        const address = addressInfo?.address || '';
-        const balances = await readOnlyWalletService.getBalance('00');
-
-        setState(prev => ({
-          ...prev,
-          isConnected: true,
-          isCheckingConnection: false,
-          address,
-          balances,
-          network,
-          xpub,
-          loadingStep: '',
-        }));
-      } else {
-        // No existing connection
-        setState(prev => ({
-          ...prev,
-          isCheckingConnection: false,
-          loadingStep: '',
-        }));
-      }
+      setState(prev => ({
+        ...prev,
+        isConnected: true,
+        isCheckingConnection: false,
+        address,
+        balances,
+        network: storedNetwork,
+        xpub: storedXpub,
+        loadingStep: '',
+      }));
     } catch (error) {
-      // No existing connection, that's fine
+      console.error('Failed to auto-reconnect:', error);
+
+      // Only clear localStorage for specific errors (invalid xpub, authentication errors)
+      // Don't clear for temporary network errors or wallet-service issues
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const shouldClearStorage =
+        errorMessage.includes('Invalid xpub') ||
+        errorMessage.includes('authentication') ||
+        errorMessage.includes('unauthorized');
+
+      if (shouldClearStorage) {
+        console.warn('Clearing stored xpub due to authentication/validation error');
+        localStorage.removeItem(STORAGE_KEYS.XPUB);
+        localStorage.removeItem(STORAGE_KEYS.NETWORK);
+      } else {
+        console.log('Keeping stored xpub - error may be temporary');
+      }
+
       setState(prev => ({
         ...prev,
         isCheckingConnection: false,
         loadingStep: '',
+        error: 'Failed to reconnect. Please try connecting manually.',
       }));
+    } finally {
+      isCheckingRef.current = false;
     }
   };
 
@@ -270,6 +306,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       const balances = await readOnlyWalletService.getBalance('00');
       console.log('💼 Wallet context received balances from read-only wallet:', balances);
 
+      // Save xpub and network to localStorage for auto-reconnect
+      localStorage.setItem(STORAGE_KEYS.XPUB, xpub);
+      localStorage.setItem(STORAGE_KEYS.NETWORK, network);
+      console.log('✅ Saved xpub to localStorage for auto-reconnect');
+
       setState(prev => ({
         ...prev,
         isConnected: true,
@@ -297,6 +338,22 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   React.useEffect(() => {
     checkExistingConnection();
   }, []);
+
+  const disconnectWallet = () => {
+    console.log('🔌 Disconnecting wallet...');
+
+    // Clear localStorage
+    localStorage.removeItem(STORAGE_KEYS.XPUB);
+    localStorage.removeItem(STORAGE_KEYS.NETWORK);
+
+    // Stop the read-only wallet
+    readOnlyWalletService.stop();
+
+    // Reset state
+    setState(initialState);
+
+    console.log('✅ Wallet disconnected');
+  };
 
   const refreshBalance = async () => {
     if (!state.isConnected || !readOnlyWalletService.isReady()) return;
@@ -351,6 +408,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const contextValue: WalletContextType = {
     ...state,
     connectWallet,
+    disconnectWallet,
     refreshBalance,
     refreshAddress,
     getTransactionHistory,

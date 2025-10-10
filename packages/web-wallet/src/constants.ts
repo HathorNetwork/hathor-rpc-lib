@@ -29,7 +29,7 @@ export const WALLET_SERVICE_URLS = {
 export const WALLET_SERVICE_WS_URLS = {
   MAINNET: 'wss://ws.wallet-service.hathor.network/',
   TESTNET: 'wss://ws.wallet-service.testnet.hathor.network/',
-  DEV_TESTNET: 'wss://dev.ws.wallet-service.testnet.hathor.network/'
+  DEV_TESTNET: 'wss://ws.dev.wallet-service.testnet.hathor.network/'
 } as const;
 
 // Token IDs
