@@ -8,8 +8,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Clock, ArrowUpRight, ArrowDownLeft, ExternalLink, Loader2 } from 'lucide-react'
 import { useWallet } from '../contexts/WalletContext'
-import { WalletServiceMethods } from '../services/HathorWalletService'
-import type { Transaction as ApiTransaction } from '../services/HathorWalletService'
 import { formatHTRAmount, truncateAddress } from '../utils/hathor'
 import { HATHOR_EXPLORER_URLS, NETWORKS } from '../constants'
 
@@ -30,7 +28,7 @@ interface ProcessedTransaction {
 const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
   const [transactions, setTransactions] = useState<ProcessedTransaction[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const { address, network } = useWallet()
+  const { address, network, getTransactionHistory } = useWallet()
 
   useEffect(() => {
     if (isOpen && address) {
@@ -40,43 +38,28 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
 
   const loadTransactionHistory = async () => {
     if (!address) return
-    
+
     setIsLoading(true)
     try {
-      const history = await WalletServiceMethods.getTransactionHistory(address, network)
-      
-      // Process transactions to determine if sent or received
-      const processed: ProcessedTransaction[] = history.map((tx: ApiTransaction) => {
-        // Check if any input belongs to our address (means we sent)
-        const isSent = tx.inputs.some(input => input.address === address)
-        
-        // Calculate the amount (for HTR token - token ID '00')
-        let amount = 0
-        if (isSent) {
-          // Sum outputs not going to our address
-          amount = tx.outputs
-            .filter(output => output.address !== address && output.token === '00')
-            .reduce((sum, output) => sum + output.value, 0)
-        } else {
-          // Sum outputs coming to our address
-          amount = tx.outputs
-            .filter(output => output.address === address && output.token === '00')
-            .reduce((sum, output) => sum + output.value, 0)
-        }
-        
+      const history = await getTransactionHistory(50, 0, '00')
+
+      // Process transactions from wallet-lib format
+      const processed: ProcessedTransaction[] = history.map((tx) => {
+        // balance is positive for received, negative for sent
+        const type = tx.balance >= 0 ? 'received' : 'sent'
+        const amount = Math.abs(tx.balance)
+
         return {
-          id: tx.txId,
-          type: isSent ? 'sent' : 'received',
-          amount: amount,
-          timestamp: new Date(tx.timestamp).toISOString(),
-          txHash: tx.txId,
-          status: tx.confirmed ? 'confirmed' : 'pending'
+          id: tx.tx_id,
+          type,
+          amount,
+          timestamp: new Date(tx.timestamp * 1000).toISOString(), // wallet-lib timestamp is in seconds
+          txHash: tx.tx_id,
+          status: !tx.is_voided ? 'confirmed' : 'pending'
         }
       })
-      
-      // Sort by timestamp, newest first
-      processed.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      
+
+      // Sort by timestamp, newest first (already sorted from wallet-lib)
       setTransactions(processed)
     } catch (error) {
       console.error('Failed to load transaction history:', error)

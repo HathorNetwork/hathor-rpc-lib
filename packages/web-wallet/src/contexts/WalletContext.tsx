@@ -1,11 +1,19 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, type ReactNode } from 'react';
 import { WalletServiceMethods } from '../services/HathorWalletService';
-import { useInvokeSnap, useRequestSnap } from 'snap-utils';
+import { readOnlyWalletService } from '../services/ReadOnlyWalletService';
+import { useInvokeSnap, useRequestSnap } from '@hathor/snap-utils';
 
 interface WalletBalance {
   token: string;
   available: number;
   locked: number;
+}
+
+interface TransactionHistoryItem {
+  tx_id: string;
+  timestamp: number;
+  balance: number;
+  is_voided: boolean;
 }
 
 interface SendTransactionParams {
@@ -30,12 +38,14 @@ interface WalletState {
   balances: WalletBalance[];
   network: string;
   error: string | null;
+  xpub: string | null;
 }
 
 interface WalletContextType extends WalletState {
   connectWallet: () => Promise<void>;
   refreshBalance: () => Promise<void>;
   refreshAddress: () => Promise<void>;
+  getTransactionHistory: (count?: number, skip?: number, tokenId?: string) => Promise<TransactionHistoryItem[]>;
   sendTransaction: (params: SendTransactionParams) => Promise<any>;
   setError: (error: string | null) => void;
 }
@@ -49,6 +59,7 @@ const initialState: WalletState = {
   balances: [],
   network: 'mainnet',
   error: null,
+  xpub: null,
 };
 
 const WalletContext = createContext<WalletContextType | null>(null);
@@ -66,18 +77,35 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const checkExistingConnection = async () => {
     try {
       setState(prev => ({ ...prev, loadingStep: 'Checking existing connection...' }));
-      
-      // Try to get address without requesting snap first
-      const address = await WalletServiceMethods.getAddress(invokeSnap, 'index', 0);
-      
-      if (address) {
+
+      // Try to get xpub without requesting snap first
+      const xpubResponse = await invokeSnap({
+        method: 'htr_getXpub',
+        params: {}
+      });
+
+      // Parse the response if it's a string (snap returns stringified JSON)
+      let parsedResponse = xpubResponse;
+      if (typeof xpubResponse === 'string') {
+        parsedResponse = JSON.parse(xpubResponse);
+      }
+
+      const xpub = parsedResponse?.response?.xpub;
+
+      if (xpub) {
+        setState(prev => ({ ...prev, loadingStep: 'Initializing read-only wallet...' }));
+
+        // Get network from snap
+        const network = await WalletServiceMethods.getConnectedNetwork(invokeSnap);
+
+        // Initialize read-only wallet
+        await readOnlyWalletService.initialize(xpub, network);
         setState(prev => ({ ...prev, loadingStep: 'Loading wallet data...' }));
-        
-        // If we got an address, snap is already connected
-        const [balances, network] = await Promise.all([
-          WalletServiceMethods.getBalance(invokeSnap, ['00']),
-          WalletServiceMethods.getConnectedNetwork(invokeSnap),
-        ]);
+
+        // Get data from read-only wallet
+        const addressInfo = readOnlyWalletService.getCurrentAddress();
+        const address = addressInfo?.address || '';
+        const balances = await readOnlyWalletService.getBalance('00');
 
         setState(prev => ({
           ...prev,
@@ -86,6 +114,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           address,
           balances,
           network,
+          xpub,
           loadingStep: '',
         }));
       } else {
@@ -112,19 +141,78 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     try {
       // Request the snap to install/activate it
       await requestSnap();
-      setState(prev => ({ ...prev, loadingStep: 'Loading address...' }));
+      setState(prev => ({ ...prev, loadingStep: 'Getting xpub from snap...' }));
 
-      // Get wallet address
-      const address = await WalletServiceMethods.getAddress(invokeSnap, 'index', 0);
+      // First, check if snap is working by getting network
+      console.log('🔍 Testing snap connection...');
+      try {
+        const networkTest = await invokeSnap({
+          method: 'htr_getConnectedNetwork',
+          params: {}
+        });
+        console.log('✅ Snap is responsive, network test:', networkTest);
+      } catch (testError) {
+        console.error('❌ Snap is not responsive:', testError);
+        throw new Error('Snap is not responding. Please make sure it is installed correctly.');
+      }
+
+      // Get xpub from snap
+      console.log('🔍 Attempting to get xpub from snap...');
+
+      let xpubResponse;
+      try {
+        xpubResponse = await invokeSnap({
+          method: 'htr_getXpub',
+          params: {}
+        });
+        console.log('✅ Raw xpub response from snap:', xpubResponse);
+        console.log('📦 Response type:', typeof xpubResponse);
+      } catch (snapError) {
+        console.error('❌ Error calling snap htr_getXpub:', snapError);
+        throw new Error(`Failed to get xpub: ${snapError instanceof Error ? snapError.message : String(snapError)}`);
+      }
+
+      // Parse the response if it's a string (snap returns stringified JSON)
+      let parsedResponse = xpubResponse;
+      if (typeof xpubResponse === 'string') {
+        console.log('📝 Parsing stringified response...');
+        try {
+          parsedResponse = JSON.parse(xpubResponse);
+          console.log('✅ Parsed response:', parsedResponse);
+        } catch (parseError) {
+          console.error('❌ Failed to parse response:', parseError);
+          throw new Error('Invalid JSON response from snap');
+        }
+      }
+
+      const xpub = parsedResponse?.response?.xpub;
+      console.log('🔑 Extracted xpub:', xpub ? xpub.substring(0, 20) + '...' : 'null');
+
+      if (!xpub) {
+        console.error('❌ Failed to extract xpub from response:', parsedResponse);
+        console.error('Response structure:', JSON.stringify(parsedResponse, null, 2));
+        throw new Error('Failed to get xpub from snap - no xpub in response');
+      }
+
+      console.log('✅ Got xpub from snap:', xpub.substring(0, 20) + '...');
+      setState(prev => ({ ...prev, loadingStep: 'Initializing read-only wallet...' }));
+
+      // Get network from snap
+      const network = await WalletServiceMethods.getConnectedNetwork(invokeSnap);
+
+      // Initialize read-only wallet with xpub
+      await readOnlyWalletService.initialize(xpub, network);
+      setState(prev => ({ ...prev, loadingStep: 'Loading wallet data...' }));
+
+      // Get address from read-only wallet
+      const addressInfo = readOnlyWalletService.getCurrentAddress();
+      const address = addressInfo?.address || '';
+
       setState(prev => ({ ...prev, loadingStep: 'Loading balance...' }));
 
-      // Get balance
-      const balances = await WalletServiceMethods.getBalance(invokeSnap, ['00']);
-      console.log('💼 Wallet context received balances:', balances);
-      setState(prev => ({ ...prev, loadingStep: 'Getting network info...' }));
-
-      // Get network
-      const network = await WalletServiceMethods.getConnectedNetwork(invokeSnap);
+      // Get balance from read-only wallet
+      const balances = await readOnlyWalletService.getBalance('00');
+      console.log('💼 Wallet context received balances from read-only wallet:', balances);
 
       setState(prev => ({
         ...prev,
@@ -132,10 +220,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         address,
         balances,
         network,
+        xpub,
         isConnecting: false,
         loadingStep: '',
       }));
-      
+
       console.log('✅ Wallet state updated with balances:', balances);
     } catch (error) {
       console.error('Connection error:', error);
@@ -154,10 +243,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   }, []);
 
   const refreshBalance = async () => {
-    if (!state.isConnected) return;
+    if (!state.isConnected || !readOnlyWalletService.isReady()) return;
 
     try {
-      const balances = await WalletServiceMethods.getBalance(invokeSnap, ['00']);
+      const balances = await readOnlyWalletService.getBalance('00');
       setState(prev => ({ ...prev, balances, error: null }));
     } catch (error) {
       setState(prev => ({
@@ -168,16 +257,30 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   };
 
   const refreshAddress = async () => {
-    if (!state.isConnected) return;
+    if (!state.isConnected || !readOnlyWalletService.isReady()) return;
 
     try {
-      const address = await WalletServiceMethods.getAddress(invokeSnap, 'index', 0);
+      const addressInfo = readOnlyWalletService.getCurrentAddress();
+      const address = addressInfo?.address || '';
       setState(prev => ({ ...prev, address, error: null }));
     } catch (error) {
       setState(prev => ({
         ...prev,
         error: error instanceof Error ? error.message : 'Failed to refresh address',
       }));
+    }
+  };
+
+  const getTransactionHistory = async (count: number = 10, skip: number = 0, tokenId: string = '00'): Promise<TransactionHistoryItem[]> => {
+    if (!state.isConnected || !readOnlyWalletService.isReady()) {
+      return [];
+    }
+
+    try {
+      return await readOnlyWalletService.getTransactionHistory(count, skip, tokenId);
+    } catch (error) {
+      console.error('Failed to get transaction history:', error);
+      return [];
     }
   };
 
@@ -194,6 +297,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     connectWallet,
     refreshBalance,
     refreshAddress,
+    getTransactionHistory,
     sendTransaction,
     setError,
   };

@@ -138,7 +138,7 @@ const WalletHome: React.FC = () => {
         onOpenChange={setReceiveOpen} 
         address={address} 
       />
-      <HistoryDialog open={historyOpen} onOpenChange={setHistoryOpen} />
+      <HistoryDialog isOpen={historyOpen} onClose={() => setHistoryOpen(false)} />
     </div>
   )
 }

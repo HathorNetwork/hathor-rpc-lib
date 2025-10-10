@@ -36,13 +36,36 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
   origin,
   request,
 }) => {
-  // Almost all RPC requests need the network, so I add it here
-  const networkData = await getNetworkData();
-  request.params = { ...request.params, network: networkData.network };
-  const wallet = await getHathorWallet();
-  const response = await handleRpcRequest(request, wallet, null, promptHandler(origin, wallet));
-  // We must return the stringified response because there are some JSON responses
-  // that include bigint values, which are not supported by snap
-  // so we use the bigint util from the wallet lib to stringify the return
-  return bigIntUtils.JSONBigInt.stringify(response);
+  console.log('🔵 onRpcRequest START:', request.method);
+  console.log('🔵 Origin:', origin);
+  console.log('🔵 Request params:', JSON.stringify(request.params));
+
+  try {
+    // Almost all RPC requests need the network, so I add it here
+    console.log('🟡 Getting network data...');
+    const networkData = await getNetworkData();
+    console.log('✅ Network data:', networkData);
+
+    request.params = { ...request.params, network: networkData.network };
+    console.log('🟡 Getting wallet...');
+    const wallet = await getHathorWallet();
+    console.log('✅ Wallet obtained');
+
+    console.log('🟡 Handling RPC request...');
+    const response = await handleRpcRequest(request, wallet, null, promptHandler(origin, wallet));
+    console.log('✅ RPC response:', typeof response, JSON.stringify(response).substring(0, 200));
+
+    // We must return the stringified response because there are some JSON responses
+    // that include bigint values, which are not supported by snap
+    // so we use the bigint util from the wallet lib to stringify the return
+    console.log('🟡 Stringifying response...');
+    const stringified = bigIntUtils.JSONBigInt.stringify(response);
+    console.log('✅ Response stringified, length:', stringified.length);
+    console.log('🟢 onRpcRequest COMPLETE');
+    return stringified;
+  } catch (error) {
+    console.error('❌ ERROR in onRpcRequest:', error);
+    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'no stack');
+    throw error;
+  }
 };

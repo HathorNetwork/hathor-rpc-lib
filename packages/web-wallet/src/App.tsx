@@ -1,4 +1,4 @@
-import { MetaMaskProvider } from 'snap-utils'
+import { MetaMaskProvider } from '@hathor/snap-utils'
 import { WalletProvider } from './contexts/WalletContext'
 import ProperWalletHome from './components/ProperWalletHome'
 

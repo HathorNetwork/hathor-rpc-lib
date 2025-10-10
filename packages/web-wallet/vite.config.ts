@@ -8,13 +8,28 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      'events': path.resolve(__dirname, 'node_modules/events'),
+      'buffer': path.resolve(__dirname, 'node_modules/buffer'),
+      'process/browser': path.resolve(__dirname, 'node_modules/process/browser.js'),
+      'assert': path.resolve(__dirname, 'node_modules/assert')
     },
+    dedupe: ['react', 'react-dom']
   },
   define: {
     global: 'globalThis',
-    process: '{"env": {"SNAP_ORIGIN": "local:http://localhost:8080"}}'
+    'process.env.SNAP_ORIGIN': JSON.stringify('local:http://localhost:8080')
   },
   optimizeDeps: {
-    exclude: ['snap-utils']
+    include: ['@hathor/snap-utils', 'react', 'react-dom', 'react/jsx-runtime', 'events', 'buffer', 'process/browser', 'assert'],
+    esbuildOptions: {
+      define: {
+        global: 'globalThis'
+      }
+    }
+  },
+  server: {
+    fs: {
+      allow: ['..']
+    }
   }
 })

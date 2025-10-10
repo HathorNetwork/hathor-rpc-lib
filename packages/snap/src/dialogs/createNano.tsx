@@ -7,7 +7,7 @@
 
 import { REQUEST_METHODS, DIALOG_TYPES } from '../constants';
 import { Bold, Box, Card, Container, Copyable, Divider, Heading, Section, Text } from '@metamask/snaps-sdk/jsx';
-import { constants as libConstants, bigIntUtils, dateUtils, NanoContractActionType, numberUtils } from '@hathor/wallet-lib';
+import { constants as libConstants, bigIntUtils, dateUtils, numberUtils, NanoContractActionType } from '@hathor/wallet-lib';
 
 const renderOptionalContractDetail = (param, title) => {
   if (!param) return null;
