@@ -117,11 +117,19 @@ export const WalletServiceMethods = {
 
   async sendTransaction(invokeSnap: any, params: SendTransactionParams): Promise<any> {
     try {
+      console.log('📤 Sending transaction with params:', params);
       const response = await invokeSnap({
         method: 'htr_sendTransaction',
         params
       });
-      return response.response;
+      console.log('📥 Send transaction response:', response);
+
+      // Handle null response (user might have rejected)
+      if (!response) {
+        throw new Error('Transaction was cancelled or rejected');
+      }
+
+      return response.response || response;
     } catch (error) {
       console.error('Failed to send transaction:', error);
       throw error;

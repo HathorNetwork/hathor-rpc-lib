@@ -1,146 +1,238 @@
-import React, { useState } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { ArrowUpRight, ArrowDownLeft, Clock, Copy, Check } from 'lucide-react'
-import SendTokenDialog from './SendTokenDialog'
-import ReceiveTokenDialog from './ReceiveTokenDialog'
-import HistoryDialog from './HistoryDialog'
+import React, { useState, useEffect } from 'react';
+import { ArrowUpRight, ArrowDownLeft, Info, Loader2 } from 'lucide-react';
+import SendDialog from './SendDialog';
+import ReceiveDialog from './ReceiveDialog';
+import HistoryDialog from './HistoryDialog';
+import Header from './Header';
+import { useWallet } from '../contexts/WalletContext';
+import { formatHTRAmount } from '../utils/hathor';
+import htrLogoWhite from '../assets/htr_logo_white.svg';
+import htrLogoWhiteOutline from '../assets/htr_logo_white_outline.svg';
 
 const WalletHome: React.FC = () => {
-  const [sendOpen, setSendOpen] = useState(false)
-  const [receiveOpen, setReceiveOpen] = useState(false)
-  const [historyOpen, setHistoryOpen] = useState(false)
-  const [copied, setCopied] = useState(false)
+  const [activeButton, setActiveButton] = useState<string | null>(null);
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [receiveDialogOpen, setReceiveDialogOpen] = useState(false);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  
+  const { 
+    isConnected, 
+    isConnecting,
+    isCheckingConnection,
+    loadingStep, 
+    address, 
+    balances, 
+    network, 
+    error, 
+    connectWallet, 
+    refreshBalance,
+    setError 
+  } = useWallet();
 
-  // Mock data - replace with actual wallet data
-  const balance = "1,234.56"
-  const address = "HJKj8Ks9d8f7sdf8s7df8s7df8s7df8s7df"
-  const hasBalance = true
+  const handleButtonClick = (buttonName: string) => {
+    setActiveButton(buttonName);
+    console.log(`${buttonName} button clicked`);
+    
+    // Open appropriate dialog
+    switch (buttonName) {
+      case 'Send':
+      case 'SendHTR':
+        setSendDialogOpen(true);
+        break;
+      case 'Receive':
+        setReceiveDialogOpen(true);
+        break;
+      case 'ViewHistory':
+        setHistoryDialogOpen(true);
+        break;
+    }
+    
+    // Reset active state after a brief moment
+    setTimeout(() => setActiveButton(null), 200);
+  };
 
-  const handleCopyAddress = () => {
-    navigator.clipboard.writeText(address)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+  // Show loading screen while checking connection
+  if (isCheckingConnection) {
+    return (
+      <div className="min-h-screen bg-[#0d1117] text-white flex items-center justify-center">
+        <div className="text-center space-y-6">
+          <div className="w-16 h-16 flex items-center justify-center mx-auto">
+            <img
+              src={htrLogoWhite}
+              alt="Hathor"
+              className="w-full h-full"
+            />
+          </div>
+          <div>
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">{loadingStep}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show connection screen if not connected
+  if (!isConnected) {
+    return (
+      <div className="min-h-screen bg-[#0d1117] text-white flex items-center justify-center">
+        <div className="text-center space-y-6">
+          <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center mx-auto p-4">
+            <img
+              src={htrLogoWhite}
+              alt="Hathor"
+              className="w-full h-full"
+            />
+          </div>
+          <div>
+            <h1 className="text-2xl font-medium mb-2">Connect to Hathor Wallet</h1>
+            <p className="text-muted-foreground mb-6">
+              Connect your MetaMask with Hathor Snap to get started
+            </p>
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mb-4">
+                <p className="text-red-400 text-sm">{error}</p>
+              </div>
+            )}
+            <button
+              onClick={connectWallet}
+              disabled={isConnecting}
+              className="px-6 py-3 bg-primary hover:bg-primary/80 disabled:bg-muted disabled:text-muted-foreground text-white rounded-lg transition-colors flex items-center justify-center gap-2 mx-auto"
+            >
+              {isConnecting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {loadingStep || 'Connecting...'}
+                </>
+              ) : (
+                'Connect Wallet'
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl bg-card border-border">
-        <CardContent className="p-8 space-y-8">
-          {/* Logo and Title */}
-          <div className="text-center space-y-2">
-            <div className="w-20 h-20 mx-auto bg-primary/20 rounded-full flex items-center justify-center mb-4">
-              <span className="text-3xl font-bold text-primary">H</span>
-            </div>
-            <h1 className="text-5xl font-display font-normal text-white">
-              {balance} HTR
-            </h1>
-            <p className="text-muted-foreground text-sm">Hathor Network</p>
-          </div>
+    <div className="min-h-screen bg-[#0d1117] text-white">
+      <Header />
 
-          {/* Address Section */}
-          <div className="bg-secondary/50 rounded-lg p-4 flex items-center justify-between">
-            <div className="flex-1">
-              <p className="text-xs text-muted-foreground mb-1">Your Address</p>
-              <p className="text-sm font-mono text-white truncate">{address}</p>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleCopyAddress}
-              className="ml-2"
-            >
-              {copied ? (
-                <Check className="h-4 w-4 text-green-500" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="grid grid-cols-3 gap-4">
-            <Button
-              onClick={() => setSendOpen(true)}
-              className="flex flex-col gap-2 h-auto py-4"
-              variant="secondary"
-              disabled={!hasBalance}
-            >
-              <ArrowUpRight className="h-5 w-5" />
-              <span>Send</span>
-            </Button>
-            <Button
-              onClick={() => setReceiveOpen(true)}
-              className="flex flex-col gap-2 h-auto py-4"
-              variant="secondary"
-            >
-              <ArrowDownLeft className="h-5 w-5" />
-              <span>Receive</span>
-            </Button>
-            <Button
-              onClick={() => setHistoryOpen(true)}
-              className="flex flex-col gap-2 h-auto py-4"
-              variant="secondary"
-              disabled={!hasBalance}
-            >
-              <Clock className="h-5 w-5" />
-              <span>History</span>
-            </Button>
-          </div>
-
-          {/* Recent Transactions Preview */}
-          {hasBalance && (
+      {/* Main Container - responsive layout */}
+      <div className="max-w-7xl mx-auto px-16 py-9 space-y-20">
+        {/* Assets Summary Card */}
+        <div className="bg-[#191C21] border border-[#24292F] rounded-2xl p-6">
+          <div className="flex items-center justify-between">
+            {/* Left: Assets Info */}
             <div className="space-y-2">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-sm font-medium text-muted-foreground">Recent Activity</h3>
-                <Button
-                  variant="link"
-                  size="sm"
-                  onClick={() => setHistoryOpen(true)}
-                  className="text-primary h-auto p-0"
-                >
-                  View all
-                </Button>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center py-2 border-b border-border/50">
-                  <div className="flex items-center gap-2">
-                    <ArrowUpRight className="h-4 w-4 text-red-500" />
-                    <span className="text-sm">Sent</span>
-                  </div>
-                  <span className="text-sm font-medium">-50.00 HTR</span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b border-border/50">
-                  <div className="flex items-center gap-2">
-                    <ArrowDownLeft className="h-4 w-4 text-green-500" />
-                    <span className="text-sm">Received</span>
-                  </div>
-                  <span className="text-sm font-medium">+100.00 HTR</span>
-                </div>
+              <p className="text-xs text-primary-400 uppercase tracking-wider">assets summary</p>
+              <div className="flex items-center gap-3">
+                {/* HTR Icon */}
+                <img
+                  src={htrLogoWhiteOutline}
+                  alt="HTR"
+                  className="w-6 h-6"
+                />
+                <span className="text-2xl font-medium text-white">
+                  {(() => {
+                    console.log('🎨 UI rendering balance. balances array:', balances);
+                    if (balances.length > 0) {
+                      console.log('💰 First balance item:', balances[0]);
+                      console.log('🔢 Available amount:', balances[0].available);
+                      console.log('📱 Formatted amount:', formatHTRAmount(balances[0].available));
+                      return `${formatHTRAmount(balances[0].available)} HTR`;
+                    }
+                    return '0 HTR';
+                  })()}
+                </span>
               </div>
             </div>
-          )}
 
-          {/* Empty State */}
-          {!hasBalance && (
-            <div className="text-center py-8 text-muted-foreground">
-              <p className="text-sm">No transactions yet</p>
-              <p className="text-xs mt-1">Receive HTR to get started</p>
+            {/* Right: Action Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => handleButtonClick('Send')}
+                className={`px-6 py-2.5 bg-primary hover:bg-primary/90 rounded-xl flex items-center gap-2 transition-colors ${
+                  activeButton === 'Send' ? 'bg-primary/90' : ''
+                }`}
+              >
+                <ArrowUpRight className="w-4 h-4 text-white" />
+                <span className="text-sm font-medium text-white">Send</span>
+              </button>
+              <button
+                onClick={() => handleButtonClick('Receive')}
+                className={`px-6 py-2.5 bg-primary hover:bg-primary/90 rounded-xl flex items-center gap-2 transition-colors ${
+                  activeButton === 'Receive' ? 'bg-primary/90' : ''
+                }`}
+              >
+                <ArrowDownLeft className="w-4 h-4 text-white" />
+                <span className="text-sm font-medium text-white">Receive</span>
+              </button>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        </div>
+
+        {/* My Assets Section */}
+        <div className="space-y-6">
+          {/* Section Header */}
+          <h2 className="text-xl font-medium text-white">My Assets</h2>
+
+          {/* Assets List */}
+          <div className="space-y-4">
+            {/* HTR Row - Clickable */}
+            <button
+              onClick={() => handleButtonClick('ViewHistory')}
+              className="w-full bg-[#191C21] border border-[#24292F] rounded-lg px-6 py-8 flex items-center justify-between hover:bg-primary-600/40 transition-colors group"
+            >
+              <div className="space-y-1 text-left">
+                <div className="text-base font-medium text-white">HTR</div>
+                <div className="text-sm text-muted-foreground">Hathor</div>
+              </div>
+              <div className="flex items-center gap-6">
+                <span className="text-lg font-medium text-white">
+                  {balances.length > 0 ? formatHTRAmount(balances[0].available) : '0.00'}
+                </span>
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleButtonClick('SendHTR');
+                  }}
+                  className="px-4 py-2 bg-transparent hover:bg-secondary/20 text-white rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer"
+                >
+                  <span>Send</span>
+                  <ArrowUpRight className="w-4 h-4" />
+                </div>
+              </div>
+            </button>
+
+            {/* Warning Message - Below the list */}
+            <div className="flex items-center justify-center gap-2 px-4 py-3">
+              <div className="w-4 h-4 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
+                <Info className="w-3 h-3 text-white" />
+              </div>
+              <span className="text-xs text-muted-foreground">
+                HTR is the only supported token in this version. Support for custom tokens is coming soon.
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Dialogs */}
-      <SendTokenDialog open={sendOpen} onOpenChange={setSendOpen} />
-      <ReceiveTokenDialog 
-        open={receiveOpen} 
-        onOpenChange={setReceiveOpen} 
-        address={address} 
+      <SendDialog 
+        isOpen={sendDialogOpen} 
+        onClose={() => setSendDialogOpen(false)} 
       />
-      <HistoryDialog isOpen={historyOpen} onClose={() => setHistoryOpen(false)} />
+      <ReceiveDialog 
+        isOpen={receiveDialogOpen} 
+        onClose={() => setReceiveDialogOpen(false)} 
+      />
+      <HistoryDialog 
+        isOpen={historyDialogOpen} 
+        onClose={() => setHistoryDialogOpen(false)} 
+      />
     </div>
-  )
-}
+  );
+};
 
-export default WalletHome
+export default WalletHome;

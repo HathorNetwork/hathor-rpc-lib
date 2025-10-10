@@ -2,11 +2,12 @@ import { prettyValue } from '@hathor/wallet-lib/lib/utils/numbers';
 
 /**
  * Format HTR amount using Hathor's prettyValue utility
- * @param amount Amount in cents (satoshis)
+ * @param amount Amount in cents (satoshis) - can be number or BigInt
  * @returns Formatted string
  */
-export const formatHTRAmount = (amount: number): string => {
-  return prettyValue(amount);
+export const formatHTRAmount = (amount: number | bigint): string => {
+  const amountValue = typeof amount === 'bigint' ? Number(amount) : amount;
+  return prettyValue(amountValue);
 };
 
 /**
@@ -20,11 +21,12 @@ export const htrToCents = (amount: string): number => {
 
 /**
  * Convert cents to HTR amount
- * @param cents Amount in cents
+ * @param cents Amount in cents (can be number or BigInt)
  * @returns Amount as number
  */
-export const centsToHTR = (cents: number): number => {
-  return cents / 100;
+export const centsToHTR = (cents: number | bigint): number => {
+  const centsValue = typeof cents === 'bigint' ? Number(cents) : cents;
+  return centsValue / 100;
 };
 
 /**

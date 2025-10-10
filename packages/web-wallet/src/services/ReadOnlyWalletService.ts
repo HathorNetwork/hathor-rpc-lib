@@ -155,8 +155,8 @@ export class ReadOnlyWalletService {
       // Transform the wallet-lib balance format to our interface
       const balances: WalletBalance[] = Object.entries(balance).map(([token, data]: [string, any]) => ({
         token,
-        available: data.available.unlocked,
-        locked: data.available.locked,
+        available: data.balance?.unlocked || 0,
+        locked: data.balance?.locked || 0,
       }));
 
       return balances;

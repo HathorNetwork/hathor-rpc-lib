@@ -1,12 +1,12 @@
 import { MetaMaskProvider } from '@hathor/snap-utils'
 import { WalletProvider } from './contexts/WalletContext'
-import ProperWalletHome from './components/ProperWalletHome'
+import WalletHome from './components/WalletHome'
 
 function App() {
   return (
     <MetaMaskProvider>
       <WalletProvider>
-        <ProperWalletHome />
+        <WalletHome />
       </WalletProvider>
     </MetaMaskProvider>
   )
