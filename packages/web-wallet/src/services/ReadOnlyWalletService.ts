@@ -1,5 +1,5 @@
-import { HathorWalletServiceWallet, Network } from '@hathor/wallet-lib';
-import { NETWORKS } from '../constants';
+import { HathorWalletServiceWallet, Network, config } from '@hathor/wallet-lib';
+import { NETWORKS, WALLET_SERVICE_URLS, WALLET_SERVICE_WS_URLS } from '../constants';
 
 export interface WalletBalance {
   token: string;
@@ -49,10 +49,37 @@ export class ReadOnlyWalletService {
     try {
       console.log('Initializing read-only wallet with xpub:', xpub.substring(0, 20) + '...');
 
+      // Get wallet service URLs based on network
+      let walletServiceUrl: string;
+      let walletServiceWsUrl: string;
+      let actualNetwork: string; // The network value for wallet-lib (mainnet or testnet)
+
+      if (network === NETWORKS.DEV_TESTNET || network === 'dev-testnet') {
+        walletServiceUrl = WALLET_SERVICE_URLS.DEV_TESTNET;
+        walletServiceWsUrl = WALLET_SERVICE_WS_URLS.DEV_TESTNET;
+        actualNetwork = 'testnet'; // wallet-lib only understands 'mainnet' or 'testnet'
+      } else if (network === NETWORKS.TESTNET || network === 'testnet') {
+        walletServiceUrl = WALLET_SERVICE_URLS.TESTNET;
+        walletServiceWsUrl = WALLET_SERVICE_WS_URLS.TESTNET;
+        actualNetwork = 'testnet';
+      } else {
+        walletServiceUrl = WALLET_SERVICE_URLS.MAINNET;
+        walletServiceWsUrl = WALLET_SERVICE_WS_URLS.MAINNET;
+        actualNetwork = 'mainnet';
+      }
+
+      console.log('Using wallet service URL:', walletServiceUrl);
+      console.log('Using wallet service WS URL:', walletServiceWsUrl);
+      console.log('Using network for wallet-lib:', actualNetwork);
+
+      // Set global wallet-lib config
+      config.setWalletServiceBaseUrl(walletServiceUrl);
+      config.setWalletServiceBaseWsUrl(walletServiceWsUrl);
+
       // Create wallet instance with xpub only
       this.wallet = new HathorWalletServiceWallet({
         xpub,
-        network: new Network(network),
+        network: new Network(actualNetwork),
         requestPassword: async () => '', // Not used for read-only mode
         enableWs: true, // Enable WebSocket for real-time updates
       });

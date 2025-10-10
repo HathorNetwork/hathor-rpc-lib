@@ -11,7 +11,9 @@ export default defineConfig({
       'events': path.resolve(__dirname, 'node_modules/events'),
       'buffer': path.resolve(__dirname, 'node_modules/buffer'),
       'process/browser': path.resolve(__dirname, 'node_modules/process/browser.js'),
-      'assert': path.resolve(__dirname, 'node_modules/assert')
+      'assert': path.resolve(__dirname, 'node_modules/assert'),
+      'crypto': path.resolve(__dirname, 'node_modules/crypto-browserify'),
+      'stream': path.resolve(__dirname, 'node_modules/stream-browserify')
     },
     dedupe: ['react', 'react-dom']
   },
@@ -20,7 +22,7 @@ export default defineConfig({
     'process.env.SNAP_ORIGIN': JSON.stringify('local:http://localhost:8080')
   },
   optimizeDeps: {
-    include: ['@hathor/snap-utils', 'react', 'react-dom', 'react/jsx-runtime', 'events', 'buffer', 'process/browser', 'assert'],
+    include: ['@hathor/snap-utils', 'react', 'react-dom', 'react/jsx-runtime', 'events', 'buffer', 'process/browser', 'assert', 'crypto-browserify', 'stream-browserify'],
     esbuildOptions: {
       define: {
         global: 'globalThis'

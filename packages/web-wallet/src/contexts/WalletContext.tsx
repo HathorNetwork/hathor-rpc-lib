@@ -78,6 +78,33 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     try {
       setState(prev => ({ ...prev, loadingStep: 'Checking existing connection...' }));
 
+      // Check snap network and change if needed
+      try {
+        const networkTest = await invokeSnap({
+          method: 'htr_getConnectedNetwork',
+          params: {}
+        });
+        const parsedNetworkTest = typeof networkTest === 'string' ? JSON.parse(networkTest) : networkTest;
+        const currentSnapNetwork = parsedNetworkTest?.response?.network;
+        const targetNetwork = 'dev-testnet';
+
+        if (currentSnapNetwork !== targetNetwork) {
+          console.log(`🔄 Changing snap network from ${currentSnapNetwork} to ${targetNetwork}...`);
+          setState(prev => ({ ...prev, loadingStep: 'Changing snap network to dev-testnet...' }));
+
+          await invokeSnap({
+            method: 'htr_changeNetwork',
+            params: {
+              network: currentSnapNetwork,
+              newNetwork: targetNetwork
+            }
+          });
+          console.log('✅ Snap network changed to dev-testnet');
+        }
+      } catch (networkError) {
+        console.error('Failed to check/change network:', networkError);
+      }
+
       // Try to get xpub without requesting snap first
       const xpubResponse = await invokeSnap({
         method: 'htr_getXpub',
@@ -95,8 +122,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       if (xpub) {
         setState(prev => ({ ...prev, loadingStep: 'Initializing read-only wallet...' }));
 
-        // Get network from snap
-        const network = await WalletServiceMethods.getConnectedNetwork(invokeSnap);
+        // Web wallet always uses dev-testnet
+        const network = 'dev-testnet';
 
         // Initialize read-only wallet
         await readOnlyWalletService.initialize(xpub, network);
@@ -141,20 +168,49 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     try {
       // Request the snap to install/activate it
       await requestSnap();
-      setState(prev => ({ ...prev, loadingStep: 'Getting xpub from snap...' }));
+      setState(prev => ({ ...prev, loadingStep: 'Checking snap network...' }));
 
       // First, check if snap is working by getting network
       console.log('🔍 Testing snap connection...');
+      let currentSnapNetwork;
       try {
         const networkTest = await invokeSnap({
           method: 'htr_getConnectedNetwork',
           params: {}
         });
         console.log('✅ Snap is responsive, network test:', networkTest);
+
+        // Parse network response
+        const parsedNetworkTest = typeof networkTest === 'string' ? JSON.parse(networkTest) : networkTest;
+        currentSnapNetwork = parsedNetworkTest?.response?.network;
+        console.log('📡 Snap current network:', currentSnapNetwork);
       } catch (testError) {
         console.error('❌ Snap is not responsive:', testError);
         throw new Error('Snap is not responding. Please make sure it is installed correctly.');
       }
+
+      // Change snap network to dev-testnet if needed
+      const targetNetwork = 'dev-testnet'; // Web wallet uses dev-testnet
+      if (currentSnapNetwork !== targetNetwork) {
+        console.log(`🔄 Changing snap network from ${currentSnapNetwork} to ${targetNetwork}...`);
+        setState(prev => ({ ...prev, loadingStep: 'Changing snap network to dev-testnet...' }));
+
+        try {
+          await invokeSnap({
+            method: 'htr_changeNetwork',
+            params: {
+              network: currentSnapNetwork,
+              newNetwork: targetNetwork
+            }
+          });
+          console.log('✅ Snap network changed to dev-testnet');
+        } catch (networkError) {
+          console.error('❌ Failed to change snap network:', networkError);
+          throw new Error('Failed to change snap network to dev-testnet');
+        }
+      }
+
+      setState(prev => ({ ...prev, loadingStep: 'Getting xpub from snap...' }));
 
       // Get xpub from snap
       console.log('🔍 Attempting to get xpub from snap...');
@@ -197,8 +253,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       console.log('✅ Got xpub from snap:', xpub.substring(0, 20) + '...');
       setState(prev => ({ ...prev, loadingStep: 'Initializing read-only wallet...' }));
 
-      // Get network from snap
-      const network = await WalletServiceMethods.getConnectedNetwork(invokeSnap);
+      // Web wallet always uses dev-testnet
+      const network = 'dev-testnet';
 
       // Initialize read-only wallet with xpub
       await readOnlyWalletService.initialize(xpub, network);
