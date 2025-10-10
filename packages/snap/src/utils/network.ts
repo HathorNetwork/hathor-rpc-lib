@@ -7,6 +7,7 @@
 
 import { config } from '@hathor/wallet-lib';
 import { REQUEST_METHODS, DEFAULT_NETWORK, NETWORK_MAP } from '../constants';
+import { initializeWalletOnService } from './wallet';
 
 /*
  * Get persisted network data or the default from constants
@@ -23,6 +24,7 @@ export const getNetworkData = async () => {
 
 /*
  * Set network, persist data in storage and update wallet lib config
+ * Also initializes the wallet on the new network's wallet-service
  */
 export const setNetwork = async (network: string) => {
   const persistedData = await snap.request({
@@ -39,6 +41,18 @@ export const setNetwork = async (network: string) => {
   });
 
   await configNetwork();
+
+  // Initialize wallet on the new network's wallet-service
+  // This ensures the wallet is available for read-only access
+  try {
+    console.log('🟡 setNetwork: Initializing wallet on new network wallet-service...');
+    const walletId = await initializeWalletOnService();
+    console.log('✅ setNetwork: Wallet initialized on new network');
+    console.log('✅ setNetwork: Wallet ID:', walletId);
+  } catch (error) {
+    console.error('❌ setNetwork: Failed to initialize wallet:', error);
+    // Don't throw - network change succeeded even if wallet init failed
+  }
 }
 
 /*
