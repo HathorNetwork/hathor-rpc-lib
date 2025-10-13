@@ -49,9 +49,15 @@ Tests
 
 TO DO
 
-Development
+## Development
 
-TO DO
+### Testing the `snap` package
+
+First build the `hathor-rpc-handler` package and then run the snaps in development mode:
+```sh
+yarn workspace @hathor/hathor-rpc-handler build
+yarn workspace @hathor/snap start
+```
 
 ## Contributing
 
