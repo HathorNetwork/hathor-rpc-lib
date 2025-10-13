@@ -35,6 +35,11 @@ then, install the dependencies:
 yarn
 ```
 
+For most development cases, build the packages right after:
+```sh
+yarn workspaces foreach -A run build
+```
+
 ## Usage
 
 TO DO
@@ -53,12 +58,12 @@ TO DO
 
 ### Testing the `snap` package
 
-First build the dependency packages and then run the snaps in development mode:
+To test the interaction with the Metamask wallet, run the snaps in development mode:
 ```sh
-yarn workspace @hathor/hathor-rpc-handler build
-yarn workspace @hathor/snap-utils build
 yarn workspace @hathor/snap start
 ```
+
+See more on the [`@hathor/snap` README](packages/snap/README.md).
 
 ## Contributing
 
