@@ -10,7 +10,9 @@
     "outDir": "./dist",
     "rootDir": "./src/",
     "types": ["node", "jest"],
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "declaration": true,
+    "declarationMap": true
   },
   "exclude": [
     "__tests__/",
