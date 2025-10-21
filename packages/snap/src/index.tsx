@@ -39,6 +39,7 @@ const READ_ONLY_METHODS = new Set([
   RpcMethods.GetConnectedNetwork,
   RpcMethods.GetXpub,
   RpcMethods.GetWalletInformation,
+  RpcMethods.ChangeNetwork,
 ]);
 
 /**
