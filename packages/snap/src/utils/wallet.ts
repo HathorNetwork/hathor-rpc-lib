@@ -31,7 +31,6 @@ export const initializeWalletOnService = async (): Promise<string> => {
     // Check if this is a "wallet already loaded" error (400 status)
     // The wallet-service returns 400 when wallet already exists
     if (error?.response?.data?.error === 'wallet-already-loaded') {
-      console.log('✅ Wallet already exists on wallet-service');
       return error.response.data.status.walletId;
     }
 

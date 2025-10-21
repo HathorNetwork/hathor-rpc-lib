@@ -20,41 +20,15 @@ import { bigIntUtils } from '@hathor/wallet-lib';
  */
 export const onInstall: OnInstallHandler = async () => {
   try {
-    console.log('🟡 onInstall: Initializing wallet on wallet-service (non-blocking)...');
-
     // Initialize wallet on wallet-service without waiting for it to be ready
     // This uses waitReady: false internally
-    const walletId = await initializeWalletOnService();
-
-    console.log('✅ onInstall: Wallet creation started on wallet-service');
-    console.log('✅ onInstall: Wallet ID:', walletId);
+    await initializeWalletOnService();
   } catch (error) {
-    console.error('❌ onInstall: Failed to initialize wallet:', error);
     // Don't throw - show installation page even if wallet init fails
+    console.error('onInstall: Failed to initialize wallet:', error);
   }
 
   return installPage();
-};
-
-/**
- * Handle snap updates. This handler is called when the snap is updated to a new version.
- *
- * We also initialize the wallet here to ensure it exists on the wallet-service after updates.
- * This is useful for testing and ensures the wallet is available even if onInstall didn't run.
- */
-export const onUpdate: OnUpdateHandler = async () => {
-  try {
-    console.log('🟡 onUpdate: Initializing wallet on wallet-service (non-blocking)...');
-
-    // Initialize wallet on wallet-service without waiting for it to be ready
-    const walletId = await initializeWalletOnService();
-
-    console.log('✅ onUpdate: Wallet creation started on wallet-service');
-    console.log('✅ onUpdate: Wallet ID:', walletId);
-  } catch (error) {
-    console.error('❌ onUpdate: Failed to initialize wallet:', error);
-    // Don't throw - continue with update even if wallet init fails
-  }
 };
 
 // RPC methods that only require read-only access (no signing)
@@ -83,7 +57,10 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
 }) => {
   // Almost all RPC requests need the network, so I add it here
   const networkData = await getNetworkData();
-  request.params = { ...request.params, network: networkData.network };
+  request.params = {
+    ...request.params,
+    network: networkData.network,
+  };
 
   // Use read-only wallet for requests that don't require signing
   const isReadOnly = READ_ONLY_METHODS.has(request.method as RpcMethods);
