@@ -81,6 +81,7 @@ export const getReadOnlyHathorWallet = async (): Promise<HathorWalletServiceWall
     requestPassword: () => Promise.resolve(''),
     xpub,
     network: networkObject,
+    enableWs: false, // WebSockets are not available in snap environment
   });
 
   // Set lib config data and start the wallet in read-only mode
