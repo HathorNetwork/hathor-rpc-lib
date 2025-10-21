@@ -37,13 +37,21 @@ const TESTNET_URLS = {
   network: 'testnet',
 }
 
+const DEV_TESTNET_URLS = {
+  nodeURL: 'https://node1.testnet.hathor.network/v1a/',
+  walletServiceURL: 'https://dev.wallet-service.testnet.hathor.network',
+  txMiningURL: 'https://txmining.testnet.hathor.network/',
+  network: 'testnet',
+}
+
 export const NETWORK_MAP = {
   'mainnet': MAINNET_URLS,
   'nano-bravo-testnet': NANO_BRAVO_URLS,
   'testnet': TESTNET_URLS,
   'testnet-hotel': TESTNET_URLS,
+  'dev-testnet': DEV_TESTNET_URLS,
 }
 
-export const DEFAULT_NETWORK = 'mainnet';
+export const DEFAULT_NETWORK = 'dev-testnet';
 
 export const DEFAULT_PIN_CODE = '123';
