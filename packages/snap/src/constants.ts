@@ -52,6 +52,6 @@ export const NETWORK_MAP = {
   'dev-testnet': DEV_TESTNET_URLS,
 }
 
-export const DEFAULT_NETWORK = 'dev-testnet';
+export const DEFAULT_NETWORK = 'mainnet';
 
 export const DEFAULT_PIN_CODE = '123';
