@@ -54,6 +54,7 @@ interface WalletContextType extends WalletState {
   refreshAddress: () => Promise<void>;
   getTransactionHistory: (count?: number, skip?: number, tokenId?: string) => Promise<TransactionHistoryItem[]>;
   sendTransaction: (params: SendTransactionParams) => Promise<any>;
+  changeNetwork: (newNetwork: string) => Promise<void>;
   setError: (error: string | null) => void;
 }
 
@@ -413,6 +414,120 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     return await WalletServiceMethods.sendTransaction(invokeSnap, params);
   };
 
+  const changeNetwork = async (newNetwork: string) => {
+    if (!state.isConnected || !state.xpub) {
+      console.error('Cannot change network: wallet not connected');
+      return;
+    }
+
+    // Save current state for rollback
+    const previousNetwork = state.network;
+    const previousAddress = state.address;
+    const previousBalances = state.balances;
+
+    try {
+      // Show loading screen by setting isCheckingConnection and loadingStep
+      setState(prev => ({
+        ...prev,
+        isCheckingConnection: true,
+        loadingStep: 'Changing network...',
+        error: null
+      }));
+
+      // Call snap to change network
+      await invokeSnap({
+        method: 'htr_changeNetwork',
+        params: {
+          network: previousNetwork,
+          newNetwork: newNetwork,
+        }
+      });
+
+      console.log(`✅ Network changed from ${previousNetwork} to ${newNetwork}`);
+
+      setState(prev => ({ ...prev, loadingStep: 'Stopping previous wallet...' }));
+
+      // Stop the old read-only wallet
+      if (readOnlyWalletService.isReady()) {
+        await readOnlyWalletService.stop();
+      }
+
+      setState(prev => ({ ...prev, loadingStep: 'Initializing wallet on new network...' }));
+
+      // Reinitialize read-only wallet with new network
+      await readOnlyWalletService.initialize(state.xpub, newNetwork);
+
+      setState(prev => ({ ...prev, loadingStep: 'Loading wallet data...' }));
+
+      // Get fresh data from the new network
+      const addressInfo = readOnlyWalletService.getCurrentAddress();
+      const address = addressInfo?.address || '';
+      const balances = await readOnlyWalletService.getBalance('00');
+
+      // Update localStorage with new network
+      localStorage.setItem(STORAGE_KEYS.NETWORK, newNetwork);
+
+      setState(prev => ({
+        ...prev,
+        network: newNetwork,
+        address,
+        balances,
+        isCheckingConnection: false,
+        loadingStep: '',
+        error: null,
+      }));
+
+      console.log('✅ Wallet reinitialized with new network');
+    } catch (error) {
+      console.error('❌ Failed to change network:', error);
+
+      // Rollback to previous network
+      try {
+        console.log(`🔄 Rolling back to previous network: ${previousNetwork}`);
+        setState(prev => ({ ...prev, loadingStep: 'Rolling back to previous network...' }));
+
+        // Change snap back to previous network
+        await invokeSnap({
+          method: 'htr_changeNetwork',
+          params: {
+            network: newNetwork,
+            newNetwork: previousNetwork,
+          }
+        });
+
+        // Stop wallet if it was initialized
+        if (readOnlyWalletService.isReady()) {
+          await readOnlyWalletService.stop();
+        }
+
+        // Reinitialize with previous network
+        await readOnlyWalletService.initialize(state.xpub, previousNetwork);
+
+        // Restore previous state
+        setState(prev => ({
+          ...prev,
+          network: previousNetwork,
+          address: previousAddress,
+          balances: previousBalances,
+          isCheckingConnection: false,
+          loadingStep: '',
+          error: error instanceof Error ? error.message : 'Failed to change network. Reverted to previous network.',
+        }));
+
+        console.log('✅ Successfully rolled back to previous network');
+      } catch (rollbackError) {
+        console.error('❌ Failed to rollback:', rollbackError);
+        // If rollback fails, at least show the error and stop loading
+        setState(prev => ({
+          ...prev,
+          isCheckingConnection: false,
+          loadingStep: '',
+          error: 'Failed to change network and rollback failed. Please reconnect your wallet.',
+        }));
+      }
+    }
+  };
+
   const setError = (error: string | null) => {
     setState(prev => ({ ...prev, error }));
     // Also clear MetaMask error when manually setting error to null
@@ -429,6 +544,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     refreshAddress,
     getTransactionHistory,
     sendTransaction,
+    changeNetwork,
     setError,
   };
 
