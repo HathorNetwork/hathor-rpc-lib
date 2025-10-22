@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import type { OnRpcRequestHandler, OnInstallHandler, OnUpdateHandler } from '@metamask/snaps-sdk';
+import type { OnRpcRequestHandler, OnInstallHandler } from '@metamask/snaps-sdk';
+import { SnapError } from '@metamask/snaps-sdk';
 import { getHathorWallet, getReadOnlyHathorWallet, initializeWalletOnService } from './utils/wallet';
 import { getNetworkData } from './utils/network';
 import { promptHandler } from './utils/prompt';
@@ -78,10 +79,22 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
     ? await getReadOnlyHathorWallet()
     : await getHathorWallet();
 
-  const response = await handleRpcRequest(request, wallet, null, promptHandler(origin, wallet));
-
-  // We must return the stringified response because there are some JSON responses
-  // that include bigint values, which are not supported by snap
-  // so we use the bigint util from the wallet lib to stringify the return
-  return bigIntUtils.JSONBigInt.stringify(response);
+  try {
+    const response = await handleRpcRequest(request, wallet, null, promptHandler(origin, wallet));
+    // We must return the stringified response because there are some JSON responses
+    // that include bigint values, which are not supported by snap
+    // so we use the bigint util from the wallet lib to stringify the return
+    return bigIntUtils.JSONBigInt.stringify(response);
+  } catch (e: any) {
+    // Re-throw using SnapError to properly serialize the data property
+    const snapError = new SnapError(
+      e.message || 'Unknown error',
+      e.data || { errorType: e.name || 'UnknownError' }
+    );
+    // Try to preserve the original error code
+    if (e.code) {
+      (snapError as any).code = e.code;
+    }
+    throw snapError;
+  }
 };

@@ -42,14 +42,7 @@ export const setNetwork = async (network: string) => {
   });
 
   await configNetwork();
-
-  // Initialize wallet on the new network's wallet-service
-  // This ensures the wallet is available for read-only access
-  try {
-    await initializeWalletOnService();
-  } catch (error) {
-    // Don't throw - network change succeeded even if wallet init failed
-  }
+  await initializeWalletOnService();
 }
 
 /*
