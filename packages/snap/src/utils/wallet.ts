@@ -10,6 +10,31 @@ import { DEFAULT_PIN_CODE, REQUEST_METHODS } from '../constants';
 import { getNetworkData, configNetwork } from './network';
 
 /**
+ * Helper function to derive xpriv from a BIP32 path
+ * @param path - BIP32 derivation path (e.g., libConstants.P2PKH_ACCT_PATH)
+ * @param network - Network name (e.g., 'mainnet', 'testnet')
+ * @returns The derived xpriv key
+ */
+async function getXpriv(path: string, network: string): Promise<string> {
+  const node = await snap.request({
+    method: REQUEST_METHODS.GET_BIP32_ENTROPY,
+    params: {
+      curve: 'secp256k1',
+      path: path.split('/'),
+    },
+  });
+
+  return walletUtils.xprivFromData(
+    Buffer.from(node.privateKey.substring(2), 'hex'),
+    Buffer.from(node.chainCode.substring(2), 'hex'),
+    node.parentFingerprint,
+    node.depth,
+    node.index,
+    network
+  );
+}
+
+/**
  * Initializes the wallet on the wallet-service without waiting for it to be ready.
  * This is useful for background initialization (e.g., during snap installation).
  * The wallet will be available for read-only access once it's ready on the service.
@@ -52,24 +77,8 @@ export const getReadOnlyHathorWallet = async (): Promise<HathorWalletServiceWall
   const network = networkData.network;
   const networkObject = new Network(network);
 
-  // Get the BIP32 node data
-  const hathorNode = await snap.request({
-    method: REQUEST_METHODS.GET_BIP32_ENTROPY,
-    params: {
-      curve: 'secp256k1',
-      path: libConstants.P2PKH_ACCT_PATH.split('/'),
-    },
-  });
-
-  // Derive xpriv first (same as getHathorWallet) to ensure consistency
-  const accountPathXpriv = walletUtils.xprivFromData(
-    Buffer.from(hathorNode.privateKey.substring(2), 'hex'),
-    Buffer.from(hathorNode.chainCode.substring(2), 'hex'),
-    hathorNode.parentFingerprint,
-    hathorNode.depth,
-    hathorNode.index,
-    network
-  );
+  // Derive xpriv using helper function
+  const accountPathXpriv = await getXpriv(libConstants.P2PKH_ACCT_PATH, network);
 
   // Convert xpriv to xpub using bitcore (ensures same derivation as full wallet)
   const HDPrivateKey = require('bitcore-lib').HDPrivateKey;
@@ -96,39 +105,9 @@ export const getHathorWallet = async (): Promise<HathorWalletServiceWallet> => {
   const network = networkData.network;
   const networkObject = new Network(network);
 
-  // Get the Hathor node, corresponding to the path m/44'/280'/0'.
-  const hathorNode = await snap.request({
-    method: REQUEST_METHODS.GET_BIP32_ENTROPY,
-    params: {
-      curve: 'secp256k1',
-      path: libConstants.P2PKH_ACCT_PATH.split('/'),
-    },
-  })
-
-  const authHathorNode = await snap.request({
-    method: REQUEST_METHODS.GET_BIP32_ENTROPY,
-    params: {
-      curve: 'secp256k1',
-      path: libConstants.WALLET_SERVICE_AUTH_DERIVATION_PATH.split('/'),
-    },
-  })
-
-  const accountPathXpriv = walletUtils.xprivFromData(
-    Buffer.from(hathorNode.privateKey.substring(2), 'hex'),
-    Buffer.from(hathorNode.chainCode.substring(2), 'hex'),
-    hathorNode.parentFingerprint,
-    hathorNode.depth,
-    hathorNode.index,
-    network
-  );
-  const authPathXpriv = walletUtils.xprivFromData(
-    Buffer.from(authHathorNode.privateKey.substring(2), 'hex'),
-    Buffer.from(authHathorNode.chainCode.substring(2), 'hex'),
-    authHathorNode.parentFingerprint,
-    authHathorNode.depth,
-    authHathorNode.index,
-    network
-  );
+  // Derive xprivs using helper function
+  const accountPathXpriv = await getXpriv(libConstants.P2PKH_ACCT_PATH, network);
+  const authPathXpriv = await getXpriv(libConstants.WALLET_SERVICE_AUTH_DERIVATION_PATH, network);
 
   const wallet = new HathorWalletServiceWallet({
     requestPassword: () => Promise.resolve(DEFAULT_PIN_CODE),

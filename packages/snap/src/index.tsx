@@ -58,6 +58,7 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
 }) => {
   // Almost all RPC requests need the network, so I add it here
   const networkData = await getNetworkData();
+
   request.params = {
     ...request.params,
     network: networkData.network,
@@ -65,11 +66,13 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
 
   // Use read-only wallet for requests that don't require signing
   const isReadOnly = READ_ONLY_METHODS.has(request.method as RpcMethods);
+
   const wallet = isReadOnly
     ? await getReadOnlyHathorWallet()
     : await getHathorWallet();
 
   const response = await handleRpcRequest(request, wallet, null, promptHandler(origin, wallet));
+
   // We must return the stringified response because there are some JSON responses
   // that include bigint values, which are not supported by snap
   // so we use the bigint util from the wallet lib to stringify the return
