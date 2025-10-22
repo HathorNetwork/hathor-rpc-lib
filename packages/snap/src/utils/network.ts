@@ -7,6 +7,7 @@
 
 import { config } from '@hathor/wallet-lib';
 import { REQUEST_METHODS, DEFAULT_NETWORK, NETWORK_MAP } from '../constants';
+import { initializeWalletOnService } from './wallet';
 
 /*
  * Get persisted network data or the default from constants
@@ -40,6 +41,7 @@ export const setNetwork = async (network: string) => {
   });
 
   await configNetwork();
+  await initializeWalletOnService();
 }
 
 /*
