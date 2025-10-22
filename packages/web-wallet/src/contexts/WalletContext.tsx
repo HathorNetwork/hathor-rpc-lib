@@ -336,11 +336,18 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       console.log('✅ Wallet state updated with balances:', balances);
     } catch (error) {
       console.error('Connection error:', error);
+
+      // Provide more specific error messages based on which step failed
+      let errorMessage = 'Failed to connect to wallet';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
       setState(prev => ({
         ...prev,
         isConnecting: false,
         loadingStep: '',
-        error: error instanceof Error ? error.message : 'Failed to connect to wallet',
+        error: errorMessage,
       }));
     }
   };

@@ -32,20 +32,41 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
   const validateForm = () => {
     const newErrors: { amount?: string; address?: string } = {};
 
-    // Validate amount
-    const amountNum = parseFloat(amount);
-    if (!amount || amountNum <= 0) {
-      newErrors.amount = 'Balance insufficient';
+    // Validate amount with comprehensive checks
+    if (!amount || amount.trim() === '') {
+      newErrors.amount = 'Amount is required';
     } else {
-      const amountInCents = htrToCents(amount);
-      if (amountInCents > availableBalance) {
-        newErrors.amount = 'Balance insufficient';
+      // Check for valid number format (no scientific notation, max 2 decimals for HTR)
+      const amountPattern = /^\d+(\.\d{1,2})?$/;
+      if (!amountPattern.test(amount)) {
+        newErrors.amount = 'Invalid amount format. Use up to 2 decimal places.';
+      } else {
+        const amountNum = parseFloat(amount);
+
+        // Check if amount is positive
+        if (amountNum <= 0) {
+          newErrors.amount = 'Amount must be greater than 0';
+        }
+        // Check for integer overflow (JavaScript's MAX_SAFE_INTEGER / 100 for cents)
+        else if (amountNum > Number.MAX_SAFE_INTEGER / 100) {
+          newErrors.amount = 'Amount is too large';
+        }
+        // Check against available balance
+        else {
+          const amountInCents = htrToCents(amount);
+          if (amountInCents > availableBalance) {
+            newErrors.amount = 'Insufficient balance';
+          }
+        }
       }
     }
 
     // Validate address
     if (!address || address.trim().length === 0) {
-      newErrors.address = 'This field is invalid';
+      newErrors.address = 'Address is required';
+    } else if (address.length < 34 || !address.startsWith('H')) {
+      // Basic Hathor address validation
+      newErrors.address = 'Invalid Hathor address format';
     }
 
     setErrors(newErrors);
