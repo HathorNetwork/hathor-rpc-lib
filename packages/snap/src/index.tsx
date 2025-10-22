@@ -7,11 +7,11 @@
 
 import type { OnRpcRequestHandler, OnInstallHandler } from '@metamask/snaps-sdk';
 import { SnapError } from '@metamask/snaps-sdk';
-import { getHathorWallet } from './utils/wallet';
+import { getHathorWallet, getReadOnlyHathorWallet, initializeWalletOnService } from './utils/wallet';
 import { getNetworkData } from './utils/network';
 import { promptHandler } from './utils/prompt';
 import { installPage } from './dialogs/install';
-import { handleRpcRequest } from '@hathor/hathor-rpc-handler';
+import { handleRpcRequest, RpcMethods } from '@hathor/hathor-rpc-handler';
 import { bigIntUtils } from '@hathor/wallet-lib';
 
 /**
@@ -20,8 +20,28 @@ import { bigIntUtils } from '@hathor/wallet-lib';
  * @returns The JSON-RPC response.
  */
 export const onInstall: OnInstallHandler = async () => {
+  try {
+    // Initialize wallet on wallet-service without waiting for it to be ready
+    // This uses waitReady: false internally
+    await initializeWalletOnService();
+  } catch (error) {
+    // Don't throw - show installation page even if wallet init fails
+    console.error('onInstall: Failed to initialize wallet:', error);
+  }
+
   return installPage();
 };
+
+// RPC methods that only require read-only access (no signing)
+const READ_ONLY_METHODS = new Set([
+  RpcMethods.GetBalance,
+  RpcMethods.GetAddress,
+  RpcMethods.GetUtxos,
+  RpcMethods.GetConnectedNetwork,
+  RpcMethods.GetXpub,
+  RpcMethods.GetWalletInformation,
+  RpcMethods.ChangeNetwork,
+]);
 
 /**
  * Handle incoming JSON-RPC requests, sent through `wallet_invokeSnap`.
@@ -40,7 +60,13 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
   // Almost all RPC requests need the network, so I add it here
   const networkData = await getNetworkData();
   request.params = { ...request.params, network: networkData.network };
-  const wallet = await getHathorWallet();
+  // Use read-only wallet for requests that don't require signing
+  const isReadOnly = READ_ONLY_METHODS.has(request.method as RpcMethods);
+
+  const wallet = isReadOnly
+    ? await getReadOnlyHathorWallet()
+    : await getHathorWallet();
+
   try {
     const response = await handleRpcRequest(request, wallet, null, promptHandler(origin, wallet));
     // We must return the stringified response because there are some JSON responses

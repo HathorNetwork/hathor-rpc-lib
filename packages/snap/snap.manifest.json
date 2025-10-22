@@ -3,7 +3,7 @@
   "description": "Hathor Network Snap integration",
   "proposedName": "Hathor Wallet",
   "source": {
-    "shasum": "97RHyq8uHNaH3AOEFDJxflvvx1b3Gq8FmBgfPMPt7Cg=",
+    "shasum": "GIK9owdGPEblDWqZGUYP6GSTXV/qUF5g9hk4dYFrvi4=",
     "location": {
       "npm": {
         "filePath": "dist/bundle.js",
@@ -24,11 +24,20 @@
     "endowment:network-access": {},
     "snap_getBip32Entropy": [
       {
-        "path": ["m", "44'", "280'", "0'"],
+        "path": [
+          "m",
+          "44'",
+          "280'",
+          "0'"
+        ],
         "curve": "secp256k1"
       },
       {
-        "path": ["m", "280'", "280'"],
+        "path": [
+          "m",
+          "280'",
+          "280'"
+        ],
         "curve": "secp256k1"
       }
     ]
