@@ -46,12 +46,8 @@ export const setNetwork = async (network: string) => {
   // Initialize wallet on the new network's wallet-service
   // This ensures the wallet is available for read-only access
   try {
-    console.log('🟡 setNetwork: Initializing wallet on new network wallet-service...');
-    const walletId = await initializeWalletOnService();
-    console.log('✅ setNetwork: Wallet initialized on new network');
-    console.log('✅ setNetwork: Wallet ID:', walletId);
+    await initializeWalletOnService();
   } catch (error) {
-    console.error('❌ setNetwork: Failed to initialize wallet:', error);
     // Don't throw - network change succeeded even if wallet init failed
   }
 }
