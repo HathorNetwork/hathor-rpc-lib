@@ -1,1 +1,0 @@
-{"version":3,"file":"bool.d.ts","sourceRoot":"","sources":["../../../../src/nano_contracts/fields/encoding/bool.ts"],"names":[],"mappings":"AAAA;;;;;GAKG;;AAEH,OAAO,EAAE,eAAe,EAAE,MAAM,aAAa,CAAC;AAE9C,wBAAgB,MAAM,CAAC,KAAK,EAAE,OAAO,UAEpC;AAED,wBAAgB,MAAM,CAAC,GAAG,EAAE,MAAM,GAAG,eAAe,CAAC,OAAO,CAAC,CAe5D"}

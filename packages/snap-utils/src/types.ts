@@ -19,17 +19,17 @@ declare global {
 }
 
 interface EIP6963AnnounceProviderEvent extends CustomEvent<{
-    info: {
-          uuid: string;
-          name: string;
-          icon: string;
-          rdns: string;
-        };
-    provider: MetaMaskInpageProvider;
-}> {}
+  info: {
+    uuid: string;
+    name: string;
+    icon: string;
+    rdns: string;
+  };
+  provider: MetaMaskInpageProvider;
+}> { }
 
 declare global {
-    interface WindowEventMap {
-          'eip6963:announceProvider': EIP6963AnnounceProviderEvent;
-        }
+  interface WindowEventMap {
+    'eip6963:announceProvider': EIP6963AnnounceProviderEvent;
+  }
 }

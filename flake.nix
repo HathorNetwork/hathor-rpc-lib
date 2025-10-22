@@ -34,17 +34,7 @@
             nixpkgs-fmt
             nodejs_22
             yarn-berry
-            nodePackages.ttag-cli
           ];
-          devshell = {
-            startup.shell-hook.text = ''
-              if ! command -v claude >/dev/null 2>&1; then
-                echo "Installing @anthropic-ai/claude-code..."
-                npm install -g @anthropic-ai/claude-code
-              fi
-              export PATH="$(npm config get prefix)/bin:$PATH"
-            '';
-          };
         };
     });
 }

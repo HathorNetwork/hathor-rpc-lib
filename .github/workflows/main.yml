@@ -37,6 +37,14 @@ jobs:
       run: |
         nix develop . -c yarn workspace @hathor/web-wallet run test --run
 
+    - name: Install Playwright browsers
+      run: |
+        nix develop . -c yarn workspace @hathor/web-wallet exec playwright install chromium --with-deps
+
+    - name: E2E test web-wallet
+      run: |
+        nix develop . -c yarn workspace @hathor/web-wallet exec playwright test --project=chromium
+
     - name: Lint snap
       run: |
         nix develop . -c yarn workspace @hathor/snap run lint
