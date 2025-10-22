@@ -1,0 +1,1 @@
+{"version":3,"file":"sizedBytes.d.ts","sourceRoot":"","sources":["../../../../src/nano_contracts/fields/encoding/sizedBytes.ts"],"names":[],"mappings":"AAAA;;;;;GAKG;;AAEH,OAAO,EAAE,eAAe,EAAE,MAAM,aAAa,CAAC;AAE9C,wBAAgB,MAAM,CAAC,GAAG,EAAE,MAAM,EAAE,GAAG,EAAE,MAAM,UAE9C;AAED,wBAAgB,MAAM,CAAC,GAAG,EAAE,MAAM,EAAE,GAAG,EAAE,MAAM,GAAG,eAAe,CAAC,MAAM,CAAC,CAQxE"}

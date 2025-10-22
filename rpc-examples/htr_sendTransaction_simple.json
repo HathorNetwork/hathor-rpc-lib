@@ -1,0 +1,12 @@
+{
+  "method": "htr_sendTransaction",
+  "params": {
+    "network": "mainnet",
+    "outputs": [
+      {
+        "address": "HKTZujeJEBeM22UmRWkuKJaDnzbAfFzwRe",
+        "value": "100"
+      }
+    ]
+  }
+} 

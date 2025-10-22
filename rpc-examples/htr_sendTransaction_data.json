@@ -1,0 +1,11 @@
+{
+  "method": "htr_sendTransaction",
+  "params": {
+    "network": "mainnet",
+    "outputs": [
+      {
+        "data": "Smart contract call data or message"
+      }
+    ]
+  }
+} 
