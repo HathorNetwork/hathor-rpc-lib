@@ -81,17 +81,26 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const invokeSnap = useInvokeSnap();
   const requestSnap = useRequestSnap();
   const { error: metamaskError, setError: setMetamaskError } = useMetaMaskContext();
-  const isCheckingRef = React.useRef(false);
+
+  // Use state instead of ref for proper atomic updates to prevent race conditions
+  const [isCheckingConnection, setIsCheckingConnection] = useState(false);
 
   // Check for existing connection on mount
   const checkExistingConnection = async () => {
-    // Prevent concurrent calls
-    if (isCheckingRef.current) {
-      console.log('Already checking connection, skipping...');
+    // Prevent concurrent calls using functional state update for atomicity
+    let shouldProceed = false;
+    setIsCheckingConnection(prev => {
+      if (prev) {
+        console.log('Already checking connection, skipping...');
+        return prev; // Already checking, don't proceed
+      }
+      shouldProceed = true;
+      return true; // Start checking
+    });
+
+    if (!shouldProceed) {
       return;
     }
-
-    isCheckingRef.current = true;
 
     try {
       setState(prev => ({ ...prev, loadingStep: 'Checking existing connection...' }));
@@ -196,7 +205,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         error: 'Failed to reconnect. Please try connecting manually.',
       }));
     } finally {
-      isCheckingRef.current = false;
+      setIsCheckingConnection(false);
     }
   };
 
@@ -517,13 +526,25 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         console.log('✅ Successfully rolled back to previous network');
       } catch (rollbackError) {
         console.error('❌ Failed to rollback:', rollbackError);
-        // If rollback fails, at least show the error and stop loading
-        setState(prev => ({
-          ...prev,
+        // Rollback failed - wallet state is now inconsistent
+        // Force disconnect to prevent user from operating in unknown state
+        console.warn('🔴 Forcing wallet disconnect due to failed rollback');
+
+        // Clear localStorage and stop wallet
+        localStorage.removeItem(STORAGE_KEYS.XPUB);
+        localStorage.removeItem(STORAGE_KEYS.NETWORK);
+        try {
+          await readOnlyWalletService.stop();
+        } catch (stopError) {
+          console.error('Error stopping wallet during forced disconnect:', stopError);
+        }
+
+        // Reset to disconnected state
+        setState({
+          ...initialState,
           isCheckingConnection: false,
-          loadingStep: '',
-          error: 'Failed to change network and rollback failed. Please reconnect your wallet.',
-        }));
+          error: 'Network change failed. Wallet has been disconnected. Please reconnect.',
+        });
       }
     }
   };

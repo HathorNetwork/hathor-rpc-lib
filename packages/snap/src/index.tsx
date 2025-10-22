@@ -27,16 +27,28 @@ import { bigIntUtils } from '@hathor/wallet-lib';
  * @returns The JSON-RPC response.
  */
 export const onInstall: OnInstallHandler = async () => {
+  let walletInitSuccess = false;
   try {
     // Initialize wallet on wallet-service without waiting for it to be ready
     // This uses waitReady: false internally
     await initializeWalletOnService();
+    walletInitSuccess = true;
   } catch (error) {
-    // Don't throw - show installation page even if wallet init fails
     console.error('onInstall: Failed to initialize wallet:', error);
+    // Store initialization failure in snap state for retry on first RPC call
+    await snap.request({
+      method: 'snap_manageState',
+      params: {
+        operation: 'update',
+        newState: {
+          walletInitFailed: true,
+          initError: error instanceof Error ? error.message : String(error),
+        },
+      },
+    });
   }
 
-  return installPage();
+  return installPage(walletInitSuccess);
 };
 
 // RPC methods that only require read-only access (no signing)
