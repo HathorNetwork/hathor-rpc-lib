@@ -5,67 +5,106 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-export class PromptRejectedError extends Error {};
+/**
+ * Base error class for all Hathor RPC errors.
+ * Sets the data property with errorType based on the error name.
+ */
+export class HathorBaseError extends Error {
+  public readonly data: { errorType: string };
 
-export class SendNanoContractTxError extends Error {};
-
-export class CreateTokenError extends Error {};
-
-export class InvalidRpcMethod extends Error {};
-
-export class NotImplementedError extends Error {};
-
-export class DifferentNetworkError extends Error {};
-
-export class NoUtxosAvailableError extends Error {};
-
-export class SignMessageError extends Error {};
-
-export class InsufficientFundsError extends Error {
-  constructor(message: string) {
+  constructor(message: string, errorType: string) {
     super(message);
-    this.name = 'InsufficientFundsError';
+    this.name = errorType;
+    this.data = { errorType };
   }
 }
 
-export class InvalidParamsError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'InvalidParamsError';
+export class PromptRejectedError extends HathorBaseError {
+  constructor(message: string | undefined | null = null) {
+    super(message ?? 'User rejected prompt', 'PromptRejectedError');
   }
 }
 
-export class MissingParamError extends Error {
+export class SendNanoContractTxError extends HathorBaseError {
+  constructor(message?: string) {
+    super(message ?? 'Send nano contract transaction error', 'SendNanoContractTxError');
+  }
+}
+
+export class CreateTokenError extends HathorBaseError {
+  constructor(message?: string) {
+    super(message ?? 'Create token error', 'CreateTokenError');
+  }
+}
+
+export class InvalidRpcMethod extends HathorBaseError {
+  constructor(message?: string) {
+    super(message ?? 'Invalid RPC method', 'InvalidRpcMethod');
+  }
+}
+
+export class NotImplementedError extends HathorBaseError {
+  constructor(message?: string) {
+    super(message ?? 'Not implemented', 'NotImplementedError');
+  }
+}
+
+export class DifferentNetworkError extends HathorBaseError {
+  constructor(message?: string) {
+    super(message ?? 'Different network error', 'DifferentNetworkError');
+  }
+}
+
+export class NoUtxosAvailableError extends HathorBaseError {
+  constructor(message?: string) {
+    super(message ?? 'No UTXOs available', 'NoUtxosAvailableError');
+  }
+}
+
+export class SignMessageError extends HathorBaseError {
+  constructor(message?: string) {
+    super(message ?? 'Sign message error', 'SignMessageError');
+  }
+}
+
+export class InsufficientFundsError extends HathorBaseError {
+  constructor(message: string) {
+    super(message, 'InsufficientFundsError');
+  }
+}
+
+export class InvalidParamsError extends HathorBaseError {
+  constructor(message: string) {
+    super(message, 'InvalidParamsError');
+  }
+}
+
+export class MissingParamError extends HathorBaseError {
   constructor(paramName: string) {
-    super(`Missing required parameter: ${paramName}`);
-    this.name = 'MissingParamError';
+    super(`Missing required parameter: ${paramName}`, 'MissingParamError');
   }
 }
 
-export class InvalidParamTypeError extends Error {
+export class InvalidParamTypeError extends HathorBaseError {
   constructor(paramName: string, expectedType: string) {
-    super(`Invalid parameter type for ${paramName}. Expected ${expectedType}`);
-    this.name = 'InvalidParamTypeError';
+    super(`Invalid parameter type for ${paramName}. Expected ${expectedType}`, 'InvalidParamTypeError');
   }
 }
 
-export class PrepareSendTransactionError extends Error {
+export class PrepareSendTransactionError extends HathorBaseError {
   constructor(message: string) {
-    super(message);
-    this.name = 'PrepareSendTransactionError';
+    super(message, 'PrepareSendTransactionError');
   }
 }
 
-export class SendTransactionError extends Error {
+export class SendTransactionError extends HathorBaseError {
   constructor(message: string) {
-    super(message);
-    this.name = 'SendTransactionError';
+    super(message, 'SendTransactionError');
   }
 }
 
-export class WalletXpubNotAvailableError extends Error {
+export class WalletXpubNotAvailableError extends HathorBaseError {
   constructor() {
-    super('Wallet xpub is not available');
-    this.name = 'WalletXpubNotAvailableError';
+    super('Wallet xpub is not available', 'WalletXpubNotAvailableError');
   }
 }
