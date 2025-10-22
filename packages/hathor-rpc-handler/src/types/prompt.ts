@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import { AddressInfoObject, GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
+import { AddressInfoObject, GetBalanceObject, TokenDetailsObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
 import { IDataInput, IDataOutput } from '@hathor/wallet-lib/lib/types';
 import { RequestMetadata, RpcRequest } from './rpcRequest';
@@ -185,6 +185,7 @@ export interface NanoContractParams {
   args: unknown[];
   parsedArgs: unknown[];
   pushTx: boolean;
+  tokenDetails?: Map<string, TokenDetailsObject>;
 }
 
 export interface CreateTokenParams {
@@ -297,6 +298,7 @@ export type SendTransactionConfirmationPrompt = BaseConfirmationPrompt & {
     outputs: IDataOutput[],
     inputs: IDataInput[],
     changeAddress?: string;
+    tokenDetails?: Map<string, TokenDetailsObject>;
   }
 }
 

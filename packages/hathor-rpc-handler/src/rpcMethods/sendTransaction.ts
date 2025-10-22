@@ -8,6 +8,7 @@
 import { z } from 'zod';
 import { constants } from '@hathor/wallet-lib';
 import type { DataScriptOutputRequestObj, IHathorWallet } from '@hathor/wallet-lib';
+import type { IDataOutput } from '@hathor/wallet-lib/lib/types';
 import {
   TriggerTypes,
   PinConfirmationPrompt,
@@ -30,7 +31,7 @@ import {
   InsufficientFundsError,
   PrepareSendTransactionError,
 } from '../errors';
-import { validateNetwork } from '../helpers';
+import { validateNetwork, fetchTokenDetails } from '../helpers';
 
 const OutputValueSchema = z.object({
   address: z.string(),
@@ -119,6 +120,12 @@ export async function sendTransaction(
     throw new PrepareSendTransactionError(err instanceof Error ? err.message : 'An unknown error occurred while preparing the transaction');
   }
 
+  // Extract token UIDs from outputs and fetch their details
+  const tokenUids = preparedTx.outputs
+    .filter((output): output is IDataOutput & { token: string } => 'token' in output && typeof output.token === 'string')
+    .map(output => output.token);
+  const tokenDetails = await fetchTokenDetails(wallet, tokenUids);
+
   // Show the complete transaction (with all inputs) to the user
   const prompt: SendTransactionConfirmationPrompt = {
     ...rpcRequest,
@@ -127,6 +134,7 @@ export async function sendTransaction(
       outputs: preparedTx.outputs,
       inputs: preparedTx.inputs,
       changeAddress: params.changeAddress,
+      tokenDetails,
     }
   };
 

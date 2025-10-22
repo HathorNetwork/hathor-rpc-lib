@@ -6,7 +6,39 @@
 
 ## Installation
 
-TO DO
+### System dependencies
+```
+Node: 22x or greater
+yarn: v4 (yarn-berry)
+```
+
+### Install nix (preferred)
+
+For a better developer experience we suggest nix usage for managing the environment. Visit this [link](https://nixos.org/download/#download-nix) to download it.
+
+To enable the commands `nix develop` and `nix build` using flakes, add the following to your `/etc/nix/nix.conf` file:
+
+```
+experimental-features = nix-command flakes
+```
+
+### Clone the project and install dependencies
+```sh
+$ git clone https://github.com/HathorNetwork/hathor-rpc-lib.git
+```
+To initialize nix dev environment:
+```sh
+$ nix develop
+```
+then, install the dependencies:
+```sh
+yarn
+```
+
+For most development cases, build the packages right after:
+```sh
+yarn workspaces foreach -A run build
+```
 
 ## Usage
 
@@ -22,9 +54,16 @@ Tests
 
 TO DO
 
-Development
+## Development
 
-TO DO
+### Testing the `snap` package
+
+To test the interaction with the Metamask wallet, run the snaps in development mode:
+```sh
+yarn workspace @hathor/snap start
+```
+
+See more on the [`@hathor/snap` README](packages/snap/README.md).
 
 ## Contributing
 

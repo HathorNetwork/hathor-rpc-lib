@@ -6,8 +6,8 @@
  */
 
 import { REQUEST_METHODS, DIALOG_TYPES } from '../constants';
-import { Bold, Box, Card, Container, Copyable, Divider, Heading, Section, Text } from '@metamask/snaps-sdk/jsx';
-import { constants as libConstants, bigIntUtils, dateUtils, numberUtils, NanoContractActionType } from '@hathor/wallet-lib';
+import { Bold, Box, Card, Container, Copyable, Heading, Icon, Section, Text, Tooltip } from '@metamask/snaps-sdk/jsx';
+import { constants as libConstants, bigIntUtils, dateUtils, NanoContractActionType, numberUtils } from '@hathor/wallet-lib';
 
 const renderOptionalContractDetail = (param, title) => {
   if (!param) return null;
@@ -47,20 +47,20 @@ const renderArgsMap = (args) => {
   });
 }
 
-const renderActions = (actions) => {
+const renderActions = (actions, tokenDetails) => {
   if (!actions || actions.length === 0) return null;
 
   return (
     <Section>
       <Bold>Actions:</Bold>
-      {renderActionsMap(actions)}
+      {renderActionsMap(actions, tokenDetails)}
     </Section>
   );
 }
 
-const renderActionsMap = (actions) => {
+const renderActionsMap = (actions, tokenDetails) => {
   return actions.map((action) => {
-    return renderAction(action)
+    return renderAction(action, tokenDetails)
   });
 }
 
@@ -71,24 +71,35 @@ const actionTitleMap = {
   [NanoContractActionType.ACQUIRE_AUTHORITY]: 'Acquire Authority',
 };
 
-const renderAmount = (action) => {
-  if (action.type === NanoContractActionType.DEPOSIT || action.type === NanoContractActionType.WITHDRAWAL) {
-    return <Card title="Amount" value="" description={numberUtils.prettyValue(action.amount)} />
+const renderAmountAndToken = (action, tokenDetails) => {
+  const token = action.token;
+  const isAmountAction = action.type === NanoContractActionType.DEPOSIT || action.type === NanoContractActionType.WITHDRAWAL;
+  const value = isAmountAction ? numberUtils.prettyValue(action.amount) : action.authority.toUpperCase();
+
+  if (!token || token === libConstants.NATIVE_TOKEN_UID) {
+    return <Text>{`${value} ${libConstants.DEFAULT_NATIVE_TOKEN_CONFIG.symbol}`}</Text>;
   }
 
-  return <Card title="Authority" value="" description={action.authority.toUpperCase()} />
-}
-
-const renderToken = (action) => {
-  if (action.token === libConstants.NATIVE_TOKEN_UID) {
-    return <Card title="Token" value="" description={libConstants.DEFAULT_NATIVE_TOKEN_CONFIG.symbol} />
+  if (!tokenDetails || !tokenDetails.has(token)) {
+    return <Text>{`${value} ${token}`}</Text>;
   }
+
+  const tokenInfo = tokenDetails.get(token);
 
   return (
-    <Box>
-      <Bold>Token</Bold>
-      <Copyable value={action.token} />
-    </Box>
+    <Tooltip
+      content={
+        <Text>
+          <Bold>{tokenInfo.tokenInfo.name}</Bold>
+          {' '}({token})
+        </Text>
+      }
+    >
+      <Text>
+        {`${value} ${tokenInfo.tokenInfo.symbol} `}
+        <Icon name="info" />
+      </Text>
+    </Tooltip>
   );
 }
 
@@ -145,12 +156,11 @@ const renderAddresses = (action) => {
   }
 }
 
-const renderAction = (action) => {
+const renderAction = (action, tokenDetails) => {
   return (
     <Section>
       <Bold>{actionTitleMap[action.type]}</Bold>
-      {renderAmount(action)} 
-      {renderToken(action)}
+      {renderAmountAndToken(action, tokenDetails)}
       {renderAddresses(action)}
     </Section>
   );
@@ -175,7 +185,7 @@ export const createNanoPage = async (data, params, origin) => (
               <Card title="Blueprint method" value="" description={params.method} />
             </Section>
             {renderArguments(data.parsedArgs)}
-            {renderActions(params.actions)}
+            {renderActions(params.actions, data.tokenDetails)}
           </Box>
         </Container>
       ),

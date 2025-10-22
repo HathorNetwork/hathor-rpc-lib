@@ -19,7 +19,8 @@ export const getNetworkData = async () => {
   }) ?? {};
 
   const network = persistedData.network ?? DEFAULT_NETWORK;
-  return NETWORK_MAP[network];
+  // Ensure the network exists in NETWORK_MAP, fallback to DEFAULT_NETWORK if not
+  return NETWORK_MAP[network] ?? NETWORK_MAP[DEFAULT_NETWORK];
 }
 
 /*
