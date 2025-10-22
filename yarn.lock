@@ -1806,7 +1806,7 @@ __metadata:
   resolution: "@hathor/snap@workspace:packages/snap"
   dependencies:
     "@hathor/hathor-rpc-handler": "workspace:^"
-    "@hathor/wallet-lib": "npm:^1.15.0"
+    "@hathor/wallet-lib": /Users/andrecardoso/Dev/hathor/wallet-lib-env/hathor-wallet-lib/
     "@jest/globals": "npm:^29.5.0"
     "@metamask/auto-changelog": "npm:^3.4.4"
     "@metamask/eslint-config": "npm:^12.2.0"
@@ -1815,7 +1815,7 @@ __metadata:
     "@metamask/eslint-config-typescript": "npm:^12.1.0"
     "@metamask/snaps-cli": "npm:^6.2.1"
     "@metamask/snaps-jest": "npm:^8.2.0"
-    "@metamask/snaps-sdk": "npm:6.9.0"
+    "@metamask/snaps-sdk": "npm:9.3.0"
     "@types/path-browserify": "npm:^1"
     "@types/react": "npm:18.2.4"
     "@types/react-dom": "npm:18.2.4"
@@ -1835,8 +1835,8 @@ __metadata:
     eslint-plugin-promise: "npm:^6.1.1"
     jest: "npm:^29.5.0"
     path-browserify: "npm:^1.0.1"
-    prettier: "npm:^2.7.1"
-    prettier-plugin-packagejson: "npm:^2.2.11"
+    prettier: "npm:^3.0.0"
+    prettier-plugin-packagejson: "npm:^2.5.0"
     process: "npm:^0.11.10"
     rimraf: "npm:^3.0.2"
     stream-browserify: "npm:^3.0.0"
@@ -1846,7 +1846,43 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@hathor/wallet-lib@npm:2.8.3, @hathor/wallet-lib@npm:^2.6.1":
+"@hathor/wallet-lib@file:/Users/andrecardoso/Dev/hathor/wallet-lib-env/hathor-wallet-lib/::locator=%40hathor%2Fsnap%40workspace%3Apackages%2Fsnap":
+  version: 2.8.3
+  resolution: "@hathor/wallet-lib@file:/Users/andrecardoso/Dev/hathor/wallet-lib-env/hathor-wallet-lib/#/Users/andrecardoso/Dev/hathor/wallet-lib-env/hathor-wallet-lib/::hash=d2076f&locator=%40hathor%2Fsnap%40workspace%3Apackages%2Fsnap"
+  dependencies:
+    axios: "npm:1.7.7"
+    bitcore-lib: "npm:8.25.10"
+    bitcore-mnemonic: "npm:8.25.10"
+    buffer: "npm:6.0.3"
+    crypto-js: "npm:4.2.0"
+    isomorphic-ws: "npm:5.0.0"
+    lodash: "npm:4.17.21"
+    queue-microtask: "npm:1.2.3"
+    ws: "npm:8.17.1"
+    zod: "npm:3.23.8"
+  checksum: 10/6b321a140d84c4357a66bfce842041aabaaf422c68bb8f2c0196d7c1ae82b95f46cf058c13a0c4b8d4ee2476885b639321908faf775aebe948c77e6d09ebdcea
+  languageName: node
+  linkType: hard
+
+"@hathor/wallet-lib@file:/Users/andrecardoso/Dev/hathor/wallet-lib-env/hathor-wallet-lib/::locator=%40hathor%2Fweb-wallet%40workspace%3Apackages%2Fweb-wallet":
+  version: 2.8.3
+  resolution: "@hathor/wallet-lib@file:/Users/andrecardoso/Dev/hathor/wallet-lib-env/hathor-wallet-lib/#/Users/andrecardoso/Dev/hathor/wallet-lib-env/hathor-wallet-lib/::hash=d2076f&locator=%40hathor%2Fweb-wallet%40workspace%3Apackages%2Fweb-wallet"
+  dependencies:
+    axios: "npm:1.7.7"
+    bitcore-lib: "npm:8.25.10"
+    bitcore-mnemonic: "npm:8.25.10"
+    buffer: "npm:6.0.3"
+    crypto-js: "npm:4.2.0"
+    isomorphic-ws: "npm:5.0.0"
+    lodash: "npm:4.17.21"
+    queue-microtask: "npm:1.2.3"
+    ws: "npm:8.17.1"
+    zod: "npm:3.23.8"
+  checksum: 10/6b321a140d84c4357a66bfce842041aabaaf422c68bb8f2c0196d7c1ae82b95f46cf058c13a0c4b8d4ee2476885b639321908faf775aebe948c77e6d09ebdcea
+  languageName: node
+  linkType: hard
+
+"@hathor/wallet-lib@npm:2.8.3":
   version: 2.8.3
   resolution: "@hathor/wallet-lib@npm:2.8.3"
   dependencies:
@@ -1864,50 +1900,39 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@hathor/wallet-lib@npm:^1.15.0":
-  version: 1.15.0
-  resolution: "@hathor/wallet-lib@npm:1.15.0"
-  dependencies:
-    axios: "npm:1.7.2"
-    bitcore-lib: "npm:8.25.10"
-    bitcore-mnemonic: "npm:8.25.10"
-    buffer: "npm:6.0.3"
-    crypto-js: "npm:4.2.0"
-    isomorphic-ws: "npm:5.0.0"
-    lodash: "npm:4.17.21"
-    long: "npm:5.2.3"
-    queue-microtask: "npm:1.2.3"
-    ws: "npm:8.17.1"
-  checksum: 10/92babf6327fe589c60f71083fe00cf860e55209c148736bace0a685e504faa3192cf134f098a258d32fb7221398ab3d3f0b5bf9ed8db55d0819cfe28720d0cae
-  languageName: node
-  linkType: hard
-
 "@hathor/web-wallet@workspace:packages/web-wallet":
   version: 0.0.0-use.local
   resolution: "@hathor/web-wallet@workspace:packages/web-wallet"
   dependencies:
     "@eslint/js": "npm:^9.33.0"
     "@hathor/snap-utils": "workspace:^"
-    "@hathor/wallet-lib": "npm:^2.6.1"
+    "@hathor/wallet-lib": /Users/andrecardoso/Dev/hathor/wallet-lib-env/hathor-wallet-lib/
     "@playwright/test": "npm:^1.54.2"
     "@radix-ui/react-dialog": "npm:^1.1.15"
     "@radix-ui/react-slot": "npm:^1.2.3"
+    "@types/events": "npm:^3"
     "@types/node": "npm:^24.3.0"
     "@types/react": "npm:^19.1.10"
     "@types/react-dom": "npm:^19.1.7"
     "@vitejs/plugin-react": "npm:^5.0.0"
+    assert: "npm:^2.1.0"
     autoprefixer: "npm:^10.4.21"
+    buffer: "npm:^6.0.3"
     class-variance-authority: "npm:^0.7.1"
     clsx: "npm:^2.1.1"
+    crypto-browserify: "npm:^3.12.1"
     eslint: "npm:^9.33.0"
     eslint-plugin-react-hooks: "npm:^5.2.0"
     eslint-plugin-react-refresh: "npm:^0.4.20"
+    events: "npm:^3.3.0"
     globals: "npm:^16.3.0"
     lucide-react: "npm:^0.539.0"
     postcss: "npm:^8.5.6"
+    process: "npm:^0.11.10"
     react: "npm:^19.1.1"
     react-dom: "npm:^19.1.1"
     react-qr-code: "npm:^2.0.18"
+    stream-browserify: "npm:^3.0.0"
     tailwind-merge: "npm:^3.3.1"
     tailwindcss: "npm:3.4.17"
     typescript: "npm:~5.8.3"
@@ -2549,17 +2574,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/json-rpc-engine@npm:^9.0.1":
-  version: 9.0.3
-  resolution: "@metamask/json-rpc-engine@npm:9.0.3"
-  dependencies:
-    "@metamask/rpc-errors": "npm:^6.3.1"
-    "@metamask/safe-event-emitter": "npm:^3.0.0"
-    "@metamask/utils": "npm:^9.1.0"
-  checksum: 10/23a3cafb5869f6d5867105e3570ac4e214a72dda0b4b428cde6bae8856ec838c822b174f8cea054108122531d662cf93a65e92e1ee07da0485d5d0c0e5a1fca6
-  languageName: node
-  linkType: hard
-
 "@metamask/json-rpc-middleware-stream@npm:^7.0.1":
   version: 7.0.2
   resolution: "@metamask/json-rpc-middleware-stream@npm:7.0.2"
@@ -2572,7 +2586,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/json-rpc-middleware-stream@npm:^8.0.1, @metamask/json-rpc-middleware-stream@npm:^8.0.6, @metamask/json-rpc-middleware-stream@npm:^8.0.7":
+"@metamask/json-rpc-middleware-stream@npm:^8.0.6, @metamask/json-rpc-middleware-stream@npm:^8.0.7":
   version: 8.0.8
   resolution: "@metamask/json-rpc-middleware-stream@npm:8.0.8"
   dependencies:
@@ -2594,19 +2608,6 @@ __metadata:
     "@noble/hashes": "npm:^1.3.2"
     "@scure/base": "npm:^1.0.0"
   checksum: 10/29b2db7f2626414f6147e6a25aae16b1a012485aa394fb6ad2b3f26519455dae7e6e6fdd502f279e1924251b7058a853982297f37761372ed034db5f150fc720
-  languageName: node
-  linkType: hard
-
-"@metamask/key-tree@npm:^9.1.2":
-  version: 9.1.2
-  resolution: "@metamask/key-tree@npm:9.1.2"
-  dependencies:
-    "@metamask/scure-bip39": "npm:^2.1.1"
-    "@metamask/utils": "npm:^9.0.0"
-    "@noble/curves": "npm:^1.2.0"
-    "@noble/hashes": "npm:^1.3.2"
-    "@scure/base": "npm:^1.0.0"
-  checksum: 10/9b178a4156b2f36bf630564dd0530c41c6356492971d2bcc8f979c79c81144945823a5b770e4097e12b89b42133b81f00c95a7b8fe9931ea1dd928989ee3c406
   languageName: node
   linkType: hard
 
@@ -2701,27 +2702,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/providers@npm:^17.1.2":
-  version: 17.2.1
-  resolution: "@metamask/providers@npm:17.2.1"
-  dependencies:
-    "@metamask/json-rpc-engine": "npm:^9.0.1"
-    "@metamask/json-rpc-middleware-stream": "npm:^8.0.1"
-    "@metamask/object-multiplex": "npm:^2.0.0"
-    "@metamask/rpc-errors": "npm:^6.3.1"
-    "@metamask/safe-event-emitter": "npm:^3.1.1"
-    "@metamask/utils": "npm:^9.0.0"
-    detect-browser: "npm:^5.2.0"
-    extension-port-stream: "npm:^4.1.0"
-    fast-deep-equal: "npm:^3.1.3"
-    is-stream: "npm:^2.0.0"
-    readable-stream: "npm:^3.6.2"
-  peerDependencies:
-    webextension-polyfill: ^0.10.0 || ^0.11.0 || ^0.12.0
-  checksum: 10/ff9cbcdd4cfa410c52ae0d9d39ad9285fb21f583bcb36a8a39d1862681fe17483008c15ab0ce87797ea94cad82a2f2e58b29b1db1f02df151f9cf3b05013e8a4
-  languageName: node
-  linkType: hard
-
 "@metamask/providers@npm:^22.1.0":
   version: 22.1.1
   resolution: "@metamask/providers@npm:22.1.1"
@@ -2743,7 +2723,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/rpc-errors@npm:^6.2.1, @metamask/rpc-errors@npm:^6.3.1":
+"@metamask/rpc-errors@npm:^6.2.1":
   version: 6.4.0
   resolution: "@metamask/rpc-errors@npm:6.4.0"
   dependencies:
@@ -2753,7 +2733,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/rpc-errors@npm:^7.0.2":
+"@metamask/rpc-errors@npm:^7.0.2, @metamask/rpc-errors@npm:^7.0.3":
   version: 7.0.3
   resolution: "@metamask/rpc-errors@npm:7.0.3"
   dependencies:
@@ -2956,16 +2936,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/snaps-sdk@npm:6.9.0":
-  version: 6.9.0
-  resolution: "@metamask/snaps-sdk@npm:6.9.0"
+"@metamask/snaps-sdk@npm:9.3.0":
+  version: 9.3.0
+  resolution: "@metamask/snaps-sdk@npm:9.3.0"
   dependencies:
-    "@metamask/key-tree": "npm:^9.1.2"
-    "@metamask/providers": "npm:^17.1.2"
-    "@metamask/rpc-errors": "npm:^6.3.1"
-    "@metamask/superstruct": "npm:^3.1.0"
-    "@metamask/utils": "npm:^9.2.1"
-  checksum: 10/ea2c34c4451f671acc6c3c0ad0d46e770e8b7d0741c1d78a30bc36b883f09a10e9a428b8b564ecd0171da95fdf78bb8ac0de261423a1b35de5d22852300a24ee
+    "@metamask/key-tree": "npm:^10.1.1"
+    "@metamask/providers": "npm:^22.1.0"
+    "@metamask/rpc-errors": "npm:^7.0.3"
+    "@metamask/superstruct": "npm:^3.2.1"
+    "@metamask/utils": "npm:^11.4.2"
+  checksum: 10/1e84195a568553d1d7929b9140469204611d2504ab5bc63a6bdad7edc70150765795d402d6d8263bc8d665f9d6656e60da64e4530c240287d8d9ae51cf6d2843
   languageName: node
   linkType: hard
 
@@ -3142,7 +3122,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/utils@npm:^9.0.0, @metamask/utils@npm:^9.1.0, @metamask/utils@npm:^9.2.1":
+"@metamask/utils@npm:^9.0.0":
   version: 9.3.0
   resolution: "@metamask/utils@npm:9.3.0"
   dependencies:
@@ -4090,6 +4070,13 @@ __metadata:
   version: 1.0.8
   resolution: "@types/estree@npm:1.0.8"
   checksum: 10/25a4c16a6752538ffde2826c2cc0c6491d90e69cd6187bef4a006dd2c3c45469f049e643d7e516c515f21484dc3d48fd5c870be158a5beb72f5baf3dc43e4099
+  languageName: node
+  linkType: hard
+
+"@types/events@npm:^3":
+  version: 3.0.3
+  resolution: "@types/events@npm:3.0.3"
+  checksum: 10/50af9312fab001fd6bd4bb3ff65830f940877e6778de140a92481a0d9bf5f4853d44ec758a8800ef60e0598ac43ed1b5688116a3c65906ae54e989278d6c7c82
   languageName: node
   linkType: hard
 
@@ -5333,17 +5320,6 @@ __metadata:
   dependencies:
     possible-typed-array-names: "npm:^1.0.0"
   checksum: 10/6c9da3a66caddd83c875010a1ca8ef11eac02ba15fb592dc9418b2b5e7b77b645fa7729380a92d9835c2f05f2ca1b6251f39b993e0feb3f1517c74fa1af02cab
-  languageName: node
-  linkType: hard
-
-"axios@npm:1.7.2":
-  version: 1.7.2
-  resolution: "axios@npm:1.7.2"
-  dependencies:
-    follow-redirects: "npm:^1.15.6"
-    form-data: "npm:^4.0.0"
-    proxy-from-env: "npm:^1.1.0"
-  checksum: 10/6ae80dda9736bb4762ce717f1a26ff997d94672d3a5799ad9941c24d4fb019c1dff45be8272f08d1975d7950bac281f3ba24aff5ecd49ef5a04d872ec428782f
   languageName: node
   linkType: hard
 
@@ -10100,13 +10076,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"long@npm:5.2.3":
-  version: 5.2.3
-  resolution: "long@npm:5.2.3"
-  checksum: 10/9167ec6947a825b827c30da169a7384eec6c0c9ec2f0b9c74da2e93d81159bbe39fb09c3f13dae9721d4b807ccfa09797a7dd1012f5d478e3e33ca3c78b608e6
-  languageName: node
-  linkType: hard
-
 "loose-envify@npm:^1.4.0":
   version: 1.4.0
   resolution: "loose-envify@npm:1.4.0"
@@ -11185,7 +11154,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier-plugin-packagejson@npm:^2.2.11, prettier-plugin-packagejson@npm:^2.2.18":
+"prettier-plugin-packagejson@npm:^2.2.18, prettier-plugin-packagejson@npm:^2.5.0":
   version: 2.5.19
   resolution: "prettier-plugin-packagejson@npm:2.5.19"
   dependencies:
@@ -11206,6 +11175,15 @@ __metadata:
   bin:
     prettier: bin-prettier.js
   checksum: 10/00cdb6ab0281f98306cd1847425c24cbaaa48a5ff03633945ab4c701901b8e96ad558eb0777364ffc312f437af9b5a07d0f45346266e8245beaf6247b9c62b24
+  languageName: node
+  linkType: hard
+
+"prettier@npm:^3.0.0":
+  version: 3.6.2
+  resolution: "prettier@npm:3.6.2"
+  bin:
+    prettier: bin/prettier.cjs
+  checksum: 10/1213691706bcef1371d16ef72773c8111106c3533b660b1cc8ec158bd109cdf1462804125f87f981f23c4a3dba053b6efafda30ab0114cc5b4a725606bb9ff26
   languageName: node
   linkType: hard
 
