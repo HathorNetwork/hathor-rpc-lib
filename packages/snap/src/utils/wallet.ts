@@ -120,5 +120,12 @@ export const getHathorWallet = async (): Promise<HathorWalletServiceWallet> => {
   // Set lib config data
   await configNetwork();
 
+  // Start the wallet and wait for it to be ready before returning
+  // This is necessary for write operations like sendTransaction
+  await wallet.start({
+    pinCode: DEFAULT_PIN_CODE,
+    password: DEFAULT_PIN_CODE,
+  });
+
   return wallet;
 };
