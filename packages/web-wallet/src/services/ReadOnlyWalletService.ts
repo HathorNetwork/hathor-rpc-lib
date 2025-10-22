@@ -120,9 +120,11 @@ export class ReadOnlyWalletService {
       console.log('Read-only wallet ready');
     } catch (error) {
       console.error('Failed to initialize read-only wallet:', error);
+      this.isInitializing = false; // Reset flag before clearing wallet
       this.wallet = null;
       throw error;
     } finally {
+      // Ensure flag is always reset
       this.isInitializing = false;
     }
   }
@@ -191,9 +193,9 @@ export class ReadOnlyWalletService {
   /**
    * Get current address
    */
-  getCurrentAddress(): AddressInfo | null {
+  async getCurrentAddress(): Promise<AddressInfo | null> {
     if (!this.wallet?.isReady()) {
-      return null;
+      throw new Error('Wallet not initialized');
     }
 
     try {
@@ -205,7 +207,7 @@ export class ReadOnlyWalletService {
       };
     } catch (error) {
       console.error('Failed to get current address:', error);
-      return null;
+      throw error; // Re-throw instead of returning null
     }
   }
 
@@ -265,7 +267,9 @@ export class ReadOnlyWalletService {
       return await this.wallet.isAddressMine(address);
     } catch (error) {
       console.error('Failed to check if address is mine:', error);
-      return false;
+      // Re-throw instead of returning false - calling code needs to distinguish
+      // between "not mine" (false) and "failed to check" (error)
+      throw error;
     }
   }
 
@@ -313,11 +317,18 @@ export class ReadOnlyWalletService {
   async stop(): Promise<void> {
     if (this.wallet) {
       try {
+        // Remove all event listeners before stopping
+        this.wallet.removeAllListeners();
         await this.wallet.stop();
-        this.wallet = null;
       } catch (error) {
         console.error('Failed to stop wallet:', error);
+        // Still clear the wallet reference even if stop() fails
+        // to prevent memory leaks and allow re-initialization
+        this.wallet = null;
         throw error;
+      } finally {
+        // Always clear the wallet reference
+        this.wallet = null;
       }
     }
   }

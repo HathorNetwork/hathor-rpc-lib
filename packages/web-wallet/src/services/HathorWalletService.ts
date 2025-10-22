@@ -75,8 +75,8 @@ export const WalletServiceMethods = {
 
       // Handle null response when snap is not connected
       if (!response) {
-        console.warn('⚠️ Received null response from snap');
-        return [];
+        console.error('⚠️ Received null response from snap - snap may not be responding');
+        throw new Error('Failed to get balance: snap not responding');
       }
 
       console.log('📊 Balance response.response:', response.response);
@@ -118,7 +118,7 @@ export const WalletServiceMethods = {
   async sendTransaction(invokeSnap: any, params: SendTransactionParams): Promise<any> {
     try {
       console.log('📤 Sending transaction with params:', params);
-      params.network = 'testnet';
+      // REMOVED: params.network = 'testnet'; - this was a debug override
       const response = await invokeSnap({
         method: 'htr_sendTransaction',
         params
@@ -182,8 +182,9 @@ export const WalletServiceMethods = {
       })) || [];
     } catch (error) {
       console.error('Failed to get transaction history:', error);
-      // Return empty array instead of throwing to avoid breaking the UI
-      return [];
+      // Re-throw the error instead of silently returning empty array
+      // The UI should handle errors gracefully with proper error messages
+      throw error;
     }
   }
 };
