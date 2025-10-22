@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ArrowUpRight, ArrowDownLeft, Info, Loader2 } from 'lucide-react';
 import SendDialog from './SendDialog';
 import ReceiveDialog from './ReceiveDialog';
 import HistoryDialog from './HistoryDialog';
 import Header from './Header';
+import ErrorNotification from './ErrorNotification';
 import { useWallet } from '../contexts/WalletContext';
 import { formatHTRAmount } from '../utils/hathor';
+import htrLogoBlack from '../assets/htr_logo_black.svg';
 import htrLogoWhite from '../assets/htr_logo_white.svg';
 import htrLogoWhiteOutline from '../assets/htr_logo_white_outline.svg';
 
@@ -14,25 +16,22 @@ const WalletHome: React.FC = () => {
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [receiveDialogOpen, setReceiveDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
-  
-  const { 
-    isConnected, 
+
+  const {
+    isConnected,
     isConnecting,
     isCheckingConnection,
-    loadingStep, 
-    address, 
-    balances, 
-    network, 
-    error, 
-    connectWallet, 
-    refreshBalance,
-    setError 
+    loadingStep,
+    balances,
+    error,
+    connectWallet,
+    setError
   } = useWallet();
 
   const handleButtonClick = (buttonName: string) => {
     setActiveButton(buttonName);
     console.log(`${buttonName} button clicked`);
-    
+
     // Open appropriate dialog
     switch (buttonName) {
       case 'Send':
@@ -46,7 +45,7 @@ const WalletHome: React.FC = () => {
         setHistoryDialogOpen(true);
         break;
     }
-    
+
     // Reset active state after a brief moment
     setTimeout(() => setActiveButton(null), 200);
   };
@@ -68,6 +67,13 @@ const WalletHome: React.FC = () => {
             <p className="text-muted-foreground">{loadingStep}</p>
           </div>
         </div>
+        {/* Error notification */}
+        {error && (
+          <ErrorNotification
+            error={new Error(error)}
+            onDismiss={() => setError(null)}
+          />
+        )}
       </div>
     );
   }
@@ -77,11 +83,11 @@ const WalletHome: React.FC = () => {
     return (
       <div className="min-h-screen bg-[#0d1117] text-white flex items-center justify-center">
         <div className="text-center space-y-6">
-          <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center mx-auto p-4">
+          <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center mx-auto p-4 shadow-xl">
             <img
-              src={htrLogoWhite}
+              src={htrLogoBlack}
               alt="Hathor"
-              className="w-full h-full"
+              className="w-full h-full object-contain"
             />
           </div>
           <div>
@@ -152,18 +158,16 @@ const WalletHome: React.FC = () => {
             <div className="flex gap-3">
               <button
                 onClick={() => handleButtonClick('Send')}
-                className={`px-6 py-2.5 bg-primary hover:bg-primary/90 rounded-xl flex items-center gap-2 transition-colors ${
-                  activeButton === 'Send' ? 'bg-primary/90' : ''
-                }`}
+                className={`px-6 py-2.5 bg-primary hover:bg-primary/90 rounded-xl flex items-center gap-2 transition-colors ${activeButton === 'Send' ? 'bg-primary/90' : ''
+                  }`}
               >
                 <ArrowUpRight className="w-4 h-4 text-white" />
                 <span className="text-sm font-medium text-white">Send</span>
               </button>
               <button
                 onClick={() => handleButtonClick('Receive')}
-                className={`px-6 py-2.5 bg-primary hover:bg-primary/90 rounded-xl flex items-center gap-2 transition-colors ${
-                  activeButton === 'Receive' ? 'bg-primary/90' : ''
-                }`}
+                className={`px-6 py-2.5 bg-primary hover:bg-primary/90 rounded-xl flex items-center gap-2 transition-colors ${activeButton === 'Receive' ? 'bg-primary/90' : ''
+                  }`}
               >
                 <ArrowDownLeft className="w-4 h-4 text-white" />
                 <span className="text-sm font-medium text-white">Receive</span>
@@ -219,18 +223,26 @@ const WalletHome: React.FC = () => {
       </div>
 
       {/* Dialogs */}
-      <SendDialog 
-        isOpen={sendDialogOpen} 
-        onClose={() => setSendDialogOpen(false)} 
+      <SendDialog
+        isOpen={sendDialogOpen}
+        onClose={() => setSendDialogOpen(false)}
       />
-      <ReceiveDialog 
-        isOpen={receiveDialogOpen} 
-        onClose={() => setReceiveDialogOpen(false)} 
+      <ReceiveDialog
+        isOpen={receiveDialogOpen}
+        onClose={() => setReceiveDialogOpen(false)}
       />
-      <HistoryDialog 
-        isOpen={historyDialogOpen} 
-        onClose={() => setHistoryDialogOpen(false)} 
+      <HistoryDialog
+        isOpen={historyDialogOpen}
+        onClose={() => setHistoryDialogOpen(false)}
       />
+
+      {/* Error notification */}
+      {error && (
+        <ErrorNotification
+          error={new Error(error)}
+          onDismiss={() => setError(null)}
+        />
+      )}
     </div>
   );
 };

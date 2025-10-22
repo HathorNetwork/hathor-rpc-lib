@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, type ReactNode } from 'react';
 import { WalletServiceMethods } from '../services/HathorWalletService';
 import { readOnlyWalletService } from '../services/ReadOnlyWalletService';
-import { useInvokeSnap, useRequestSnap } from '@hathor/snap-utils';
+import { useInvokeSnap, useRequestSnap, useMetaMaskContext } from '@hathor/snap-utils';
 
 // localStorage keys
 const STORAGE_KEYS = {
@@ -79,6 +79,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const [state, setState] = useState<WalletState>(initialState);
   const invokeSnap = useInvokeSnap();
   const requestSnap = useRequestSnap();
+  const { error: metamaskError, setError: setMetamaskError } = useMetaMaskContext();
   const isCheckingRef = React.useRef(false);
 
   // Check for existing connection on mount
@@ -339,6 +340,17 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     checkExistingConnection();
   }, []);
 
+  // Sync MetaMask errors to wallet state
+  React.useEffect(() => {
+    if (metamaskError) {
+      console.error('MetaMask RPC Error:', metamaskError);
+      setState(prev => ({
+        ...prev,
+        error: metamaskError.message || 'An RPC error occurred',
+      }));
+    }
+  }, [metamaskError]);
+
   const disconnectWallet = () => {
     console.log('🔌 Disconnecting wallet...');
 
@@ -403,6 +415,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   const setError = (error: string | null) => {
     setState(prev => ({ ...prev, error }));
+    // Also clear MetaMask error when manually setting error to null
+    if (error === null) {
+      setMetamaskError(null);
+    }
   };
 
   const contextValue: WalletContextType = {

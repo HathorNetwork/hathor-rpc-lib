@@ -62,7 +62,7 @@ export const WalletServiceMethods = {
   async getBalance(invokeSnap: any, tokens: string[] = [TOKEN_IDS.HTR]): Promise<WalletBalance[]> {
     try {
       console.log('🔍 Getting balance with params:', { network: DEFAULT_NETWORK, tokens });
-      
+
       const response = await invokeSnap({
         method: 'htr_getBalance',
         params: {
@@ -118,6 +118,7 @@ export const WalletServiceMethods = {
   async sendTransaction(invokeSnap: any, params: SendTransactionParams): Promise<any> {
     try {
       console.log('📤 Sending transaction with params:', params);
+      params.network = 'testnet';
       const response = await invokeSnap({
         method: 'htr_sendTransaction',
         params
