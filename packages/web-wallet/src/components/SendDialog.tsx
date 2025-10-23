@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { X, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { formatHTRAmount, htrToCents, centsToHTR } from '../utils/hathor';
+import { Network } from '@hathor/wallet-lib';
+import Address from '@hathor/wallet-lib/lib/models/address';
 
 interface SendDialogProps {
   isOpen: boolean;
@@ -61,12 +63,24 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
       }
     }
 
-    // Validate address
+    // Validate address with proper checksum verification
     if (!address || address.trim().length === 0) {
       newErrors.address = 'Address is required';
-    } else if (address.length < 34 || !address.startsWith('H')) {
-      // Basic Hathor address validation
-      newErrors.address = 'Invalid Hathor address format';
+    } else {
+      try {
+        const networkObj = new Network(network || 'dev-testnet');
+        const addressObj = new Address(address.trim(), { network: networkObj });
+        addressObj.validateAddress();
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Invalid address';
+        if (errorMsg.includes('checksum')) {
+          newErrors.address = 'Invalid address checksum. Please check the address.';
+        } else if (errorMsg.includes('network')) {
+          newErrors.address = `Invalid address for ${network} network`;
+        } else {
+          newErrors.address = 'Invalid Hathor address format';
+        }
+      }
     }
 
     setErrors(newErrors);

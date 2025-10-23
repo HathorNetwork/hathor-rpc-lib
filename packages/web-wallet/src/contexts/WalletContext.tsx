@@ -123,30 +123,27 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       setState(prev => ({ ...prev, loadingStep: 'Checking snap network...' }));
 
       // Check snap network and change if needed
-      try {
-        const networkTest = await invokeSnap({
-          method: 'htr_getConnectedNetwork',
-          params: {}
+      // Don't catch errors here - if network check fails, don't proceed with wallet initialization
+      const networkTest = await invokeSnap({
+        method: 'htr_getConnectedNetwork',
+        params: {}
+      });
+      const parsedNetworkTest = typeof networkTest === 'string' ? JSON.parse(networkTest) : networkTest;
+      const currentSnapNetwork = parsedNetworkTest?.response?.network;
+      const targetNetwork = 'dev-testnet';
+
+      if (currentSnapNetwork !== targetNetwork) {
+        console.log(`🔄 Changing snap network from ${currentSnapNetwork} to ${targetNetwork}...`);
+        setState(prev => ({ ...prev, loadingStep: 'Changing snap network to dev-testnet...' }));
+
+        await invokeSnap({
+          method: 'htr_changeNetwork',
+          params: {
+            network: currentSnapNetwork,
+            newNetwork: targetNetwork
+          }
         });
-        const parsedNetworkTest = typeof networkTest === 'string' ? JSON.parse(networkTest) : networkTest;
-        const currentSnapNetwork = parsedNetworkTest?.response?.network;
-        const targetNetwork = 'dev-testnet';
-
-        if (currentSnapNetwork !== targetNetwork) {
-          console.log(`🔄 Changing snap network from ${currentSnapNetwork} to ${targetNetwork}...`);
-          setState(prev => ({ ...prev, loadingStep: 'Changing snap network to dev-testnet...' }));
-
-          await invokeSnap({
-            method: 'htr_changeNetwork',
-            params: {
-              network: currentSnapNetwork,
-              newNetwork: targetNetwork
-            }
-          });
-          console.log('✅ Snap network changed to dev-testnet');
-        }
-      } catch (networkError) {
-        console.error('Failed to check/change network:', networkError);
+        console.log('✅ Snap network changed to dev-testnet');
       }
 
       setState(prev => ({ ...prev, loadingStep: 'Initializing read-only wallet...' }));
@@ -163,8 +160,15 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       setState(prev => ({ ...prev, loadingStep: 'Loading wallet data...' }));
 
       // Get data from read-only wallet
-      const addressInfo = readOnlyWalletService.getCurrentAddress();
-      const address = addressInfo?.address || '';
+      let address = '';
+      try {
+        const addressInfo = readOnlyWalletService.getCurrentAddress();
+        address = addressInfo?.address || '';
+      } catch (addressError) {
+        console.error('Failed to get current address during auto-reconnect:', addressError);
+        throw new Error('Failed to retrieve wallet address. The wallet may not be properly initialized.');
+      }
+
       const balances = await readOnlyWalletService.getBalance('00');
 
       console.log('✅ Automatically reconnected with stored xpub');
@@ -308,8 +312,14 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       setState(prev => ({ ...prev, loadingStep: 'Loading wallet data...' }));
 
       // Get address from read-only wallet
-      const addressInfo = readOnlyWalletService.getCurrentAddress();
-      const address = addressInfo?.address || '';
+      let address = '';
+      try {
+        const addressInfo = readOnlyWalletService.getCurrentAddress();
+        address = addressInfo?.address || '';
+      } catch (addressError) {
+        console.error('Failed to get current address during wallet connection:', addressError);
+        throw new Error('Failed to retrieve wallet address. The wallet may not be properly initialized.');
+      }
 
       setState(prev => ({ ...prev, loadingStep: 'Loading balance...' }));
 
@@ -406,9 +416,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       const address = addressInfo?.address || '';
       setState(prev => ({ ...prev, address, error: null }));
     } catch (error) {
+      console.error('Failed to refresh address:', error);
       setState(prev => ({
         ...prev,
-        error: error instanceof Error ? error.message : 'Failed to refresh address',
+        error: error instanceof Error ? error.message : 'Failed to refresh address. The wallet may not be properly initialized.',
       }));
     }
   };
@@ -476,8 +487,15 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       setState(prev => ({ ...prev, loadingStep: 'Loading wallet data...' }));
 
       // Get fresh data from the new network
-      const addressInfo = readOnlyWalletService.getCurrentAddress();
-      const address = addressInfo?.address || '';
+      let address = '';
+      try {
+        const addressInfo = readOnlyWalletService.getCurrentAddress();
+        address = addressInfo?.address || '';
+      } catch (addressError) {
+        console.error('Failed to get current address after network change:', addressError);
+        throw new Error('Failed to retrieve wallet address on new network. The wallet may not be properly initialized.');
+      }
+
       const balances = await readOnlyWalletService.getBalance('00');
 
       // Update localStorage with new network
@@ -540,10 +558,16 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         // Clear localStorage and stop wallet
         localStorage.removeItem(STORAGE_KEYS.XPUB);
         localStorage.removeItem(STORAGE_KEYS.NETWORK);
+
         try {
           await readOnlyWalletService.stop();
         } catch (stopError) {
-          console.error('Error stopping wallet during forced disconnect:', stopError);
+          console.error('CRITICAL: Failed to cleanup wallet during forced disconnect:', stopError);
+        }
+
+        // Verify wallet is fully stopped to prevent memory leaks
+        if (readOnlyWalletService.isReady()) {
+          console.error('CRITICAL: Wallet still active after stop attempt - possible resource leak');
         }
 
         // Reset to disconnected state
