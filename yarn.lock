@@ -1531,7 +1531,7 @@ __metadata:
   resolution: "@hathor/hathor-rpc-handler@workspace:packages/hathor-rpc-handler"
   dependencies:
     "@eslint/js": "npm:9.4.0"
-    "@hathor/wallet-lib": "npm:2.8.3"
+    "@hathor/wallet-lib": "npm:2.9.0"
     "@types/eslint__js": "npm:8.42.3"
     "@types/jest": "npm:29.5.12"
     "@types/node": "npm:20.14.2"
@@ -1638,6 +1638,24 @@ __metadata:
     ws: "npm:8.17.1"
     zod: "npm:3.23.8"
   checksum: 10/a52b8f8de761a7abdfb206ed536b0fae21c3904cb6b55730cc4dc5c293874ffd89c91babf47536d040c20dc3e2dd542016dfc6bdba282a662e86c3e638291c26
+  languageName: node
+  linkType: hard
+
+"@hathor/wallet-lib@npm:2.9.0":
+  version: 2.9.0
+  resolution: "@hathor/wallet-lib@npm:2.9.0"
+  dependencies:
+    axios: "npm:1.7.7"
+    bitcore-lib: "npm:8.25.10"
+    bitcore-mnemonic: "npm:8.25.10"
+    buffer: "npm:6.0.3"
+    crypto-js: "npm:4.2.0"
+    isomorphic-ws: "npm:5.0.0"
+    lodash: "npm:4.17.21"
+    queue-microtask: "npm:1.2.3"
+    ws: "npm:8.17.1"
+    zod: "npm:3.23.8"
+  checksum: 10/f6934e8af8162a1e268c9f520ca3ab539aaff09802442714df930444ddc6f0ef42298f96f17ae4459e8d6c2a55091f70b44c8bcbe5e9d415cf635495d3483c64
   languageName: node
   linkType: hard
 
