@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@hathor/snap-utils": "workspace:^",
-    "@hathor/wallet-lib": "/Users/andrecardoso/Dev/hathor/wallet-lib-env/hathor-wallet-lib/",
+    "@hathor/wallet-lib": "2.9.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-slot": "^1.2.3",
     "class-variance-authority": "^0.7.1",

@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@hathor/hathor-rpc-handler": "workspace:^",
-    "@hathor/wallet-lib": "/Users/andrecardoso/Dev/hathor/wallet-lib-env/hathor-wallet-lib/",
+    "@hathor/wallet-lib": "2.9.0",
     "@metamask/snaps-sdk": "9.3.0"
   },
   "devDependencies": {
