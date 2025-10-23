@@ -7,7 +7,7 @@
 
 import type { OnRpcRequestHandler, OnInstallHandler } from '@metamask/snaps-sdk';
 import { SnapError } from '@metamask/snaps-sdk';
-import { getHathorWallet, getReadOnlyHathorWallet, initializeWalletOnService } from './utils/wallet';
+import { getAndStartHathorWallet, getReadOnlyHathorWallet, initializeWalletOnService } from './utils/wallet';
 import { getNetworkData } from './utils/network';
 import { promptHandler } from './utils/prompt';
 import { installPage } from './dialogs/install';
@@ -65,7 +65,7 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
 
   const wallet = isReadOnly
     ? await getReadOnlyHathorWallet()
-    : await getHathorWallet();
+    : await getAndStartHathorWallet();
 
   try {
     const response = await handleRpcRequest(request, wallet, null, promptHandler(origin, wallet));
