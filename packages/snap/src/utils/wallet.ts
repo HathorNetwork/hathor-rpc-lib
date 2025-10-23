@@ -71,7 +71,7 @@ export const initializeWalletOnService = async (): Promise<string> => {
  * Read-only wallets use only the xpub and don't require access to private keys,
  * making them faster to initialize and more secure for read operations.
  */
-export const getReadOnlyHathorWallet = async (): Promise<HathorWalletServiceWallet> => {
+export const getAndStartReadOnlyHathorWallet = async (): Promise<HathorWalletServiceWallet> => {
   // Get network data from persistent storage
   const networkData = await getNetworkData();
   const network = networkData.network;
