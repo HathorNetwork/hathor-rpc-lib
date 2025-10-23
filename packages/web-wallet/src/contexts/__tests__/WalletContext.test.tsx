@@ -59,17 +59,11 @@ describe('WalletContext - Critical Error Handling Tests', () => {
       localStorage.setItem('hathor_wallet_xpub', 'test_xpub');
       localStorage.setItem('hathor_wallet_network', 'testnet');
 
-      // Simulate cleanup failure scenario
-      const mockWalletService = {
-        stop: vi.fn().mockRejectedValue(new Error('Stop failed')),
-        isReady: vi.fn().mockReturnValue(true),
-      };
-
       try {
         // Even though stop fails, we still clear localStorage
         localStorage.removeItem('hathor_wallet_xpub');
         localStorage.removeItem('hathor_wallet_network');
-      } catch (error) {
+      } catch {
         // Should not throw
       }
 
@@ -90,12 +84,10 @@ describe('WalletContext - Critical Error Handling Tests', () => {
       // After fix: wrapped in try-catch with user-friendly error
 
       expect(() => {
-        let address = '';
-
         try {
           const addressInfo = mockWalletService.getCurrentAddress();
-          address = addressInfo?.address || '';
-        } catch (error) {
+          const _address = addressInfo?.address || '';
+        } catch {
           // Provide user-friendly error message
           throw new Error(
             'Failed to retrieve wallet address. The wallet may not be properly initialized.'
@@ -114,13 +106,8 @@ describe('WalletContext - Critical Error Handling Tests', () => {
         }),
       };
 
-      let address = '';
-      try {
-        const addressInfo = mockWalletService.getCurrentAddress();
-        address = addressInfo?.address || '';
-      } catch (error) {
-        throw new Error('Failed to retrieve wallet address');
-      }
+      const addressInfo = mockWalletService.getCurrentAddress();
+      const address = addressInfo?.address || '';
 
       expect(address).toBe('WYiD1E8n5oB9weZ2IzvOe5pT4WaduMGKNW');
     });

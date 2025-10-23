@@ -82,20 +82,17 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const requestSnap = useRequestSnap();
   const { error: metamaskError, setError: setMetamaskError } = useMetaMaskContext();
 
-  // Use state instead of ref for proper atomic updates to prevent race conditions
-  const [isCheckingConnection, setIsCheckingConnection] = useState(false);
-
   // Check for existing connection on mount
   const checkExistingConnection = async () => {
     // Prevent concurrent calls using functional state update for atomicity
     let shouldProceed = false;
-    setIsCheckingConnection(prev => {
-      if (prev) {
+    setState(prev => {
+      if (prev.isCheckingConnection) {
         console.log('Already checking connection, skipping...');
         return prev; // Already checking, don't proceed
       }
       shouldProceed = true;
-      return true; // Start checking
+      return { ...prev, isCheckingConnection: true, loadingStep: 'Checking existing connection...' };
     });
 
     if (!shouldProceed) {
@@ -103,7 +100,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     }
 
     try {
-      setState(prev => ({ ...prev, loadingStep: 'Checking existing connection...' }));
 
       // Check if we have a stored xpub in localStorage
       const storedXpub = localStorage.getItem(STORAGE_KEYS.XPUB);
@@ -209,7 +205,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         error: 'Failed to reconnect. Please try connecting manually.',
       }));
     } finally {
-      setIsCheckingConnection(false);
+      setState(prev => ({ ...prev, isCheckingConnection: false }));
     }
   };
 
