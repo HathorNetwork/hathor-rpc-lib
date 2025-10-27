@@ -97,6 +97,11 @@ export const getAndStartReadOnlyHathorWallet = async (): Promise<HathorWalletSer
   try {
     await wallet.startReadOnly({ skipAddressFetch: true });
   } catch (e) {
+    // If the wallet is not started in the wallet service,
+    // the method above will fail
+    // So we fallback to a full wallet, so it's properly
+    // started in the wallet service and the snap request
+    // is executed normally
     if (e instanceof libErrors.WalletRequestError) {
       return getAndStartHathorWallet();
     }
