@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { constants as libConstants, walletUtils, HathorWalletServiceWallet, Network } from '@hathor/wallet-lib';
+import { constants as libConstants, errors as libErrors, walletUtils, HathorWalletServiceWallet, Network } from '@hathor/wallet-lib';
 import { DEFAULT_PIN_CODE, REQUEST_METHODS } from '../constants';
 import { getNetworkData, configNetwork } from './network';
 
@@ -94,7 +94,16 @@ export const getAndStartReadOnlyHathorWallet = async (): Promise<HathorWalletSer
 
   // Set lib config data and start the wallet in read-only mode
   await configNetwork();
-  await wallet.startReadOnly({ skipAddressFetch: true });
+  try {
+    await wallet.startReadOnly({ skipAddressFetch: true });
+  } catch (e) {
+    if (e instanceof libErrors.WalletRequestError) {
+      return getAndStartHathorWallet();
+    }
+
+    // For other errors, we re-throw
+    throw e;
+  }
 
   return wallet;
 };
