@@ -100,10 +100,13 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     }
 
     try {
+      console.log('Starting connection check...');
 
       // Check if we have a stored xpub in localStorage
       const storedXpub = localStorage.getItem(STORAGE_KEYS.XPUB);
       const storedNetwork = localStorage.getItem(STORAGE_KEYS.NETWORK) || 'dev-testnet';
+
+      console.log('Stored xpub:', storedXpub ? 'Found' : 'Not found');
 
       if (!storedXpub) {
         console.log('No stored xpub found, user needs to connect');
@@ -360,7 +363,21 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   // Check for existing connection on mount
   React.useEffect(() => {
-    checkExistingConnection();
+    // Add a small delay to avoid race condition with React StrictMode double-mount
+    const timer = setTimeout(() => {
+      checkExistingConnection().catch((error) => {
+        console.error('Connection check failed:', error);
+        // Ensure we reset the checking state on error
+        setState(prev => ({
+          ...prev,
+          isCheckingConnection: false,
+          loadingStep: '',
+          error: 'Failed to check connection',
+        }));
+      });
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Sync MetaMask errors to wallet state
