@@ -85,8 +85,7 @@ describe('WalletContext - Critical Error Handling Tests', () => {
 
       expect(() => {
         try {
-          const addressInfo = mockWalletService.getCurrentAddress();
-          const _address = addressInfo?.address || '';
+          mockWalletService.getCurrentAddress();
         } catch {
           // Provide user-friendly error message
           throw new Error(

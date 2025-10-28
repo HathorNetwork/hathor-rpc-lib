@@ -51,9 +51,9 @@ interface WalletContextType extends WalletState {
   connectWallet: () => Promise<void>;
   disconnectWallet: () => void;
   refreshBalance: () => Promise<void>;
-  refreshAddress: () => Promise<void>;
+  refreshAddress: () => void;
   getTransactionHistory: (count?: number, skip?: number, tokenId?: string) => Promise<TransactionHistoryItem[]>;
-  sendTransaction: (params: SendTransactionParams) => Promise<any>;
+  sendTransaction: (params: SendTransactionParams) => Promise<unknown>;
   changeNetwork: (newNetwork: string) => Promise<void>;
   setError: (error: string | null) => void;
 }
@@ -404,7 +404,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     }
   };
 
-  const refreshAddress = async () => {
+  const refreshAddress = () => {
     if (!state.isConnected || !readOnlyWalletService.isReady()) return;
 
     try {

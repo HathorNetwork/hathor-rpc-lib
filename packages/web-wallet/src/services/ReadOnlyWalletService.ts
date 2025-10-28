@@ -198,7 +198,7 @@ export class ReadOnlyWalletService {
   /**
    * Get current address
    */
-  async getCurrentAddress(): Promise<AddressInfo | null> {
+  getCurrentAddress(): AddressInfo | null {
     if (!this.wallet?.isReady()) {
       throw new Error('Wallet not initialized');
     }

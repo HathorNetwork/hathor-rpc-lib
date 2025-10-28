@@ -1,0 +1,13 @@
+node_modules
+dist
+.git
+.gitignore
+*.log
+.env
+.env.*
+coverage
+test-results
+playwright-report
+*.md
+Dockerfile
+.dockerignore
