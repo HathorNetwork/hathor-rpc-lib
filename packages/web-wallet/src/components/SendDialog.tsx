@@ -193,7 +193,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
             </div>
             {errors.amount && (
               <div className="flex items-center gap-1 mt-1">
-                <span className="text-xs text-red-400">⚠ {errors.amount}</span>
+                <span className="text-xs text-red-400">{errors.amount}</span>
               </div>
             )}
           </div>
@@ -217,15 +217,14 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
             />
             {errors.address && (
               <div className="flex items-center gap-1 mt-1">
-                <span className="text-xs text-red-400">⚠ {errors.address}</span>
+                <span className="text-xs text-red-400">{errors.address}</span>
               </div>
             )}
           </div>
 
-          {/* Transaction Error Display */}
           {transactionError && (
             <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/50 rounded-lg">
-              <span className="text-red-400 text-sm">⚠ {transactionError}</span>
+              <span className="text-red-400 text-sm">{transactionError}</span>
             </div>
           )}
 

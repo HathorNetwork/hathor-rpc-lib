@@ -40,11 +40,8 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
 
   const loadTransactionHistory = async (skip: number = 0) => {
     if (!address) {
-      console.log('❌ No address, cannot load history');
       return;
     }
-
-    console.log(`📜 Loading transaction history for address: ${address}, skip: ${skip}`);
 
     const isInitialLoad = skip === 0;
     if (isInitialLoad) {
@@ -55,10 +52,8 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
 
     try {
       const history = await getTransactionHistory(PAGE_SIZE, skip, '00')
-      console.log('📜 Raw transaction history from wallet:', history);
 
       if (!history || history.length === 0) {
-        console.log('📜 No more transactions found');
         setHasMore(false);
         if (isInitialLoad) {
           setTransactions([]);
@@ -66,16 +61,11 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
         return;
       }
 
-      // Check if we got fewer results than requested (means we're at the end)
       if (history.length < PAGE_SIZE) {
         setHasMore(false);
       }
 
-      // Process transactions from wallet-lib format
       const processed: ProcessedTransaction[] = history.map((tx: any) => {
-        console.log('Processing transaction:', tx);
-        // balance is positive for received, negative for sent
-        // Handle BigInt values from wallet-lib
         const balanceValue = typeof tx.balance === 'bigint' ? Number(tx.balance) : tx.balance;
         const type = balanceValue >= 0 ? 'received' : 'sent'
         const amount = Math.abs(balanceValue)
@@ -84,15 +74,11 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
           id: tx.txId || tx.tx_id,
           type,
           amount,
-          timestamp: new Date(tx.timestamp * 1000).toISOString(), // wallet-lib timestamp is in seconds
+          timestamp: new Date(tx.timestamp * 1000).toISOString(),
           txHash: tx.txId || tx.tx_id,
           status: !tx.voided && !tx.is_voided ? 'confirmed' : 'pending'
         }
       })
-
-      console.log('📜 Processed transactions:', processed);
-
-      // Append or replace transactions
       if (isInitialLoad) {
         setTransactions(processed);
         setCurrentCount(processed.length);

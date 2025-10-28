@@ -48,7 +48,6 @@ export const WalletServiceMethods = {
           index
         }
       });
-      // Handle null response when snap is not connected
       if (!response) {
         return '';
       }
@@ -61,8 +60,6 @@ export const WalletServiceMethods = {
 
   async getBalance(invokeSnap: any, tokens: string[] = [TOKEN_IDS.HTR]): Promise<WalletBalance[]> {
     try {
-      console.log('🔍 Getting balance with params:', { network: DEFAULT_NETWORK, tokens });
-
       const response = await invokeSnap({
         method: 'htr_getBalance',
         params: {
@@ -71,30 +68,20 @@ export const WalletServiceMethods = {
         }
       });
 
-      console.log('📡 Raw balance response from snap:', response);
-
-      // Handle null response when snap is not connected
       if (!response) {
-        console.error('⚠️ Received null response from snap - snap may not be responding');
+        console.error('Received null response from snap - snap may not be responding');
         throw new Error('Failed to get balance: snap not responding');
       }
 
-      console.log('📊 Balance response.response:', response.response);
+      const balances = response.response?.map((balance: any) => ({
+        token: balance.token_id || balance.token,
+        available: balance.available || 0,
+        locked: balance.locked || 0
+      })) || [];
 
-      // Transform the response to match our interface
-      const balances = response.response?.map((balance: any) => {
-        console.log('💰 Processing balance item:', balance);
-        return {
-          token: balance.token_id || balance.token,
-          available: balance.available || 0,
-          locked: balance.locked || 0
-        };
-      }) || [];
-
-      console.log('✅ Final processed balances:', balances);
       return balances;
     } catch (error) {
-      console.error('❌ Failed to get balance:', error);
+      console.error('Failed to get balance:', error);
       throw error;
     }
   },
@@ -104,7 +91,6 @@ export const WalletServiceMethods = {
       const response = await invokeSnap({
         method: 'htr_getConnectedNetwork'
       });
-      // Handle null response when snap is not connected
       if (!response) {
         return DEFAULT_NETWORK;
       }
@@ -117,15 +103,11 @@ export const WalletServiceMethods = {
 
   async sendTransaction(invokeSnap: any, params: SendTransactionParams): Promise<any> {
     try {
-      console.log('📤 Sending transaction with params:', params);
-      // REMOVED: params.network = 'testnet'; - this was a debug override
       const response = await invokeSnap({
         method: 'htr_sendTransaction',
         params
       });
-      console.log('📥 Send transaction response:', response);
 
-      // Handle null response (user might have rejected)
       if (!response) {
         throw new Error('Transaction was cancelled or rejected');
       }
@@ -182,8 +164,6 @@ export const WalletServiceMethods = {
       })) || [];
     } catch (error) {
       console.error('Failed to get transaction history:', error);
-      // Re-throw the error instead of silently returning empty array
-      // The UI should handle errors gracefully with proper error messages
       throw error;
     }
   }

@@ -3,7 +3,6 @@ import { WalletServiceMethods } from '../services/HathorWalletService';
 import { readOnlyWalletService } from '../services/ReadOnlyWalletService';
 import { useInvokeSnap, useRequestSnap, useMetaMaskContext } from '@hathor/snap-utils';
 
-// localStorage keys
 const STORAGE_KEYS = {
   XPUB: 'hathor_wallet_xpub',
   NETWORK: 'hathor_wallet_network',
@@ -83,18 +82,12 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const { error: metamaskError, setError: setMetamaskError } = useMetaMaskContext();
   const isCheckingRef = React.useRef(false);
 
-  // Check for existing connection on mount
   const checkExistingConnection = async () => {
-    console.log('[checkExistingConnection] Function called, isCheckingRef:', isCheckingRef.current);
-
-    // Use ref to prevent concurrent calls
     if (isCheckingRef.current) {
-      console.log('[checkExistingConnection] Already checking (ref), skipping...');
       return;
     }
 
     isCheckingRef.current = true;
-    console.log('[checkExistingConnection] Set isCheckingRef to true');
 
     setState(prev => ({
       ...prev,
@@ -103,31 +96,19 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     }));
 
     try {
-      console.log('[checkExistingConnection] Starting connection check...');
-
-      // Check if we have a stored xpub in localStorage
       const storedXpub = localStorage.getItem(STORAGE_KEYS.XPUB);
       const storedNetwork = localStorage.getItem(STORAGE_KEYS.NETWORK) || 'dev-testnet';
 
-      console.log('[checkExistingConnection] Stored xpub:', storedXpub ? 'Found' : 'Not found');
-      console.log('[checkExistingConnection] Stored network:', storedNetwork);
-
       if (!storedXpub) {
-        console.log('[checkExistingConnection] No stored xpub found, user needs to connect');
         setState(prev => ({
           ...prev,
           isCheckingConnection: false,
           loadingStep: '',
         }));
-        console.log('[checkExistingConnection] State updated to show connect screen');
         return;
       }
 
-      console.log('✅ Found stored xpub, reconnecting automatically...');
       setState(prev => ({ ...prev, loadingStep: 'Checking snap network...' }));
-
-      // Check snap network and change if needed
-      // Don't catch errors here - if network check fails, don't proceed with wallet initialization
       const networkTest = await invokeSnap({
         method: 'htr_getConnectedNetwork',
         params: {}
@@ -137,7 +118,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       const targetNetwork = 'dev-testnet';
 
       if (currentSnapNetwork !== targetNetwork) {
-        console.log(`🔄 Changing snap network from ${currentSnapNetwork} to ${targetNetwork}...`);
         setState(prev => ({ ...prev, loadingStep: 'Changing snap network to dev-testnet...' }));
 
         await invokeSnap({
@@ -147,35 +127,26 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
             newNetwork: targetNetwork
           }
         });
-        console.log('✅ Snap network changed to dev-testnet');
       }
 
       setState(prev => ({ ...prev, loadingStep: 'Initializing read-only wallet...' }));
 
-      // Stop any existing wallet before reinitializing
       if (readOnlyWalletService.isReady()) {
-        console.log('Stopping existing wallet before reinitializing...');
         await readOnlyWalletService.stop();
       }
-
-      // Initialize read-only wallet with stored xpub
       await readOnlyWalletService.initialize(storedXpub, storedNetwork);
 
       setState(prev => ({ ...prev, loadingStep: 'Loading wallet data...' }));
 
-      // Get data from read-only wallet
       let address = '';
       try {
         const addressInfo = readOnlyWalletService.getCurrentAddress();
         address = addressInfo?.address || '';
       } catch (addressError) {
-        console.error('Failed to get current address during auto-reconnect:', addressError);
         throw new Error('Failed to retrieve wallet address. The wallet may not be properly initialized.');
       }
 
       const balances = await readOnlyWalletService.getBalance('00');
-
-      console.log('✅ Automatically reconnected with stored xpub');
 
       setState(prev => ({
         ...prev,
@@ -188,10 +159,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         loadingStep: '',
       }));
     } catch (error) {
-      console.error('Failed to auto-reconnect:', error);
-
-      // Only clear localStorage for specific errors (invalid xpub, authentication errors)
-      // Don't clear for temporary network errors or wallet-service issues
       const errorMessage = error instanceof Error ? error.message : String(error);
       const shouldClearStorage =
         errorMessage.includes('Invalid xpub') ||
@@ -199,11 +166,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         errorMessage.includes('unauthorized');
 
       if (shouldClearStorage) {
-        console.warn('Clearing stored xpub due to authentication/validation error');
         localStorage.removeItem(STORAGE_KEYS.XPUB);
         localStorage.removeItem(STORAGE_KEYS.NETWORK);
-      } else {
-        console.log('Keeping stored xpub - error may be temporary');
       }
 
       setState(prev => ({
@@ -213,7 +177,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         error: 'Failed to reconnect. Please try connecting manually.',
       }));
     } finally {
-      console.log('[checkExistingConnection] Finally block - resetting isCheckingRef');
       isCheckingRef.current = false;
       setState(prev => ({ ...prev, isCheckingConnection: false }));
     }
@@ -223,33 +186,24 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     setState(prev => ({ ...prev, isConnecting: true, loadingStep: 'Requesting snap...', error: null }));
 
     try {
-      // Request the snap to install/activate it
       await requestSnap();
       setState(prev => ({ ...prev, loadingStep: 'Checking snap network...' }));
 
-      // First, check if snap is working by getting network
-      console.log('🔍 Testing snap connection...');
       let currentSnapNetwork;
       try {
         const networkTest = await invokeSnap({
           method: 'htr_getConnectedNetwork',
           params: {}
         });
-        console.log('✅ Snap is responsive, network test:', networkTest);
 
-        // Parse network response
         const parsedNetworkTest = typeof networkTest === 'string' ? JSON.parse(networkTest) : networkTest;
         currentSnapNetwork = parsedNetworkTest?.response?.network;
-        console.log('📡 Snap current network:', currentSnapNetwork);
       } catch (testError) {
-        console.error('❌ Snap is not responsive:', testError);
         throw new Error('Snap is not responding. Please make sure it is installed correctly.');
       }
 
-      // Change snap network to dev-testnet if needed
-      const targetNetwork = 'dev-testnet'; // Web wallet uses dev-testnet
+      const targetNetwork = 'dev-testnet';
       if (currentSnapNetwork !== targetNetwork) {
-        console.log(`🔄 Changing snap network from ${currentSnapNetwork} to ${targetNetwork}...`);
         setState(prev => ({ ...prev, loadingStep: 'Changing snap network to dev-testnet...' }));
 
         try {
@@ -260,17 +214,12 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
               newNetwork: targetNetwork
             }
           });
-          console.log('✅ Snap network changed to dev-testnet');
         } catch (networkError) {
-          console.error('❌ Failed to change snap network:', networkError);
           throw new Error('Failed to change snap network to dev-testnet');
         }
       }
 
       setState(prev => ({ ...prev, loadingStep: 'Getting xpub from snap...' }));
-
-      // Get xpub from snap
-      console.log('🔍 Attempting to get xpub from snap...');
 
       let xpubResponse;
       try {
@@ -278,65 +227,45 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           method: 'htr_getXpub',
           params: {}
         });
-        console.log('✅ Raw xpub response from snap:', xpubResponse);
-        console.log('📦 Response type:', typeof xpubResponse);
       } catch (snapError) {
-        console.error('❌ Error calling snap htr_getXpub:', snapError);
         throw new Error(`Failed to get xpub: ${snapError instanceof Error ? snapError.message : String(snapError)}`);
       }
 
-      // Parse the response if it's a string (snap returns stringified JSON)
       let parsedResponse = xpubResponse;
       if (typeof xpubResponse === 'string') {
-        console.log('📝 Parsing stringified response...');
         try {
           parsedResponse = JSON.parse(xpubResponse);
-          console.log('✅ Parsed response:', parsedResponse);
         } catch (parseError) {
-          console.error('❌ Failed to parse response:', parseError);
           throw new Error('Invalid JSON response from snap');
         }
       }
 
       const xpub = (parsedResponse as { response?: { xpub?: string } })?.response?.xpub;
-      console.log('🔑 Extracted xpub:', xpub ? xpub.substring(0, 20) + '...' : 'null');
 
       if (!xpub) {
-        console.error('❌ Failed to extract xpub from response:', parsedResponse);
-        console.error('Response structure:', JSON.stringify(parsedResponse, null, 2));
         throw new Error('Failed to get xpub from snap - no xpub in response');
       }
 
-      console.log('✅ Got xpub from snap:', xpub.substring(0, 20) + '...');
       setState(prev => ({ ...prev, loadingStep: 'Initializing read-only wallet...' }));
 
-      // Web wallet always uses dev-testnet
       const network = 'dev-testnet';
-
-      // Initialize read-only wallet with xpub
       await readOnlyWalletService.initialize(xpub, network);
       setState(prev => ({ ...prev, loadingStep: 'Loading wallet data...' }));
 
-      // Get address from read-only wallet
       let address = '';
       try {
         const addressInfo = readOnlyWalletService.getCurrentAddress();
         address = addressInfo?.address || '';
       } catch (addressError) {
-        console.error('Failed to get current address during wallet connection:', addressError);
         throw new Error('Failed to retrieve wallet address. The wallet may not be properly initialized.');
       }
 
       setState(prev => ({ ...prev, loadingStep: 'Loading balance...' }));
 
-      // Get balance from read-only wallet
       const balances = await readOnlyWalletService.getBalance('00');
-      console.log('💼 Wallet context received balances from read-only wallet:', balances);
 
-      // Save xpub and network to localStorage for auto-reconnect
       localStorage.setItem(STORAGE_KEYS.XPUB, xpub);
       localStorage.setItem(STORAGE_KEYS.NETWORK, network);
-      console.log('✅ Saved xpub to localStorage for auto-reconnect');
 
       setState(prev => ({
         ...prev,
@@ -348,12 +277,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         isConnecting: false,
         loadingStep: '',
       }));
-
-      console.log('✅ Wallet state updated with balances:', balances);
     } catch (error) {
-      console.error('Connection error:', error);
-
-      // Provide more specific error messages based on which step failed
       let errorMessage = 'Failed to connect to wallet';
       if (error instanceof Error) {
         errorMessage = error.message;
@@ -368,18 +292,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     }
   };
 
-  // Check for existing connection on mount
   React.useEffect(() => {
-    console.log('[useEffect] Mounting WalletProvider');
     let timeoutId: NodeJS.Timeout;
 
-    // Add a small delay to avoid race condition with React StrictMode double-mount
     const timer = setTimeout(() => {
-      console.log('[useEffect] Timer fired, calling checkExistingConnection');
-
-      // Set a timeout to prevent infinite hanging
       timeoutId = setTimeout(() => {
-        console.error('[useEffect] Connection check timed out after 10 seconds');
         setState(prev => ({
           ...prev,
           isCheckingConnection: false,
@@ -389,12 +306,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       }, 10000);
 
       checkExistingConnection()
-        .then(() => {
-          console.log('[useEffect] checkExistingConnection completed successfully');
-        })
-        .catch((error) => {
-          console.error('[useEffect] Connection check failed with error:', error);
-          // Ensure we reset the checking state on error
+        .then(() => {})
+        .catch(() => {
           setState(prev => ({
             ...prev,
             isCheckingConnection: false,
@@ -403,22 +316,18 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           }));
         })
         .finally(() => {
-          console.log('[useEffect] checkExistingConnection finally block');
           clearTimeout(timeoutId);
         });
     }, 100);
 
     return () => {
-      console.log('[useEffect] Unmounting WalletProvider');
       clearTimeout(timer);
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, []);
 
-  // Sync MetaMask errors to wallet state
   React.useEffect(() => {
     if (metamaskError) {
-      console.error('MetaMask RPC Error:', metamaskError);
       setState(prev => ({
         ...prev,
         error: metamaskError.message || 'An RPC error occurred',
@@ -427,19 +336,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   }, [metamaskError]);
 
   const disconnectWallet = () => {
-    console.log('🔌 Disconnecting wallet...');
-
-    // Clear localStorage
     localStorage.removeItem(STORAGE_KEYS.XPUB);
     localStorage.removeItem(STORAGE_KEYS.NETWORK);
-
-    // Stop the read-only wallet
     readOnlyWalletService.stop();
-
-    // Reset state
     setState(initialState);
-
-    console.log('✅ Wallet disconnected');
   };
 
   const refreshBalance = async () => {
@@ -464,7 +364,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       const address = addressInfo?.address || '';
       setState(prev => ({ ...prev, address, error: null }));
     } catch (error) {
-      console.error('Failed to refresh address:', error);
       setState(prev => ({
         ...prev,
         error: error instanceof Error ? error.message : 'Failed to refresh address. The wallet may not be properly initialized.',
@@ -480,7 +379,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     try {
       return await readOnlyWalletService.getTransactionHistory(count, skip, tokenId);
     } catch (error) {
-      console.error('Failed to get transaction history:', error);
       return [];
     }
   };
@@ -491,17 +389,14 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   const changeNetwork = async (newNetwork: string) => {
     if (!state.isConnected || !state.xpub) {
-      console.error('Cannot change network: wallet not connected');
       return;
     }
 
-    // Save current state for rollback
     const previousNetwork = state.network;
     const previousAddress = state.address;
     const previousBalances = state.balances;
 
     try {
-      // Show loading screen by setting isCheckingConnection and loadingStep
       setState(prev => ({
         ...prev,
         isCheckingConnection: true,
@@ -509,7 +404,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         error: null
       }));
 
-      // Call snap to change network
       await invokeSnap({
         method: 'htr_changeNetwork',
         params: {
@@ -517,8 +411,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           newNetwork: newNetwork,
         }
       });
-
-      console.log(`✅ Network changed from ${previousNetwork} to ${newNetwork}`);
 
       setState(prev => ({ ...prev, loadingStep: 'Stopping previous wallet...' }));
 
@@ -559,13 +451,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         error: null,
       }));
 
-      console.log('✅ Wallet reinitialized with new network');
     } catch (error) {
-      console.error('❌ Failed to change network:', error);
+      console.error('Failed to change network:', error);
 
-      // Rollback to previous network
       try {
-        console.log(`🔄 Rolling back to previous network: ${previousNetwork}`);
         setState(prev => ({ ...prev, loadingStep: 'Rolling back to previous network...' }));
 
         // Change snap back to previous network
@@ -595,13 +484,9 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           loadingStep: '',
           error: error instanceof Error ? error.message : 'Failed to change network. Reverted to previous network.',
         }));
-
-        console.log('✅ Successfully rolled back to previous network');
       } catch (rollbackError) {
-        console.error('❌ Failed to rollback:', rollbackError);
-        // Rollback failed - wallet state is now inconsistent
-        // Force disconnect to prevent user from operating in unknown state
-        console.warn('🔴 Forcing wallet disconnect due to failed rollback');
+        console.error('Failed to rollback:', rollbackError);
+        console.warn('Forcing wallet disconnect due to failed rollback');
 
         // Clear localStorage and stop wallet
         localStorage.removeItem(STORAGE_KEYS.XPUB);

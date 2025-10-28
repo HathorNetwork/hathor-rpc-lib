@@ -37,20 +37,12 @@ export const promptHandler = (origin, wallet) => async (promptRequest) => {
     case TriggerTypes.ChangeNetworkConfirmationPrompt:
       if (!(Object.hasOwn(NETWORK_MAP, params.newNetwork))) {
         // Reject if the newNetwork is not a valid option
-        console.error('❌ Network not found in NETWORK_MAP:', params.newNetwork);
         return { data: false };
       }
 
       approved = await changeNetworkPage(data, params, origin);
       if (approved) {
-        try {
-          console.log('🔄 Setting network to:', params.newNetwork);
-          await setNetwork(params.newNetwork);
-          console.log('✅ Network changed successfully');
-        } catch (error) {
-          console.error('❌ Failed to set network:', error);
-          throw error; // Re-throw to see the real error
-        }
+        await setNetwork(params.newNetwork);
       }
       return { data: approved };
     case TriggerTypes.SendTransactionConfirmationPrompt:

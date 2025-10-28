@@ -140,16 +140,7 @@ const WalletHome: React.FC = () => {
                   className="w-6 h-6"
                 />
                 <span className="text-2xl font-medium text-white">
-                  {(() => {
-                    console.log('🎨 UI rendering balance. balances array:', balances);
-                    if (balances.length > 0) {
-                      console.log('💰 First balance item:', balances[0]);
-                      console.log('🔢 Available amount:', balances[0].available);
-                      console.log('📱 Formatted amount:', formatHTRAmount(balances[0].available));
-                      return `${formatHTRAmount(balances[0].available)} HTR`;
-                    }
-                    return '0 HTR';
-                  })()}
+                  {balances.length > 0 ? `${formatHTRAmount(balances[0].available)} HTR` : '0 HTR'}
                 </span>
               </div>
             </div>

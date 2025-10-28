@@ -115,8 +115,7 @@ export class ReadOnlyWalletService {
         // Check if this is a "wallet already loaded" error (400 status)
         // The wallet-service returns 400 when wallet already exists
         if (error?.response?.data?.error === 'wallet-already-loaded') {
-          console.log('✅ Wallet already exists on wallet-service (read-only mode)');
-          // Wallet is already loaded, this is OK for read-only access
+          console.log('Wallet already exists on wallet-service (read-only mode)');
         } else {
           // For other errors, re-throw
           throw error;

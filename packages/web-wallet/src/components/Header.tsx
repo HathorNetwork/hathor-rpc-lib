@@ -69,40 +69,6 @@ const Header: React.FC = () => {
                 {getNetworkDisplayName(network)}
               </span>
             </button>
-
-            {/* Menu Button - Hidden for now */}
-            {/* <div className="relative">
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-2 bg-[#191C21] border border-[#24292F] rounded-full hover:bg-[#24292F] transition-colors"
-              >
-                <MoreVertical className="w-5 h-5 text-white" />
-              </button>
-
-              {isMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-[#191C21] border border-[#24292F] rounded-lg shadow-lg overflow-hidden z-50">
-                  <button
-                    onClick={() => {
-                      setIsNetworkDialogOpen(true);
-                      setIsMenuOpen(false);
-                    }}
-                    className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] transition-colors"
-                  >
-                    Create Tokens
-                  </button>
-                  <button
-                    className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] transition-colors"
-                  >
-                    Notifications
-                  </button>
-                  <button
-                    className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] transition-colors"
-                  >
-                    Address mode
-                  </button>
-                </div>
-              )}
-            </div> */}
           </div>
         </div>
       </header>
