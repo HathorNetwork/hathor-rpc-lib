@@ -17,8 +17,17 @@ RUN corepack enable && yarn install
 # Copy source code
 COPY packages/web-wallet ./packages/web-wallet
 COPY packages/snap-utils ./packages/snap-utils
+COPY packages/hathor-rpc-handler ./packages/hathor-rpc-handler
 
-# Build the application
+# Build snap-utils first (web-wallet depends on it)
+WORKDIR /app/packages/snap-utils
+RUN yarn build
+
+# Build hathor-rpc-handler (snap-utils depends on it)
+WORKDIR /app/packages/hathor-rpc-handler
+RUN yarn build
+
+# Build the web-wallet application
 WORKDIR /app/packages/web-wallet
 RUN yarn build
 
