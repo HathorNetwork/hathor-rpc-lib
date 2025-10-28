@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { constants as libConstants, walletUtils, HathorWalletServiceWallet, Network } from '@hathor/wallet-lib';
+import { constants as libConstants, errors as libErrors, walletUtils, HathorWalletServiceWallet, Network } from '@hathor/wallet-lib';
 import { DEFAULT_PIN_CODE, REQUEST_METHODS } from '../constants';
 import { getNetworkData, configNetwork } from './network';
 
@@ -71,7 +71,7 @@ export const initializeWalletOnService = async (): Promise<string> => {
  * Read-only wallets use only the xpub and don't require access to private keys,
  * making them faster to initialize and more secure for read operations.
  */
-export const getReadOnlyHathorWallet = async (): Promise<HathorWalletServiceWallet> => {
+export const getAndStartReadOnlyHathorWallet = async (): Promise<HathorWalletServiceWallet> => {
   // Get network data from persistent storage
   const networkData = await getNetworkData();
   const network = networkData.network;
@@ -94,7 +94,21 @@ export const getReadOnlyHathorWallet = async (): Promise<HathorWalletServiceWall
 
   // Set lib config data and start the wallet in read-only mode
   await configNetwork();
-  await wallet.startReadOnly({ skipAddressFetch: true });
+  try {
+    await wallet.startReadOnly({ skipAddressFetch: true });
+  } catch (e) {
+    // If the wallet is not started in the wallet service,
+    // the method above will fail
+    // So we fallback to a full wallet, so it's properly
+    // started in the wallet service and the snap request
+    // is executed normally
+    if (e instanceof libErrors.WalletRequestError) {
+      return getAndStartHathorWallet();
+    }
+
+    // For other errors, we re-throw
+    throw e;
+  }
 
   return wallet;
 };
@@ -117,8 +131,14 @@ export const getHathorWallet = async (): Promise<HathorWalletServiceWallet> => {
     enableWs: false,
   });
 
-  // Set lib config data and start the wallet
+  // Set lib config data
   await configNetwork();
+
+  return wallet;
+}
+
+export const getAndStartHathorWallet = async (): Promise<HathorWalletServiceWallet> => {
+  const wallet = await getHathorWallet();
 
   await wallet.start({ pinCode: DEFAULT_PIN_CODE, password: DEFAULT_PIN_CODE });
 

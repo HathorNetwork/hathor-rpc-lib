@@ -76,6 +76,7 @@ export async function sendNanoContractTx(
       type: TriggerTypes.PinConfirmationPrompt,
     };
 
+    config.setServerUrl(wallet.getServerUrl());
     let blueprintId = params.blueprintId;
     if (blueprintId) {
       // Check if the user sent a valid blueprint id
@@ -100,7 +101,6 @@ export async function sendNanoContractTx(
       }
     }
 
-    config.setServerUrl(wallet.getServerUrl());
     const result = await nanoUtils.validateAndParseBlueprintMethodArgs(blueprintId!, params.method, params.args, new Network(params.network));
     const parsedArgs = result.map((data) => {
       return { ...data, parsed: data.field.toUser() };
