@@ -4,6 +4,7 @@ import { useWallet } from '../contexts/WalletContext';
 import { truncateAddress } from '../utils/hathor';
 import ChangeNetworkDialog from './ChangeNetworkDialog';
 import htrLogo from '../htr_logo.svg';
+import { NETWORKS } from '../constants';
 
 const Header: React.FC = () => {
   const { address, network } = useWallet();
@@ -17,11 +18,11 @@ const Header: React.FC = () => {
 
   const getNetworkDisplayName = (networkId: string) => {
     switch (networkId) {
-      case 'mainnet':
+      case NETWORKS.MAINNET:
         return 'Mainnet';
-      case 'testnet':
+      case NETWORKS.TESTNET:
         return 'Testnet';
-      case 'dev-testnet':
+      case NETWORKS.DEV_TESTNET:
         return 'Dev Testnet';
       default:
         return networkId;

@@ -38,7 +38,7 @@ export const TOKEN_IDS = {
 } as const;
 
 // Default configuration
-export const DEFAULT_NETWORK = NETWORKS.TESTNET;
+export const DEFAULT_NETWORK = NETWORKS.DEV_TESTNET;
 export const DEFAULT_ADDRESS_INDEX = 0;
 export const DEFAULT_ADDRESS_TYPE = 'index' as const;
 

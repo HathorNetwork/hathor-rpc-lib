@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { WalletServiceMethods } from '../HathorWalletService';
+import { NETWORKS } from '../../constants';
 
 describe('HathorWalletService - Critical Issues', () => {
   let mockInvokeSnap: any;
@@ -12,7 +13,7 @@ describe('HathorWalletService - Critical Issues', () => {
   describe('Critical Issue #1: Hardcoded Network Override', () => {
     it('should NOT override network parameter to testnet', async () => {
       const params = {
-        network: 'mainnet', // User wants mainnet
+        network: NETWORKS.MAINNET, // User wants mainnet
         outputs: [
           {
             address: 'HAddr123',
@@ -30,14 +31,14 @@ describe('HathorWalletService - Critical Issues', () => {
       expect(mockInvokeSnap).toHaveBeenCalledWith({
         method: 'htr_sendTransaction',
         params: expect.objectContaining({
-          network: 'mainnet', // Should preserve original network
+          network: NETWORKS.MAINNET, // Should preserve original network
         }),
       });
     });
 
     it('should respect testnet when explicitly passed', async () => {
       const params = {
-        network: 'testnet',
+        network: NETWORKS.TESTNET,
         outputs: [
           {
             address: 'HAddr123',
@@ -54,14 +55,14 @@ describe('HathorWalletService - Critical Issues', () => {
       expect(mockInvokeSnap).toHaveBeenCalledWith({
         method: 'htr_sendTransaction',
         params: expect.objectContaining({
-          network: 'testnet',
+          network: NETWORKS.TESTNET,
         }),
       });
     });
 
     it('should respect dev-testnet when explicitly passed', async () => {
       const params = {
-        network: 'dev-testnet',
+        network: NETWORKS.DEV_TESTNET,
         outputs: [
           {
             address: 'HAddr123',
@@ -78,7 +79,7 @@ describe('HathorWalletService - Critical Issues', () => {
       expect(mockInvokeSnap).toHaveBeenCalledWith({
         method: 'htr_sendTransaction',
         params: expect.objectContaining({
-          network: 'dev-testnet',
+          network: NETWORKS.DEV_TESTNET,
         }),
       });
     });
@@ -94,7 +95,7 @@ describe('HathorWalletService - Critical Issues', () => {
 
       // Should throw instead of silently returning []
       await expect(
-        WalletServiceMethods.getTransactionHistory('HAddr123', 'mainnet')
+        WalletServiceMethods.getTransactionHistory('HAddr123', NETWORKS.MAINNET)
       ).rejects.toThrow();
     });
 
@@ -102,7 +103,7 @@ describe('HathorWalletService - Critical Issues', () => {
       (global.fetch as any).mockRejectedValueOnce(new Error('Network timeout'));
 
       await expect(
-        WalletServiceMethods.getTransactionHistory('HAddr123', 'mainnet')
+        WalletServiceMethods.getTransactionHistory('HAddr123', NETWORKS.MAINNET)
       ).rejects.toThrow('Network timeout');
     });
 
@@ -113,7 +114,7 @@ describe('HathorWalletService - Critical Issues', () => {
       });
 
       await expect(
-        WalletServiceMethods.getTransactionHistory('HAddr123', 'mainnet')
+        WalletServiceMethods.getTransactionHistory('HAddr123', NETWORKS.MAINNET)
       ).rejects.toThrow('Invalid JSON');
     });
 
@@ -135,7 +136,7 @@ describe('HathorWalletService - Critical Issues', () => {
         json: vi.fn().mockResolvedValue(mockHistory),
       });
 
-      const result = await WalletServiceMethods.getTransactionHistory('HAddr123', 'mainnet');
+      const result = await WalletServiceMethods.getTransactionHistory('HAddr123', NETWORKS.MAINNET);
 
       expect(result).toHaveLength(1);
       expect(result[0].txId).toBe('abc123'); // Changed from tx_id to txId (camelCase)
@@ -150,7 +151,7 @@ describe('HathorWalletService - Critical Issues', () => {
 
       await expect(
         WalletServiceMethods.sendTransaction(mockInvokeSnap, {
-          network: 'testnet',
+          network: NETWORKS.TESTNET,
           outputs: [
             {
               address: 'HAddr123',
@@ -167,7 +168,7 @@ describe('HathorWalletService - Critical Issues', () => {
 
       await expect(
         WalletServiceMethods.sendTransaction(mockInvokeSnap, {
-          network: 'testnet',
+          network: NETWORKS.TESTNET,
           outputs: [
             {
               address: 'HAddr123',
@@ -186,7 +187,7 @@ describe('HathorWalletService - Critical Issues', () => {
 
       await expect(
         WalletServiceMethods.sendTransaction(mockInvokeSnap, {
-          network: 'testnet',
+          network: NETWORKS.TESTNET,
           outputs: [
             {
               address: 'HAddr123',
@@ -203,7 +204,7 @@ describe('HathorWalletService - Critical Issues', () => {
       mockInvokeSnap.mockResolvedValueOnce(mockResponse);
 
       const result = await WalletServiceMethods.sendTransaction(mockInvokeSnap, {
-        network: 'testnet',
+        network: NETWORKS.TESTNET,
         outputs: [
           {
             address: 'HAddr123',

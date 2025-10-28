@@ -1,3 +1,4 @@
+import { DEFAULT_NETWORK } from '@/constants';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 describe('WalletContext - Critical Error Handling Tests', () => {
@@ -22,12 +23,12 @@ describe('WalletContext - Critical Error Handling Tests', () => {
     it('should demonstrate correct network verification success path', async () => {
       const mockInvokeSnap = vi
         .fn()
-        .mockResolvedValue(JSON.stringify({ response: { network: 'dev-testnet' } }));
+        .mockResolvedValue(JSON.stringify({ response: { network: DEFAULT_NETWORK } }));
 
       const result = await mockInvokeSnap({ method: 'htr_getConnectedNetwork', params: {} });
       const parsed = JSON.parse(result);
 
-      expect(parsed.response.network).toBe('dev-testnet');
+      expect(parsed.response.network).toBe(DEFAULT_NETWORK);
     });
   });
 

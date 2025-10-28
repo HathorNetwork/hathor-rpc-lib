@@ -59,11 +59,11 @@ export class ReadOnlyWalletService {
       let walletServiceWsUrl: string;
       let actualNetwork: string;
 
-      if (network === NETWORKS.DEV_TESTNET || network === 'dev-testnet') {
+      if (network === NETWORKS.DEV_TESTNET) {
         walletServiceUrl = WALLET_SERVICE_URLS.DEV_TESTNET;
         walletServiceWsUrl = WALLET_SERVICE_WS_URLS.DEV_TESTNET;
         actualNetwork = 'testnet'; // wallet-lib only understands 'mainnet' or 'testnet'
-      } else if (network === NETWORKS.TESTNET || network === 'testnet') {
+      } else if (network === NETWORKS.TESTNET) {
         walletServiceUrl = WALLET_SERVICE_URLS.TESTNET;
         walletServiceWsUrl = WALLET_SERVICE_WS_URLS.TESTNET;
         actualNetwork = 'testnet';

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, type ReactNode } from 'reac
 import { WalletServiceMethods } from '../services/HathorWalletService';
 import { readOnlyWalletService } from '../services/ReadOnlyWalletService';
 import { useInvokeSnap, useRequestSnap, useMetaMaskContext } from '@hathor/snap-utils';
+import { DEFAULT_NETWORK } from '@/constants';
 
 const STORAGE_KEYS = {
   XPUB: 'hathor_wallet_xpub',
@@ -97,7 +98,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
     try {
       const storedXpub = localStorage.getItem(STORAGE_KEYS.XPUB);
-      const storedNetwork = localStorage.getItem(STORAGE_KEYS.NETWORK) || 'dev-testnet';
+      const storedNetwork = localStorage.getItem(STORAGE_KEYS.NETWORK) || DEFAULT_NETWORK;
 
       if (!storedXpub) {
         setState(prev => ({
@@ -115,10 +116,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       });
       const parsedNetworkTest = typeof networkTest === 'string' ? JSON.parse(networkTest) : networkTest;
       const currentSnapNetwork = parsedNetworkTest?.response?.network;
-      const targetNetwork = 'dev-testnet';
+      const targetNetwork = DEFAULT_NETWORK;
 
       if (currentSnapNetwork !== targetNetwork) {
-        setState(prev => ({ ...prev, loadingStep: 'Changing snap network to dev-testnet...' }));
+        setState(prev => ({ ...prev, loadingStep: `Changing snap network to ${DEFAULT_NETWORK}...` }));
 
         await invokeSnap({
           method: 'htr_changeNetwork',
@@ -199,12 +200,13 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         const parsedNetworkTest = typeof networkTest === 'string' ? JSON.parse(networkTest) : networkTest;
         currentSnapNetwork = parsedNetworkTest?.response?.network;
       } catch (testError) {
+        console.error(testError);
         throw new Error('Snap is not responding. Please make sure it is installed correctly.');
       }
 
-      const targetNetwork = 'dev-testnet';
+      const targetNetwork = DEFAULT_NETWORK;
       if (currentSnapNetwork !== targetNetwork) {
-        setState(prev => ({ ...prev, loadingStep: 'Changing snap network to dev-testnet...' }));
+        setState(prev => ({ ...prev, loadingStep: `Changing snap network to ${DEFAULT_NETWORK}...` }));
 
         try {
           await invokeSnap({
@@ -215,7 +217,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
             }
           });
         } catch (networkError) {
-          throw new Error('Failed to change snap network to dev-testnet');
+          console.error(networkError);
+          throw new Error(`Failed to change snap network to ${DEFAULT_NETWORK}`);
         }
       }
 
@@ -248,7 +251,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       setState(prev => ({ ...prev, loadingStep: 'Initializing read-only wallet...' }));
 
-      const network = 'dev-testnet';
+      const network = DEFAULT_NETWORK;
       await readOnlyWalletService.initialize(xpub, network);
       setState(prev => ({ ...prev, loadingStep: 'Loading wallet data...' }));
 
@@ -306,7 +309,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       }, 10000);
 
       checkExistingConnection()
-        .then(() => {})
+        .then(() => { })
         .catch(() => {
           setState(prev => ({
             ...prev,
