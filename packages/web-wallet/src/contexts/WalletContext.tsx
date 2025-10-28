@@ -81,40 +81,45 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const invokeSnap = useInvokeSnap();
   const requestSnap = useRequestSnap();
   const { error: metamaskError, setError: setMetamaskError } = useMetaMaskContext();
+  const isCheckingRef = React.useRef(false);
 
   // Check for existing connection on mount
   const checkExistingConnection = async () => {
-    // Prevent concurrent calls using functional state update for atomicity
-    let shouldProceed = false;
-    setState(prev => {
-      if (prev.isCheckingConnection) {
-        console.log('Already checking connection, skipping...');
-        return prev; // Already checking, don't proceed
-      }
-      shouldProceed = true;
-      return { ...prev, isCheckingConnection: true, loadingStep: 'Checking existing connection...' };
-    });
+    console.log('[checkExistingConnection] Function called, isCheckingRef:', isCheckingRef.current);
 
-    if (!shouldProceed) {
+    // Use ref to prevent concurrent calls
+    if (isCheckingRef.current) {
+      console.log('[checkExistingConnection] Already checking (ref), skipping...');
       return;
     }
 
+    isCheckingRef.current = true;
+    console.log('[checkExistingConnection] Set isCheckingRef to true');
+
+    setState(prev => ({
+      ...prev,
+      isCheckingConnection: true,
+      loadingStep: 'Checking existing connection...',
+    }));
+
     try {
-      console.log('Starting connection check...');
+      console.log('[checkExistingConnection] Starting connection check...');
 
       // Check if we have a stored xpub in localStorage
       const storedXpub = localStorage.getItem(STORAGE_KEYS.XPUB);
       const storedNetwork = localStorage.getItem(STORAGE_KEYS.NETWORK) || 'dev-testnet';
 
-      console.log('Stored xpub:', storedXpub ? 'Found' : 'Not found');
+      console.log('[checkExistingConnection] Stored xpub:', storedXpub ? 'Found' : 'Not found');
+      console.log('[checkExistingConnection] Stored network:', storedNetwork);
 
       if (!storedXpub) {
-        console.log('No stored xpub found, user needs to connect');
+        console.log('[checkExistingConnection] No stored xpub found, user needs to connect');
         setState(prev => ({
           ...prev,
           isCheckingConnection: false,
           loadingStep: '',
         }));
+        console.log('[checkExistingConnection] State updated to show connect screen');
         return;
       }
 
@@ -208,6 +213,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         error: 'Failed to reconnect. Please try connecting manually.',
       }));
     } finally {
+      console.log('[checkExistingConnection] Finally block - resetting isCheckingRef');
+      isCheckingRef.current = false;
       setState(prev => ({ ...prev, isCheckingConnection: false }));
     }
   };
@@ -363,21 +370,49 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   // Check for existing connection on mount
   React.useEffect(() => {
+    console.log('[useEffect] Mounting WalletProvider');
+    let timeoutId: NodeJS.Timeout;
+
     // Add a small delay to avoid race condition with React StrictMode double-mount
     const timer = setTimeout(() => {
-      checkExistingConnection().catch((error) => {
-        console.error('Connection check failed:', error);
-        // Ensure we reset the checking state on error
+      console.log('[useEffect] Timer fired, calling checkExistingConnection');
+
+      // Set a timeout to prevent infinite hanging
+      timeoutId = setTimeout(() => {
+        console.error('[useEffect] Connection check timed out after 10 seconds');
         setState(prev => ({
           ...prev,
           isCheckingConnection: false,
           loadingStep: '',
-          error: 'Failed to check connection',
+          error: null,
         }));
-      });
+      }, 10000);
+
+      checkExistingConnection()
+        .then(() => {
+          console.log('[useEffect] checkExistingConnection completed successfully');
+        })
+        .catch((error) => {
+          console.error('[useEffect] Connection check failed with error:', error);
+          // Ensure we reset the checking state on error
+          setState(prev => ({
+            ...prev,
+            isCheckingConnection: false,
+            loadingStep: '',
+            error: 'Failed to check connection',
+          }));
+        })
+        .finally(() => {
+          console.log('[useEffect] checkExistingConnection finally block');
+          clearTimeout(timeoutId);
+        });
     }, 100);
 
-    return () => clearTimeout(timer);
+    return () => {
+      console.log('[useEffect] Unmounting WalletProvider');
+      clearTimeout(timer);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, []);
 
   // Sync MetaMask errors to wallet state
