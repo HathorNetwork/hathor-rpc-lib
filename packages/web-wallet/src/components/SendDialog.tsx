@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { X, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useWallet } from '../contexts/WalletContext';
 import { formatHTRAmount, htrToCents, centsToHTR } from '../utils/hathor';
 import { Network } from '@hathor/wallet-lib';
@@ -10,98 +13,105 @@ interface SendDialogProps {
   onClose: () => void;
 }
 
+// Create a Zod schema factory for form validation
+const createSendFormSchema = (availableBalance: number, network: string) =>
+  z.object({
+    selectedToken: z.string(),
+    amount: z
+      .string()
+      .min(1, 'Amount is required')
+      .regex(/^\d+(\.\d{1,2})?$/, 'Invalid amount format. Use up to 2 decimal places.')
+      .refine((val) => {
+        const num = parseFloat(val);
+        return num > 0;
+      }, 'Amount must be greater than 0')
+      .refine((val) => {
+        const num = parseFloat(val);
+        return num <= Number.MAX_SAFE_INTEGER / 100;
+      }, 'Amount is too large')
+      .refine((val) => {
+        const amountInCents = htrToCents(val);
+        return amountInCents <= availableBalance;
+      }, 'Insufficient balance'),
+    address: z
+      .string()
+      .min(1, 'Address is required')
+      .superRefine((val, ctx) => {
+        try {
+          const networkObj = new Network(network);
+          const addressObj = new Address(val.trim(), { network: networkObj });
+          addressObj.validateAddress();
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : 'Invalid address';
+          let customMessage = 'Invalid Hathor address format';
+
+          if (errorMsg.includes('checksum')) {
+            customMessage = 'Invalid address checksum. Please check the address.';
+          } else if (errorMsg.includes('network')) {
+            customMessage = `Invalid address for ${network} network`;
+          }
+
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: customMessage,
+          });
+        }
+      }),
+    timelock: z.string().optional(),
+    dataOutput: z.string().optional(),
+  });
+
+type SendFormData = z.infer<ReturnType<typeof createSendFormSchema>>;
+
 const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
-  const [selectedToken, setSelectedToken] = useState('HTR');
-  const [amount, setAmount] = useState('');
-  const [address, setAddress] = useState('');
-  const [timelock, setTimelock] = useState('');
-  const [dataOutput, setDataOutput] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ amount?: string; address?: string }>({});
   const [transactionError, setTransactionError] = useState<string | null>(null);
 
   const { sendTransaction, balances, network, refreshBalance } = useWallet();
 
   const availableBalance = balances.length > 0 ? balances[0].available : 0;
 
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+    reset,
+  } = useForm<SendFormData>({
+    resolver: zodResolver(createSendFormSchema(availableBalance, network)),
+    defaultValues: {
+      selectedToken: 'HTR',
+      amount: '',
+      address: '',
+      timelock: '',
+      dataOutput: '',
+    },
+    mode: 'onChange',
+  });
+
+  const amount = watch('amount');
+
   const handleMaxClick = () => {
     if (availableBalance > 0) {
-      setAmount(centsToHTR(availableBalance).toString());
+      setValue('amount', centsToHTR(availableBalance).toString(), {
+        shouldValidate: true
+      });
     }
   };
 
-  const validateForm = () => {
-    const newErrors: { amount?: string; address?: string } = {};
-
-    // Validate amount with comprehensive checks
-    if (!amount || amount.trim() === '') {
-      newErrors.amount = 'Amount is required';
-    } else {
-      // Check for valid number format (no scientific notation, max 2 decimals for HTR)
-      const amountPattern = /^\d+(\.\d{1,2})?$/;
-      if (!amountPattern.test(amount)) {
-        newErrors.amount = 'Invalid amount format. Use up to 2 decimal places.';
-      } else {
-        const amountNum = parseFloat(amount);
-
-        // Check if amount is positive
-        if (amountNum <= 0) {
-          newErrors.amount = 'Amount must be greater than 0';
-        }
-        // Check for integer overflow (JavaScript's MAX_SAFE_INTEGER / 100 for cents)
-        else if (amountNum > Number.MAX_SAFE_INTEGER / 100) {
-          newErrors.amount = 'Amount is too large';
-        }
-        // Check against available balance
-        else {
-          const amountInCents = htrToCents(amount);
-          if (amountInCents > availableBalance) {
-            newErrors.amount = 'Insufficient balance';
-          }
-        }
-      }
-    }
-
-    // Validate address with proper checksum verification
-    if (!address || address.trim().length === 0) {
-      newErrors.address = 'Address is required';
-    } else {
-      try {
-        const networkObj = new Network(network || 'dev-testnet');
-        const addressObj = new Address(address.trim(), { network: networkObj });
-        addressObj.validateAddress();
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Invalid address';
-        if (errorMsg.includes('checksum')) {
-          newErrors.address = 'Invalid address checksum. Please check the address.';
-        } else if (errorMsg.includes('network')) {
-          newErrors.address = `Invalid address for ${network} network`;
-        } else {
-          newErrors.address = 'Invalid Hathor address format';
-        }
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSend = async () => {
-    if (!validateForm()) {
-      return;
-    }
-
+  const onSubmit = async (data: SendFormData) => {
     setIsLoading(true);
     setTransactionError(null);
 
     try {
-      const amountInCents = htrToCents(amount);
+      const amountInCents = htrToCents(data.amount);
 
       const result = await sendTransaction({
-        network: network || 'dev-testnet',
+        network,
         outputs: [{
-          address: address.trim(),
+          address: data.address.trim(),
           value: amountInCents.toString(),
           token: '00'
         }]
@@ -113,11 +123,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
       await refreshBalance();
 
       // Reset form and close
-      setAmount('');
-      setAddress('');
-      setTimelock('');
-      setDataOutput('');
-      setErrors({});
+      reset();
       setTransactionError(null);
       onClose();
     } catch (err) {
@@ -145,15 +151,14 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Form */}
-        <div className="p-6 space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
           {/* Select Token */}
           <div>
             <label className="block text-base font-bold text-white mb-2">
               Select Token
             </label>
             <select
-              value={selectedToken}
-              onChange={(e) => setSelectedToken(e.target.value)}
+              {...register('selectedToken')}
               className="w-full px-3 py-2 bg-[#0D1117] border border-border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
             >
               <option value="HTR">HTR</option>
@@ -167,12 +172,8 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
             </label>
             <div className="relative">
               <input
-                type="number"
-                value={amount}
-                onChange={(e) => {
-                  setAmount(e.target.value);
-                  if (errors.amount) setErrors({ ...errors, amount: undefined });
-                }}
+                type="text"
+                {...register('amount')}
                 placeholder="0.0"
                 className={`w-full px-3 py-2 pr-12 bg-[#0D1117] border ${
                   errors.amount ? 'border-red-500' : 'border-border'
@@ -185,6 +186,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
                 Balance available: {formatHTRAmount(availableBalance)} HTR
               </span>
               <button
+                type="button"
                 onClick={handleMaxClick}
                 className="text-xs text-primary hover:text-primary/80 transition-colors uppercase"
               >
@@ -193,7 +195,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
             </div>
             {errors.amount && (
               <div className="flex items-center gap-1 mt-1">
-                <span className="text-xs text-red-400">{errors.amount}</span>
+                <span className="text-xs text-red-400">{errors.amount.message}</span>
               </div>
             )}
           </div>
@@ -205,11 +207,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
             </label>
             <input
               type="text"
-              value={address}
-              onChange={(e) => {
-                setAddress(e.target.value);
-                if (errors.address) setErrors({ ...errors, address: undefined });
-              }}
+              {...register('address')}
               placeholder="Address"
               className={`w-full px-3 py-2 bg-[#0D1117] border ${
                 errors.address ? 'border-red-500' : 'border-border'
@@ -217,7 +215,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
             />
             {errors.address && (
               <div className="flex items-center gap-1 mt-1">
-                <span className="text-xs text-red-400">{errors.address}</span>
+                <span className="text-xs text-red-400">{errors.address.message}</span>
               </div>
             )}
           </div>
@@ -231,6 +229,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
           {/* Advanced Options */}
           <div>
             <button
+              type="button"
               onClick={() => setShowAdvanced(!showAdvanced)}
               className="flex items-center gap-2 text-base font-bold text-white hover:text-primary transition-colors"
             >
@@ -251,8 +250,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
                   </label>
                   <input
                     type="text"
-                    value={timelock}
-                    onChange={(e) => setTimelock(e.target.value)}
+                    {...register('timelock')}
                     placeholder="MM / DD / YYYY"
                     className="w-full px-3 py-2 bg-[#0D1117] border border-border rounded-lg text-white placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                   />
@@ -264,8 +262,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
                     Data output (optional)
                   </label>
                   <textarea
-                    value={dataOutput}
-                    onChange={(e) => setDataOutput(e.target.value)}
+                    {...register('dataOutput')}
                     placeholder="Optional message or metadata"
                     rows={3}
                     className="w-full px-3 py-2 bg-[#0D1117] border border-border rounded-lg text-white placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
@@ -277,8 +274,8 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
 
           {/* Send Button */}
           <button
-            onClick={handleSend}
-            disabled={isLoading || !amount || !address}
+            type="submit"
+            disabled={isLoading || !amount}
             className="w-auto mx-auto px-8 py-2.5 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
           >
             {isLoading ? (
@@ -290,7 +287,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
               'Send token'
             )}
           </button>
-        </div>
+        </form>
       </div>
     </div>
   );
