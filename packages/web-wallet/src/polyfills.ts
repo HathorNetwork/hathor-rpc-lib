@@ -1,5 +1,6 @@
 // Browser polyfills for Node.js globals
 import { Buffer } from 'buffer';
+// @ts-ignore - No type definitions available for process/browser
 import process from 'process/browser';
 
 // Make Buffer available globally

@@ -45,13 +45,18 @@ export type ErrorId = typeof ErrorIds[keyof typeof ErrorIds];
  * Create an error with an error ID for tracking
  */
 export class TrackedError extends Error {
+  public readonly errorId: ErrorId;
+  public readonly context?: Record<string, unknown>;
+
   constructor(
     message: string,
-    public readonly errorId: ErrorId,
-    public readonly context?: Record<string, unknown>
+    errorId: ErrorId,
+    context?: Record<string, unknown>
   ) {
     super(message);
     this.name = 'TrackedError';
+    this.errorId = errorId;
+    this.context = context;
   }
 
   toJSON() {

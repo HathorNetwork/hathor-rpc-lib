@@ -42,8 +42,6 @@ const ChangeNetworkDialog: React.FC<ChangeNetworkDialogProps> = ({ isOpen, onClo
 
   if (!isOpen) return null;
 
-  const selectedNetworkOption = NETWORK_OPTIONS.find(n => n.id === selectedNetwork);
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-[#191C21] border border-[#24292F] rounded-2xl w-full max-w-md mx-4">

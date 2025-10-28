@@ -288,7 +288,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         }
       }
 
-      const xpub = parsedResponse?.response?.xpub;
+      const xpub = (parsedResponse as { response?: { xpub?: string } })?.response?.xpub;
       console.log('🔑 Extracted xpub:', xpub ? xpub.substring(0, 20) + '...' : 'null');
 
       if (!xpub) {

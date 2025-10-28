@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
 import { ArrowUpRight, ArrowDownLeft, ExternalLink, Loader2, ArrowLeft, Clock } from 'lucide-react'
 import { useWallet } from '../contexts/WalletContext'
 import { formatHTRAmount } from '../utils/hathor'
@@ -171,13 +170,9 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
                         : 'bg-red-500/20'
                     }`}>
                       {tx.type === 'received' ? (
-                        <ArrowDownLeft className={`h-5 w-5 ${
-                          tx.type === 'received' ? 'text-green-500' : 'text-red-500'
-                        }`} />
+                        <ArrowDownLeft className="h-5 w-5 text-green-500" />
                       ) : (
-                        <ArrowUpRight className={`h-5 w-5 ${
-                          tx.type === 'received' ? 'text-green-500' : 'text-red-500'
-                        }`} />
+                        <ArrowUpRight className="h-5 w-5 text-red-500" />
                       )}
                     </div>
                     <div>

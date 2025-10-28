@@ -1,4 +1,5 @@
 import { HathorWalletServiceWallet, Network, config } from '@hathor/wallet-lib';
+import type { GetHistoryObject, AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { NETWORKS, WALLET_SERVICE_URLS, WALLET_SERVICE_WS_URLS } from '../constants';
 
 export interface WalletBalance {
@@ -182,13 +183,19 @@ export class ReadOnlyWalletService {
     }
 
     try {
-      const history = await this.wallet.getTxHistory({
+      const history: GetHistoryObject[] = await this.wallet.getTxHistory({
         token_id: tokenId,
         count,
         skip,
       });
 
-      return history;
+      // Transform GetHistoryObject[] to TransactionHistoryItem[]
+      return history.map((item: GetHistoryObject) => ({
+        tx_id: item.txId,
+        timestamp: item.timestamp,
+        balance: typeof item.balance === 'bigint' ? Number(item.balance) : item.balance,
+        is_voided: item.voided,
+      }));
     } catch (error) {
       console.error('Failed to get transaction history:', error);
       throw error;
@@ -204,11 +211,11 @@ export class ReadOnlyWalletService {
     }
 
     try {
-      const addressInfo = this.wallet.getCurrentAddress();
+      const addressInfo: AddressInfoObject = this.wallet.getCurrentAddress();
       return {
         address: addressInfo.address,
         index: addressInfo.index,
-        transactions: addressInfo.transactions || 0,
+        transactions: 0, // AddressInfoObject doesn't have transactions field
       };
     } catch (error) {
       console.error('Failed to get current address:', error);
@@ -225,11 +232,11 @@ export class ReadOnlyWalletService {
     }
 
     try {
-      const addressInfo = await this.wallet.getAddressAtIndex(index);
+      const addressStr: string = await this.wallet.getAddressAtIndex(index);
       return {
-        address: addressInfo.address,
-        index: addressInfo.index,
-        transactions: addressInfo.transactions || 0,
+        address: addressStr,
+        index: index,
+        transactions: 0,
       };
     } catch (error) {
       console.error('Failed to get address at index:', error);
@@ -251,7 +258,7 @@ export class ReadOnlyWalletService {
         yield {
           address: addr.address,
           index: addr.index,
-          transactions: addr.transactions || 0,
+          transactions: addr.transactions,
         };
       }
     } catch (error) {
@@ -287,7 +294,7 @@ export class ReadOnlyWalletService {
     filter_address?: string;
     amount_bigger_than?: number;
     amount_smaller_than?: number;
-  }): Promise<any[]> {
+  }): Promise<any> {
     if (!this.wallet?.isReady()) {
       throw new Error('Wallet not initialized');
     }

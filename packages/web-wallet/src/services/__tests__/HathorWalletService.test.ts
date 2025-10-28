@@ -12,10 +12,14 @@ describe('HathorWalletService - Critical Issues', () => {
   describe('Critical Issue #1: Hardcoded Network Override', () => {
     it('should NOT override network parameter to testnet', async () => {
       const params = {
-        address: 'HAddr123',
-        amount: 100,
-        token: '00',
         network: 'mainnet', // User wants mainnet
+        outputs: [
+          {
+            address: 'HAddr123',
+            value: '100',
+            token: '00',
+          }
+        ],
       };
 
       mockInvokeSnap.mockResolvedValueOnce({ txId: 'abc123' });
@@ -33,10 +37,14 @@ describe('HathorWalletService - Critical Issues', () => {
 
     it('should respect testnet when explicitly passed', async () => {
       const params = {
-        address: 'HAddr123',
-        amount: 100,
-        token: '00',
         network: 'testnet',
+        outputs: [
+          {
+            address: 'HAddr123',
+            value: '100',
+            token: '00',
+          }
+        ],
       };
 
       mockInvokeSnap.mockResolvedValueOnce({ txId: 'abc123' });
@@ -53,10 +61,14 @@ describe('HathorWalletService - Critical Issues', () => {
 
     it('should respect dev-testnet when explicitly passed', async () => {
       const params = {
-        address: 'HAddr123',
-        amount: 100,
-        token: '00',
         network: 'dev-testnet',
+        outputs: [
+          {
+            address: 'HAddr123',
+            value: '100',
+            token: '00',
+          }
+        ],
       };
 
       mockInvokeSnap.mockResolvedValueOnce({ txId: 'abc123' });
@@ -138,10 +150,14 @@ describe('HathorWalletService - Critical Issues', () => {
 
       await expect(
         WalletServiceMethods.sendTransaction(mockInvokeSnap, {
-          address: 'HAddr123',
-          amount: 100,
-          token: '00',
           network: 'testnet',
+          outputs: [
+            {
+              address: 'HAddr123',
+              value: '100',
+              token: '00',
+            }
+          ],
         })
       ).rejects.toThrow(/cancel|reject/i);
     });
@@ -151,10 +167,14 @@ describe('HathorWalletService - Critical Issues', () => {
 
       await expect(
         WalletServiceMethods.sendTransaction(mockInvokeSnap, {
-          address: 'HAddr123',
-          amount: 100,
-          token: '00',
           network: 'testnet',
+          outputs: [
+            {
+              address: 'HAddr123',
+              value: '100',
+              token: '00',
+            }
+          ],
         })
       ).rejects.toThrow('Insufficient funds');
     });
@@ -166,10 +186,14 @@ describe('HathorWalletService - Critical Issues', () => {
 
       await expect(
         WalletServiceMethods.sendTransaction(mockInvokeSnap, {
-          address: 'HAddr123',
-          amount: 100,
-          token: '00',
           network: 'testnet',
+          outputs: [
+            {
+              address: 'HAddr123',
+              value: '100',
+              token: '00',
+            }
+          ],
         })
       ).rejects.toThrow('User rejected');
     });
@@ -179,10 +203,14 @@ describe('HathorWalletService - Critical Issues', () => {
       mockInvokeSnap.mockResolvedValueOnce(mockResponse);
 
       const result = await WalletServiceMethods.sendTransaction(mockInvokeSnap, {
-        address: 'HAddr123',
-        amount: 100,
-        token: '00',
         network: 'testnet',
+        outputs: [
+          {
+            address: 'HAddr123',
+            value: '100',
+            token: '00',
+          }
+        ],
       });
 
       expect(result).toEqual(mockResponse);

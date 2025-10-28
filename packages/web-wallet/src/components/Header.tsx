@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Globe, MoreVertical } from 'lucide-react';
+import { Copy, Globe } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { truncateAddress } from '../utils/hathor';
 import ChangeNetworkDialog from './ChangeNetworkDialog';
@@ -8,7 +8,6 @@ import htrLogo from '../htr_logo.svg';
 const Header: React.FC = () => {
   const { address, network } = useWallet();
   const [isNetworkDialogOpen, setIsNetworkDialogOpen] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleCopyAddress = () => {
     if (address) {
