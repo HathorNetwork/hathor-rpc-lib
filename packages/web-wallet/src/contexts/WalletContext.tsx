@@ -61,8 +61,8 @@ interface WalletContextType extends WalletState {
 const initialState: WalletState = {
   isConnected: false,
   isConnecting: false,
-  isCheckingConnection: true,
-  loadingStep: 'Checking connection...',
+  isCheckingConnection: false,
+  loadingStep: '',
   address: '',
   balances: [],
   network: 'mainnet',
