@@ -3,7 +3,7 @@
   "description": "Hathor Network Snap integration",
   "proposedName": "Hathor Wallet",
   "source": {
-    "shasum": "vdt1OQteb8HPBh/K57S4KgSlzVBOeInqwefoYDODg7Q=",
+    "shasum": "XGwMlqkGmIDAqQuV/2QjvSnQxadE5ixDEYgZNe3eZwA=",
     "location": {
       "npm": {
         "filePath": "dist/bundle.js",
