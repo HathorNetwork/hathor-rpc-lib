@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, type ReactNode } from 'reac
 import { WalletServiceMethods } from '../services/HathorWalletService';
 import { readOnlyWalletService } from '../services/ReadOnlyWalletService';
 import { useInvokeSnap, useRequestSnap, useMetaMaskContext } from '@hathor/snap-utils';
-import { DEFAULT_NETWORK } from '@/constants';
+import { DEFAULT_NETWORK, TOKEN_IDS } from '@/constants';
 
 const STORAGE_KEYS = {
   XPUB: 'hathor_wallet_xpub',
@@ -147,7 +147,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         throw new Error('Failed to retrieve wallet address. The wallet may not be properly initialized.');
       }
 
-      const balances = await readOnlyWalletService.getBalance('00');
+      const balances = await readOnlyWalletService.getBalance(TOKEN_IDS.HTR);
 
       setState(prev => ({
         ...prev,
@@ -265,7 +265,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       setState(prev => ({ ...prev, loadingStep: 'Loading balance...' }));
 
-      const balances = await readOnlyWalletService.getBalance('00');
+      const balances = await readOnlyWalletService.getBalance(TOKEN_IDS.HTR);
 
       localStorage.setItem(STORAGE_KEYS.XPUB, xpub);
       localStorage.setItem(STORAGE_KEYS.NETWORK, network);
@@ -349,7 +349,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     if (!state.isConnected || !readOnlyWalletService.isReady()) return;
 
     try {
-      const balances = await readOnlyWalletService.getBalance('00');
+      const balances = await readOnlyWalletService.getBalance(TOKEN_IDS.HTR);
       setState(prev => ({ ...prev, balances, error: null }));
     } catch (error) {
       setState(prev => ({
@@ -374,7 +374,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     }
   };
 
-  const getTransactionHistory = async (count: number = 10, skip: number = 0, tokenId: string = '00'): Promise<TransactionHistoryItem[]> => {
+  const getTransactionHistory = async (count: number = 10, skip: number = 0, tokenId: string = TOKEN_IDS.HTR): Promise<TransactionHistoryItem[]> => {
     if (!state.isConnected || !readOnlyWalletService.isReady()) {
       return [];
     }
@@ -439,7 +439,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         throw new Error('Failed to retrieve wallet address on new network. The wallet may not be properly initialized.');
       }
 
-      const balances = await readOnlyWalletService.getBalance('00');
+      const balances = await readOnlyWalletService.getBalance(TOKEN_IDS.HTR);
 
       // Update localStorage with new network
       localStorage.setItem(STORAGE_KEYS.NETWORK, newNetwork);

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { WalletServiceMethods } from '../HathorWalletService';
-import { NETWORKS } from '../../constants';
+import { NETWORKS, TOKEN_IDS } from '../../constants';
 
 describe('HathorWalletService - Critical Issues', () => {
   let mockInvokeSnap: any;
@@ -18,7 +18,7 @@ describe('HathorWalletService - Critical Issues', () => {
           {
             address: 'HAddr123',
             value: '100',
-            token: '00',
+            token: TOKEN_IDS.HTR,
           }
         ],
       };
@@ -43,7 +43,7 @@ describe('HathorWalletService - Critical Issues', () => {
           {
             address: 'HAddr123',
             value: '100',
-            token: '00',
+            token: TOKEN_IDS.HTR,
           }
         ],
       };
@@ -67,7 +67,7 @@ describe('HathorWalletService - Critical Issues', () => {
           {
             address: 'HAddr123',
             value: '100',
-            token: '00',
+            token: TOKEN_IDS.HTR,
           }
         ],
       };
@@ -156,7 +156,7 @@ describe('HathorWalletService - Critical Issues', () => {
             {
               address: 'HAddr123',
               value: '100',
-              token: '00',
+              token: TOKEN_IDS.HTR,
             }
           ],
         })
@@ -173,7 +173,7 @@ describe('HathorWalletService - Critical Issues', () => {
             {
               address: 'HAddr123',
               value: '100',
-              token: '00',
+              token: TOKEN_IDS.HTR,
             }
           ],
         })
@@ -192,7 +192,7 @@ describe('HathorWalletService - Critical Issues', () => {
             {
               address: 'HAddr123',
               value: '100',
-              token: '00',
+              token: TOKEN_IDS.HTR,
             }
           ],
         })
@@ -209,7 +209,7 @@ describe('HathorWalletService - Critical Issues', () => {
           {
             address: 'HAddr123',
             value: '100',
-            token: '00',
+            token: TOKEN_IDS.HTR,
           }
         ],
       });
@@ -237,7 +237,7 @@ describe('HathorWalletService - Critical Issues', () => {
 
     it('should successfully return balance when snap works', async () => {
       const mockBalance = [
-        { token: '00', available: 10000, locked: 500 },
+        { token: TOKEN_IDS.HTR, available: 10000, locked: 500 },
       ];
       // The snap returns { response: [...] } format
       mockInvokeSnap.mockResolvedValueOnce({ response: mockBalance });

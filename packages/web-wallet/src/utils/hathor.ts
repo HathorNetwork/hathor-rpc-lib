@@ -1,4 +1,5 @@
 import { prettyValue } from '@hathor/wallet-lib/lib/utils/numbers';
+import { HTR_DECIMAL_MULTIPLIER } from '../constants';
 
 /**
  * Format HTR amount using Hathor's prettyValue utility
@@ -16,7 +17,7 @@ export const formatHTRAmount = (amount: number | bigint): string => {
  * @returns Amount in cents
  */
 export const htrToCents = (amount: string): number => {
-  return Math.floor(parseFloat(amount) * 100);
+  return Math.floor(parseFloat(amount) * HTR_DECIMAL_MULTIPLIER);
 };
 
 /**
@@ -26,7 +27,7 @@ export const htrToCents = (amount: string): number => {
  */
 export const centsToHTR = (cents: number | bigint): number => {
   const centsValue = typeof cents === 'bigint' ? Number(cents) : cents;
-  return centsValue / 100;
+  return centsValue / HTR_DECIMAL_MULTIPLIER;
 };
 
 /**
@@ -51,15 +52,6 @@ export const truncateAddress = (address: string, prefixLength = 7, suffixLength 
 export const isValidHTRAddress = (address: string): boolean => {
   // Basic HTR address validation - starts with 'H' or 'W' and has correct length
   return /^[HW][a-zA-Z0-9]{32,34}$/.test(address);
-};
-
-/**
- * HTR token constants
- */
-export const HTR_TOKEN = {
-  uid: '00',
-  name: 'Hathor',
-  symbol: 'HTR'
 };
 
 /**

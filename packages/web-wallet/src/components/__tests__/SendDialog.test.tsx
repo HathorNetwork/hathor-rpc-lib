@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Network } from '@hathor/wallet-lib';
 import Address from '@hathor/wallet-lib/lib/models/address';
+import { HTR_DECIMAL_MULTIPLIER } from '../../constants';
 
 describe('SendDialog - Address Validation (Critical for Fund Safety)', () => {
   // Test the actual validation logic that prevents fund loss
@@ -58,22 +59,22 @@ describe('SendDialog - Address Validation (Critical for Fund Safety)', () => {
 
   describe('Critical: Amount validation prevents overflow', () => {
     it('should detect amount exceeding MAX_SAFE_INTEGER/100', () => {
-      const overflowAmount = Number.MAX_SAFE_INTEGER / 100 + 1;
+      const overflowAmount = Number.MAX_SAFE_INTEGER / HTR_DECIMAL_MULTIPLIER + 1;
       const amountPattern = /^\d+(\.\d{1,2})?$/;
 
       // Amount is a valid number format
       expect(amountPattern.test(overflowAmount.toString())).toBe(true);
 
       // But exceeds safe integer limit
-      expect(overflowAmount > Number.MAX_SAFE_INTEGER / 100).toBe(true);
+      expect(overflowAmount > Number.MAX_SAFE_INTEGER / HTR_DECIMAL_MULTIPLIER).toBe(true);
     });
 
     it('should accept amounts within safe range', () => {
-      const safeAmount = Number.MAX_SAFE_INTEGER / 100 - 1;
+      const safeAmount = Number.MAX_SAFE_INTEGER / HTR_DECIMAL_MULTIPLIER - 1;
       const amountPattern = /^\d+(\.\d{1,2})?$/;
 
       expect(amountPattern.test(safeAmount.toString())).toBe(true);
-      expect(safeAmount <= Number.MAX_SAFE_INTEGER / 100).toBe(true);
+      expect(safeAmount <= Number.MAX_SAFE_INTEGER / HTR_DECIMAL_MULTIPLIER).toBe(true);
     });
 
     it('should validate amount format (max 2 decimals)', () => {

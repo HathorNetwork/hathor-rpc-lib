@@ -7,6 +7,7 @@ import { useWallet } from '../contexts/WalletContext';
 import { formatHTRAmount, htrToCents, centsToHTR } from '../utils/hathor';
 import { Network } from '@hathor/wallet-lib';
 import Address from '@hathor/wallet-lib/lib/models/address';
+import { TOKEN_IDS, HTR_DECIMAL_MULTIPLIER } from '../constants';
 
 interface SendDialogProps {
   isOpen: boolean;
@@ -27,7 +28,7 @@ const createSendFormSchema = (availableBalance: number, network: string) =>
       }, 'Amount must be greater than 0')
       .refine((val) => {
         const num = parseFloat(val);
-        return num <= Number.MAX_SAFE_INTEGER / 100;
+        return num <= Number.MAX_SAFE_INTEGER / HTR_DECIMAL_MULTIPLIER;
       }, 'Amount is too large')
       .refine((val) => {
         const amountInCents = htrToCents(val);
@@ -113,7 +114,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
         outputs: [{
           address: data.address.trim(),
           value: amountInCents.toString(),
-          token: '00'
+          token: TOKEN_IDS.HTR
         }]
       });
 

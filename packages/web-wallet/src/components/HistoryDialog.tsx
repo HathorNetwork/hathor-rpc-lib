@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { ArrowUpRight, ArrowDownLeft, ExternalLink, Loader2, ArrowLeft, Clock } from 'lucide-react'
 import { useWallet } from '../contexts/WalletContext'
 import { formatHTRAmount } from '../utils/hathor'
-import { HATHOR_EXPLORER_URLS, NETWORKS } from '../constants'
+import { HATHOR_EXPLORER_URLS, NETWORKS, TOKEN_IDS } from '../constants'
 import Header from './Header'
 
 interface HistoryDialogProps {
@@ -51,7 +51,7 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
     }
 
     try {
-      const history = await getTransactionHistory(PAGE_SIZE, skip, '00')
+      const history = await getTransactionHistory(PAGE_SIZE, skip, TOKEN_IDS.HTR)
 
       if (!history || history.length === 0) {
         setHasMore(false);

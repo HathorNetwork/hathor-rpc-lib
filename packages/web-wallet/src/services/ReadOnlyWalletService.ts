@@ -1,6 +1,6 @@
 import { HathorWalletServiceWallet, Network, config } from '@hathor/wallet-lib';
 import type { GetHistoryObject, AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
-import { NETWORKS, WALLET_SERVICE_URLS, WALLET_SERVICE_WS_URLS } from '../constants';
+import { NETWORKS, WALLET_SERVICE_URLS, WALLET_SERVICE_WS_URLS, TOKEN_IDS } from '../constants';
 
 export interface WalletBalance {
   token: string;
@@ -176,7 +176,7 @@ export class ReadOnlyWalletService {
   /**
    * Get transaction history
    */
-  async getTransactionHistory(count: number = 10, skip: number = 0, tokenId: string = '00'): Promise<TransactionHistoryItem[]> {
+  async getTransactionHistory(count: number = 10, skip: number = 0, tokenId: string = TOKEN_IDS.HTR): Promise<TransactionHistoryItem[]> {
     if (!this.wallet?.isReady()) {
       throw new Error('Wallet not initialized');
     }

@@ -1,3 +1,6 @@
+// Import wallet-lib constants
+import { constants as walletLibConstants } from '@hathor/wallet-lib';
+
 // Network configuration
 export const NETWORKS = {
   MAINNET: 'mainnet',
@@ -32,10 +35,14 @@ export const WALLET_SERVICE_WS_URLS = {
   DEV_TESTNET: 'wss://ws.dev.wallet-service.testnet.hathor.network/'
 } as const;
 
-// Token IDs
+// Token IDs - Re-export from wallet-lib for convenience
 export const TOKEN_IDS = {
-  HTR: '00'
+  HTR: walletLibConstants.NATIVE_TOKEN_UID
 } as const;
+
+// Decimal places for HTR (used for conversion between HTR and cents)
+export const HTR_DECIMAL_PLACES = walletLibConstants.DECIMAL_PLACES;
+export const HTR_DECIMAL_MULTIPLIER = 10 ** HTR_DECIMAL_PLACES; // 100
 
 // Default configuration
 export const DEFAULT_NETWORK = NETWORKS.DEV_TESTNET;
