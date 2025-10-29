@@ -22,8 +22,6 @@ const Header: React.FC = () => {
         return 'Mainnet';
       case NETWORKS.TESTNET:
         return 'Testnet';
-      case NETWORKS.DEV_TESTNET:
-        return 'Dev Testnet';
       default:
         return networkId;
     }

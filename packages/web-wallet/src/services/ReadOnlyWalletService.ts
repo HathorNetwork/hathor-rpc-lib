@@ -51,19 +51,13 @@ export class ReadOnlyWalletService {
       console.log('Initializing read-only wallet with xpub:', xpub.substring(0, 20) + '...');
 
       // Network URL Mapping:
-      // - User-facing networks: 'mainnet', 'testnet', 'dev-testnet'
+      // - User-facing networks: 'mainnet', 'testnet'
       // - wallet-lib networks: only 'mainnet' or 'testnet'
-      // We map 'dev-testnet' to testnet URLs but with dev-testnet wallet-service
-      // This allows connecting to development environment while using testnet addresses
       let walletServiceUrl: string;
       let walletServiceWsUrl: string;
       let actualNetwork: string;
 
-      if (network === NETWORKS.DEV_TESTNET) {
-        walletServiceUrl = WALLET_SERVICE_URLS.DEV_TESTNET;
-        walletServiceWsUrl = WALLET_SERVICE_WS_URLS.DEV_TESTNET;
-        actualNetwork = 'testnet'; // wallet-lib only understands 'mainnet' or 'testnet'
-      } else if (network === NETWORKS.TESTNET) {
+      if (network === NETWORKS.TESTNET) {
         walletServiceUrl = WALLET_SERVICE_URLS.TESTNET;
         walletServiceWsUrl = WALLET_SERVICE_WS_URLS.TESTNET;
         actualNetwork = 'testnet';

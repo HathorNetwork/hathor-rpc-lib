@@ -4,8 +4,7 @@ import { constants as walletLibConstants } from '@hathor/wallet-lib';
 // Network configuration
 export const NETWORKS = {
   MAINNET: 'mainnet',
-  TESTNET: 'testnet',
-  DEV_TESTNET: 'dev-testnet'
+  TESTNET: 'testnet'
 } as const;
 
 // WafpWYepbV13FVM9Qp9brmBTXgjrn3dnfx 
@@ -24,15 +23,13 @@ export const HATHOR_EXPLORER_URLS = {
 // Wallet service URLs
 export const WALLET_SERVICE_URLS = {
   MAINNET: 'https://wallet-service.hathor.network/',
-  TESTNET: 'https://wallet-service.india.testnet.hathor.network/',
-  DEV_TESTNET: 'https://dev.wallet-service.testnet.hathor.network/'
+  TESTNET: 'https://wallet-service.india.testnet.hathor.network/'
 } as const;
 
 // Wallet service WebSocket URLs
 export const WALLET_SERVICE_WS_URLS = {
   MAINNET: 'wss://ws.wallet-service.hathor.network/',
-  TESTNET: 'wss://ws.wallet-service.testnet.hathor.network/',
-  DEV_TESTNET: 'wss://ws.dev.wallet-service.testnet.hathor.network/'
+  TESTNET: 'wss://ws.wallet-service.testnet.hathor.network/'
 } as const;
 
 // Token IDs - Re-export from wallet-lib for convenience
@@ -45,7 +42,7 @@ export const HTR_DECIMAL_PLACES = walletLibConstants.DECIMAL_PLACES;
 export const HTR_DECIMAL_MULTIPLIER = 10 ** HTR_DECIMAL_PLACES; // 100
 
 // Default configuration
-export const DEFAULT_NETWORK = NETWORKS.DEV_TESTNET;
+export const DEFAULT_NETWORK = NETWORKS.TESTNET;
 export const DEFAULT_ADDRESS_INDEX = 0;
 export const DEFAULT_ADDRESS_TYPE = 'index' as const;
 

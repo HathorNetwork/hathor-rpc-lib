@@ -19,11 +19,6 @@ const NETWORK_OPTIONS = [
     name: 'Testnet',
     url: WALLET_SERVICE_URLS.TESTNET,
   },
-  {
-    id: NETWORKS.DEV_TESTNET,
-    name: 'Dev Testnet',
-    url: WALLET_SERVICE_URLS.DEV_TESTNET,
-  },
 ];
 
 const ChangeNetworkDialog: React.FC<ChangeNetworkDialogProps> = ({ isOpen, onClose }) => {

@@ -60,29 +60,6 @@ describe('HathorWalletService - Critical Issues', () => {
       });
     });
 
-    it('should respect dev-testnet when explicitly passed', async () => {
-      const params = {
-        network: NETWORKS.DEV_TESTNET,
-        outputs: [
-          {
-            address: 'HAddr123',
-            value: '100',
-            token: TOKEN_IDS.HTR,
-          }
-        ],
-      };
-
-      mockInvokeSnap.mockResolvedValueOnce({ txId: 'abc123' });
-
-      await WalletServiceMethods.sendTransaction(mockInvokeSnap, params);
-
-      expect(mockInvokeSnap).toHaveBeenCalledWith({
-        method: 'htr_sendTransaction',
-        params: expect.objectContaining({
-          network: NETWORKS.DEV_TESTNET,
-        }),
-      });
-    });
   });
 
   describe('Critical Issue #2: Silent Transaction History Failures', () => {

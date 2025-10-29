@@ -43,22 +43,3 @@ export const truncateAddress = (address: string, prefixLength = 7, suffixLength 
   }
   return `${address.slice(0, prefixLength)}...${address.slice(-suffixLength)}`;
 };
-
-/**
- * Validate HTR address format
- * @param address Address to validate
- * @returns True if valid format
- */
-export const isValidHTRAddress = (address: string): boolean => {
-  // Basic HTR address validation - starts with 'H' or 'W' and has correct length
-  return /^[HW][a-zA-Z0-9]{32,34}$/.test(address);
-};
-
-/**
- * Format transaction hash for display
- * @param hash Transaction hash
- * @returns Formatted hash
- */
-export const formatTxHash = (hash: string): string => {
-  return truncateAddress(hash, 10, 8);
-};
