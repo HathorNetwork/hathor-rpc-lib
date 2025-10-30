@@ -11,3 +11,4 @@ coverage/
 public/
 *.swp
 *.swo
+.claude
