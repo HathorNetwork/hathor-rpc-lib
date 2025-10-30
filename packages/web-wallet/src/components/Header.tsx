@@ -8,9 +8,10 @@ import { NETWORKS } from '../constants';
 
 interface HeaderProps {
   onRegisterTokenClick?: () => void;
+  onCreateTokenClick?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick }) => {
+const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClick }) => {
   const { address, network } = useWallet();
   const [isNetworkDialogOpen, setIsNetworkDialogOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -89,6 +90,15 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick }) => {
             {/* Dropdown Menu */}
             {isMenuOpen && (
               <div className="absolute top-full right-0 mt-2 w-48 bg-[#191C21] border border-[#24292F] rounded-lg shadow-lg overflow-hidden z-50">
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    onCreateTokenClick?.();
+                  }}
+                  className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] transition-colors"
+                >
+                  Create token
+                </button>
                 <button
                   onClick={() => {
                     setIsMenuOpen(false);

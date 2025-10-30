@@ -4,6 +4,7 @@ import SendDialog from './SendDialog';
 import ReceiveDialog from './ReceiveDialog';
 import HistoryDialog from './HistoryDialog';
 import RegisterTokenDialog from './RegisterTokenDialog';
+import CreateTokenDialog from './CreateTokenDialog';
 import TokenTabs from './TokenTabs';
 import TokenList from './TokenList';
 import Header from './Header';
@@ -22,6 +23,7 @@ const WalletHome: React.FC = () => {
   const [receiveDialogOpen, setReceiveDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [registerTokenOpen, setRegisterTokenOpen] = useState(false);
+  const [createTokenOpen, setCreateTokenOpen] = useState(false);
   const [selectedTokenForHistory, setSelectedTokenForHistory] = useState<string | null>(null);
   const [selectedTokenForSend, setSelectedTokenForSend] = useState<string | undefined>(undefined);
 
@@ -136,7 +138,10 @@ const WalletHome: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-white">
-      <Header onRegisterTokenClick={() => setRegisterTokenOpen(true)} />
+      <Header
+        onRegisterTokenClick={() => setRegisterTokenOpen(true)}
+        onCreateTokenClick={() => setCreateTokenOpen(true)}
+      />
 
       {/* Main Container - responsive layout */}
       <div className="max-w-7xl mx-auto px-16 py-9 space-y-20">
@@ -249,6 +254,10 @@ const WalletHome: React.FC = () => {
       <RegisterTokenDialog
         isOpen={registerTokenOpen}
         onClose={() => setRegisterTokenOpen(false)}
+      />
+      <CreateTokenDialog
+        isOpen={createTokenOpen}
+        onClose={() => setCreateTokenOpen(false)}
       />
 
       {/* Error notification */}
