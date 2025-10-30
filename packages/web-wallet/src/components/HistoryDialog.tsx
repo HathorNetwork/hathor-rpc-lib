@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { ArrowUpRight, ArrowDownLeft, ExternalLink, Loader2, ArrowLeft, Clock } from 'lucide-react'
 import { useWallet } from '../contexts/WalletContext'
+import type { TransactionHistoryItem } from '../contexts/WalletContext'
 import { formatHTRAmount } from '../utils/hathor'
 import { HATHOR_EXPLORER_URLS, NETWORKS, TOKEN_IDS } from '../constants'
 import Header from './Header'
@@ -41,32 +42,36 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
       // Notify context that dialog is closed
       setHistoryDialogState(false, 0)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, address])
 
   // Handle incoming new transactions from WebSocket
   useEffect(() => {
     if (!newTransaction || !isOpen) return;
 
+    // Type guard to check if this is a history transaction
+    const transaction = newTransaction as Record<string, unknown>;
+
     // Only process if we have transaction data with tx_id (for history list)
-    if (newTransaction.tx_id) {
-      const balanceValue = typeof newTransaction.balance === 'bigint'
-        ? Number(newTransaction.balance)
-        : newTransaction.balance;
+    if (transaction.tx_id) {
+      const balanceValue = typeof transaction.balance === 'bigint'
+        ? Number(transaction.balance)
+        : (transaction.balance as number);
       const type = balanceValue >= 0 ? 'received' : 'sent'
       const amount = Math.abs(balanceValue)
 
       const processedTx: ProcessedTransaction = {
-        id: newTransaction.tx_id,
+        id: transaction.tx_id as string,
         type,
         amount,
-        timestamp: new Date(newTransaction.timestamp * 1000).toISOString(),
-        txHash: newTransaction.tx_id,
-        status: !newTransaction.is_voided ? 'confirmed' : 'pending'
+        timestamp: new Date((transaction.timestamp as number) * 1000).toISOString(),
+        txHash: transaction.tx_id as string,
+        status: !(transaction.is_voided as boolean) ? 'confirmed' : 'pending'
       };
 
       // Use functional update to avoid race conditions with duplicate check
       setTransactions(prev => {
-        const isDuplicate = prev.some(tx => tx.id === newTransaction.tx_id);
+        const isDuplicate = prev.some(tx => tx.id === transaction.tx_id);
         if (isDuplicate) return prev;
         return [processedTx, ...prev].slice(0, PAGE_SIZE);
       });
@@ -76,6 +81,7 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
       // Clear the transaction from context
       clearNewTransaction();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newTransaction, isOpen]);
 
   const loadTransactionHistory = async (skip: number = 0) => {
@@ -108,18 +114,18 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
         setHasMore(false);
       }
 
-      const processed: ProcessedTransaction[] = history.map((tx: any) => {
+      const processed: ProcessedTransaction[] = history.map((tx: TransactionHistoryItem) => {
         const balanceValue = typeof tx.balance === 'bigint' ? Number(tx.balance) : tx.balance;
         const type = balanceValue >= 0 ? 'received' : 'sent'
         const amount = Math.abs(balanceValue)
 
         return {
-          id: tx.txId || tx.tx_id,
+          id: tx.tx_id,
           type,
           amount,
           timestamp: new Date(tx.timestamp * 1000).toISOString(),
-          txHash: tx.txId || tx.tx_id,
-          status: !tx.voided && !tx.is_voided ? 'confirmed' : 'pending'
+          txHash: tx.tx_id,
+          status: !tx.is_voided ? 'confirmed' : 'pending'
         }
       })
       if (isInitialLoad) {

@@ -239,16 +239,23 @@ const WalletHome: React.FC = () => {
       )}
 
       {/* Transaction notification */}
-      {newTransaction && !newTransaction.tx_id && (
-        <TransactionNotification
-          transaction={newTransaction}
-          onDismiss={clearNewTransaction}
-          onViewHistory={() => {
-            clearNewTransaction();
-            setHistoryDialogOpen(true);
-          }}
-        />
-      )}
+      {(() => {
+        if (!newTransaction) return null;
+        const tx = newTransaction as Record<string, unknown>;
+        if (tx.tx_id) return null; // This is for history dialog, not notification
+
+        const notification = tx as { type: 'sent' | 'received'; amount: number; timestamp: number };
+        return (
+          <TransactionNotification
+            transaction={notification}
+            onDismiss={clearNewTransaction}
+            onViewHistory={() => {
+              clearNewTransaction();
+              setHistoryDialogOpen(true);
+            }}
+          />
+        );
+      })()}
     </div>
   );
 };

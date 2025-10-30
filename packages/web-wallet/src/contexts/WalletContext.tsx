@@ -9,13 +9,13 @@ const STORAGE_KEYS = {
   NETWORK: 'hathor_wallet_network',
 };
 
-interface WalletBalance {
+export interface WalletBalance {
   token: string;
   available: number;
   locked: number;
 }
 
-interface TransactionHistoryItem {
+export interface TransactionHistoryItem {
   tx_id: string;
   timestamp: number;
   balance: number;
@@ -47,7 +47,7 @@ interface WalletState {
   xpub: string | null;
   isHistoryDialogOpen: boolean;
   currentHistoryPage: number;
-  newTransaction: any | null;
+  newTransaction: unknown | null;
 }
 
 interface WalletContextType extends WalletState {
@@ -168,7 +168,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       try {
         const addressInfo = readOnlyWalletService.getCurrentAddress();
         address = addressInfo?.address || '';
-      } catch (addressError) {
+      } catch {
         throw new Error('Failed to retrieve wallet address. The wallet may not be properly initialized.');
       }
 
@@ -295,7 +295,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       if (typeof xpubResponse === 'string') {
         try {
           parsedResponse = JSON.parse(xpubResponse);
-        } catch (parseError) {
+        } catch {
           throw new Error('Invalid JSON response from snap');
         }
       }
@@ -321,7 +321,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       try {
         const addressInfo = readOnlyWalletService.getCurrentAddress();
         address = addressInfo?.address || '';
-      } catch (addressError) {
+      } catch {
         throw new Error('Failed to retrieve wallet address. The wallet may not be properly initialized.');
       }
 
@@ -409,6 +409,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       clearTimeout(timer);
       if (timeoutId) clearTimeout(timeoutId);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   React.useEffect(() => {
@@ -464,7 +465,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
     try {
       return await readOnlyWalletService.getTransactionHistory(count, skip, tokenId);
-    } catch (error) {
+    } catch {
       return [];
     }
   };
@@ -680,11 +681,14 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     setState(prev => ({ ...prev, newTransaction: null }));
   };
 
-  const handleNewTransaction = async (tx: any) => {
+  const handleNewTransaction = async (tx: unknown) => {
     if (!state.isConnected || !readOnlyWalletService.isReady()) return;
 
+    // Type cast the transaction
+    const transaction = tx as Record<string, unknown>;
+
     try {
-      console.log('Processing new transaction:', tx.tx_id);
+      console.log('Processing new transaction:', transaction.tx_id);
 
       // Refresh balance to get accurate amounts
       await refreshBalance();
@@ -697,20 +701,20 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       const currentAddress = readOnlyWalletService.getCurrentAddress()?.address;
 
       // Check outputs for received amounts
-      if (tx.outputs && currentAddress) {
-        for (const output of tx.outputs) {
-          if (output.decoded?.address === currentAddress && output.token === TOKEN_IDS.HTR) {
-            const value = typeof output.value === 'bigint' ? Number(output.value) : output.value;
+      if (Array.isArray(transaction.outputs) && currentAddress) {
+        for (const output of transaction.outputs as Array<Record<string, unknown>>) {
+          if ((output.decoded as Record<string, unknown>)?.address === currentAddress && output.token === TOKEN_IDS.HTR) {
+            const value = typeof output.value === 'bigint' ? Number(output.value) : (output.value as number);
             receivedAmount += value;
           }
         }
       }
 
       // Check inputs for sent amounts
-      if (tx.inputs && currentAddress) {
-        for (const input of tx.inputs) {
-          if (input.decoded?.address === currentAddress && input.token === TOKEN_IDS.HTR) {
-            const value = typeof input.value === 'bigint' ? Number(input.value) : input.value;
+      if (Array.isArray(transaction.inputs) && currentAddress) {
+        for (const input of transaction.inputs as Array<Record<string, unknown>>) {
+          if ((input.decoded as Record<string, unknown>)?.address === currentAddress && input.token === TOKEN_IDS.HTR) {
+            const value = typeof input.value === 'bigint' ? Number(input.value) : (input.value as number);
             sentAmount += value;
           }
         }
@@ -733,10 +737,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           return {
             ...prev,
             newTransaction: {
-              tx_id: tx.tx_id,
-              timestamp: tx.timestamp,
+              tx_id: transaction.tx_id,
+              timestamp: transaction.timestamp,
               balance: netAmount,
-              is_voided: tx.is_voided || tx.voided || false,
+              is_voided: transaction.is_voided || transaction.voided || false,
               type: transactionType,
               amount: absoluteAmount,
             },
@@ -748,7 +752,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
             newTransaction: {
               type: transactionType,
               amount: absoluteAmount,
-              timestamp: tx.timestamp,
+              timestamp: transaction.timestamp,
             },
           };
         }
