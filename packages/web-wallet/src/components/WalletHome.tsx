@@ -38,7 +38,6 @@ const WalletHome: React.FC = () => {
     clearNewTransaction,
     selectedTokenFilter,
     setSelectedTokenFilter,
-    unregisterToken,
   } = useWallet();
 
   const { tokens, tokenCount, nftCount, customTokenCount } = useTokens();
@@ -220,7 +219,6 @@ const WalletHome: React.FC = () => {
                 setSelectedTokenForSend(tokenUid);
                 setSendDialogOpen(true);
               }}
-              onUnregister={unregisterToken}
             />
           )}
         </div>
