@@ -28,12 +28,12 @@ const TokenTabs: React.FC<TokenTabsProps> = ({
   ];
 
   return (
-    <div className="flex gap-8 border-b border-[#24292F]">
+    <div className="flex border-b border-[#24292F]">
       {tabs.map((tab) => (
         <button
           key={tab.id}
           onClick={() => onFilterChange(tab.id)}
-          className={`pb-4 px-1 relative transition-colors ${
+          className={`flex-1 pb-4 px-1 relative transition-colors ${
             selectedFilter === tab.id
               ? 'text-primary-400'
               : 'text-muted-foreground hover:text-white'

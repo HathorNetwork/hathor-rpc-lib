@@ -122,7 +122,7 @@ const RegisterTokenDialog: React.FC<RegisterTokenDialogProps> = ({ isOpen, onClo
               rows={3}
               className={`w-full px-3 py-2 bg-[#0D1117] border ${
                 errors.configString ? 'border-red-500' : 'border-border'
-              } rounded-lg text-white placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none font-mono text-sm`}
+              } rounded-lg text-white placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary resize-none font-mono text-sm`}
             />
             {errors.configString && (
               <div className="flex items-start gap-2 mt-2">
@@ -130,12 +130,15 @@ const RegisterTokenDialog: React.FC<RegisterTokenDialogProps> = ({ isOpen, onClo
                 <span className="text-xs text-red-400">{errors.configString.message}</span>
               </div>
             )}
-            <p className="text-xs text-muted-foreground mt-2">
-              Format: [name:symbol:uid:checksum]
-            </p>
+            {/* Only show format hint after user starts typing */}
+            {configString && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Format: [name:symbol:uid:checksum]
+              </p>
+            )}
           </div>
 
-          {/* Preview Section */}
+          {/* Preview Section - Only show after user starts typing and validation passes */}
           {previewInfo && !errors.configString && (
             <div className="bg-[#0D1117] border border-border rounded-lg p-4">
               <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">
