@@ -37,6 +37,14 @@ export const TOKEN_IDS = {
   HTR: walletLibConstants.NATIVE_TOKEN_UID
 } as const;
 
+// HTR Token Information
+export const HTR_TOKEN_INFO = {
+  uid: TOKEN_IDS.HTR,
+  name: 'Hathor',
+  symbol: 'HTR',
+  isNFT: false,
+} as const;
+
 // Decimal places for HTR (used for conversion between HTR and cents)
 export const HTR_DECIMAL_PLACES = walletLibConstants.DECIMAL_PLACES;
 export const HTR_DECIMAL_MULTIPLIER = 10 ** HTR_DECIMAL_PLACES; // 100

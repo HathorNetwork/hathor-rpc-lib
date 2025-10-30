@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
-import { ArrowUpRight, ArrowDownLeft, Info, Loader2 } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, Loader2 } from 'lucide-react';
 import SendDialog from './SendDialog';
 import ReceiveDialog from './ReceiveDialog';
 import HistoryDialog from './HistoryDialog';
+import RegisterTokenDialog from './RegisterTokenDialog';
+import TokenTabs from './TokenTabs';
+import TokenList from './TokenList';
 import Header from './Header';
 import ErrorNotification from './ErrorNotification';
 import TransactionNotification from './TransactionNotification';
 import { useWallet } from '../contexts/WalletContext';
+import { useTokens } from '../hooks/useTokens';
 import { formatHTRAmount } from '../utils/hathor';
 import htrLogoBlack from '../assets/htr_logo_black.svg';
 import htrLogoWhite from '../assets/htr_logo_white.svg';
@@ -17,6 +21,9 @@ const WalletHome: React.FC = () => {
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [receiveDialogOpen, setReceiveDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [registerTokenOpen, setRegisterTokenOpen] = useState(false);
+  const [selectedTokenForHistory, setSelectedTokenForHistory] = useState<string | null>(null);
+  const [selectedTokenForSend, setSelectedTokenForSend] = useState<string | undefined>(undefined);
 
   const {
     isConnected,
@@ -28,8 +35,13 @@ const WalletHome: React.FC = () => {
     connectWallet,
     setError,
     newTransaction,
-    clearNewTransaction
+    clearNewTransaction,
+    selectedTokenFilter,
+    setSelectedTokenFilter,
+    unregisterToken,
   } = useWallet();
+
+  const { tokens, tokenCount, nftCount, customTokenCount } = useTokens();
 
   const handleButtonClick = (buttonName: string) => {
     setActiveButton(buttonName);
@@ -125,7 +137,7 @@ const WalletHome: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-white">
-      <Header />
+      <Header onRegisterTokenClick={() => setRegisterTokenOpen(true)} />
 
       {/* Main Container - responsive layout */}
       <div className="max-w-7xl mx-auto px-16 py-9 space-y-20">
@@ -146,6 +158,14 @@ const WalletHome: React.FC = () => {
                   {balances.length > 0 ? `${formatHTRAmount(balances[0].available)} HTR` : '0 HTR'}
                 </span>
               </div>
+              {/* Show custom token and NFT counts */}
+              {(customTokenCount > 0 || nftCount > 0) && (
+                <p className="text-xs text-muted-foreground">
+                  You also have {customTokenCount > 0 && `${customTokenCount} custom token${customTokenCount > 1 ? 's' : ''}`}
+                  {customTokenCount > 0 && nftCount > 0 && ' and '}
+                  {nftCount > 0 && `${nftCount} NFT${nftCount > 1 ? 's' : ''}`}
+                </p>
+              )}
             </div>
 
             {/* Right: Action Buttons */}
@@ -175,51 +195,45 @@ const WalletHome: React.FC = () => {
           {/* Section Header */}
           <h2 className="text-xl font-medium text-white">My Assets</h2>
 
-          {/* Assets List */}
-          <div className="space-y-4">
-            {/* HTR Row - Clickable */}
-            <button
-              onClick={() => handleButtonClick('ViewHistory')}
-              className="w-full bg-[#191C21] border border-[#24292F] rounded-lg px-6 py-8 flex items-center justify-between hover:bg-primary-600/40 transition-colors group"
-            >
-              <div className="space-y-1 text-left">
-                <div className="text-base font-medium text-white">HTR</div>
-                <div className="text-sm text-muted-foreground">Hathor</div>
-              </div>
-              <div className="flex items-center gap-6">
-                <span className="text-lg font-medium text-white">
-                  {balances.length > 0 ? formatHTRAmount(balances[0].available) : '0.00'}
-                </span>
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleButtonClick('SendHTR');
-                  }}
-                  className="px-4 py-2 bg-transparent hover:bg-secondary/20 text-white rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer"
-                >
-                  <span>Send</span>
-                  <ArrowUpRight className="w-4 h-4" />
-                </div>
-              </div>
-            </button>
+          {/* Token Tabs */}
+          <TokenTabs
+            selectedFilter={selectedTokenFilter}
+            onFilterChange={setSelectedTokenFilter}
+            tokenCount={tokenCount}
+            nftCount={nftCount}
+          />
 
-            {/* Warning Message - Below the list */}
-            <div className="flex items-center justify-center gap-2 px-4 py-3">
-              <div className="w-4 h-4 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
-                <Info className="w-3 h-3 text-white" />
-              </div>
-              <span className="text-xs text-muted-foreground">
-                HTR is the only supported token in this version. Support for custom tokens is coming soon.
-              </span>
+          {/* Token List or NFT Placeholder */}
+          {selectedTokenFilter === 'nfts' ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <p className="text-sm">NFT support coming soon</p>
+              <p className="text-xs mt-2">You'll be able to view and manage your NFTs here</p>
             </div>
-          </div>
+          ) : (
+            <TokenList
+              tokens={tokens}
+              onTokenClick={(tokenUid) => {
+                setSelectedTokenForHistory(tokenUid);
+                setHistoryDialogOpen(true);
+              }}
+              onSendClick={(tokenUid) => {
+                setSelectedTokenForSend(tokenUid);
+                setSendDialogOpen(true);
+              }}
+              onUnregister={unregisterToken}
+            />
+          )}
         </div>
       </div>
 
       {/* Dialogs */}
       <SendDialog
         isOpen={sendDialogOpen}
-        onClose={() => setSendDialogOpen(false)}
+        onClose={() => {
+          setSendDialogOpen(false);
+          setSelectedTokenForSend(undefined);
+        }}
+        initialTokenUid={selectedTokenForSend}
       />
       <ReceiveDialog
         isOpen={receiveDialogOpen}
@@ -227,7 +241,16 @@ const WalletHome: React.FC = () => {
       />
       <HistoryDialog
         isOpen={historyDialogOpen}
-        onClose={() => setHistoryDialogOpen(false)}
+        onClose={() => {
+          setHistoryDialogOpen(false);
+          setSelectedTokenForHistory(null);
+        }}
+        tokenUid={selectedTokenForHistory || undefined}
+        onRegisterTokenClick={() => setRegisterTokenOpen(true)}
+      />
+      <RegisterTokenDialog
+        isOpen={registerTokenOpen}
+        onClose={() => setRegisterTokenOpen(false)}
       />
 
       {/* Error notification */}

@@ -3,6 +3,8 @@ import { WalletServiceMethods } from '../services/HathorWalletService';
 import { readOnlyWalletService } from '../services/ReadOnlyWalletService';
 import { useInvokeSnap, useRequestSnap, useMetaMaskContext } from '@hathor/snap-utils';
 import { DEFAULT_NETWORK, TOKEN_IDS } from '@/constants';
+import type { TokenInfo, TokenFilter } from '../types/token';
+import { tokenRegistryService } from '../services/TokenRegistryService';
 
 const STORAGE_KEYS = {
   XPUB: 'hathor_wallet_xpub',
@@ -48,6 +50,9 @@ interface WalletState {
   isHistoryDialogOpen: boolean;
   currentHistoryPage: number;
   newTransaction: unknown | null;
+  registeredTokens: TokenInfo[];
+  selectedTokenFilter: TokenFilter;
+  selectedTokenForSend: string | null;
 }
 
 interface WalletContextType extends WalletState {
@@ -61,6 +66,11 @@ interface WalletContextType extends WalletState {
   setError: (error: string | null) => void;
   setHistoryDialogState: (isOpen: boolean, page?: number) => void;
   clearNewTransaction: () => void;
+  registerToken: (configString: string) => Promise<void>;
+  unregisterToken: (tokenUid: string) => Promise<void>;
+  refreshTokenBalances: () => Promise<void>;
+  setSelectedTokenFilter: (filter: TokenFilter) => void;
+  getTokenBalance: (tokenUid: string) => TokenInfo | undefined;
 }
 
 const initialState: WalletState = {
@@ -76,6 +86,9 @@ const initialState: WalletState = {
   isHistoryDialogOpen: false,
   currentHistoryPage: 0,
   newTransaction: null,
+  registeredTokens: [],
+  selectedTokenFilter: 'tokens',
+  selectedTokenForSend: null,
 };
 
 const WalletContext = createContext<WalletContextType | null>(null);
@@ -90,6 +103,16 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const requestSnap = useRequestSnap();
   const { error: metamaskError, setError: setMetamaskError } = useMetaMaskContext();
   const isCheckingRef = React.useRef(false);
+
+  // Helper function to set up event listeners
+  const setupEventListeners = () => {
+    // Remove all existing listeners to prevent duplicates
+    readOnlyWalletService.removeAllListeners();
+
+    // Register new listeners using stable ref wrapper
+    readOnlyWalletService.on('new-tx', (tx) => handleNewTransactionRef.current(tx));
+    readOnlyWalletService.on('update-tx', (tx) => handleNewTransactionRef.current(tx));
+  };
 
   const checkExistingConnection = async () => {
     if (isCheckingRef.current) {
@@ -158,9 +181,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       }
       await readOnlyWalletService.initialize(storedXpub, storedNetwork);
 
-      // Set up event listeners for real-time updates using stable ref wrapper
-      readOnlyWalletService.on('new-tx', (tx) => handleNewTransactionRef.current(tx));
-      readOnlyWalletService.on('update-tx', (tx) => handleNewTransactionRef.current(tx));
+      // Set up event listeners for real-time updates
+      setupEventListeners();
 
       setState(prev => ({ ...prev, loadingStep: 'Loading wallet data...' }));
 
@@ -174,6 +196,39 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       const balances = await readOnlyWalletService.getBalance(TOKEN_IDS.HTR);
 
+      // Load registered tokens for this network
+      const genesisHash = ''; // TODO: Get from RPC handler
+      const registeredTokens = tokenRegistryService.getRegisteredTokens(storedNetwork, genesisHash);
+
+      // Fetch balances for all registered tokens
+      let failedTokenCount = 0;
+      const tokensWithBalances = await Promise.all(
+        registeredTokens.map(async (token) => {
+          try {
+            const tokenBalances = await readOnlyWalletService.getBalance(token.uid);
+            if (tokenBalances && tokenBalances.length > 0) {
+              return {
+                ...token,
+                balance: {
+                  available: tokenBalances[0].available,
+                  locked: tokenBalances[0].locked,
+                },
+              };
+            }
+            return token;
+          } catch (error) {
+            console.error(`Failed to fetch balance for token ${token.uid}:`, error);
+            failedTokenCount++;
+            return token;
+          }
+        })
+      );
+
+      // Set warning if some tokens failed to load
+      const tokenLoadWarning = failedTokenCount > 0
+        ? `Warning: Failed to load balance for ${failedTokenCount} token${failedTokenCount > 1 ? 's' : ''}. Showing cached values.`
+        : null;
+
       setState(prev => ({
         ...prev,
         isConnected: true,
@@ -183,6 +238,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         network: storedNetwork,
         xpub: storedXpub,
         loadingStep: '',
+        registeredTokens: tokensWithBalances,
+        error: tokenLoadWarning,
       }));
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -311,9 +368,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       const network = DEFAULT_NETWORK;
       await readOnlyWalletService.initialize(xpub, network);
 
-      // Set up event listeners for real-time updates using stable ref wrapper
-      readOnlyWalletService.on('new-tx', (tx) => handleNewTransactionRef.current(tx));
-      readOnlyWalletService.on('update-tx', (tx) => handleNewTransactionRef.current(tx));
+      // Set up event listeners for real-time updates
+      setupEventListeners();
 
       setState(prev => ({ ...prev, loadingStep: 'Loading wallet data...' }));
 
@@ -329,8 +385,41 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       const balances = await readOnlyWalletService.getBalance(TOKEN_IDS.HTR);
 
+      // Load registered tokens for this network
+      const genesisHash = ''; // TODO: Get from RPC handler
+      const registeredTokens = tokenRegistryService.getRegisteredTokens(network, genesisHash);
+
+      // Fetch balances for all registered tokens
+      let failedTokenCount = 0;
+      const tokensWithBalances = await Promise.all(
+        registeredTokens.map(async (token) => {
+          try {
+            const tokenBalances = await readOnlyWalletService.getBalance(token.uid);
+            if (tokenBalances && tokenBalances.length > 0) {
+              return {
+                ...token,
+                balance: {
+                  available: tokenBalances[0].available,
+                  locked: tokenBalances[0].locked,
+                },
+              };
+            }
+            return token;
+          } catch (error) {
+            console.error(`Failed to fetch balance for token ${token.uid}:`, error);
+            failedTokenCount++;
+            return token;
+          }
+        })
+      );
+
       localStorage.setItem(STORAGE_KEYS.XPUB, xpub);
       localStorage.setItem(STORAGE_KEYS.NETWORK, network);
+
+      // Set warning if some tokens failed to load
+      const tokenLoadWarning = failedTokenCount > 0
+        ? `Warning: Failed to load balance for ${failedTokenCount} token${failedTokenCount > 1 ? 's' : ''}. Showing cached values.`
+        : null;
 
       setState(prev => ({
         ...prev,
@@ -341,6 +430,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         xpub,
         isConnecting: false,
         loadingStep: '',
+        registeredTokens: tokensWithBalances,
+        error: tokenLoadWarning,
       }));
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -434,6 +525,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
     try {
       const balances = await readOnlyWalletService.getBalance(TOKEN_IDS.HTR);
+
+      // Also refresh token balances
+      await refreshTokenBalances();
+
       setState(prev => ({ ...prev, balances, error: null }));
     } catch (error) {
       setState(prev => ({
@@ -511,6 +606,9 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       // Reinitialize read-only wallet with new network
       await readOnlyWalletService.initialize(state.xpub, newNetwork);
 
+      // Set up event listeners for real-time updates
+      setupEventListeners();
+
       setState(prev => ({ ...prev, loadingStep: 'Loading wallet data...' }));
 
       // Get fresh data from the new network
@@ -525,8 +623,41 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       const balances = await readOnlyWalletService.getBalance(TOKEN_IDS.HTR);
 
+      // Load registered tokens for new network
+      const genesisHash = ''; // TODO: Get from RPC handler
+      const registeredTokens = tokenRegistryService.getRegisteredTokens(newNetwork, genesisHash);
+
+      // Fetch balances for all registered tokens
+      let failedTokenCount = 0;
+      const tokensWithBalances = await Promise.all(
+        registeredTokens.map(async (token) => {
+          try {
+            const tokenBalances = await readOnlyWalletService.getBalance(token.uid);
+            if (tokenBalances && tokenBalances.length > 0) {
+              return {
+                ...token,
+                balance: {
+                  available: tokenBalances[0].available,
+                  locked: tokenBalances[0].locked,
+                },
+              };
+            }
+            return token;
+          } catch (error) {
+            console.error(`Failed to fetch balance for token ${token.uid}:`, error);
+            failedTokenCount++;
+            return token;
+          }
+        })
+      );
+
       // Update localStorage with new network
       localStorage.setItem(STORAGE_KEYS.NETWORK, newNetwork);
+
+      // Set warning if some tokens failed to load
+      const tokenLoadWarning = failedTokenCount > 0
+        ? `Warning: Failed to load balance for ${failedTokenCount} token${failedTokenCount > 1 ? 's' : ''}. Showing cached values.`
+        : null;
 
       setState(prev => ({
         ...prev,
@@ -535,7 +666,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         balances,
         isCheckingConnection: false,
         loadingStep: '',
-        error: null,
+        error: tokenLoadWarning,
+        registeredTokens: tokensWithBalances,
       }));
 
     } catch (error) {
@@ -681,6 +813,106 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     setState(prev => ({ ...prev, newTransaction: null }));
   };
 
+  const registerToken = async (configString: string) => {
+    if (!state.isConnected || !readOnlyWalletService.isReady()) {
+      throw new Error('Wallet not connected');
+    }
+
+    try {
+      // genesisHash is empty string for now (TODO in RPC handler)
+      const genesisHash = '';
+      const tokenInfo = await tokenRegistryService.registerToken(
+        configString,
+        state.network,
+        genesisHash
+      );
+
+      // Fetch balance immediately after registration
+      const balances = await readOnlyWalletService.getBalance(tokenInfo.uid);
+      if (balances && balances.length > 0) {
+        tokenInfo.balance = {
+          available: balances[0].available,
+          locked: balances[0].locked,
+        };
+      }
+
+      // Update state with new token
+      setState(prev => ({
+        ...prev,
+        registeredTokens: [...prev.registeredTokens, tokenInfo],
+      }));
+    } catch (error) {
+      console.error('Failed to register token:', error);
+      throw error;
+    }
+  };
+
+  const unregisterToken = async (tokenUid: string) => {
+    if (!state.isConnected) {
+      return;
+    }
+
+    // Prevent HTR from being unregistered
+    if (tokenUid === TOKEN_IDS.HTR) {
+      console.error('Cannot unregister HTR token');
+      throw new Error('Cannot unregister the native HTR token');
+    }
+
+    try {
+      const genesisHash = '';
+      tokenRegistryService.unregisterToken(tokenUid, state.network, genesisHash);
+
+      // Update state
+      setState(prev => ({
+        ...prev,
+        registeredTokens: prev.registeredTokens.filter(t => t.uid !== tokenUid),
+      }));
+    } catch (error) {
+      console.error('Failed to unregister token:', error);
+      throw error;
+    }
+  };
+
+  const refreshTokenBalances = async () => {
+    if (!state.isConnected || !readOnlyWalletService.isReady()) return;
+
+    try {
+      // Fetch balances for all registered tokens
+      const updatedTokens = await Promise.all(
+        state.registeredTokens.map(async (token) => {
+          try {
+            const balances = await readOnlyWalletService.getBalance(token.uid);
+            if (balances && balances.length > 0) {
+              return {
+                ...token,
+                balance: {
+                  available: balances[0].available,
+                  locked: balances[0].locked,
+                },
+              };
+            }
+            return token;
+          } catch (error) {
+            console.error(`Failed to fetch balance for token ${token.uid}:`, error);
+            return token;
+          }
+        })
+      );
+
+      setState(prev => ({ ...prev, registeredTokens: updatedTokens }));
+    } catch (error) {
+      console.error('Failed to refresh token balances:', error);
+    }
+  };
+
+  const setSelectedTokenFilter = (filter: TokenFilter) => {
+    setState(prev => ({ ...prev, selectedTokenFilter: filter }));
+  };
+
+  const getTokenBalance = (tokenUid: string): TokenInfo | undefined => {
+    return state.registeredTokens.find(t => t.uid === tokenUid);
+  };
+
   const handleNewTransaction = async (tx: unknown) => {
     if (!state.isConnected || !readOnlyWalletService.isReady()) return;
 
@@ -781,6 +1013,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     setError,
     setHistoryDialogState,
     clearNewTransaction,
+    registerToken,
+    unregisterToken,
+    refreshTokenBalances,
+    setSelectedTokenFilter,
+    getTokenBalance,
   };
 
   return (

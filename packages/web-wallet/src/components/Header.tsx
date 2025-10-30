@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
-import { Copy, Globe } from 'lucide-react';
+import { Copy, Globe, Menu, X } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { truncateAddress } from '../utils/hathor';
 import ChangeNetworkDialog from './ChangeNetworkDialog';
 import htrLogo from '../htr_logo.svg';
 import { NETWORKS } from '../constants';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  onRegisterTokenClick?: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick }) => {
   const { address, network } = useWallet();
   const [isNetworkDialogOpen, setIsNetworkDialogOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleCopyAddress = () => {
     if (address) {
@@ -46,7 +51,7 @@ const Header: React.FC = () => {
           </div>
 
           {/* Right: Address + Network + Menu */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 relative">
             {/* Wallet Address */}
             <button
               onClick={handleCopyAddress}
@@ -68,6 +73,45 @@ const Header: React.FC = () => {
                 {getNetworkDisplayName(network)}
               </span>
             </button>
+
+            {/* Hamburger Menu Button */}
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="p-2 bg-[#191C21] border border-[#24292F] rounded-full hover:bg-[#24292F] transition-colors"
+            >
+              {isMenuOpen ? (
+                <X className="w-5 h-5 text-white" />
+              ) : (
+                <Menu className="w-5 h-5 text-white" />
+              )}
+            </button>
+
+            {/* Dropdown Menu */}
+            {isMenuOpen && (
+              <div className="absolute top-full right-0 mt-2 w-48 bg-[#191C21] border border-[#24292F] rounded-lg shadow-lg overflow-hidden z-50">
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    onRegisterTokenClick?.();
+                  }}
+                  className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] transition-colors"
+                >
+                  Register token
+                </button>
+                <button
+                  className="w-full px-4 py-3 text-left text-sm text-muted-foreground hover:bg-[#24292F] transition-colors"
+                  disabled
+                >
+                  Address book
+                </button>
+                <button
+                  className="w-full px-4 py-3 text-left text-sm text-muted-foreground hover:bg-[#24292F] transition-colors"
+                  disabled
+                >
+                  Preferences
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
