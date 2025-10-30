@@ -26,17 +26,57 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
   const [hasMore, setHasMore] = useState(true)
   const [currentCount, setCurrentCount] = useState(0)
   const PAGE_SIZE = 10
-  const { address, network, getTransactionHistory } = useWallet()
+  const { address, network, getTransactionHistory, newTransaction, setHistoryDialogState, clearNewTransaction } = useWallet()
 
   useEffect(() => {
     if (isOpen && address) {
+      // Notify context that dialog is open on page 0 (page 1 in UI)
+      setHistoryDialogState(true, 0)
       // Reset pagination when dialog opens
       setTransactions([])
       setCurrentCount(0)
       setHasMore(true)
       loadTransactionHistory(0)
+    } else if (!isOpen) {
+      // Notify context that dialog is closed
+      setHistoryDialogState(false, 0)
     }
   }, [isOpen, address])
+
+  // Handle incoming new transactions from WebSocket
+  useEffect(() => {
+    if (!newTransaction || !isOpen) return;
+
+    // Only process if we have transaction data with tx_id (for history list)
+    if (newTransaction.tx_id) {
+      const balanceValue = typeof newTransaction.balance === 'bigint'
+        ? Number(newTransaction.balance)
+        : newTransaction.balance;
+      const type = balanceValue >= 0 ? 'received' : 'sent'
+      const amount = Math.abs(balanceValue)
+
+      const processedTx: ProcessedTransaction = {
+        id: newTransaction.tx_id,
+        type,
+        amount,
+        timestamp: new Date(newTransaction.timestamp * 1000).toISOString(),
+        txHash: newTransaction.tx_id,
+        status: !newTransaction.is_voided ? 'confirmed' : 'pending'
+      };
+
+      // Use functional update to avoid race conditions with duplicate check
+      setTransactions(prev => {
+        const isDuplicate = prev.some(tx => tx.id === newTransaction.tx_id);
+        if (isDuplicate) return prev;
+        return [processedTx, ...prev].slice(0, PAGE_SIZE);
+      });
+
+      setCurrentCount(prev => prev + 1);
+
+      // Clear the transaction from context
+      clearNewTransaction();
+    }
+  }, [newTransaction, isOpen]);
 
   const loadTransactionHistory = async (skip: number = 0) => {
     if (!address) {
@@ -49,6 +89,9 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
     } else {
       setIsLoadingMore(true);
     }
+
+    // Calculate page number (0-indexed)
+    const pageNum = Math.floor(skip / PAGE_SIZE);
 
     try {
       const history = await getTransactionHistory(PAGE_SIZE, skip, TOKEN_IDS.HTR)
@@ -86,6 +129,9 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
         setTransactions(prev => [...prev, ...processed]);
         setCurrentCount(prev => prev + processed.length);
       }
+
+      // Notify context of page change
+      setHistoryDialogState(true, pageNum);
     } catch (error) {
       console.error('Failed to load transaction history:', error)
     } finally {

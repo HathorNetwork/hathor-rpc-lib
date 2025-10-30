@@ -45,6 +45,9 @@ interface WalletState {
   network: string;
   error: string | null;
   xpub: string | null;
+  isHistoryDialogOpen: boolean;
+  currentHistoryPage: number;
+  newTransaction: any | null;
 }
 
 interface WalletContextType extends WalletState {
@@ -56,6 +59,8 @@ interface WalletContextType extends WalletState {
   sendTransaction: (params: SendTransactionParams) => Promise<unknown>;
   changeNetwork: (newNetwork: string) => Promise<void>;
   setError: (error: string | null) => void;
+  setHistoryDialogState: (isOpen: boolean, page?: number) => void;
+  clearNewTransaction: () => void;
 }
 
 const initialState: WalletState = {
@@ -68,6 +73,9 @@ const initialState: WalletState = {
   network: 'mainnet',
   error: null,
   xpub: null,
+  isHistoryDialogOpen: false,
+  currentHistoryPage: 0,
+  newTransaction: null,
 };
 
 const WalletContext = createContext<WalletContextType | null>(null);
@@ -110,10 +118,17 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       }
 
       setState(prev => ({ ...prev, loadingStep: 'Checking snap network...' }));
-      const networkTest = await invokeSnap({
+
+      // Add timeout to snap network check
+      const networkCheckPromise = invokeSnap({
         method: 'htr_getConnectedNetwork',
         params: {}
       });
+      const networkCheckTimeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Network check timeout')), 10000)
+      );
+
+      const networkTest = await Promise.race([networkCheckPromise, networkCheckTimeout]);
       const parsedNetworkTest = typeof networkTest === 'string' ? JSON.parse(networkTest) : networkTest;
       const currentSnapNetwork = parsedNetworkTest?.response?.network;
       const targetNetwork = DEFAULT_NETWORK;
@@ -121,13 +136,19 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       if (currentSnapNetwork !== targetNetwork) {
         setState(prev => ({ ...prev, loadingStep: `Changing snap network to ${DEFAULT_NETWORK}...` }));
 
-        await invokeSnap({
+        // Add timeout to network change
+        const changeNetworkPromise = invokeSnap({
           method: 'htr_changeNetwork',
           params: {
             network: currentSnapNetwork,
             newNetwork: targetNetwork
           }
         });
+        const changeNetworkTimeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Network change timeout')), 10000)
+        );
+
+        await Promise.race([changeNetworkPromise, changeNetworkTimeout]);
       }
 
       setState(prev => ({ ...prev, loadingStep: 'Initializing read-only wallet...' }));
@@ -136,6 +157,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         await readOnlyWalletService.stop();
       }
       await readOnlyWalletService.initialize(storedXpub, storedNetwork);
+
+      // Set up event listeners for real-time updates using stable ref wrapper
+      readOnlyWalletService.on('new-tx', (tx) => handleNewTransactionRef.current(tx));
+      readOnlyWalletService.on('update-tx', (tx) => handleNewTransactionRef.current(tx));
 
       setState(prev => ({ ...prev, loadingStep: 'Loading wallet data...' }));
 
@@ -161,7 +186,16 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       }));
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
+
+      // Check if snap crashed
+      const snapCrashed =
+        errorMessage.includes('DataCloneError') ||
+        errorMessage.includes('postMessage') ||
+        errorMessage.includes('cloned') ||
+        errorMessage.includes('timeout');
+
       const shouldClearStorage =
+        snapCrashed ||
         errorMessage.includes('Invalid xpub') ||
         errorMessage.includes('authentication') ||
         errorMessage.includes('unauthorized');
@@ -171,15 +205,23 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         localStorage.removeItem(STORAGE_KEYS.NETWORK);
       }
 
+      const userMessage = snapCrashed
+        ? 'MetaMask Snap is not responding. Please refresh the page and try again.'
+        : 'Failed to reconnect. Please try connecting manually.';
+
       setState(prev => ({
         ...prev,
         isCheckingConnection: false,
         loadingStep: '',
-        error: 'Failed to reconnect. Please try connecting manually.',
+        error: userMessage,
       }));
     } finally {
       isCheckingRef.current = false;
-      setState(prev => ({ ...prev, isCheckingConnection: false }));
+      setState(prev => ({
+        ...prev,
+        isCheckingConnection: false,
+        loadingStep: '',
+      }));
     }
   };
 
@@ -192,10 +234,15 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       let currentSnapNetwork;
       try {
-        const networkTest = await invokeSnap({
+        // Add timeout to network check
+        const networkCheckPromise = invokeSnap({
           method: 'htr_getConnectedNetwork',
           params: {}
         });
+        const networkCheckTimeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Network check timeout')), 10000)
+        );
+        const networkTest = await Promise.race([networkCheckPromise, networkCheckTimeout]);
 
         const parsedNetworkTest = typeof networkTest === 'string' ? JSON.parse(networkTest) : networkTest;
         currentSnapNetwork = parsedNetworkTest?.response?.network;
@@ -209,13 +256,18 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         setState(prev => ({ ...prev, loadingStep: `Changing snap network to ${DEFAULT_NETWORK}...` }));
 
         try {
-          await invokeSnap({
+          // Add timeout to network change
+          const changeNetworkPromise = invokeSnap({
             method: 'htr_changeNetwork',
             params: {
               network: currentSnapNetwork,
               newNetwork: targetNetwork
             }
           });
+          const changeNetworkTimeout = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Network change timeout')), 10000)
+          );
+          await Promise.race([changeNetworkPromise, changeNetworkTimeout]);
         } catch (networkError) {
           console.error(networkError);
           throw new Error(`Failed to change snap network to ${DEFAULT_NETWORK}`);
@@ -226,10 +278,15 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       let xpubResponse;
       try {
-        xpubResponse = await invokeSnap({
+        // Add timeout to getXpub call
+        const xpubPromise = invokeSnap({
           method: 'htr_getXpub',
           params: {}
         });
+        const xpubTimeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Get xpub timeout')), 10000)
+        );
+        xpubResponse = await Promise.race([xpubPromise, xpubTimeout]);
       } catch (snapError) {
         throw new Error(`Failed to get xpub: ${snapError instanceof Error ? snapError.message : String(snapError)}`);
       }
@@ -253,6 +310,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       const network = DEFAULT_NETWORK;
       await readOnlyWalletService.initialize(xpub, network);
+
+      // Set up event listeners for real-time updates using stable ref wrapper
+      readOnlyWalletService.on('new-tx', (tx) => handleNewTransactionRef.current(tx));
+      readOnlyWalletService.on('update-tx', (tx) => handleNewTransactionRef.current(tx));
+
       setState(prev => ({ ...prev, loadingStep: 'Loading wallet data...' }));
 
       let address = '';
@@ -281,17 +343,37 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         loadingStep: '',
       }));
     } catch (error) {
-      let errorMessage = 'Failed to connect to wallet';
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
+      const errorMessage = error instanceof Error ? error.message : String(error);
+
+      // Check if snap crashed
+      const snapCrashed =
+        errorMessage.includes('DataCloneError') ||
+        errorMessage.includes('postMessage') ||
+        errorMessage.includes('cloned') ||
+        errorMessage.includes('timeout');
+
+      const userMessage = snapCrashed
+        ? 'MetaMask Snap is not responding. Please refresh the page and try again.'
+        : errorMessage || 'Failed to connect to wallet';
 
       setState(prev => ({
         ...prev,
         isConnecting: false,
         loadingStep: '',
-        error: errorMessage,
+        error: userMessage,
       }));
+    } finally {
+      // Safety net: ensure loading state is always cleared
+      setState(prev => {
+        if (prev.isConnecting || prev.loadingStep) {
+          return {
+            ...prev,
+            isConnecting: false,
+            loadingStep: '',
+          };
+        }
+        return prev;
+      });
     }
   };
 
@@ -341,6 +423,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const disconnectWallet = () => {
     localStorage.removeItem(STORAGE_KEYS.XPUB);
     localStorage.removeItem(STORAGE_KEYS.NETWORK);
+    // stop() will call removeAllListeners() internally
     readOnlyWalletService.stop();
     setState(initialState);
   };
@@ -457,25 +540,70 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Failed to change network:', error);
 
+      // Check if snap crashed (DataCloneError, unresponsive, etc.)
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const snapCrashed =
+        errorMessage.includes('DataCloneError') ||
+        errorMessage.includes('postMessage') ||
+        errorMessage.includes('cloned') ||
+        errorMessage.includes('ERR_NETWORK') ||
+        errorMessage.includes('Network Error');
+
+      if (snapCrashed) {
+        console.warn('Snap appears to have crashed, skipping rollback and forcing disconnect');
+
+        // Don't attempt rollback if snap crashed - just disconnect
+        localStorage.removeItem(STORAGE_KEYS.XPUB);
+        localStorage.removeItem(STORAGE_KEYS.NETWORK);
+
+        try {
+          await readOnlyWalletService.stop();
+        } catch (stopError) {
+          console.error('Failed to stop wallet during crash recovery:', stopError);
+        }
+
+        setState({
+          ...initialState,
+          isCheckingConnection: false,
+          isConnecting: false,
+          loadingStep: '',
+          error: 'Network change failed (MetaMask Snap may need to be reloaded). Please refresh the page and try again.',
+        });
+        return;
+      }
+
+      // Only attempt rollback if snap is still responding
       try {
         setState(prev => ({ ...prev, loadingStep: 'Rolling back to previous network...' }));
 
-        // Change snap back to previous network
-        await invokeSnap({
-          method: 'htr_changeNetwork',
-          params: {
-            network: newNetwork,
-            newNetwork: previousNetwork,
+        // Add timeout to rollback attempt
+        const rollbackPromise = (async () => {
+          // Change snap back to previous network
+          await invokeSnap({
+            method: 'htr_changeNetwork',
+            params: {
+              network: newNetwork,
+              newNetwork: previousNetwork,
+            }
+          });
+
+          // Stop wallet if it was initialized
+          if (readOnlyWalletService.isReady()) {
+            await readOnlyWalletService.stop();
           }
-        });
 
-        // Stop wallet if it was initialized
-        if (readOnlyWalletService.isReady()) {
-          await readOnlyWalletService.stop();
-        }
+          // Reinitialize with previous network
+          if (state.xpub) {
+            await readOnlyWalletService.initialize(state.xpub, previousNetwork);
+          }
+        })();
 
-        // Reinitialize with previous network
-        await readOnlyWalletService.initialize(state.xpub, previousNetwork);
+        // Timeout after 10 seconds
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Rollback timeout')), 10000)
+        );
+
+        await Promise.race([rollbackPromise, timeoutPromise]);
 
         // Restore previous state
         setState(prev => ({
@@ -506,13 +634,27 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           console.error('CRITICAL: Wallet still active after stop attempt - possible resource leak');
         }
 
-        // Reset to disconnected state
+        // Reset to disconnected state - ALWAYS clear loading state
         setState({
           ...initialState,
           isCheckingConnection: false,
+          isConnecting: false,
+          loadingStep: '',
           error: 'Network change failed. Wallet has been disconnected. Please reconnect.',
         });
       }
+    } finally {
+      // Safety net: ensure loading states are always cleared
+      setState(prev => {
+        if (prev.isCheckingConnection || prev.loadingStep) {
+          return {
+            ...prev,
+            isCheckingConnection: false,
+            loadingStep: '',
+          };
+        }
+        return prev;
+      });
     }
   };
 
@@ -524,6 +666,105 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     }
   };
 
+  const setHistoryDialogState = (isOpen: boolean, page: number = 0) => {
+    setState(prev => ({
+      ...prev,
+      isHistoryDialogOpen: isOpen,
+      currentHistoryPage: page,
+      // Clear new transaction when opening dialog or changing pages
+      newTransaction: null,
+    }));
+  };
+
+  const clearNewTransaction = () => {
+    setState(prev => ({ ...prev, newTransaction: null }));
+  };
+
+  const handleNewTransaction = async (tx: any) => {
+    if (!state.isConnected || !readOnlyWalletService.isReady()) return;
+
+    try {
+      console.log('Processing new transaction:', tx.tx_id);
+
+      // Refresh balance to get accurate amounts
+      await refreshBalance();
+
+      // Determine transaction type and amount for notification
+      // Parse outputs to check if we received HTR
+      let receivedAmount = 0;
+      let sentAmount = 0;
+
+      const currentAddress = readOnlyWalletService.getCurrentAddress()?.address;
+
+      // Check outputs for received amounts
+      if (tx.outputs && currentAddress) {
+        for (const output of tx.outputs) {
+          if (output.decoded?.address === currentAddress && output.token === TOKEN_IDS.HTR) {
+            const value = typeof output.value === 'bigint' ? Number(output.value) : output.value;
+            receivedAmount += value;
+          }
+        }
+      }
+
+      // Check inputs for sent amounts
+      if (tx.inputs && currentAddress) {
+        for (const input of tx.inputs) {
+          if (input.decoded?.address === currentAddress && input.token === TOKEN_IDS.HTR) {
+            const value = typeof input.value === 'bigint' ? Number(input.value) : input.value;
+            sentAmount += value;
+          }
+        }
+      }
+
+      // Only process if this transaction affects our wallet
+      if (receivedAmount === 0 && sentAmount === 0) {
+        return;
+      }
+
+      const netAmount = receivedAmount - sentAmount;
+      const transactionType = netAmount >= 0 ? 'received' : 'sent';
+      const absoluteAmount = Math.abs(netAmount);
+
+      // Update state based on current UI state using functional update
+      setState(prev => {
+        // Check current state for UI decisions
+        if (prev.isHistoryDialogOpen && prev.currentHistoryPage === 0) {
+          // Page 1 of history: prepend transaction to list
+          return {
+            ...prev,
+            newTransaction: {
+              tx_id: tx.tx_id,
+              timestamp: tx.timestamp,
+              balance: netAmount,
+              is_voided: tx.is_voided || tx.voided || false,
+              type: transactionType,
+              amount: absoluteAmount,
+            },
+          };
+        } else {
+          // Home screen or page 2+: show notification
+          return {
+            ...prev,
+            newTransaction: {
+              type: transactionType,
+              amount: absoluteAmount,
+              timestamp: tx.timestamp,
+            },
+          };
+        }
+      });
+    } catch (error) {
+      console.error('Failed to process transaction event:', error);
+      // Don't show error to user - they can manually refresh
+    }
+  };
+
+  // Use a ref to maintain stable event handler
+  const handleNewTransactionRef = React.useRef(handleNewTransaction);
+  React.useEffect(() => {
+    handleNewTransactionRef.current = handleNewTransaction;
+  });
+
   const contextValue: WalletContextType = {
     ...state,
     connectWallet,
@@ -534,6 +775,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     sendTransaction,
     changeNetwork,
     setError,
+    setHistoryDialogState,
+    clearNewTransaction,
   };
 
   return (

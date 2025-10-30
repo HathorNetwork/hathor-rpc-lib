@@ -5,6 +5,7 @@ import ReceiveDialog from './ReceiveDialog';
 import HistoryDialog from './HistoryDialog';
 import Header from './Header';
 import ErrorNotification from './ErrorNotification';
+import TransactionNotification from './TransactionNotification';
 import { useWallet } from '../contexts/WalletContext';
 import { formatHTRAmount } from '../utils/hathor';
 import htrLogoBlack from '../assets/htr_logo_black.svg';
@@ -25,7 +26,9 @@ const WalletHome: React.FC = () => {
     balances,
     error,
     connectWallet,
-    setError
+    setError,
+    newTransaction,
+    clearNewTransaction
   } = useWallet();
 
   const handleButtonClick = (buttonName: string) => {
@@ -232,6 +235,18 @@ const WalletHome: React.FC = () => {
         <ErrorNotification
           error={new Error(error)}
           onDismiss={() => setError(null)}
+        />
+      )}
+
+      {/* Transaction notification */}
+      {newTransaction && !newTransaction.tx_id && (
+        <TransactionNotification
+          transaction={newTransaction}
+          onDismiss={clearNewTransaction}
+          onViewHistory={() => {
+            clearNewTransaction();
+            setHistoryDialogOpen(true);
+          }}
         />
       )}
     </div>
