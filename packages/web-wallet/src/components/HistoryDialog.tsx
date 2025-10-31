@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react'
 import { ArrowUpRight, ArrowDownLeft, ExternalLink, Loader2, ArrowLeft, Clock } from 'lucide-react'
 import { useWallet } from '../contexts/WalletContext'
+import { useTokens } from '../hooks/useTokens'
 import type { TransactionHistoryItem } from '../contexts/WalletContext'
 import { formatHTRAmount } from '../utils/hathor'
 import { HATHOR_EXPLORER_URLS, NETWORKS, TOKEN_IDS } from '../constants'
 import Header from './Header'
+import UnregisterTokenDialog from './UnregisterTokenDialog'
 
 interface HistoryDialogProps {
   isOpen: boolean
   onClose: () => void
+  tokenUid?: string
+  onRegisterTokenClick?: () => void
 }
 
 interface ProcessedTransaction {
@@ -20,14 +24,22 @@ interface ProcessedTransaction {
   status: 'confirmed' | 'pending'
 }
 
-const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
+const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid, onRegisterTokenClick }) => {
   const [transactions, setTransactions] = useState<ProcessedTransaction[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [currentCount, setCurrentCount] = useState(0)
+  const [unregisterDialogOpen, setUnregisterDialogOpen] = useState(false)
   const PAGE_SIZE = 10
-  const { address, network, getTransactionHistory, newTransaction, setHistoryDialogState, clearNewTransaction } = useWallet()
+  const { address, network, getTransactionHistory, newTransaction, setHistoryDialogState, clearNewTransaction, unregisterToken } = useWallet()
+  const { allTokens } = useTokens()
+
+  // Get token info for display
+  const selectedToken = React.useMemo(() => {
+    const uid = tokenUid || TOKEN_IDS.HTR;
+    return allTokens.find(t => t.uid === uid);
+  }, [allTokens, tokenUid]);
 
   useEffect(() => {
     if (isOpen && address) {
@@ -99,8 +111,11 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
     // Calculate page number (0-indexed)
     const pageNum = Math.floor(skip / PAGE_SIZE);
 
+    // Use provided tokenUid or default to HTR
+    const activeTokenUid = tokenUid || TOKEN_IDS.HTR;
+
     try {
-      const history = await getTransactionHistory(PAGE_SIZE, skip, TOKEN_IDS.HTR)
+      const history = await getTransactionHistory(PAGE_SIZE, skip, activeTokenUid)
 
       if (!history || history.length === 0) {
         setHasMore(false);
@@ -164,11 +179,19 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
     window.open(`${baseUrl}/transaction/${txHash}`, '_blank')
   }
 
+  const handleUnregisterToken = async () => {
+    if (!selectedToken || selectedToken.uid === TOKEN_IDS.HTR) return;
+
+    await unregisterToken(selectedToken.uid);
+    // Close the history dialog after unregistering
+    onClose();
+  }
+
   if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 bg-background z-50 overflow-y-auto">
-      <Header />
+      <Header onRegisterTokenClick={onRegisterTokenClick} />
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-16 py-12">
@@ -182,9 +205,27 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
         </button>
 
         {/* Title */}
-        <h1 className="text-3xl font-medium text-white text-center mb-12">
-          Transaction History
-        </h1>
+        <div className="flex items-start justify-between mb-12">
+          <div className="text-center flex-1">
+            <h1 className="text-3xl font-medium text-white">
+              Transaction History
+            </h1>
+            {selectedToken && (
+              <p className="text-sm text-muted-foreground mt-2">
+                {selectedToken.symbol} - {selectedToken.name}
+              </p>
+            )}
+          </div>
+          {/* Unregister token link - only show for custom tokens */}
+          {selectedToken && selectedToken.uid !== TOKEN_IDS.HTR && (
+            <button
+              onClick={() => setUnregisterDialogOpen(true)}
+              className="text-sm text-primary-400 hover:text-primary-300 transition-colors underline"
+            >
+              Unregister token
+            </button>
+          )}
+        </div>
 
         {/* Transactions List */}
         <div className="space-y-4">
@@ -229,7 +270,7 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
                       tx.type === 'received' ? 'text-green-500' : 'text-red-500'
                     }`}>
                       {tx.type === 'received' ? '+' : '-'}{formatHTRAmount(tx.amount)}
-                      <span className="text-sm ml-2">HTR</span>
+                      <span className="text-sm ml-2">{selectedToken?.symbol || 'HTR'}</span>
                     </p>
                     <button
                       onClick={() => openExplorer(tx.txHash)}
@@ -270,6 +311,17 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
           )}
         </div>
       </div>
+
+      {/* Unregister Token Dialog */}
+      {selectedToken && selectedToken.uid !== TOKEN_IDS.HTR && (
+        <UnregisterTokenDialog
+          isOpen={unregisterDialogOpen}
+          onClose={() => setUnregisterDialogOpen(false)}
+          onConfirm={handleUnregisterToken}
+          tokenSymbol={selectedToken.symbol}
+          tokenName={selectedToken.name}
+        />
+      )}
     </div>
   )
 }

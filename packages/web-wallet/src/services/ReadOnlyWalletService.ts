@@ -355,6 +355,15 @@ export class ReadOnlyWalletService {
       this.wallet.off(event, callback);
     }
   }
+
+  /**
+   * Remove all event listeners from the wallet
+   */
+  removeAllListeners(): void {
+    if (this.wallet) {
+      this.wallet.removeAllListeners();
+    }
+  }
 }
 
 // Export a singleton instance

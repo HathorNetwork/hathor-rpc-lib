@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useWallet } from '../contexts/WalletContext';
+import { useTokens } from '../hooks/useTokens';
 import { formatHTRAmount, htrToCents, centsToHTR } from '../utils/hathor';
 import { Network } from '@hathor/wallet-lib';
 import Address from '@hathor/wallet-lib/lib/models/address';
@@ -12,6 +13,7 @@ import { TOKEN_IDS, HTR_DECIMAL_MULTIPLIER } from '../constants';
 interface SendDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  initialTokenUid?: string;
 }
 
 // Create a Zod schema factory for form validation
@@ -64,15 +66,18 @@ const createSendFormSchema = (availableBalance: number, network: string) =>
 
 type SendFormData = z.infer<ReturnType<typeof createSendFormSchema>>;
 
-const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
+const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUid }) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [transactionError, setTransactionError] = useState<string | null>(null);
 
-  const { sendTransaction, balances, network, refreshBalance } = useWallet();
+  const { sendTransaction, network, refreshBalance } = useWallet();
+  const { allTokens } = useTokens();
 
-  const availableBalance = balances.length > 0 ? balances[0].available : 0;
+  // Get initial token balance for form setup
+  const initialBalance = allTokens.length > 0 ? allTokens[0].balance.available : 0;
 
+  // Initialize form
   const {
     register,
     handleSubmit,
@@ -80,10 +85,11 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
     setValue,
     watch,
     reset,
+    trigger,
   } = useForm<SendFormData>({
-    resolver: zodResolver(createSendFormSchema(availableBalance, network)),
+    resolver: zodResolver(createSendFormSchema(initialBalance, network)),
     defaultValues: {
-      selectedToken: 'HTR',
+      selectedToken: initialTokenUid || TOKEN_IDS.HTR,
       amount: '',
       address: '',
       timelock: '',
@@ -92,7 +98,29 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
     mode: 'onChange',
   });
 
+  // Update selected token when initialTokenUid changes and dialog opens
+  React.useEffect(() => {
+    if (isOpen && initialTokenUid) {
+      setValue('selectedToken', initialTokenUid);
+    }
+  }, [isOpen, initialTokenUid, setValue]);
+
   const amount = watch('amount');
+  const selectedTokenUid = watch('selectedToken');
+
+  // Get the selected token's balance
+  const selectedToken = React.useMemo(() => {
+    return allTokens.find(t => t.uid === selectedTokenUid);
+  }, [allTokens, selectedTokenUid]);
+
+  const availableBalance = selectedToken?.balance.available || 0;
+
+  // Re-validate amount when token or balance changes to use current balance
+  React.useEffect(() => {
+    if (amount) {
+      trigger('amount');
+    }
+  }, [selectedTokenUid, availableBalance, amount, trigger]);
 
   const handleMaxClick = () => {
     if (availableBalance > 0) {
@@ -109,12 +137,20 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
     try {
       const amountInCents = htrToCents(data.amount);
 
+      // Final balance check to ensure we have sufficient funds
+      // This prevents race conditions where balance changed after form validation
+      if (amountInCents > availableBalance) {
+        setTransactionError('Insufficient balance for this transaction');
+        setIsLoading(false);
+        return;
+      }
+
       const result = await sendTransaction({
         network,
         outputs: [{
           address: data.address.trim(),
           value: amountInCents.toString(),
-          token: TOKEN_IDS.HTR
+          token: data.selectedToken
         }]
       });
 
@@ -162,7 +198,11 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
               {...register('selectedToken')}
               className="w-full px-3 py-2 bg-[#0D1117] border border-border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
             >
-              <option value="HTR">HTR</option>
+              {allTokens.map((token) => (
+                <option key={token.uid} value={token.uid}>
+                  {token.symbol} - {token.name}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -180,11 +220,13 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
                   errors.amount ? 'border-red-500' : 'border-border'
                 } rounded-lg text-white placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
               />
-              <span className="absolute right-3 top-2.5 text-sm text-muted-foreground">HTR</span>
+              <span className="absolute right-3 top-2.5 text-sm text-muted-foreground">
+                {selectedToken?.symbol || 'HTR'}
+              </span>
             </div>
             <div className="flex items-center justify-between mt-2">
               <span className="text-xs text-muted-foreground uppercase">
-                Balance available: {formatHTRAmount(availableBalance)} HTR
+                Balance available: {formatHTRAmount(availableBalance)} {selectedToken?.symbol || 'HTR'}
               </span>
               <button
                 type="button"
