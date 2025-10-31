@@ -85,15 +85,15 @@ export class ReadOnlyWalletService {
       });
 
       // Set up event listeners for wallet state changes
-      this.wallet.on('state', (state: any) => {
+      this.wallet.on('state', (state: unknown) => {
         console.log('Read-only wallet state:', state);
       });
 
-      this.wallet.on('new-tx', (tx: any) => {
+      this.wallet.on('new-tx', (tx: { tx_id: string }) => {
         console.log('New transaction received:', tx.tx_id);
       });
 
-      this.wallet.on('update-tx', (tx: any) => {
+      this.wallet.on('update-tx', (tx: { tx_id: string }) => {
         console.log('Transaction updated:', tx.tx_id);
       });
 
@@ -105,10 +105,11 @@ export class ReadOnlyWalletService {
       try {
         await this.wallet.startReadOnly();
         console.log('Read-only wallet started successfully');
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Check if this is a "wallet already loaded" error (400 status)
         // The wallet-service returns 400 when wallet already exists
-        if (error?.response?.data?.error === 'wallet-already-loaded') {
+        const errorObj = error as { response?: { data?: { error?: string } } };
+        if (errorObj?.response?.data?.error === 'wallet-already-loaded') {
           console.log('Wallet already exists on wallet-service (read-only mode)');
         } else {
           // For other errors, re-throw
@@ -154,11 +155,14 @@ export class ReadOnlyWalletService {
       const balance = await this.wallet.getBalance(tokenId);
 
       // Transform the wallet-lib balance format to our interface
-      const balances: WalletBalance[] = Object.entries(balance).map(([token, data]: [string, any]) => ({
-        token,
-        available: data.balance?.unlocked || 0,
-        locked: data.balance?.locked || 0,
-      }));
+      const balances: WalletBalance[] = Object.entries(balance).map(([token, data]) => {
+        const tokenData = data as { balance?: { unlocked?: number; locked?: number } };
+        return {
+          token,
+          available: tokenData.balance?.unlocked || 0,
+          locked: tokenData.balance?.locked || 0,
+        };
+      });
 
       return balances;
     } catch (error) {
@@ -287,7 +291,7 @@ export class ReadOnlyWalletService {
     filter_address?: string;
     amount_bigger_than?: number;
     amount_smaller_than?: number;
-  }): Promise<any> {
+  }): Promise<unknown> {
     if (!this.wallet?.isReady()) {
       throw new Error('Wallet not initialized');
     }
@@ -303,7 +307,7 @@ export class ReadOnlyWalletService {
   /**
    * Get tokens in the wallet
    */
-  async getTokens(): Promise<any[]> {
+  async getTokens(): Promise<Array<Record<string, unknown>>> {
     if (!this.wallet?.isReady()) {
       throw new Error('Wallet not initialized');
     }
@@ -341,7 +345,7 @@ export class ReadOnlyWalletService {
   /**
    * Register event listener for wallet events
    */
-  on(event: string, callback: (data: any) => void): void {
+  on(event: string, callback: (data: unknown) => void): void {
     if (this.wallet) {
       this.wallet.on(event, callback);
     }
@@ -350,7 +354,7 @@ export class ReadOnlyWalletService {
   /**
    * Remove event listener
    */
-  off(event: string, callback: (data: any) => void): void {
+  off(event: string, callback: (data: unknown) => void): void {
     if (this.wallet) {
       this.wallet.off(event, callback);
     }

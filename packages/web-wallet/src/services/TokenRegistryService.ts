@@ -182,7 +182,7 @@ export class TokenRegistryService {
     // Fetch from wallet-lib
     try {
       const tokens = await readOnlyWalletService.getTokens();
-      const tokenData = tokens.find((t: any) => t.uid === tokenUid);
+      const tokenData = tokens.find((t: { uid: string }) => t.uid === tokenUid);
 
       if (!tokenData) {
         throw new Error('Token not found');

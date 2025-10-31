@@ -1,5 +1,8 @@
 import { HATHOR_API_URLS, NETWORKS, TOKEN_IDS, DEFAULT_NETWORK } from '../constants';
 
+// Type for the invokeSnap function from snap-utils
+type InvokeSnapFunction = (params: { method: string; params?: Record<string, unknown> }) => Promise<unknown>;
+
 export interface WalletBalance {
   token: string;
   available: number;
@@ -39,7 +42,7 @@ export interface Transaction {
 
 // These will be used by the wallet context with the hooks
 export const WalletServiceMethods = {
-  async getAddress(invokeSnap: any, type: 'index' = 'index', index: number = 0): Promise<string> {
+  async getAddress(invokeSnap: InvokeSnapFunction, type: 'index' = 'index', index: number = 0): Promise<string> {
     try {
       const response = await invokeSnap({
         method: 'htr_getAddress',
@@ -58,7 +61,7 @@ export const WalletServiceMethods = {
     }
   },
 
-  async getBalance(invokeSnap: any, tokens: string[] = [TOKEN_IDS.HTR]): Promise<WalletBalance[]> {
+  async getBalance(invokeSnap: InvokeSnapFunction, tokens: string[] = [TOKEN_IDS.HTR]): Promise<WalletBalance[]> {
     try {
       const response = await invokeSnap({
         method: 'htr_getBalance',
@@ -73,8 +76,8 @@ export const WalletServiceMethods = {
         throw new Error('Failed to get balance: snap not responding');
       }
 
-      const balances = response.response?.map((balance: any) => ({
-        token: balance.token_id || balance.token,
+      const balances = (response.response as Array<{ token_id?: string; token?: string; available?: number; locked?: number }> | undefined)?.map((balance) => ({
+        token: balance.token_id || balance.token || '',
         available: balance.available || 0,
         locked: balance.locked || 0
       })) || [];
@@ -86,7 +89,7 @@ export const WalletServiceMethods = {
     }
   },
 
-  async getConnectedNetwork(invokeSnap: any): Promise<string> {
+  async getConnectedNetwork(invokeSnap: InvokeSnapFunction): Promise<string> {
     try {
       const response = await invokeSnap({
         method: 'htr_getConnectedNetwork'
@@ -101,7 +104,7 @@ export const WalletServiceMethods = {
     }
   },
 
-  async sendTransaction(invokeSnap: any, params: SendTransactionParams): Promise<any> {
+  async sendTransaction(invokeSnap: InvokeSnapFunction, params: SendTransactionParams): Promise<unknown> {
     try {
       const response = await invokeSnap({
         method: 'htr_sendTransaction',
@@ -119,14 +122,14 @@ export const WalletServiceMethods = {
     }
   },
 
-  async getUtxos(invokeSnap: any, filters?: {
+  async getUtxos(invokeSnap: InvokeSnapFunction, filters?: {
     token?: string;
     filterAddress?: string;
     amountBiggerThan?: number;
     amountSmallerThan?: number;
     maxUtxos?: number;
     maximumAmount?: number;
-  }): Promise<any[]> {
+  }): Promise<unknown[]> {
     try {
       const response = await invokeSnap({
         method: 'htr_getUtxos',
@@ -152,10 +155,16 @@ export const WalletServiceMethods = {
         throw new Error('Failed to fetch transaction history');
       }
 
-      const data = await response.json();
+      const data = await response.json() as { history?: Array<{
+        tx_id: string;
+        timestamp: number;
+        inputs?: Transaction['inputs'];
+        outputs?: Transaction['outputs'];
+        is_voided?: boolean;
+      }> };
 
       // Transform the API response to our Transaction interface
-      return data.history?.map((tx: any) => ({
+      return data.history?.map((tx) => ({
         txId: tx.tx_id,
         timestamp: tx.timestamp * 1000, // Convert to milliseconds
         inputs: tx.inputs || [],

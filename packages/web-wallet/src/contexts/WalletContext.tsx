@@ -1027,6 +1027,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useWallet = (): WalletContextType => {
   const context = useContext(WalletContext);
   if (!context) {

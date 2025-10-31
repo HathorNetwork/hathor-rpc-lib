@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import type { Mock } from 'vitest';
 import { WalletServiceMethods } from '../HathorWalletService';
 import { NETWORKS, TOKEN_IDS } from '../../constants';
 
 describe('HathorWalletService - Critical Issues', () => {
-  let mockInvokeSnap: any;
+  let mockInvokeSnap: Mock;
 
   beforeEach(() => {
     mockInvokeSnap = vi.fn();
@@ -64,7 +65,7 @@ describe('HathorWalletService - Critical Issues', () => {
 
   describe('Critical Issue #2: Silent Transaction History Failures', () => {
     it('should throw error instead of returning empty array on fetch failure', async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as Mock).mockResolvedValueOnce({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error',
@@ -77,7 +78,7 @@ describe('HathorWalletService - Critical Issues', () => {
     });
 
     it('should throw error on network failures', async () => {
-      (global.fetch as any).mockRejectedValueOnce(new Error('Network timeout'));
+      (global.fetch as Mock).mockRejectedValueOnce(new Error('Network timeout'));
 
       await expect(
         WalletServiceMethods.getTransactionHistory('HAddr123', NETWORKS.MAINNET)
@@ -85,7 +86,7 @@ describe('HathorWalletService - Critical Issues', () => {
     });
 
     it('should throw error on invalid JSON response', async () => {
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as Mock).mockResolvedValueOnce({
         ok: true,
         json: vi.fn().mockRejectedValue(new Error('Invalid JSON')),
       });
@@ -108,7 +109,7 @@ describe('HathorWalletService - Critical Issues', () => {
         ],
       };
 
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch as Mock).mockResolvedValueOnce({
         ok: true,
         json: vi.fn().mockResolvedValue(mockHistory),
       });
@@ -158,8 +159,7 @@ describe('HathorWalletService - Critical Issues', () => {
     });
 
     it('should propagate error code 4001 (user rejection)', async () => {
-      const rejectionError = new Error('User rejected');
-      (rejectionError as any).code = 4001;
+      const rejectionError = Object.assign(new Error('User rejected'), { code: 4001 });
       mockInvokeSnap.mockRejectedValueOnce(rejectionError);
 
       await expect(
