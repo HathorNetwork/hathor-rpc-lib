@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowUpRight, Music, Video, FileText, File, ExternalLink } from 'lucide-react';
 import type { TokenInfo } from '../types/token';
 import { formatHTRAmount } from '../utils/hathor';
+import { TOKEN_IDS } from '../constants';
 
 type MediaType = 'IMAGE' | 'AUDIO' | 'VIDEO' | 'PDF' | 'UNKNOWN';
 
@@ -134,19 +135,21 @@ const TokenList: React.FC<TokenListProps> = ({
                 {formatHTRAmount(token.balance.available)}
               </span>
 
-              {/* View Details Button */}
-              <button
-                onClick={(e) => handleViewDetails(token.uid, e)}
-                className="px-4 py-2 bg-transparent hover:bg-secondary/20 text-white rounded-lg text-sm flex items-center gap-2 transition-colors"
-              >
-                <span>View details</span>
-                <ExternalLink className="w-4 h-4" />
-              </button>
+              {/* View Details Button - hide for HTR token */}
+              {token.uid !== TOKEN_IDS.HTR && (
+                <button
+                  onClick={(e) => handleViewDetails(token.uid, e)}
+                  className="px-4 py-2 bg-[#191C21] border border-border hover:bg-[#24292F] text-white rounded-lg text-sm flex items-center gap-2 transition-colors"
+                >
+                  <span>View details</span>
+                  <ExternalLink className="w-4 h-4" />
+                </button>
+              )}
 
               {/* Send Button */}
               <button
                 onClick={(e) => handleSendClick(token.uid, e)}
-                className="px-4 py-2 bg-transparent hover:bg-secondary/20 text-white rounded-lg text-sm flex items-center gap-2 transition-colors"
+                className="px-4 py-2 bg-[#191C21] border border-border hover:bg-[#24292F] text-white rounded-lg text-sm flex items-center gap-2 transition-colors"
               >
                 <span>Send</span>
                 <ArrowUpRight className="w-4 h-4" />
