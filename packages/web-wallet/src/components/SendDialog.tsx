@@ -9,6 +9,8 @@ import { formatHTRAmount, htrToCents, centsToHTR } from '../utils/hathor';
 import { Network } from '@hathor/wallet-lib';
 import Address from '@hathor/wallet-lib/lib/models/address';
 import { TOKEN_IDS, HTR_DECIMAL_MULTIPLIER } from '../constants';
+import { readOnlyWalletService } from '../services/ReadOnlyWalletService';
+import { getAddressForMode } from '../utils/addressMode';
 
 interface SendDialogProps {
   isOpen: boolean;
@@ -71,7 +73,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
   const [isLoading, setIsLoading] = useState(false);
   const [transactionError, setTransactionError] = useState<string | null>(null);
 
-  const { sendTransaction, network, refreshBalance } = useWallet();
+  const { sendTransaction, network, refreshBalance, addressMode } = useWallet();
   const { allTokens } = useTokens();
 
   // Get initial token balance for form setup
@@ -145,13 +147,17 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
         return;
       }
 
+      // Get change address based on address mode
+      const changeAddress = await getAddressForMode(addressMode, readOnlyWalletService);
+
       const result = await sendTransaction({
         network,
         outputs: [{
           address: data.address.trim(),
           value: amountInCents.toString(),
           token: data.selectedToken
-        }]
+        }],
+        changeAddress,
       });
 
       console.log('Transaction sent successfully:', result);

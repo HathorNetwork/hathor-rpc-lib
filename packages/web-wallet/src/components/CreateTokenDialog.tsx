@@ -7,6 +7,8 @@ import { useWallet } from '../contexts/WalletContext';
 import { useInvokeSnap } from '@hathor/snap-utils';
 import helpers from '@hathor/wallet-lib/lib/utils/helpers';
 import { formatHTRAmount } from '../utils/hathor';
+import { readOnlyWalletService } from '../services/ReadOnlyWalletService';
+import { getAddressForMode } from '../utils/addressMode';
 
 interface CreateTokenDialogProps {
   isOpen: boolean;
@@ -55,7 +57,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
     tokenSymbol: string;
   } | null>(null);
 
-  const { registerToken, balances } = useWallet();
+  const { registerToken, balances, addressMode } = useWallet();
   const invokeSnap = useInvokeSnap();
 
   // Get HTR balance
@@ -122,20 +124,24 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
         ? (data.createMeltAuthority || false)
         : data.tokenType === 'deposit';
 
+      // Get addresses based on address mode
+      const changeAddress = await getAddressForMode(addressMode, readOnlyWalletService);
+      const mintAddress = await getAddressForMode(addressMode, readOnlyWalletService);
+
       // Prepare RPC params matching createTokenRpcSchema
       const params = {
         name: data.name,
         symbol: data.symbol,
         amount: data.amount,
-        change_address: null, // Use wallet default
+        change_address: changeAddress,
         create_mint: createMint,
         create_melt: createMelt,
-        mint_authority_address: null,
-        melt_authority_address: null,
+        mint_authority_address: null, // Leave as null for wallet-managed
+        melt_authority_address: null, // Leave as null for wallet-managed
         allow_external_mint_authority_address: false,
         allow_external_melt_authority_address: false,
         data: data.isNFT && data.nftData ? [data.nftData] : null,
-        address: null, // Mint address
+        address: mintAddress, // Mint address where tokens are sent
       };
 
       // Call RPC

@@ -7,6 +7,7 @@ import type { TokenInfo, TokenFilter } from '../types/token';
 import { tokenRegistryService } from '../services/TokenRegistryService';
 import { tokenStorageService } from '../services/TokenStorageService';
 import { nftDetectionService } from '../services/NftDetectionService';
+import { loadAddressMode, saveAddressMode, type AddressMode } from '../utils/addressMode';
 
 const STORAGE_KEYS = {
   XPUB: 'hathor_wallet_xpub',
@@ -55,6 +56,7 @@ interface WalletState {
   registeredTokens: TokenInfo[];
   selectedTokenFilter: TokenFilter;
   selectedTokenForSend: string | null;
+  addressMode: AddressMode;
 }
 
 interface WalletContextType extends WalletState {
@@ -73,6 +75,7 @@ interface WalletContextType extends WalletState {
   refreshTokenBalances: () => Promise<void>;
   setSelectedTokenFilter: (filter: TokenFilter) => void;
   getTokenBalance: (tokenUid: string) => TokenInfo | undefined;
+  setAddressMode: (mode: AddressMode) => void;
 }
 
 const initialState: WalletState = {
@@ -91,6 +94,7 @@ const initialState: WalletState = {
   registeredTokens: [],
   selectedTokenFilter: 'tokens',
   selectedTokenForSend: null,
+  addressMode: loadAddressMode(),
 };
 
 const WalletContext = createContext<WalletContextType | null>(null);
@@ -1021,6 +1025,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     return state.registeredTokens.find(t => t.uid === tokenUid);
   };
 
+  const setAddressMode = (mode: AddressMode) => {
+    saveAddressMode(mode);
+    setState(prev => ({ ...prev, addressMode: mode }));
+  };
+
   const handleNewTransaction = async (tx: unknown) => {
     if (!state.isConnected || !readOnlyWalletService.isReady()) return;
 
@@ -1126,6 +1135,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     refreshTokenBalances,
     setSelectedTokenFilter,
     getTokenBalance,
+    setAddressMode,
   };
 
   return (

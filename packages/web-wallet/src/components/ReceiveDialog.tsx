@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Copy } from 'lucide-react';
 import QRCode from 'react-qr-code';
 import { useWallet } from '../contexts/WalletContext';
 import { QR_CODE_SIZE } from '../constants';
+import { readOnlyWalletService } from '../services/ReadOnlyWalletService';
+import { getAddressForMode } from '../utils/addressMode';
 
 interface ReceiveDialogProps {
   isOpen: boolean;
@@ -11,13 +13,30 @@ interface ReceiveDialogProps {
 
 const ReceiveDialog: React.FC<ReceiveDialogProps> = ({ isOpen, onClose }) => {
   const [copied, setCopied] = useState(false);
-  const { address } = useWallet();
+  const [displayAddress, setDisplayAddress] = useState<string>('');
+  const { addressMode } = useWallet();
+
+  // Get address based on address mode when dialog opens
+  useEffect(() => {
+    const loadAddress = async () => {
+      if (isOpen && readOnlyWalletService.isReady()) {
+        try {
+          const addr = await getAddressForMode(addressMode, readOnlyWalletService);
+          setDisplayAddress(addr);
+        } catch (error) {
+          console.error('Failed to get address for receive dialog:', error);
+          setDisplayAddress('');
+        }
+      }
+    };
+    loadAddress();
+  }, [isOpen, addressMode]);
 
   const handleCopy = async () => {
-    if (!address) return;
+    if (!displayAddress) return;
 
     try {
-      await navigator.clipboard.writeText(address);
+      await navigator.clipboard.writeText(displayAddress);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -51,9 +70,9 @@ const ReceiveDialog: React.FC<ReceiveDialogProps> = ({ isOpen, onClose }) => {
           {/* QR Code */}
           <div className="flex justify-center">
             <div className="p-4 bg-white rounded-lg">
-              {address ? (
+              {displayAddress ? (
                 <QRCode
-                  value={address}
+                  value={displayAddress}
                   size={QR_CODE_SIZE}
                   level="H"
                 />
@@ -69,7 +88,7 @@ const ReceiveDialog: React.FC<ReceiveDialogProps> = ({ isOpen, onClose }) => {
           <div className="w-full flex justify-center">
             <div className="px-4 py-3 bg-secondary border border-border rounded-lg max-w-full">
               <p className="text-sm text-white font-mono text-center break-all">
-                {address || 'No address available'}
+                {displayAddress || 'No address available'}
               </p>
             </div>
           </div>

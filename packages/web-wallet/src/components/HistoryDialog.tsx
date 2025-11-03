@@ -205,8 +205,8 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
         </button>
 
         {/* Title */}
-        <div className="flex items-start justify-between mb-12">
-          <div className="text-center flex-1">
+        <div className="relative mb-12">
+          <div className="text-center">
             <h1 className="text-3xl font-medium text-white">
               Transaction History
             </h1>
@@ -220,7 +220,7 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
           {selectedToken && selectedToken.uid !== TOKEN_IDS.HTR && (
             <button
               onClick={() => setUnregisterDialogOpen(true)}
-              className="text-sm text-primary-400 hover:text-primary-300 transition-colors underline"
+              className="absolute top-0 right-0 text-sm text-primary-400 hover:text-primary-300 transition-colors underline"
             >
               Unregister token
             </button>

@@ -5,6 +5,7 @@ import ReceiveDialog from './ReceiveDialog';
 import HistoryDialog from './HistoryDialog';
 import RegisterTokenDialog from './RegisterTokenDialog';
 import CreateTokenDialog from './CreateTokenDialog';
+import AddressModeDialog from './AddressModeDialog';
 import TokenTabs from './TokenTabs';
 import TokenList from './TokenList';
 import Header from './Header';
@@ -24,6 +25,7 @@ const WalletHome: React.FC = () => {
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [registerTokenOpen, setRegisterTokenOpen] = useState(false);
   const [createTokenOpen, setCreateTokenOpen] = useState(false);
+  const [addressModeOpen, setAddressModeOpen] = useState(false);
   const [selectedTokenForHistory, setSelectedTokenForHistory] = useState<string | null>(null);
   const [selectedTokenForSend, setSelectedTokenForSend] = useState<string | undefined>(undefined);
 
@@ -142,6 +144,7 @@ const WalletHome: React.FC = () => {
       <Header
         onRegisterTokenClick={() => setRegisterTokenOpen(true)}
         onCreateTokenClick={() => setCreateTokenOpen(true)}
+        onAddressModeClick={() => setAddressModeOpen(true)}
       />
 
       {/* Main Container - responsive layout */}
@@ -253,6 +256,10 @@ const WalletHome: React.FC = () => {
       <CreateTokenDialog
         isOpen={createTokenOpen}
         onClose={() => setCreateTokenOpen(false)}
+      />
+      <AddressModeDialog
+        isOpen={addressModeOpen}
+        onClose={() => setAddressModeOpen(false)}
       />
 
       {/* Error notification */}

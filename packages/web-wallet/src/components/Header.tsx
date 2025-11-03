@@ -9,9 +9,10 @@ import { NETWORKS } from '../constants';
 interface HeaderProps {
   onRegisterTokenClick?: () => void;
   onCreateTokenClick?: () => void;
+  onAddressModeClick?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClick }) => {
+const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClick, onAddressModeClick }) => {
   const { address, network } = useWallet();
   const [isNetworkDialogOpen, setIsNetworkDialogOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -97,7 +98,7 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
                   }}
                   className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] transition-colors"
                 >
-                  Create token
+                  Create Tokens
                 </button>
                 <button
                   onClick={() => {
@@ -106,19 +107,16 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
                   }}
                   className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] transition-colors"
                 >
-                  Register token
+                  Register Tokens
                 </button>
                 <button
-                  className="w-full px-4 py-3 text-left text-sm text-muted-foreground hover:bg-[#24292F] transition-colors"
-                  disabled
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    onAddressModeClick?.();
+                  }}
+                  className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] transition-colors"
                 >
-                  Address book
-                </button>
-                <button
-                  className="w-full px-4 py-3 text-left text-sm text-muted-foreground hover:bg-[#24292F] transition-colors"
-                  disabled
-                >
-                  Preferences
+                  Address mode
                 </button>
               </div>
             )}
