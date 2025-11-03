@@ -26,6 +26,7 @@ export class TokenStorageService {
           configString: token.configString || "",
           registeredAt: token.registeredAt,
           isNFT: token.isNFT,
+          metadata: token.metadata,
         })),
         version: this.CURRENT_VERSION,
       };
@@ -63,6 +64,7 @@ export class TokenStorageService {
           locked: 0,
         },
         isNFT: token.isNFT || false,
+        metadata: token.metadata,
         configString: token.configString,
         registeredAt: token.registeredAt,
       }));

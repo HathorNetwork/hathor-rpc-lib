@@ -1,7 +1,8 @@
-import type { TokenInfo, TokenMetadata, ValidationResult } from '../types/token';
+import type { TokenInfo, TokenMetadata, ValidationResult, DagMetadata } from '../types/token';
 import { readOnlyWalletService } from './ReadOnlyWalletService';
 import { tokenStorageService } from './TokenStorageService';
 import helpers from '@hathor/wallet-lib/lib/utils/helpers';
+import { nftDetectionService } from './NftDetectionService';
 
 /**
  * Service for managing token registration, validation, and metadata.
@@ -32,10 +33,12 @@ export class TokenRegistryService {
 
     // Check if already registered (idempotent)
     if (tokenStorageService.isTokenRegistered(network, genesisHash, uid)) {
-      // Token already registered - fetch fresh balance and return
+      // Token already registered - fetch fresh balance and NFT status, then return
       const existingTokens = tokenStorageService.loadTokens(network, genesisHash);
       const existing = existingTokens.find(t => t.uid === uid);
       if (existing) {
+        let needsSave = false;
+
         // Update balance before returning
         try {
           const balances = await readOnlyWalletService.getBalance(uid);
@@ -44,11 +47,43 @@ export class TokenRegistryService {
               available: balances[0].available || 0,
               locked: balances[0].locked || 0,
             };
+            needsSave = true; // Balance updated, need to save
           }
         } catch (error) {
           console.error(`Failed to update balance for existing token ${uid}:`, error);
           // Keep existing balance if fetch fails
         }
+
+        // Update NFT status and metadata
+        try {
+          const metadata = await nftDetectionService.detectNft(uid, network);
+          const isNft = metadata?.nft ?? false;
+          if (existing.isNFT !== isNft || (!existing.metadata && metadata)) {
+            existing.isNFT = isNft;
+            existing.metadata = metadata || undefined;
+            needsSave = true;
+            // Update cache
+            this.tokenCache.set(uid, {
+              uid: existing.uid,
+              name: existing.name,
+              symbol: existing.symbol,
+              isNFT: isNft,
+            });
+          }
+        } catch (error) {
+          console.warn(`Failed to update NFT status for existing token ${uid}:`, error);
+          // Keep existing NFT status
+        }
+
+        // Save to storage if anything changed
+        if (needsSave) {
+          const index = existingTokens.findIndex(t => t.uid === uid);
+          if (index >= 0) {
+            existingTokens[index] = existing;
+            tokenStorageService.saveTokens(network, genesisHash, existingTokens);
+          }
+        }
+
         return existing;
       }
     }
@@ -68,13 +103,26 @@ export class TokenRegistryService {
       // Continue with zero balance
     }
 
-    // Create token info
+    // Detect NFT status and metadata before creating token info
+    let isNFT = false;
+    let dagMetadata: DagMetadata | null = null;
+    try {
+      const metadata = await nftDetectionService.detectNft(uid, network);
+      isNFT = metadata?.nft ?? false;
+      dagMetadata = metadata;
+    } catch (error) {
+      console.warn(`Failed to detect NFT status for ${uid}, defaulting to false:`, error);
+      // Continue with isNFT: false
+    }
+
+    // Create token info with detected NFT status and metadata
     const tokenInfo: TokenInfo = {
       uid,
       name,
       symbol,
       balance,
-      isNFT: false, // TODO: Detect NFT from token properties
+      isNFT,
+      metadata: dagMetadata || undefined,
       configString,
       registeredAt: Date.now(),
     };
@@ -84,7 +132,7 @@ export class TokenRegistryService {
       uid,
       name,
       symbol,
-      isNFT: false,
+      isNFT,
     });
 
     // Save to storage
@@ -172,7 +220,7 @@ export class TokenRegistryService {
   /**
    * Fetch token metadata from wallet-lib
    */
-  async fetchTokenMetadata(tokenUid: string): Promise<TokenMetadata> {
+  async fetchTokenMetadata(tokenUid: string, network: string): Promise<TokenMetadata> {
     // Check cache first
     const cached = this.tokenCache.get(tokenUid);
     if (cached) {
@@ -182,17 +230,21 @@ export class TokenRegistryService {
     // Fetch from wallet-lib
     try {
       const tokens = await readOnlyWalletService.getTokens();
-      const tokenData = tokens.find((t: { uid: string }) => t.uid === tokenUid);
+      const tokenData = tokens.find((t: Record<string, unknown>) => t.uid === tokenUid) as Record<string, unknown> | undefined;
 
       if (!tokenData) {
         throw new Error('Token not found');
       }
 
+      // Detect NFT status
+      const dagMetadata = await nftDetectionService.detectNft(tokenData.uid as string, network);
+      const isNft = dagMetadata?.nft ?? false;
+
       const metadata: TokenMetadata = {
-        uid: tokenData.uid,
-        name: tokenData.name || 'Unknown',
-        symbol: tokenData.symbol || '???',
-        isNFT: false, // TODO: Detect from token properties
+        uid: tokenData.uid as string,
+        name: (tokenData.name as string) || 'Unknown',
+        symbol: (tokenData.symbol as string) || '???',
+        isNFT: isNft,
       };
 
       // Cache it

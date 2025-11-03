@@ -33,6 +33,7 @@ const WalletHome: React.FC = () => {
     isCheckingConnection,
     loadingStep,
     balances,
+    network,
     error,
     connectWallet,
     setError,
@@ -207,25 +208,19 @@ const WalletHome: React.FC = () => {
             nftCount={nftCount}
           />
 
-          {/* Token List or NFT Placeholder */}
-          {selectedTokenFilter === 'nfts' ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <p className="text-sm">NFT support coming soon</p>
-              <p className="text-xs mt-2">You'll be able to view and manage your NFTs here</p>
-            </div>
-          ) : (
-            <TokenList
-              tokens={tokens}
-              onTokenClick={(tokenUid) => {
-                setSelectedTokenForHistory(tokenUid);
-                setHistoryDialogOpen(true);
-              }}
-              onSendClick={(tokenUid) => {
-                setSelectedTokenForSend(tokenUid);
-                setSendDialogOpen(true);
-              }}
-            />
-          )}
+          {/* Token List */}
+          <TokenList
+            tokens={tokens}
+            network={network}
+            onTokenClick={(tokenUid) => {
+              setSelectedTokenForHistory(tokenUid);
+              setHistoryDialogOpen(true);
+            }}
+            onSendClick={(tokenUid) => {
+              setSelectedTokenForSend(tokenUid);
+              setSendDialogOpen(true);
+            }}
+          />
         </div>
       </div>
 

@@ -5,6 +5,8 @@ import { useInvokeSnap, useRequestSnap, useMetaMaskContext } from '@hathor/snap-
 import { DEFAULT_NETWORK, TOKEN_IDS } from '@/constants';
 import type { TokenInfo, TokenFilter } from '../types/token';
 import { tokenRegistryService } from '../services/TokenRegistryService';
+import { tokenStorageService } from '../services/TokenStorageService';
+import { nftDetectionService } from '../services/NftDetectionService';
 
 const STORAGE_KEYS = {
   XPUB: 'hathor_wallet_xpub',
@@ -200,12 +202,37 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       const genesisHash = ''; // TODO: Get from RPC handler
       const registeredTokens = tokenRegistryService.getRegisteredTokens(storedNetwork, genesisHash);
 
+      // Clear NFT detection cache to ensure fresh detection
+      nftDetectionService.clearCache();
+
+      // Detect NFT status for all tokens
+      const nftMetadata = await nftDetectionService.detectNftBatch(
+        registeredTokens.map(t => t.uid),
+        storedNetwork
+      );
+
+      // Update storage with detected NFT statuses and metadata
+      let storageNeedsUpdate = false;
+      registeredTokens.forEach((token) => {
+        const metadata = nftMetadata.get(token.uid);
+        const isNft = metadata?.nft ?? false;
+        if (token.isNFT !== isNft || (!token.metadata && metadata)) {
+          token.isNFT = isNft;
+          token.metadata = metadata || undefined;
+          storageNeedsUpdate = true;
+        }
+      });
+      if (storageNeedsUpdate) {
+        tokenStorageService.saveTokens(storedNetwork, genesisHash, registeredTokens);
+      }
+
       // Fetch balances for all registered tokens
       let failedTokenCount = 0;
       const tokensWithBalances = await Promise.all(
         registeredTokens.map(async (token) => {
           try {
             const tokenBalances = await readOnlyWalletService.getBalance(token.uid);
+
             if (tokenBalances && tokenBalances.length > 0) {
               return {
                 ...token,
@@ -389,12 +416,34 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       const genesisHash = ''; // TODO: Get from RPC handler
       const registeredTokens = tokenRegistryService.getRegisteredTokens(network, genesisHash);
 
+      // Detect NFT status for all tokens
+      const nftMetadata = await nftDetectionService.detectNftBatch(
+        registeredTokens.map(t => t.uid),
+        network
+      );
+
+      // Update storage with detected NFT statuses and metadata
+      let storageNeedsUpdate = false;
+      registeredTokens.forEach((token) => {
+        const metadata = nftMetadata.get(token.uid);
+        const isNft = metadata?.nft ?? false;
+        if (token.isNFT !== isNft || (!token.metadata && metadata)) {
+          token.isNFT = isNft;
+          token.metadata = metadata || undefined;
+          storageNeedsUpdate = true;
+        }
+      });
+      if (storageNeedsUpdate) {
+        tokenStorageService.saveTokens(network, genesisHash, registeredTokens);
+      }
+
       // Fetch balances for all registered tokens
       let failedTokenCount = 0;
       const tokensWithBalances = await Promise.all(
         registeredTokens.map(async (token) => {
           try {
             const tokenBalances = await readOnlyWalletService.getBalance(token.uid);
+
             if (tokenBalances && tokenBalances.length > 0) {
               return {
                 ...token,
@@ -627,12 +676,34 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       const genesisHash = ''; // TODO: Get from RPC handler
       const registeredTokens = tokenRegistryService.getRegisteredTokens(newNetwork, genesisHash);
 
+      // Detect NFT status for all tokens
+      const nftMetadata = await nftDetectionService.detectNftBatch(
+        registeredTokens.map(t => t.uid),
+        newNetwork
+      );
+
+      // Update storage with detected NFT statuses and metadata
+      let storageNeedsUpdate = false;
+      registeredTokens.forEach((token) => {
+        const metadata = nftMetadata.get(token.uid);
+        const isNft = metadata?.nft ?? false;
+        if (token.isNFT !== isNft || (!token.metadata && metadata)) {
+          token.isNFT = isNft;
+          token.metadata = metadata || undefined;
+          storageNeedsUpdate = true;
+        }
+      });
+      if (storageNeedsUpdate) {
+        tokenStorageService.saveTokens(newNetwork, genesisHash, registeredTokens);
+      }
+
       // Fetch balances for all registered tokens
       let failedTokenCount = 0;
       const tokensWithBalances = await Promise.all(
         registeredTokens.map(async (token) => {
           try {
             const tokenBalances = await readOnlyWalletService.getBalance(token.uid);
+
             if (tokenBalances && tokenBalances.length > 0) {
               return {
                 ...token,
@@ -821,11 +892,13 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     try {
       // genesisHash is empty string for now (TODO in RPC handler)
       const genesisHash = '';
+      console.log('[WalletContext] Registering token...');
       const tokenInfo = await tokenRegistryService.registerToken(
         configString,
         state.network,
         genesisHash
       );
+      console.log('[WalletContext] Token registered:', { uid: tokenInfo.uid, isNFT: tokenInfo.isNFT, symbol: tokenInfo.symbol });
 
       // Fetch balance immediately after registration
       const balances = await readOnlyWalletService.getBalance(tokenInfo.uid);
@@ -835,12 +908,30 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           locked: balances[0].locked,
         };
       }
+      console.log('[WalletContext] Balance fetched:', tokenInfo.balance);
 
-      // Update state with new token
-      setState(prev => ({
-        ...prev,
-        registeredTokens: [...prev.registeredTokens, tokenInfo],
-      }));
+      // Update state with new or updated token
+      setState(prev => {
+        const existingIndex = prev.registeredTokens.findIndex(t => t.uid === tokenInfo.uid);
+        if (existingIndex >= 0) {
+          // Update existing token
+          console.log('[WalletContext] Updating existing token at index', existingIndex);
+          const updatedTokens = [...prev.registeredTokens];
+          updatedTokens[existingIndex] = tokenInfo;
+          return {
+            ...prev,
+            registeredTokens: updatedTokens,
+          };
+        } else {
+          // Add new token
+          console.log('[WalletContext] Adding new token, total will be:', prev.registeredTokens.length + 1);
+          return {
+            ...prev,
+            registeredTokens: [...prev.registeredTokens, tokenInfo],
+          };
+        }
+      });
+      console.log('[WalletContext] State updated with token');
     } catch (error) {
       console.error('Failed to register token:', error);
       throw error;
@@ -877,29 +968,46 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     if (!state.isConnected || !readOnlyWalletService.isReady()) return;
 
     try {
-      // Fetch balances for all registered tokens
-      const updatedTokens = await Promise.all(
-        state.registeredTokens.map(async (token) => {
+      // Get current tokens from state using functional update to avoid stale closure
+      let tokensSnapshot: TokenInfo[] = [];
+      setState(prev => {
+        tokensSnapshot = prev.registeredTokens;
+        return prev; // No state change yet
+      });
+
+      // Fetch balances for all tokens
+      const balanceUpdates = await Promise.all(
+        tokensSnapshot.map(async (token) => {
           try {
             const balances = await readOnlyWalletService.getBalance(token.uid);
             if (balances && balances.length > 0) {
               return {
-                ...token,
+                uid: token.uid,
                 balance: {
                   available: balances[0].available,
                   locked: balances[0].locked,
                 },
               };
             }
-            return token;
+            return null;
           } catch (error) {
             console.error(`Failed to fetch balance for token ${token.uid}:`, error);
-            return token;
+            return null;
           }
         })
       );
 
-      setState(prev => ({ ...prev, registeredTokens: updatedTokens }));
+      // Update state by merging balance updates into existing tokens
+      setState(prev => ({
+        ...prev,
+        registeredTokens: prev.registeredTokens.map(token => {
+          const update = balanceUpdates.find(u => u && u.uid === token.uid);
+          if (update) {
+            return { ...token, balance: update.balance };
+          }
+          return token;
+        }),
+      }));
     } catch (error) {
       console.error('Failed to refresh token balances:', error);
     }
