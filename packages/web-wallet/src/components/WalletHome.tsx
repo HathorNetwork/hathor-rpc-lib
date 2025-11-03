@@ -148,10 +148,10 @@ const WalletHome: React.FC = () => {
       />
 
       {/* Main Container - responsive layout */}
-      <div className="max-w-7xl mx-auto px-16 py-9 space-y-20">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 py-6 md:py-9 space-y-8 md:space-y-20">
         {/* Assets Summary Card */}
-        <div className="bg-[#191C21] border border-[#24292F] rounded-2xl p-6">
-          <div className="flex items-center justify-between">
+        <div className="bg-[#191C21] border border-[#24292F] rounded-2xl p-4 md:p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-0">
             {/* Left: Assets Info */}
             <div className="space-y-2">
               <p className="text-xs text-primary-400 uppercase tracking-wider">assets summary</p>
@@ -160,9 +160,9 @@ const WalletHome: React.FC = () => {
                 <img
                   src={htrLogoWhiteOutline}
                   alt="HTR"
-                  className="w-6 h-6"
+                  className="w-5 h-5 md:w-6 md:h-6"
                 />
-                <span className="text-2xl font-medium text-white">
+                <span className="text-xl md:text-2xl font-medium text-white">
                   {balances.length > 0 ? `${formatHTRAmount(balances[0].available)} HTR` : '0 HTR'}
                 </span>
               </div>
@@ -177,10 +177,10 @@ const WalletHome: React.FC = () => {
             </div>
 
             {/* Right: Action Buttons */}
-            <div className="flex gap-3">
+            <div className="flex gap-3 w-full md:w-auto">
               <button
                 onClick={() => handleButtonClick('Send')}
-                className={`px-6 py-2.5 bg-primary hover:bg-primary/90 rounded-xl flex items-center gap-2 transition-colors ${activeButton === 'Send' ? 'bg-primary/90' : ''
+                className={`flex-1 md:flex-none px-6 py-2.5 bg-primary hover:bg-primary/90 rounded-xl flex items-center justify-center gap-2 transition-colors ${activeButton === 'Send' ? 'bg-primary/90' : ''
                   }`}
               >
                 <ArrowUpRight className="w-4 h-4 text-white" />
@@ -188,7 +188,7 @@ const WalletHome: React.FC = () => {
               </button>
               <button
                 onClick={() => handleButtonClick('Receive')}
-                className={`px-6 py-2.5 bg-primary hover:bg-primary/90 rounded-xl flex items-center gap-2 transition-colors ${activeButton === 'Receive' ? 'bg-primary/90' : ''
+                className={`flex-1 md:flex-none px-6 py-2.5 bg-primary hover:bg-primary/90 rounded-xl flex items-center justify-center gap-2 transition-colors ${activeButton === 'Receive' ? 'bg-primary/90' : ''
                   }`}
               >
                 <ArrowDownLeft className="w-4 h-4 text-white" />

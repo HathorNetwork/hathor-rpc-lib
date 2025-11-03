@@ -17,6 +17,18 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
   const [isNetworkDialogOpen, setIsNetworkDialogOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  // Prevent body scroll when mobile menu is open
+  React.useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMenuOpen]);
+
   const handleCopyAddress = () => {
     if (address) {
       navigator.clipboard.writeText(address);
@@ -37,92 +49,137 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
   return (
     <>
       <header>
-        <div className="max-w-7xl mx-auto px-16 py-6 flex items-center justify-between">
-          {/* Left: Logo + Badge */}
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 py-4 md:py-6">
+          {/* Mobile: Stacked layout, Desktop: Side by side */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            {/* Logo + Badge */}
+            <div className="flex items-center justify-center md:justify-start gap-2">
               <img
                 src={htrLogo}
                 alt="Hathor"
-                className="h-5"
+                className="h-4 md:h-5"
               />
               <div className="px-[6px] py-[6px] bg-transparent border border-white/20 rounded-full flex items-center">
-                <span className="text-[9px] font-medium text-white tracking-wider leading-none">WEB WALLET</span>
+                <span className="text-[8px] md:text-[9px] font-medium text-white tracking-wider leading-none">WEB WALLET</span>
               </div>
             </div>
-          </div>
 
-          {/* Right: Address + Network + Menu */}
-          <div className="flex items-center gap-3 relative">
-            {/* Wallet Address */}
-            <button
-              onClick={handleCopyAddress}
-              className="px-3 py-2 bg-[#191C21] border border-[#24292F] rounded-full flex items-center gap-2 hover:bg-[#24292F] transition-colors"
-            >
-              <span className="text-sm font-mono text-white">
-                {address ? truncateAddress(address) : 'Not connected'}
-              </span>
-              {address && <Copy className="w-4 h-4 text-muted-foreground" />}
-            </button>
+            {/* Address + Network + Menu */}
+            <div className="flex items-center justify-center gap-2 md:gap-3 md:relative">
+              {/* Wallet Address */}
+              <button
+                onClick={handleCopyAddress}
+                className="px-2 md:px-3 py-2 bg-[#191C21] border border-[#24292F] rounded-full flex items-center gap-1 md:gap-2 hover:bg-[#24292F] transition-colors"
+              >
+                <span className="text-xs md:text-sm font-mono text-white">
+                  {address ? truncateAddress(address) : 'Not connected'}
+                </span>
+                {address && <Copy className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground" />}
+              </button>
 
-            {/* Network Button */}
-            <button
-              onClick={() => setIsNetworkDialogOpen(true)}
-              className="px-4 py-2 bg-[#191C21] border border-[#24292F] rounded-full flex items-center gap-2 hover:bg-[#24292F] transition-colors"
-            >
-              <Globe className="w-4 h-4 text-white" />
-              <span className="text-sm font-medium text-white">
-                {getNetworkDisplayName(network)}
-              </span>
-            </button>
+              {/* Network Button */}
+              <button
+                onClick={() => setIsNetworkDialogOpen(true)}
+                className="px-2 md:px-4 py-2 bg-[#191C21] border border-[#24292F] rounded-full flex items-center gap-1 md:gap-2 hover:bg-[#24292F] transition-colors"
+              >
+                <Globe className="w-3 h-3 md:w-4 md:h-4 text-white" />
+                <span className="text-xs md:text-sm font-medium text-white">
+                  {getNetworkDisplayName(network)}
+                </span>
+              </button>
 
-            {/* Hamburger Menu Button */}
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="p-2 bg-[#191C21] border border-[#24292F] rounded-full hover:bg-[#24292F] transition-colors"
-            >
-              {isMenuOpen ? (
-                <X className="w-5 h-5 text-white" />
-              ) : (
-                <Menu className="w-5 h-5 text-white" />
+              {/* Hamburger Menu Button */}
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="p-2 bg-[#191C21] border border-[#24292F] rounded-full hover:bg-[#24292F] transition-colors"
+              >
+                {isMenuOpen ? (
+                  <X className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                ) : (
+                  <Menu className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                )}
+              </button>
+
+              {/* Desktop: Compact dropdown - only on desktop, stays in relative container */}
+              {isMenuOpen && (
+                <div className="hidden md:block absolute top-full right-0 mt-2 w-48 bg-[#191C21] border border-[#24292F] rounded-lg shadow-lg overflow-hidden z-50">
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      onCreateTokenClick?.();
+                    }}
+                    className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] transition-colors"
+                  >
+                    Create Tokens
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      onRegisterTokenClick?.();
+                    }}
+                    className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] transition-colors"
+                  >
+                    Register Tokens
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      onAddressModeClick?.();
+                    }}
+                    className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] transition-colors"
+                  >
+                    Address mode
+                  </button>
+                </div>
               )}
-            </button>
-
-            {/* Dropdown Menu */}
-            {isMenuOpen && (
-              <div className="absolute top-full right-0 mt-2 w-48 bg-[#191C21] border border-[#24292F] rounded-lg shadow-lg overflow-hidden z-50">
-                <button
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    onCreateTokenClick?.();
-                  }}
-                  className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] transition-colors"
-                >
-                  Create Tokens
-                </button>
-                <button
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    onRegisterTokenClick?.();
-                  }}
-                  className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] transition-colors"
-                >
-                  Register Tokens
-                </button>
-                <button
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    onAddressModeClick?.();
-                  }}
-                  className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] transition-colors"
-                >
-                  Address mode
-                </button>
-              </div>
-            )}
+            </div>
           </div>
         </div>
       </header>
+
+      {/* Mobile Menu - Backdrop + Panel (rendered outside header to prevent layout shift) */}
+      {isMenuOpen && (
+        <div className="md:hidden">
+          {/* Backdrop overlay */}
+          <div
+            className="fixed inset-0 bg-black/50 z-40"
+            onClick={() => setIsMenuOpen(false)}
+          />
+
+          {/* Menu panel */}
+          <div className="fixed left-4 right-4 top-[calc(100px+0.75rem)] bg-[#191C21] border border-[#24292F] rounded-xl shadow-lg z-50">
+            <div className="px-4 py-2">
+              <button
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  onCreateTokenClick?.();
+                }}
+                className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] rounded-lg transition-colors"
+              >
+                Create Tokens
+              </button>
+              <button
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  onRegisterTokenClick?.();
+                }}
+                className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] rounded-lg transition-colors"
+              >
+                Register Tokens
+              </button>
+              <button
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  onAddressModeClick?.();
+                }}
+                className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] rounded-lg transition-colors"
+              >
+                Address mode
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Change Network Dialog */}
       <ChangeNetworkDialog

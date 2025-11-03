@@ -194,20 +194,20 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
       <Header onRegisterTokenClick={onRegisterTokenClick} />
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-16 py-12">
+      <div className="max-w-4xl mx-auto px-4 md:px-8 lg:px-16 py-6 md:py-12">
         {/* Back Button */}
         <button
           onClick={onClose}
-          className="flex items-center gap-2 text-white hover:text-primary transition-colors mb-12"
+          className="flex items-center gap-2 text-white hover:text-primary transition-colors mb-8 md:mb-12"
         >
           <ArrowLeft className="w-4 h-4" />
           <span className="text-sm">Back to home</span>
         </button>
 
         {/* Title */}
-        <div className="relative mb-12">
-          <div className="text-center">
-            <h1 className="text-3xl font-medium text-white">
+        <div className="mb-8 md:mb-12">
+          <div className="text-center mb-4 md:mb-0">
+            <h1 className="text-2xl md:text-3xl font-medium text-white">
               Transaction History
             </h1>
             {selectedToken && (
@@ -218,12 +218,14 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
           </div>
           {/* Unregister token link - only show for custom tokens */}
           {selectedToken && selectedToken.uid !== TOKEN_IDS.HTR && (
-            <button
-              onClick={() => setUnregisterDialogOpen(true)}
-              className="absolute top-0 right-0 text-sm text-primary-400 hover:text-primary-300 transition-colors underline"
-            >
-              Unregister token
-            </button>
+            <div className="flex justify-center md:justify-end md:absolute md:top-0 md:right-0">
+              <button
+                onClick={() => setUnregisterDialogOpen(true)}
+                className="text-sm text-primary-400 hover:text-primary-300 transition-colors underline"
+              >
+                Unregister token
+              </button>
+            </div>
           )}
         </div>
 
@@ -239,44 +241,44 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
               {transactions.map((tx) => (
                 <div
                   key={tx.id}
-                  className="bg-[#191C21] border border-[#24292F] rounded-xl p-6 flex items-center justify-between hover:bg-[#191C21]/80 transition-colors"
+                  className="bg-[#191C21] border border-[#24292F] rounded-xl p-4 md:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 hover:bg-[#191C21]/80 transition-colors"
                 >
                   {/* Left: Icon + Info */}
-                  <div className="flex items-center gap-4">
-                    <div className={`p-2 rounded-lg ${
+                  <div className="flex items-center gap-3 md:gap-4 min-w-0">
+                    <div className={`p-2 rounded-lg flex-shrink-0 ${
                       tx.type === 'received'
                         ? 'bg-green-500/20'
                         : 'bg-red-500/20'
                     }`}>
                       {tx.type === 'received' ? (
-                        <ArrowDownLeft className="h-5 w-5 text-green-500" />
+                        <ArrowDownLeft className="h-4 w-4 md:h-5 md:w-5 text-green-500" />
                       ) : (
-                        <ArrowUpRight className="h-5 w-5 text-red-500" />
+                        <ArrowUpRight className="h-4 w-4 md:h-5 md:w-5 text-red-500" />
                       )}
                     </div>
-                    <div>
-                      <p className="font-medium text-white capitalize">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-white capitalize text-sm md:text-base">
                         {tx.type} Token
                       </p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-xs md:text-sm text-muted-foreground truncate">
                         {formatDate(tx.timestamp)}
                       </p>
                     </div>
                   </div>
 
                   {/* Right: Amount + Explorer Link */}
-                  <div className="flex items-center gap-4">
-                    <p className={`text-xl font-medium ${
+                  <div className="flex items-center justify-between sm:justify-end gap-3 md:gap-4 flex-shrink-0">
+                    <p className={`text-lg md:text-xl font-medium ${
                       tx.type === 'received' ? 'text-green-500' : 'text-red-500'
                     }`}>
                       {tx.type === 'received' ? '+' : '-'}{formatHTRAmount(tx.amount)}
-                      <span className="text-sm ml-2">{selectedToken?.symbol || 'HTR'}</span>
+                      <span className="text-xs md:text-sm ml-1 md:ml-2">{selectedToken?.symbol || 'HTR'}</span>
                     </p>
                     <button
                       onClick={() => openExplorer(tx.txHash)}
-                      className="p-2 hover:bg-secondary/20 rounded-lg transition-colors"
+                      className="p-2 hover:bg-secondary/20 rounded-lg transition-colors flex-shrink-0"
                     >
-                      <ExternalLink className="h-5 w-5 text-white" />
+                      <ExternalLink className="h-4 w-4 md:h-5 md:w-5 text-white" />
                     </button>
                   </div>
                 </div>

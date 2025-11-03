@@ -33,13 +33,13 @@ const TokenTabs: React.FC<TokenTabsProps> = ({
         <button
           key={tab.id}
           onClick={() => onFilterChange(tab.id)}
-          className={`flex-1 pb-4 px-1 relative transition-colors ${
+          className={`flex-1 pb-3 md:pb-4 px-1 relative transition-colors ${
             selectedFilter === tab.id
               ? 'text-primary-400'
               : 'text-muted-foreground hover:text-white'
           }`}
         >
-          <span className="text-base font-medium">
+          <span className="text-sm md:text-base font-medium">
             {tab.label}
           </span>
           {/* Active indicator */}

@@ -228,8 +228,8 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-[#191C21] border border-[#24292F] rounded-2xl w-full max-w-2xl mx-4">
+    <div className="fixed inset-0 bg-black/50 flex items-start md:items-center justify-center z-50 overflow-y-auto p-4 md:p-0">
+      <div className="bg-[#191C21] border border-[#24292F] rounded-2xl w-full max-w-2xl my-4 md:my-0 md:mx-4">
         {successData ? (
           // Success State
           <>
@@ -295,8 +295,8 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
           // Form State
           <>
             {/* Header */}
-            <div className="relative flex items-center justify-center p-6 border-b border-[#24292F]">
-              <h2 className="text-base font-bold text-primary-400">Create Token</h2>
+            <div className="relative flex items-center justify-center p-4 md:p-6 border-b border-[#24292F]">
+              <h2 className="text-base md:text-lg font-bold text-primary-400">Create Token</h2>
               <button
                 onClick={handleClose}
                 disabled={isLoading}
@@ -307,10 +307,10 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="p-4 md:p-6 space-y-4 md:space-y-6">
               {/* Name Input */}
-              <div className="flex items-center gap-6">
-                <label className="text-base font-bold text-white w-[120px]">Name</label>
+              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
+                <label className="text-sm md:text-base font-bold text-white md:w-[120px]">Name</label>
                 <div className="flex-1">
                   <input
                     type="text"
@@ -330,8 +330,8 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
               </div>
 
               {/* Symbol Input */}
-              <div className="flex items-center gap-6">
-                <label className="text-base font-bold text-white w-[120px]">Symbol</label>
+              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
+                <label className="text-sm md:text-base font-bold text-white md:w-[120px]">Symbol</label>
                 <div className="flex-1">
                   <input
                     type="text"
@@ -350,22 +350,22 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
                 </div>
               </div>
 
-              {/* Amount Input and NFT Toggle - Same Row */}
-              <div className="flex items-center gap-6">
-                <label className="text-base font-bold text-white w-[120px]">Amount</label>
+              {/* Amount Input and NFT Toggle */}
+              <div className="flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
+                <label className="text-sm md:text-base font-bold text-white md:w-[120px] md:pt-3">Amount</label>
                 <div className="flex-1">
-                  <div className="flex items-center justify-between gap-4 mb-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-2">
                     <input
                       type="text"
                       {...register('amount')}
                       placeholder="1"
                       disabled={isNFT}
-                      className={`flex-1 px-4 py-3 bg-[#0D1117] border ${
+                      className={`w-full sm:flex-1 px-4 py-3 bg-[#0D1117] border ${
                         errors.amount ? 'border-red-500' : 'border-border'
                       } rounded-lg text-white placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed`}
                     />
-                    <label className="flex items-center gap-2 cursor-pointer whitespace-nowrap">
-                      <span className="text-base font-bold text-white">Create as NFT</span>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <span className="text-sm md:text-base font-bold text-white whitespace-nowrap">Create as NFT</span>
                       <div className="relative inline-block w-11 h-6">
                         <input
                           type="checkbox"
@@ -387,8 +387,8 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
 
               {/* NFT Data Field - Only shown for NFTs */}
               {isNFT && (
-                <div className="flex items-center gap-6">
-                  <label className="text-base font-bold text-white w-[120px]">NFT Data</label>
+                <div className="flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
+                  <label className="text-sm md:text-base font-bold text-white md:w-[120px] md:pt-3">NFT Data</label>
                   <div className="flex-1">
                     <input
                       type="text"
@@ -413,9 +413,9 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
 
               {/* NFT Mint/Melt Authority Checkboxes - Only shown for NFTs */}
               {isNFT && (
-                <div className="flex items-start gap-6">
-                  <div className="w-[120px]"></div>
-                  <div className="flex-1 grid grid-cols-2 gap-4">
+                <div className="flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
+                  <div className="md:w-[120px]"></div>
+                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Create a mint authority */}
                     <label className="flex items-start gap-3 cursor-pointer group">
                       <input
@@ -461,9 +461,9 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
 
               {/* Token Type Dropdown - Only shown for regular tokens */}
               {!isNFT && (
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2 w-[120px]">
-                  <label className="text-base font-bold text-white">Token Type</label>
+              <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
+                <div className="flex items-center gap-2 md:w-[120px]">
+                  <label className="text-sm md:text-base font-bold text-white">Token Type</label>
                   <div className="group relative">
                     <Info className="w-4 h-4 text-muted-foreground cursor-help" />
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-80 p-3 bg-[#0D1117] border border-border rounded-lg text-xs text-white z-10">

@@ -95,8 +95,8 @@ const RegisterTokenDialog: React.FC<RegisterTokenDialogProps> = ({ isOpen, onClo
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-[#191C21] border border-[#24292F] rounded-2xl w-full max-w-md mx-4">
+    <div className="fixed inset-0 bg-black/50 flex items-start md:items-center justify-center z-50 overflow-y-auto p-4 md:p-0">
+      <div className="bg-[#191C21] border border-[#24292F] rounded-2xl w-full max-w-md my-4 md:my-0 md:mx-4">
         {/* Header */}
         <div className="relative flex items-center justify-center p-6 border-b border-[#24292F]">
           <h2 className="text-base font-bold text-primary-400">Register Token</h2>
