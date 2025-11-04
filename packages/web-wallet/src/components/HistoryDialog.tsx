@@ -14,7 +14,7 @@ interface HistoryDialogProps {
 interface ProcessedTransaction {
   id: string
   type: 'sent' | 'received'
-  amount: number
+  amount: bigint
   timestamp: string
   txHash: string
   status: 'confirmed' | 'pending'
@@ -55,10 +55,10 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
     // Only process if we have transaction data with tx_id (for history list)
     if (transaction.tx_id) {
       const balanceValue = typeof transaction.balance === 'bigint'
-        ? Number(transaction.balance)
-        : (transaction.balance as number);
-      const type = balanceValue >= 0 ? 'received' : 'sent'
-      const amount = Math.abs(balanceValue)
+        ? transaction.balance
+        : BigInt(transaction.balance as number);
+      const type = balanceValue >= 0n ? 'received' : 'sent'
+      const amount = balanceValue >= 0n ? balanceValue : -balanceValue
 
       const processedTx: ProcessedTransaction = {
         id: transaction.tx_id as string,
@@ -115,9 +115,9 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
       }
 
       const processed: ProcessedTransaction[] = history.map((tx: TransactionHistoryItem) => {
-        const balanceValue = typeof tx.balance === 'bigint' ? Number(tx.balance) : tx.balance;
-        const type = balanceValue >= 0 ? 'received' : 'sent'
-        const amount = Math.abs(balanceValue)
+        const balanceValue = typeof tx.balance === 'bigint' ? tx.balance : BigInt(tx.balance);
+        const type = balanceValue >= 0n ? 'received' : 'sent'
+        const amount = balanceValue >= 0n ? balanceValue : -balanceValue
 
         return {
           id: tx.tx_id,

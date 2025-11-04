@@ -11,14 +11,14 @@ const STORAGE_KEYS = {
 
 export interface WalletBalance {
   token: string;
-  available: number;
-  locked: number;
+  available: bigint;
+  locked: bigint;
 }
 
 export interface TransactionHistoryItem {
   tx_id: string;
   timestamp: number;
-  balance: number;
+  balance: bigint;
   is_voided: boolean;
 }
 
@@ -695,8 +695,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       // Determine transaction type and amount for notification
       // Parse outputs to check if we received HTR
-      let receivedAmount = 0;
-      let sentAmount = 0;
+      let receivedAmount = 0n;
+      let sentAmount = 0n;
 
       const currentAddress = readOnlyWalletService.getCurrentAddress()?.address;
 
@@ -704,7 +704,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       if (Array.isArray(transaction.outputs) && currentAddress) {
         for (const output of transaction.outputs as Array<Record<string, unknown>>) {
           if ((output.decoded as Record<string, unknown>)?.address === currentAddress && output.token === TOKEN_IDS.HTR) {
-            const value = typeof output.value === 'bigint' ? Number(output.value) : (output.value as number);
+            const value = typeof output.value === 'bigint' ? output.value : BigInt(output.value as number);
             receivedAmount += value;
           }
         }
@@ -714,20 +714,20 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       if (Array.isArray(transaction.inputs) && currentAddress) {
         for (const input of transaction.inputs as Array<Record<string, unknown>>) {
           if ((input.decoded as Record<string, unknown>)?.address === currentAddress && input.token === TOKEN_IDS.HTR) {
-            const value = typeof input.value === 'bigint' ? Number(input.value) : (input.value as number);
+            const value = typeof input.value === 'bigint' ? input.value : BigInt(input.value as number);
             sentAmount += value;
           }
         }
       }
 
       // Only process if this transaction affects our wallet
-      if (receivedAmount === 0 && sentAmount === 0) {
+      if (receivedAmount === 0n && sentAmount === 0n) {
         return;
       }
 
       const netAmount = receivedAmount - sentAmount;
-      const transactionType = netAmount >= 0 ? 'received' : 'sent';
-      const absoluteAmount = Math.abs(netAmount);
+      const transactionType = netAmount >= 0n ? 'received' : 'sent';
+      const absoluteAmount = netAmount >= 0n ? netAmount : -netAmount;
 
       // Update state based on current UI state using functional update
       setState(prev => {

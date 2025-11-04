@@ -4,14 +4,14 @@ import { NETWORKS, WALLET_SERVICE_URLS, WALLET_SERVICE_WS_URLS, TOKEN_IDS } from
 
 export interface WalletBalance {
   token: string;
-  available: number;
-  locked: number;
+  available: bigint;
+  locked: bigint;
 }
 
 export interface TransactionHistoryItem {
   tx_id: string;
   timestamp: number;
-  balance: number;
+  balance: bigint;
   is_voided: boolean;
 }
 
@@ -156,8 +156,8 @@ export class ReadOnlyWalletService {
       // Transform the wallet-lib balance format to our interface
       const balances: WalletBalance[] = Object.entries(balance).map(([token, data]: [string, any]) => ({
         token,
-        available: data.balance?.unlocked || 0,
-        locked: data.balance?.locked || 0,
+        available: data.balance?.unlocked || 0n,
+        locked: data.balance?.locked || 0n,
       }));
 
       return balances;
@@ -186,7 +186,7 @@ export class ReadOnlyWalletService {
       return history.map((item: GetHistoryObject) => ({
         tx_id: item.txId,
         timestamp: item.timestamp,
-        balance: typeof item.balance === 'bigint' ? Number(item.balance) : item.balance,
+        balance: typeof item.balance === 'bigint' ? item.balance : BigInt(item.balance),
         is_voided: item.voided,
       }));
     } catch (error) {

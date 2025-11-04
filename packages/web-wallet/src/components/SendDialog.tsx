@@ -15,7 +15,7 @@ interface SendDialogProps {
 }
 
 // Create a Zod schema factory for form validation
-const createSendFormSchema = (availableBalance: number, network: string) =>
+const createSendFormSchema = (availableBalance: bigint, network: string) =>
   z.object({
     selectedToken: z.string(),
     amount: z
@@ -23,16 +23,20 @@ const createSendFormSchema = (availableBalance: number, network: string) =>
       .min(1, 'Amount is required')
       .regex(/^\d+(\.\d{1,2})?$/, 'Invalid amount format. Use up to 2 decimal places.')
       .refine((val) => {
-        const num = parseFloat(val);
-        return num > 0;
+        try {
+          const amountInCents = htrToCents(val);
+          return amountInCents > 0n;
+        } catch {
+          return false;
+        }
       }, 'Amount must be greater than 0')
       .refine((val) => {
-        const num = parseFloat(val);
-        return num <= Number.MAX_SAFE_INTEGER / HTR_DECIMAL_MULTIPLIER;
-      }, 'Amount is too large')
-      .refine((val) => {
-        const amountInCents = htrToCents(val);
-        return amountInCents <= availableBalance;
+        try {
+          const amountInCents = htrToCents(val);
+          return amountInCents <= availableBalance;
+        } catch {
+          return false;
+        }
       }, 'Insufficient balance'),
     address: z
       .string()
@@ -71,7 +75,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
 
   const { sendTransaction, balances, network, refreshBalance } = useWallet();
 
-  const availableBalance = balances.length > 0 ? balances[0].available : 0;
+  const availableBalance = balances.length > 0 ? balances[0].available : 0n;
 
   const {
     register,
@@ -95,8 +99,8 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose }) => {
   const amount = watch('amount');
 
   const handleMaxClick = () => {
-    if (availableBalance > 0) {
-      setValue('amount', centsToHTR(availableBalance).toString(), {
+    if (availableBalance > 0n) {
+      setValue('amount', centsToHTR(availableBalance), {
         shouldValidate: true
       });
     }
