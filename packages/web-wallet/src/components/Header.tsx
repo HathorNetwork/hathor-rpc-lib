@@ -69,7 +69,7 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
               {/* Wallet Address */}
               <button
                 onClick={handleCopyAddress}
-                className="px-2 md:px-3 py-2 bg-[#191C21] border border-[#24292F] rounded-full flex items-center gap-1 md:gap-2 hover:bg-[#24292F] transition-colors"
+                className="px-3 md:px-4 py-2 bg-[#191C21] border border-[#24292F] rounded-full flex items-center gap-1 md:gap-2 hover:bg-[#24292F] transition-colors"
               >
                 <span className="text-xs md:text-sm font-mono text-white">
                   {address ? truncateAddress(address) : 'Not connected'}
@@ -80,7 +80,7 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
               {/* Network Button */}
               <button
                 onClick={() => setIsNetworkDialogOpen(true)}
-                className="px-2 md:px-4 py-2 bg-[#191C21] border border-[#24292F] rounded-full flex items-center gap-1 md:gap-2 hover:bg-[#24292F] transition-colors"
+                className="px-3 md:px-5 py-2 bg-[#191C21] border border-[#24292F] rounded-full flex items-center gap-1 md:gap-2 hover:bg-[#24292F] transition-colors"
               >
                 <Globe className="w-3 h-3 md:w-4 md:h-4 text-white" />
                 <span className="text-xs md:text-sm font-medium text-white">

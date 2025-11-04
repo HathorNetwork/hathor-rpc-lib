@@ -73,13 +73,10 @@ const AddressModeDialog: React.FC<AddressModeDialogProps> = ({ isOpen, onClose }
                 </div>
               </div>
               <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-white font-medium">Dynamic Address</span>
-                  <span className="text-xs text-muted-foreground">–</span>
-                  <span className="text-xs text-muted-foreground">
-                    A new address is generated for each request (default)
-                  </span>
-                </div>
+                <span className="text-sm text-white font-medium block">Dynamic Address</span>
+                <span className="text-xs text-muted-foreground block mt-1">
+                  A new address is generated for each request (default)
+                </span>
               </div>
             </label>
 
@@ -99,13 +96,10 @@ const AddressModeDialog: React.FC<AddressModeDialogProps> = ({ isOpen, onClose }
                 </div>
               </div>
               <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-white font-medium">Single Address</span>
-                  <span className="text-xs text-muted-foreground">–</span>
-                  <span className="text-xs text-muted-foreground">
-                    Always use the same address (index 0)
-                  </span>
-                </div>
+                <span className="text-sm text-white font-medium block">Single Address</span>
+                <span className="text-xs text-muted-foreground block mt-1">
+                  Always use the same address (index 0)
+                </span>
               </div>
             </label>
           </div>

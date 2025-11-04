@@ -11,6 +11,7 @@ import Address from '@hathor/wallet-lib/lib/models/address';
 import { TOKEN_IDS, HTR_DECIMAL_MULTIPLIER } from '../constants';
 import { readOnlyWalletService } from '../services/ReadOnlyWalletService';
 import { getAddressForMode } from '../utils/addressMode';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 interface SendDialogProps {
   isOpen: boolean;
@@ -200,16 +201,21 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
             <label className="block text-base font-bold text-white mb-2">
               Select Token
             </label>
-            <select
-              {...register('selectedToken')}
-              className="w-full px-3 py-2 bg-[#0D1117] border border-border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
+            <Select
+              value={selectedTokenUid}
+              onValueChange={(value) => setValue('selectedToken', value)}
             >
-              {allTokens.map((token) => (
-                <option key={token.uid} value={token.uid}>
-                  {token.symbol} - {token.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {allTokens.map((token) => (
+                  <SelectItem key={token.uid} value={token.uid}>
+                    {token.symbol} - {token.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Amount */}

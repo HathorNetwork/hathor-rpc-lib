@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { X, AlertCircle, ChevronDown } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { NETWORKS, WALLET_SERVICE_URLS } from '../constants';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 interface ChangeNetworkDialogProps {
   isOpen: boolean;
@@ -77,20 +78,21 @@ const ChangeNetworkDialog: React.FC<ChangeNetworkDialogProps> = ({ isOpen, onClo
             <label className="block text-base font-bold text-white">
               Choose network
             </label>
-            <div className="relative">
-              <select
-                value={selectedNetwork}
-                onChange={(e) => setSelectedNetwork(e.target.value)}
-                className="w-full px-4 py-3 pr-10 bg-[#0D1117] border border-border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
-              >
+            <Select
+              value={selectedNetwork}
+              onValueChange={setSelectedNetwork}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
                 {NETWORK_OPTIONS.map((networkOption) => (
-                  <option key={networkOption.id} value={networkOption.id}>
+                  <SelectItem key={networkOption.id} value={networkOption.id}>
                     {networkOption.name} ({networkOption.url})
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
-            </div>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Change Network Button */}

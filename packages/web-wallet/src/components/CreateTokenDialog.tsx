@@ -9,6 +9,7 @@ import helpers from '@hathor/wallet-lib/lib/utils/helpers';
 import { formatHTRAmount } from '../utils/hathor';
 import { readOnlyWalletService } from '../services/ReadOnlyWalletService';
 import { getAddressForMode } from '../utils/addressMode';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 interface CreateTokenDialogProps {
   isOpen: boolean;
@@ -87,6 +88,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
 
   const isNFT = watch('isNFT');
   const amount = watch('amount');
+  const tokenType = watch('tokenType');
 
   // NFT logic: Set amount to 1 when NFT is toggled
   React.useEffect(() => {
@@ -336,10 +338,10 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
                   <input
                     type="text"
                     {...register('symbol')}
-                    placeholder="MYC (2-5 CHARACTERS)"
+                    placeholder="MYC (2-5 characters)"
                     className={`w-full px-4 py-3 bg-[#0D1117] border ${
                       errors.symbol ? 'border-red-500' : 'border-border'
-                    } rounded-lg text-white placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary uppercase`}
+                    } rounded-lg text-white placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary`}
                   />
                   {errors.symbol && (
                     <div className="flex items-start gap-2 mt-2">
@@ -479,13 +481,18 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
                   </div>
                 </div>
                 <div className="flex-1">
-                  <select
-                    {...register('tokenType')}
-                    className="w-full px-4 py-3 bg-[#0D1117] border border-border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
+                  <Select
+                    value={tokenType}
+                    onValueChange={(value) => setValue('tokenType', value as 'deposit' | 'fee')}
                   >
-                    <option value="deposit">Deposit</option>
-                    <option value="fee">Fee</option>
-                  </select>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="deposit">Deposit</SelectItem>
+                      <SelectItem value="fee">Fee</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <ul className="list-disc list-inside text-xs text-muted-foreground mt-2 space-y-1">
                     <li>
                       <strong>Deposit Token:</strong> 1% HTR deposit required. No transfer fees.
