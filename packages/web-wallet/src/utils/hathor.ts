@@ -5,6 +5,21 @@ const DECIMAL_PLACES = constants.DECIMAL_PLACES; // 2
 const DECIMAL_MULTIPLIER = BigInt(10 ** DECIMAL_PLACES); // 100n
 
 /**
+ * Safely convert a value to BigInt, handling number, bigint, and string inputs.
+ *
+ * @example
+ * toBigInt(12345) // 12345n
+ * toBigInt(12345n) // 12345n
+ * toBigInt("12345") // 12345n
+ *
+ * @param value Value to convert to BigInt
+ * @returns BigInt representation of the value
+ */
+export const toBigInt = (value: number | bigint | string): bigint => {
+  return typeof value === 'bigint' ? value : BigInt(value);
+};
+
+/**
  * Format an amount in cents (satoshis) to a human-readable HTR string.
  * Uses wallet-lib's prettyValue which handles BigInt natively.
  *
@@ -40,11 +55,6 @@ export const htrToCents = (amount: string): bigint => {
     throw new Error('Invalid amount format. Use up to 2 decimal places.');
   }
 
-  // Validate positive
-  if (parseFloat(trimmed) <= 0) {
-    throw new Error('Amount must be greater than 0');
-  }
-
   // Split into integer and decimal parts
   const [integerPart, decimalPart = ''] = trimmed.split('.');
 
@@ -54,8 +64,14 @@ export const htrToCents = (amount: string): bigint => {
   // Construct cents value: combine integer and decimal parts
   // Example: "123.45" -> "123" + "45" -> 12345n
   const centsString = integerPart + paddedDecimal;
+  const result = BigInt(centsString);
 
-  return BigInt(centsString);
+  // Validate positive after BigInt conversion (avoids parseFloat precision issues)
+  if (result <= 0n) {
+    throw new Error('Amount must be greater than 0');
+  }
+
+  return result;
 };
 
 /**
@@ -71,11 +87,12 @@ export const htrToCents = (amount: string): bigint => {
  * @returns Amount as string with decimal point
  */
 export const centsToHTR = (cents: number | bigint): string => {
-  const amount = typeof cents === 'bigint' ? cents : BigInt(cents);
+  const amount = toBigInt(cents);
 
   // Perform BigInt division and modulo to split integer and decimal parts
   const integerPart = amount / DECIMAL_MULTIPLIER;
-  const decimalPart = amount % DECIMAL_MULTIPLIER;
+  // For negative amounts, modulo returns negative, so take absolute value
+  const decimalPart = amount < 0n ? -(amount % DECIMAL_MULTIPLIER) : (amount % DECIMAL_MULTIPLIER);
 
   // Format decimal part with leading zeros if needed
   // Example: 5n -> "05", 50n -> "50"

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { ArrowUpRight, ArrowDownLeft, ExternalLink, Loader2, ArrowLeft, Clock } from 'lucide-react'
 import { useWallet } from '../contexts/WalletContext'
-import type { TransactionHistoryItem } from '../contexts/WalletContext'
-import { formatHTRAmount } from '../utils/hathor'
+import type { TransactionHistoryItem } from '../services/ReadOnlyWalletService'
+import { formatHTRAmount, toBigInt } from '../utils/hathor'
 import { HATHOR_EXPLORER_URLS, NETWORKS, TOKEN_IDS } from '../constants'
 import Header from './Header'
 
@@ -54,9 +54,7 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
 
     // Only process if we have transaction data with tx_id (for history list)
     if (transaction.tx_id) {
-      const balanceValue = typeof transaction.balance === 'bigint'
-        ? transaction.balance
-        : BigInt(transaction.balance as number);
+      const balanceValue = toBigInt(transaction.balance as number | bigint);
       const type = balanceValue >= 0n ? 'received' : 'sent'
       const amount = balanceValue >= 0n ? balanceValue : -balanceValue
 
@@ -115,7 +113,7 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose }) => {
       }
 
       const processed: ProcessedTransaction[] = history.map((tx: TransactionHistoryItem) => {
-        const balanceValue = typeof tx.balance === 'bigint' ? tx.balance : BigInt(tx.balance);
+        const balanceValue = toBigInt(tx.balance);
         const type = balanceValue >= 0n ? 'received' : 'sent'
         const amount = balanceValue >= 0n ? balanceValue : -balanceValue
 

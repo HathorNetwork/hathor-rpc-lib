@@ -1,26 +1,14 @@
 import React, { createContext, useContext, useState, type ReactNode } from 'react';
 import { WalletServiceMethods } from '../services/HathorWalletService';
-import { readOnlyWalletService } from '../services/ReadOnlyWalletService';
+import { readOnlyWalletService, type WalletBalance, type TransactionHistoryItem } from '../services/ReadOnlyWalletService';
 import { useInvokeSnap, useRequestSnap, useMetaMaskContext } from '@hathor/snap-utils';
 import { DEFAULT_NETWORK, TOKEN_IDS } from '@/constants';
+import { toBigInt } from '../utils/hathor';
 
 const STORAGE_KEYS = {
   XPUB: 'hathor_wallet_xpub',
   NETWORK: 'hathor_wallet_network',
 };
-
-export interface WalletBalance {
-  token: string;
-  available: bigint;
-  locked: bigint;
-}
-
-export interface TransactionHistoryItem {
-  tx_id: string;
-  timestamp: number;
-  balance: bigint;
-  is_voided: boolean;
-}
 
 interface SendTransactionParams {
   network: string;
@@ -704,7 +692,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       if (Array.isArray(transaction.outputs) && currentAddress) {
         for (const output of transaction.outputs as Array<Record<string, unknown>>) {
           if ((output.decoded as Record<string, unknown>)?.address === currentAddress && output.token === TOKEN_IDS.HTR) {
-            const value = typeof output.value === 'bigint' ? output.value : BigInt(output.value as number);
+            const value = toBigInt(output.value as number | bigint);
             receivedAmount += value;
           }
         }
@@ -714,7 +702,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       if (Array.isArray(transaction.inputs) && currentAddress) {
         for (const input of transaction.inputs as Array<Record<string, unknown>>) {
           if ((input.decoded as Record<string, unknown>)?.address === currentAddress && input.token === TOKEN_IDS.HTR) {
-            const value = typeof input.value === 'bigint' ? input.value : BigInt(input.value as number);
+            const value = toBigInt(input.value as number | bigint);
             sentAmount += value;
           }
         }

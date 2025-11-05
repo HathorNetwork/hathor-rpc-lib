@@ -1,6 +1,7 @@
 import { HathorWalletServiceWallet, Network, config } from '@hathor/wallet-lib';
 import type { GetHistoryObject, AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { NETWORKS, WALLET_SERVICE_URLS, WALLET_SERVICE_WS_URLS, TOKEN_IDS } from '../constants';
+import { toBigInt } from '../utils/hathor';
 
 export interface WalletBalance {
   token: string;
@@ -186,7 +187,7 @@ export class ReadOnlyWalletService {
       return history.map((item: GetHistoryObject) => ({
         tx_id: item.txId,
         timestamp: item.timestamp,
-        balance: typeof item.balance === 'bigint' ? item.balance : BigInt(item.balance),
+        balance: toBigInt(item.balance),
         is_voided: item.voided,
       }));
     } catch (error) {
