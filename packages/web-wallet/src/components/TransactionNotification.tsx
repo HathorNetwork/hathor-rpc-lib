@@ -57,7 +57,7 @@ const TransactionNotification: React.FC<TransactionNotificationProps> = ({
             </h3>
             <p className={`text-sm ${textColor} font-medium`}>
               {isReceived ? '+' : '-'}
-              {formatHTRAmount(transaction.amount)} HTR
+              {formatHTRAmount(transaction.amount, false)} HTR
             </p>
             <button
               onClick={onViewHistory}

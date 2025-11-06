@@ -271,7 +271,7 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
                     <p className={`text-lg md:text-xl font-medium ${
                       tx.type === 'received' ? 'text-green-500' : 'text-red-500'
                     }`}>
-                      {tx.type === 'received' ? '+' : '-'}{formatHTRAmount(tx.amount)}
+                      {tx.type === 'received' ? '+' : '-'}{formatHTRAmount(tx.amount, selectedToken?.isNFT || false)}
                       <span className="text-xs md:text-sm ml-1 md:ml-2">{selectedToken?.symbol || 'HTR'}</span>
                     </p>
                     <button

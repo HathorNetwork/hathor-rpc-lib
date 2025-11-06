@@ -20,13 +20,18 @@ interface SendDialogProps {
 }
 
 // Create a Zod schema factory for form validation
-const createSendFormSchema = (availableBalance: number, network: string) =>
+const createSendFormSchema = (availableBalance: number, network: string, isNft: boolean) =>
   z.object({
     selectedToken: z.string(),
     amount: z
       .string()
       .min(1, 'Amount is required')
-      .regex(/^\d+(\.\d{1,2})?$/, 'Invalid amount format. Use up to 2 decimal places.')
+      .regex(
+        isNft ? /^\d+$/ : /^\d+(\.\d{1,2})?$/,
+        isNft
+          ? 'NFT amounts must be whole numbers only.'
+          : 'Invalid amount format. Use up to 2 decimal places.'
+      )
       .refine((val) => {
         const num = parseFloat(val);
         return num > 0;
@@ -89,8 +94,10 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
     watch,
     reset,
     trigger,
+    setError,
+    clearErrors,
   } = useForm<SendFormData>({
-    resolver: zodResolver(createSendFormSchema(initialBalance, network)),
+    resolver: zodResolver(createSendFormSchema(initialBalance, network, false)),
     defaultValues: {
       selectedToken: initialTokenUid || TOKEN_IDS.HTR,
       amount: '',
@@ -131,9 +138,32 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
     }
   }, [selectedTokenUid, availableBalance, amount, trigger]);
 
+  // Validate NFT amounts must be integers
+  React.useEffect(() => {
+    if (amount && selectedToken?.isNFT) {
+      // Check if amount contains decimal point
+      if (amount.includes('.')) {
+        setError('amount', {
+          type: 'manual',
+          message: 'NFT amounts must be whole numbers only.',
+        });
+      } else {
+        // Clear the error if it was set by us
+        clearErrors('amount');
+        // Re-trigger validation to check other constraints
+        trigger('amount');
+      }
+    }
+  }, [amount, selectedToken?.isNFT, setError, clearErrors, trigger]);
+
   const handleMaxClick = () => {
     if (availableBalance > 0) {
-      setValue('amount', centsToHTR(availableBalance).toString(), {
+      // NFTs are already in whole units, no conversion needed
+      // Regular tokens need to be converted from base units (cents) to display units
+      const maxAmount = selectedToken?.isNFT
+        ? availableBalance.toString()
+        : centsToHTR(availableBalance).toString();
+      setValue('amount', maxAmount, {
         shouldValidate: true
       });
     }
@@ -144,11 +174,15 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
     setTransactionError(null);
 
     try {
-      const amountInCents = htrToCents(data.amount);
+      // For NFTs, amount is already in base units (whole numbers)
+      // For regular tokens, convert from display units to base units (cents)
+      const amountInBaseUnits = selectedToken?.isNFT
+        ? parseInt(data.amount, 10)
+        : htrToCents(data.amount);
 
       // Final balance check to ensure we have sufficient funds
       // This prevents race conditions where balance changed after form validation
-      if (amountInCents > availableBalance) {
+      if (amountInBaseUnits > availableBalance) {
         setTransactionError('Insufficient balance for this transaction');
         setIsLoading(false);
         return;
@@ -161,7 +195,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
         network,
         outputs: [{
           address: data.address.trim(),
-          value: amountInCents.toString(),
+          value: amountInBaseUnits.toString(),
           token: data.selectedToken
         }],
         changeAddress,
@@ -234,7 +268,9 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
               <input
                 type="text"
                 {...register('amount')}
-                placeholder="0.0"
+                placeholder={selectedToken?.isNFT ? '0' : '0.0'}
+                inputMode={selectedToken?.isNFT ? 'numeric' : 'decimal'}
+                pattern={selectedToken?.isNFT ? '[0-9]*' : undefined}
                 className={`w-full px-3 py-2 pr-12 bg-[#0D1117] border ${
                   errors.amount ? 'border-red-500' : 'border-border'
                 } rounded-lg text-white placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
@@ -245,7 +281,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
             </div>
             <div className="flex items-center justify-between mt-2">
               <span className="text-xs text-muted-foreground uppercase">
-                Balance available: {formatHTRAmount(availableBalance)} {selectedToken?.symbol || 'HTR'}
+                Balance available: {formatHTRAmount(availableBalance, selectedToken?.isNFT || false)} {selectedToken?.symbol || 'HTR'}
               </span>
               <button
                 type="button"

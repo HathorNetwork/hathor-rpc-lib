@@ -509,10 +509,10 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
               {amount && parseInt(amount) > 0 && depositInCents > 0 && (
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">
-                    <span className="uppercase tracking-wide font-medium">DEPOSIT:</span> {formatHTRAmount(depositInCents)} HTR
+                    <span className="uppercase tracking-wide font-medium">DEPOSIT:</span> {formatHTRAmount(depositInCents, false)} HTR
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    <span className="uppercase tracking-wide font-medium">TOTAL:</span> {formatHTRAmount(depositInCents)} HTR ({formatHTRAmount(htrBalance)} HTR AVAILABLE)
+                    <span className="uppercase tracking-wide font-medium">TOTAL:</span> {formatHTRAmount(depositInCents, false)} HTR ({formatHTRAmount(htrBalance, false)} HTR AVAILABLE)
                   </p>
                 </div>
               )}
@@ -522,7 +522,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
                 <div className="flex items-start gap-2 p-3 bg-yellow-500/10 border border-yellow-500/50 rounded-lg">
                   <AlertCircle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
                   <span className="text-yellow-400 text-sm">
-                    Insufficient HTR balance. You need {formatHTRAmount(depositInCents)} HTR but only have {formatHTRAmount(htrBalance)} HTR available.
+                    Insufficient HTR balance. You need {formatHTRAmount(depositInCents, false)} HTR but only have {formatHTRAmount(htrBalance, false)} HTR available.
                   </span>
                 </div>
               )}

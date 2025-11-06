@@ -2,13 +2,15 @@ import { prettyValue } from '@hathor/wallet-lib/lib/utils/numbers';
 import { HTR_DECIMAL_MULTIPLIER } from '../constants';
 
 /**
- * Format HTR amount using Hathor's prettyValue utility
- * @param amount Amount in cents (satoshis) - can be number or BigInt
+ * Format token amount using Hathor's prettyValue utility
+ * @param amount Amount in base units - can be number or BigInt
+ * @param isNft Whether this is an NFT (uses 0 decimals) or regular token (uses 2 decimals)
  * @returns Formatted string
  */
-export const formatHTRAmount = (amount: number | bigint): string => {
+export const formatHTRAmount = (amount: number | bigint, isNft: boolean = false): string => {
   const amountValue = typeof amount === 'bigint' ? Number(amount) : amount;
-  return prettyValue(amountValue);
+  const decimalPlaces = isNft ? 0 : 2;
+  return prettyValue(amountValue, decimalPlaces);
 };
 
 /**
