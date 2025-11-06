@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { ArrowUpRight, ArrowDownLeft, ExternalLink, Loader2, ArrowLeft, Clock } from 'lucide-react'
+import { ArrowUpRight, ArrowDownLeft, ExternalLink, Loader2, ArrowLeft, Clock, Copy, Check } from 'lucide-react'
 import { useWallet } from '../contexts/WalletContext'
 import { useTokens } from '../hooks/useTokens'
 import type { TransactionHistoryItem } from '../types/wallet'
-import { formatHTRAmount, toBigInt } from '../utils/hathor'
+import { formatHTRAmount, toBigInt, truncateAddress } from '../utils/hathor'
 import { HATHOR_EXPLORER_URLS, NETWORKS, TOKEN_IDS } from '../constants'
 import Header from './Header'
 import UnregisterTokenDialog from './UnregisterTokenDialog'
@@ -31,6 +31,8 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
   const [hasMore, setHasMore] = useState(true)
   const [currentCount, setCurrentCount] = useState(0)
   const [unregisterDialogOpen, setUnregisterDialogOpen] = useState(false)
+  const [unregisterSuccess, setUnregisterSuccess] = useState(false)
+  const [copiedUid, setCopiedUid] = useState(false)
   const PAGE_SIZE = 10
   const { address, network, getTransactionHistory, newTransaction, setHistoryDialogState, clearNewTransaction, unregisterToken } = useWallet()
   const { allTokens } = useTokens()
@@ -177,12 +179,41 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
     window.open(`${baseUrl}/transaction/${txHash}`, '_blank')
   }
 
+  const openTokenDetails = () => {
+    if (!selectedToken) return;
+    const baseUrl = network === NETWORKS.MAINNET
+      ? HATHOR_EXPLORER_URLS.MAINNET
+      : HATHOR_EXPLORER_URLS.TESTNET
+    window.open(`${baseUrl}/token_detail/${selectedToken.uid}`, '_blank')
+  }
+
+  const copyTokenUid = async () => {
+    if (!selectedToken) return;
+    try {
+      await navigator.clipboard.writeText(selectedToken.uid);
+      setCopiedUid(true);
+      setTimeout(() => setCopiedUid(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy token UID:', error);
+    }
+  }
+
   const handleUnregisterToken = async () => {
     if (!selectedToken || selectedToken.uid === TOKEN_IDS.HTR) return;
 
-    await unregisterToken(selectedToken.uid);
-    // Close the history dialog after unregistering
-    onClose();
+    try {
+      await unregisterToken(selectedToken.uid);
+      // Show success message briefly before closing
+      setUnregisterSuccess(true);
+      setTimeout(() => {
+        setUnregisterSuccess(false);
+        setUnregisterDialogOpen(false);
+        onClose();
+      }, 1500);
+    } catch (error) {
+      // Error will be displayed in UnregisterTokenDialog
+      throw error;
+    }
   }
 
   if (!isOpen) return null
@@ -191,44 +222,100 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
     <div className="fixed inset-0 bg-background z-50 overflow-y-auto">
       <Header onRegisterTokenClick={onRegisterTokenClick} />
 
+      {/* Toast Notification */}
+      {copiedUid && (
+        <div className="fixed bottom-4 right-4 z-[60] animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="bg-[#191C21] rounded-lg px-4 py-3 shadow-lg flex items-center gap-3">
+            <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+              <Check className="w-5 h-5 text-primary" />
+            </div>
+            <p className="text-sm font-medium text-white">Copied to clipboard</p>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 md:px-8 lg:px-16 py-6 md:py-12">
-        {/* Back Button */}
-        <button
-          onClick={onClose}
-          className="flex items-center gap-2 text-white hover:text-primary transition-colors mb-8 md:mb-12"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm">Back to home</span>
-        </button>
+        {/* Back Button and Actions */}
+        <div className="flex items-center justify-between mb-8 md:mb-12">
+          <button
+            onClick={onClose}
+            className="flex items-center gap-2 text-white hover:text-primary transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm">Back to home</span>
+          </button>
 
-        {/* Title */}
-        <div className="mb-8 md:mb-12">
-          <div className="text-center mb-4 md:mb-0">
-            <h1 className="text-2xl md:text-3xl font-medium text-white">
-              Transaction History
-            </h1>
-            {selectedToken && (
-              <p className="text-sm text-muted-foreground mt-2">
-                {selectedToken.symbol} - {selectedToken.name}
-              </p>
-            )}
-          </div>
-          {/* Unregister token link - only show for custom tokens */}
-          {selectedToken && selectedToken.uid !== TOKEN_IDS.HTR && (
-            <div className="flex justify-center md:justify-end md:absolute md:top-0 md:right-0">
+          <div className="flex items-center gap-4">
+            {selectedToken && selectedToken.uid !== TOKEN_IDS.HTR && (
               <button
                 onClick={() => setUnregisterDialogOpen(true)}
-                className="text-sm text-primary-400 hover:text-primary-300 transition-colors underline"
+                className="text-sm text-primary-400 hover:text-primary-300 transition-colors"
               >
                 Unregister token
               </button>
-            </div>
-          )}
+            )}
+            {selectedToken && (
+              <button
+                onClick={openTokenDetails}
+                className="px-4 py-2 bg-[#191C21] border border-border hover:bg-[#24292F] text-white rounded-lg text-sm flex items-center gap-2 transition-colors"
+              >
+                <span>View on explorer</span>
+                <ExternalLink className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
 
+        {/* Token Info Card */}
+        {selectedToken && (
+          <div className="bg-[#191C21] border border-[#24292F] rounded-lg p-6 mb-6">
+            {/* Two Column Layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left Column: Token */}
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Token</p>
+                <p className="text-base font-medium text-white">{selectedToken.name} ({selectedToken.symbol})</p>
+              </div>
+
+              {/* Right Column: Available Balance + Locked Balance */}
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Available balance</p>
+                <p className="text-base font-medium text-white">
+                  {formatHTRAmount(selectedToken.balance.available, selectedToken.isNFT)} {selectedToken.symbol}
+                </p>
+                {/* Locked Balance (Only if > 0) - Small secondary line */}
+                {selectedToken.balance.locked > 0n && (
+                  <p className="text-xs text-[#6B7280] mt-1">
+                    {formatHTRAmount(selectedToken.balance.locked, selectedToken.isNFT)} locked
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Bottom Section: Token UID */}
+            {selectedToken.uid !== TOKEN_IDS.HTR && (
+              <div className="mt-6 pt-6 border-t border-[#24292F]">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Token UID</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-[#6B7280] font-mono">{truncateAddress(selectedToken.uid, 16, 16)}</p>
+                    <button
+                      onClick={copyTokenUid}
+                      className="p-1.5 rounded transition-colors group"
+                      title={copiedUid ? "Copied!" : "Copy token UID"}
+                    >
+                      <Copy className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Transactions List */}
-        <div className="space-y-4">
+        <div className="bg-[#191C21] border border-[#24292F] rounded-lg overflow-hidden">
           {isLoading ? (
             <div className="text-center py-12">
               <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
@@ -236,10 +323,12 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
             </div>
           ) : transactions.length > 0 ? (
             <>
-              {transactions.map((tx) => (
+              {transactions.map((tx, index) => (
                 <div
                   key={tx.id}
-                  className="bg-[#191C21] border border-[#24292F] rounded-xl p-4 md:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 hover:bg-[#191C21]/80 transition-colors"
+                  className={`p-4 md:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 hover:bg-[#24292F]/50 transition-colors ${
+                    index !== transactions.length - 1 ? 'border-b border-[#24292F]' : ''
+                  }`}
                 >
                   {/* Left: Icon + Info */}
                   <div className="flex items-center gap-3 md:gap-4 min-w-0">
@@ -258,7 +347,7 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
                       <p className="font-medium text-white capitalize text-sm md:text-base">
                         {tx.type} Token
                       </p>
-                      <p className="text-xs md:text-sm text-muted-foreground truncate">
+                      <p className="text-xs md:text-sm text-[#6B7280] truncate">
                         {formatDate(tx.timestamp)}
                       </p>
                     </div>
@@ -284,7 +373,7 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
 
               {/* See More Button */}
               {hasMore && (
-                <div className="flex justify-center pt-8">
+                <div className="flex justify-center p-6 border-t border-[#24292F]">
                   <button
                     onClick={handleLoadMore}
                     disabled={isLoadingMore}

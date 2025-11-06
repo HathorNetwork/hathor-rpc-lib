@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface UnregisterTokenDialogProps {
   isOpen: boolean;
@@ -18,24 +18,30 @@ const UnregisterTokenDialog: React.FC<UnregisterTokenDialogProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   const handleUnregister = async () => {
     if (!isConfirmed) return;
 
     setIsLoading(true);
+    setError(null);
     try {
       await onConfirm();
-      onClose();
+      setSuccess(true);
+      // Dialog will be closed by parent component after showing success
     } catch (error) {
       console.error('Failed to unregister token:', error);
-    } finally {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to unregister token. Please try again.';
+      setError(errorMessage);
       setIsLoading(false);
     }
   };
 
   const handleClose = () => {
-    if (!isLoading) {
+    if (!isLoading && !success) {
       setIsConfirmed(false);
+      setError(null);
       onClose();
     }
   };
@@ -91,10 +97,26 @@ const UnregisterTokenDialog: React.FC<UnregisterTokenDialogProps> = ({
             </button>
           </div>
 
+          {/* Error Message */}
+          {error && (
+            <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-500">{error}</p>
+            </div>
+          )}
+
+          {/* Success Message */}
+          {success && (
+            <div className="flex items-start gap-3 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-green-500">Token unregistered successfully!</p>
+            </div>
+          )}
+
           {/* Unregister Button */}
           <button
             onClick={handleUnregister}
-            disabled={!isConfirmed || isLoading}
+            disabled={!isConfirmed || isLoading || success}
             className="w-full px-8 py-2.5 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
           >
             {isLoading ? (

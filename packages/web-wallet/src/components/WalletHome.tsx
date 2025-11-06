@@ -214,7 +214,6 @@ const WalletHome: React.FC = () => {
           {/* Token List */}
           <TokenList
             tokens={tokens}
-            network={network}
             onTokenClick={(tokenUid) => {
               setSelectedTokenForHistory(tokenUid);
               setHistoryDialogOpen(true);

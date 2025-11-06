@@ -1,8 +1,7 @@
 import React from 'react';
-import { ArrowUpRight, Music, Video, FileText, File, ExternalLink } from 'lucide-react';
+import { ArrowUpRight, Music, Video, FileText, File } from 'lucide-react';
 import type { TokenInfo } from '../types/token';
-import { formatHTRAmount } from '../utils/hathor';
-import { TOKEN_IDS } from '../constants';
+import { formatHTRAmount, truncateAddress } from '../utils/hathor';
 
 type MediaType = 'IMAGE' | 'AUDIO' | 'VIDEO' | 'PDF' | 'UNKNOWN';
 
@@ -80,26 +79,16 @@ interface TokenListProps {
   tokens: TokenInfo[];
   onTokenClick: (tokenUid: string) => void;
   onSendClick: (tokenUid: string) => void;
-  network: string;
 }
 
 const TokenList: React.FC<TokenListProps> = ({
   tokens,
   onTokenClick,
   onSendClick,
-  network,
 }) => {
   const handleSendClick = (tokenUid: string, e: React.MouseEvent) => {
     e.stopPropagation();
     onSendClick(tokenUid);
-  };
-
-  const handleViewDetails = (tokenUid: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const explorerBaseUrl = network === 'mainnet'
-      ? 'https://explorer.hathor.network'
-      : 'https://explorer.testnet.hathor.network';
-    window.open(`${explorerBaseUrl}/token_detail/${tokenUid}`, '_blank');
   };
 
   if (tokens.length === 0) {
@@ -130,29 +119,20 @@ const TokenList: React.FC<TokenListProps> = ({
                   {/* Token Info */}
                   <div className="space-y-1 text-left min-w-0 flex-1">
                     <div className="text-sm md:text-base font-medium text-white truncate">{token.symbol}</div>
-                    <div className="text-xs md:text-sm text-muted-foreground truncate">{token.name}</div>
+                    <div className="text-xs md:text-sm text-muted-foreground truncate">
+                      {token.isNFT ? truncateAddress(token.uid) : token.name}
+                    </div>
                   </div>
                 </div>
 
                 {/* Balance - aligned right on mobile, integrated in left side */}
                 <span className="text-base md:text-lg font-medium text-white flex-shrink-0 md:ml-4">
-                  {formatHTRAmount(token.balance.available, token.isNFT)}
+                  {formatHTRAmount(token.balance.available, token.isNFT)} {token.symbol}
                 </span>
               </div>
 
               {/* Right side: Action Buttons */}
               <div className="flex items-center gap-2 md:gap-3">
-                {/* View Details Button - hide for HTR token */}
-                {token.uid !== TOKEN_IDS.HTR && (
-                  <button
-                    onClick={(e) => handleViewDetails(token.uid, e)}
-                    className="flex-1 md:flex-none px-3 md:px-4 py-2 bg-[#191C21] border border-border hover:bg-[#24292F] text-white rounded-lg text-xs md:text-sm flex items-center justify-center gap-1 md:gap-2 transition-colors"
-                  >
-                    <span className="hidden sm:inline">View details</span>
-                    <ExternalLink className="w-3 h-3 md:w-4 md:h-4" />
-                  </button>
-                )}
-
                 {/* Send Button */}
                 <button
                   onClick={(e) => handleSendClick(token.uid, e)}

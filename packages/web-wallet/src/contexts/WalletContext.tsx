@@ -929,7 +929,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   const unregisterToken = async (tokenUid: string) => {
     if (!state.isConnected) {
-      return;
+      throw new Error('Wallet is not connected');
     }
 
     // Prevent HTR from being unregistered
