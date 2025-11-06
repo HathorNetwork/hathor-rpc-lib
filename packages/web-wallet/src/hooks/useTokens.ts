@@ -1,15 +1,14 @@
 import { useMemo } from 'react';
 import { useWallet } from '../contexts/WalletContext';
-import type { TokenInfo } from '../types/token';
+import type { TokenInfo, TokenFilter } from '../types/token';
 import { TOKEN_IDS, HTR_TOKEN_INFO } from '../constants';
 
 /**
  * Custom hook for token operations and filtering
  */
-export function useTokens() {
+export function useTokens(selectedTokenFilter: TokenFilter = 'all') {
   const {
     registeredTokens,
-    selectedTokenFilter,
     registerToken,
     unregisterToken,
     refreshTokenBalances,

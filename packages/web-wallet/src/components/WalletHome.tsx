@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowUpRight, ArrowDownLeft, Loader2 } from 'lucide-react';
 import SendDialog from './SendDialog';
 import ReceiveDialog from './ReceiveDialog';
@@ -19,15 +20,9 @@ import htrLogoWhite from '../assets/htr_logo_white.svg';
 import htrLogoWhiteOutline from '../assets/htr_logo_white_outline.svg';
 
 const WalletHome: React.FC = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [activeButton, setActiveButton] = useState<string | null>(null);
-  const [sendDialogOpen, setSendDialogOpen] = useState(false);
-  const [receiveDialogOpen, setReceiveDialogOpen] = useState(false);
-  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
-  const [registerTokenOpen, setRegisterTokenOpen] = useState(false);
-  const [createTokenOpen, setCreateTokenOpen] = useState(false);
-  const [addressModeOpen, setAddressModeOpen] = useState(false);
-  const [selectedTokenForHistory, setSelectedTokenForHistory] = useState<string | null>(null);
-  const [selectedTokenForSend, setSelectedTokenForSend] = useState<string | undefined>(undefined);
 
   const {
     isConnected,
@@ -35,38 +30,69 @@ const WalletHome: React.FC = () => {
     isCheckingConnection,
     loadingStep,
     balances,
-    network,
     error,
     connectWallet,
     setError,
     newTransaction,
     clearNewTransaction,
-    selectedTokenFilter,
-    setSelectedTokenFilter,
   } = useWallet();
 
-  const { tokens, tokenCount, nftCount, customTokenCount } = useTokens();
+  // Derive dialog states and filter from URL search params
+  const dialog = searchParams.get('dialog');
+  const tokenUid = searchParams.get('token');
+  const filterParam = searchParams.get('filter') as 'all' | 'tokens' | 'nfts' | null;
+
+  // Use filter from URL or default to 'all'
+  const selectedTokenFilter = filterParam || 'all';
+
+  const { tokens, tokenCount, nftCount, customTokenCount } = useTokens(selectedTokenFilter);
+
+  const sendDialogOpen = dialog === 'send';
+  const receiveDialogOpen = dialog === 'receive';
+  const historyDialogOpen = dialog === 'history';
+  const registerTokenOpen = dialog === 'register';
+  const createTokenOpen = dialog === 'create';
+  const addressModeOpen = dialog === 'addressMode';
+
+  // Helper to update search params while preserving existing ones
+  const updateSearchParams = (updates: Record<string, string | null>) => {
+    const newParams = new URLSearchParams(searchParams);
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null) {
+        newParams.delete(key);
+      } else {
+        newParams.set(key, value);
+      }
+    });
+    const queryString = newParams.toString();
+    navigate(queryString ? `?${queryString}` : '/', { replace: false });
+  };
 
   const handleButtonClick = (buttonName: string) => {
     setActiveButton(buttonName);
     console.log(`${buttonName} button clicked`);
 
-    // Open appropriate dialog
+    // Open appropriate dialog using URL navigation
     switch (buttonName) {
       case 'Send':
       case 'SendHTR':
-        setSendDialogOpen(true);
+        navigate('?dialog=send');
         break;
       case 'Receive':
-        setReceiveDialogOpen(true);
+        navigate('?dialog=receive');
         break;
       case 'ViewHistory':
-        setHistoryDialogOpen(true);
+        navigate('?dialog=history');
         break;
     }
 
     // Reset active state after a brief moment
     setTimeout(() => setActiveButton(null), 200);
+  };
+
+  // Helper function to close dialogs
+  const closeDialog = () => {
+    navigate('/');
   };
 
   // Show loading screen while checking connection
@@ -142,9 +168,9 @@ const WalletHome: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#0d1117] text-white">
       <Header
-        onRegisterTokenClick={() => setRegisterTokenOpen(true)}
-        onCreateTokenClick={() => setCreateTokenOpen(true)}
-        onAddressModeClick={() => setAddressModeOpen(true)}
+        onRegisterTokenClick={() => navigate('?dialog=register')}
+        onCreateTokenClick={() => navigate('?dialog=create')}
+        onAddressModeClick={() => navigate('?dialog=addressMode')}
       />
 
       {/* Main Container - responsive layout */}
@@ -206,7 +232,7 @@ const WalletHome: React.FC = () => {
           {/* Token Tabs */}
           <TokenTabs
             selectedFilter={selectedTokenFilter}
-            onFilterChange={setSelectedTokenFilter}
+            onFilterChange={(filter) => updateSearchParams({ filter })}
             tokenCount={tokenCount}
             nftCount={nftCount}
           />
@@ -215,12 +241,10 @@ const WalletHome: React.FC = () => {
           <TokenList
             tokens={tokens}
             onTokenClick={(tokenUid) => {
-              setSelectedTokenForHistory(tokenUid);
-              setHistoryDialogOpen(true);
+              navigate(`?dialog=history&token=${tokenUid}`);
             }}
             onSendClick={(tokenUid) => {
-              setSelectedTokenForSend(tokenUid);
-              setSendDialogOpen(true);
+              navigate(`?dialog=send&token=${tokenUid}`);
             }}
           />
         </div>
@@ -229,36 +253,30 @@ const WalletHome: React.FC = () => {
       {/* Dialogs */}
       <SendDialog
         isOpen={sendDialogOpen}
-        onClose={() => {
-          setSendDialogOpen(false);
-          setSelectedTokenForSend(undefined);
-        }}
-        initialTokenUid={selectedTokenForSend}
+        onClose={closeDialog}
+        initialTokenUid={tokenUid || undefined}
       />
       <ReceiveDialog
         isOpen={receiveDialogOpen}
-        onClose={() => setReceiveDialogOpen(false)}
+        onClose={closeDialog}
       />
       <HistoryDialog
         isOpen={historyDialogOpen}
-        onClose={() => {
-          setHistoryDialogOpen(false);
-          setSelectedTokenForHistory(null);
-        }}
-        tokenUid={selectedTokenForHistory || undefined}
-        onRegisterTokenClick={() => setRegisterTokenOpen(true)}
+        onClose={closeDialog}
+        tokenUid={tokenUid || undefined}
+        onRegisterTokenClick={() => navigate('?dialog=register')}
       />
       <RegisterTokenDialog
         isOpen={registerTokenOpen}
-        onClose={() => setRegisterTokenOpen(false)}
+        onClose={closeDialog}
       />
       <CreateTokenDialog
         isOpen={createTokenOpen}
-        onClose={() => setCreateTokenOpen(false)}
+        onClose={closeDialog}
       />
       <AddressModeDialog
         isOpen={addressModeOpen}
-        onClose={() => setAddressModeOpen(false)}
+        onClose={closeDialog}
       />
 
       {/* Error notification */}
@@ -282,7 +300,7 @@ const WalletHome: React.FC = () => {
             onDismiss={clearNewTransaction}
             onViewHistory={() => {
               clearNewTransaction();
-              setHistoryDialogOpen(true);
+              navigate('?dialog=history');
             }}
           />
         );

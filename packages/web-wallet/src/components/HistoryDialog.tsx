@@ -31,7 +31,6 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
   const [hasMore, setHasMore] = useState(true)
   const [currentCount, setCurrentCount] = useState(0)
   const [unregisterDialogOpen, setUnregisterDialogOpen] = useState(false)
-  const [unregisterSuccess, setUnregisterSuccess] = useState(false)
   const [copiedUid, setCopiedUid] = useState(false)
   const PAGE_SIZE = 10
   const { address, network, getTransactionHistory, newTransaction, setHistoryDialogState, clearNewTransaction, unregisterToken } = useWallet()
@@ -201,19 +200,12 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
   const handleUnregisterToken = async () => {
     if (!selectedToken || selectedToken.uid === TOKEN_IDS.HTR) return;
 
-    try {
-      await unregisterToken(selectedToken.uid);
-      // Show success message briefly before closing
-      setUnregisterSuccess(true);
-      setTimeout(() => {
-        setUnregisterSuccess(false);
-        setUnregisterDialogOpen(false);
-        onClose();
-      }, 1500);
-    } catch (error) {
-      // Error will be displayed in UnregisterTokenDialog
-      throw error;
-    }
+    await unregisterToken(selectedToken.uid);
+    // Close dialog after success
+    setTimeout(() => {
+      setUnregisterDialogOpen(false);
+      onClose();
+    }, 1500);
   }
 
   if (!isOpen) return null
