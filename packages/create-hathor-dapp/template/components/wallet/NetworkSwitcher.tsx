@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useInvokeSnap } from '@hathor/snap-utils';
 
 const NETWORKS = ['mainnet', 'testnet'] as const;
@@ -11,11 +11,7 @@ export function NetworkSwitcher() {
   const [currentNetwork, setCurrentNetwork] = useState<Network>('testnet');
   const [isChanging, setIsChanging] = useState(false);
 
-  useEffect(() => {
-    loadCurrentNetwork();
-  }, []);
-
-  const loadCurrentNetwork = async () => {
+  const loadCurrentNetwork = useCallback(async () => {
     try {
       const response = await invokeSnap({
         method: 'htr_getConnectedNetwork',
@@ -28,7 +24,11 @@ export function NetworkSwitcher() {
     } catch (error) {
       console.error('Failed to load network:', error);
     }
-  };
+  }, [invokeSnap]);
+
+  useEffect(() => {
+    loadCurrentNetwork();
+  }, [loadCurrentNetwork]);
 
   const handleNetworkChange = async (network: Network) => {
     if (network === currentNetwork || isChanging) return;

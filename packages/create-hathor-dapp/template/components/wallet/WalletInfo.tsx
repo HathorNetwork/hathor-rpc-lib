@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useInvokeSnap } from '@hathor/snap-utils';
 import { DICE_CONTRACT_CONFIG } from '@/config/contract';
 import { shortenAddress } from '@/lib/hathor/utils';
@@ -11,11 +11,7 @@ export function WalletInfo() {
   const [network, setNetwork] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadWalletInfo();
-  }, []);
-
-  const loadWalletInfo = async () => {
+  const loadWalletInfo = useCallback(async () => {
     setIsLoading(true);
     try {
       // Get address
@@ -42,7 +38,11 @@ export function WalletInfo() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [invokeSnap]);
+
+  useEffect(() => {
+    loadWalletInfo();
+  }, [loadWalletInfo]);
 
   if (isLoading) {
     return (

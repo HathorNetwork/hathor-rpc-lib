@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useInvokeSnap, useMetaMaskContext } from '@hathor/snap-utils';
 import { DICE_CONTRACT_CONFIG } from '@/config/contract';
 
@@ -15,13 +15,7 @@ export function useContractBalance() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    if (installedSnap) {
-      fetchBalance();
-    }
-  }, [installedSnap]);
-
-  const fetchBalance = async () => {
+  const fetchBalance = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -52,7 +46,13 @@ export function useContractBalance() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [invokeSnap]);
+
+  useEffect(() => {
+    if (installedSnap) {
+      fetchBalance();
+    }
+  }, [installedSnap, fetchBalance]);
 
   return { balance, isLoading, error, refetch: fetchBalance };
 }

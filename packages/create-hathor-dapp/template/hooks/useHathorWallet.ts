@@ -1,5 +1,5 @@
 import { useInvokeSnap, useMetaMaskContext } from '@hathor/snap-utils';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { DICE_CONTRACT_CONFIG } from '@/config/contract';
 import type { WalletInfo } from '@/lib/hathor/types';
 
@@ -10,13 +10,7 @@ export function useHathorWallet() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    if (installedSnap) {
-      fetchWalletInfo();
-    }
-  }, [installedSnap]);
-
-  const fetchWalletInfo = async () => {
+  const fetchWalletInfo = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -58,7 +52,13 @@ export function useHathorWallet() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [invokeSnap]);
+
+  useEffect(() => {
+    if (installedSnap) {
+      fetchWalletInfo();
+    }
+  }, [installedSnap, fetchWalletInfo]);
 
   return { walletInfo, isLoading, error, refetch: fetchWalletInfo };
 }
