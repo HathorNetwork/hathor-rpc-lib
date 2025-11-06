@@ -62,7 +62,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
   const invokeSnap = useInvokeSnap();
 
   // Get HTR balance
-  const htrBalance = balances.length > 0 ? balances[0].available : 0;
+  const htrBalance = balances.length > 0 ? balances[0].available : 0n;
 
   const {
     register,
@@ -102,8 +102,8 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
   // Formula: (tokens / 100) * 100 cents = tokens * 1 cent
   const depositInCents = useMemo(() => {
     const amountNum = parseInt(amount || '0', 10);
-    if (isNaN(amountNum) || amountNum <= 0) return 0;
-    return Math.ceil(amountNum); // 1 cent per token
+    if (isNaN(amountNum) || amountNum <= 0) return 0n;
+    return BigInt(Math.ceil(amountNum)); // 1 cent per token
   }, [amount]);
 
   // Check if user has insufficient balance

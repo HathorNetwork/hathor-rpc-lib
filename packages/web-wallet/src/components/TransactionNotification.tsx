@@ -5,7 +5,7 @@ import { formatHTRAmount } from '../utils/hathor';
 interface TransactionNotificationProps {
   transaction: {
     type: 'sent' | 'received';
-    amount: number;
+    amount: bigint;
     timestamp: number;
   } | null;
   onDismiss: () => void;

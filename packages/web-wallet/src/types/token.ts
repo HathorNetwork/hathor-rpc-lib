@@ -24,8 +24,8 @@ export interface TokenInfo {
   name: string;          // Token name (e.g., "Hathor", "My Token")
   symbol: string;        // Token symbol (e.g., "HTR", "TKN")
   balance: {
-    available: number;   // Available balance in token base units
-    locked: number;      // Locked balance in token base units
+    available: bigint;   // Available balance in token base units
+    locked: bigint;      // Locked balance in token base units
   };
   isNFT: boolean;        // True if this is an NFT
   metadata?: DagMetadata; // DAG metadata (for NFTs)

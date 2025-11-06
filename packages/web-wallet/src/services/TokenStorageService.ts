@@ -60,8 +60,8 @@ export class TokenStorageService {
         name: token.name,
         symbol: token.symbol,
         balance: {
-          available: 0, // Will be fetched separately
-          locked: 0,
+          available: 0n, // Will be fetched separately
+          locked: 0n,
         },
         isNFT: token.isNFT || false,
         metadata: token.metadata,

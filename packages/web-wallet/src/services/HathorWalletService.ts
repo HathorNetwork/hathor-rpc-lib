@@ -1,13 +1,8 @@
 import { HATHOR_API_URLS, NETWORKS, TOKEN_IDS, DEFAULT_NETWORK } from '../constants';
+import type { WalletBalance } from '../types/wallet';
 
 // Type for the invokeSnap function from snap-utils
 type InvokeSnapFunction = (params: { method: string; params?: Record<string, unknown> }) => Promise<unknown>;
-
-export interface WalletBalance {
-  token: string;
-  available: number;
-  locked: number;
-}
 
 export interface TransactionOutput {
   address?: string;
@@ -29,12 +24,12 @@ export interface Transaction {
   timestamp: number;
   inputs: Array<{
     address: string;
-    value: number;
+    value: bigint;
     token: string;
   }>;
   outputs: Array<{
     address: string;
-    value: number;
+    value: bigint;
     token: string;
   }>;
   confirmed: boolean;
@@ -76,10 +71,10 @@ export const WalletServiceMethods = {
         throw new Error('Failed to get balance: snap not responding');
       }
 
-      const balances = (response.response as Array<{ token_id?: string; token?: string; available?: number; locked?: number }> | undefined)?.map((balance) => ({
+      const balances = (response.response as Array<{ token_id?: string; token?: string; available?: number | bigint; locked?: number | bigint }> | undefined)?.map((balance) => ({
         token: balance.token_id || balance.token || '',
-        available: balance.available || 0,
-        locked: balance.locked || 0
+        available: balance.available ? (typeof balance.available === 'bigint' ? balance.available : BigInt(balance.available)) : 0n,
+        locked: balance.locked ? (typeof balance.locked === 'bigint' ? balance.locked : BigInt(balance.locked)) : 0n
       })) || [];
 
       return balances;

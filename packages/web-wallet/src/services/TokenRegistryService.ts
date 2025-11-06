@@ -89,13 +89,13 @@ export class TokenRegistryService {
     }
 
     // Try to fetch balance (but allow registration even if balance fetch fails)
-    let balance = { available: 0, locked: 0 };
+    let balance = { available: 0n, locked: 0n };
     try {
       const balances = await readOnlyWalletService.getBalance(uid);
       if (balances && balances.length > 0) {
         balance = {
-          available: balances[0].available || 0,
-          locked: balances[0].locked || 0,
+          available: balances[0].available || 0n,
+          locked: balances[0].locked || 0n,
         };
       }
     } catch (error) {

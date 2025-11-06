@@ -1,19 +1,8 @@
 import { HathorWalletServiceWallet, Network, config } from '@hathor/wallet-lib';
 import type { GetHistoryObject, AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { NETWORKS, WALLET_SERVICE_URLS, WALLET_SERVICE_WS_URLS, TOKEN_IDS } from '../constants';
-
-export interface WalletBalance {
-  token: string;
-  available: number;
-  locked: number;
-}
-
-export interface TransactionHistoryItem {
-  tx_id: string;
-  timestamp: number;
-  balance: number;
-  is_voided: boolean;
-}
+import type { WalletBalance, TransactionHistoryItem } from '../types/wallet';
+import { toBigInt } from '../utils/hathor';
 
 export interface AddressInfo {
   address: string;
@@ -156,11 +145,11 @@ export class ReadOnlyWalletService {
 
       // Transform the wallet-lib balance format to our interface
       const balances: WalletBalance[] = Object.entries(balance).map(([token, data]) => {
-        const tokenData = data as { balance?: { unlocked?: number; locked?: number } };
+        const tokenData = data as { balance?: { unlocked?: number | bigint; locked?: number | bigint } };
         return {
           token,
-          available: tokenData.balance?.unlocked || 0,
-          locked: tokenData.balance?.locked || 0,
+          available: tokenData.balance?.unlocked ? toBigInt(tokenData.balance.unlocked) : 0n,
+          locked: tokenData.balance?.locked ? toBigInt(tokenData.balance.locked) : 0n,
         };
       });
 
@@ -190,7 +179,7 @@ export class ReadOnlyWalletService {
       return history.map((item: GetHistoryObject) => ({
         tx_id: item.txId,
         timestamp: item.timestamp,
-        balance: typeof item.balance === 'bigint' ? Number(item.balance) : item.balance,
+        balance: toBigInt(item.balance),
         is_voided: item.voided,
       }));
     } catch (error) {
@@ -308,8 +297,8 @@ export class ReadOnlyWalletService {
     token?: string;
     max_utxos?: number;
     filter_address?: string;
-    amount_bigger_than?: number;
-    amount_smaller_than?: number;
+    amount_bigger_than?: bigint;
+    amount_smaller_than?: bigint;
   }): Promise<unknown> {
     if (!this.wallet?.isReady()) {
       throw new Error('Wallet not initialized');

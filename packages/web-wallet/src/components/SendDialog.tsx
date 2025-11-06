@@ -20,7 +20,7 @@ interface SendDialogProps {
 }
 
 // Create a Zod schema factory for form validation
-const createSendFormSchema = (availableBalance: number, network: string, isNft: boolean) =>
+const createSendFormSchema = (availableBalance: bigint, network: string, isNft: boolean) =>
   z.object({
     selectedToken: z.string(),
     amount: z
@@ -33,16 +33,20 @@ const createSendFormSchema = (availableBalance: number, network: string, isNft: 
           : 'Invalid amount format. Use up to 2 decimal places.'
       )
       .refine((val) => {
-        const num = parseFloat(val);
-        return num > 0;
+        try {
+          const amountInCents = htrToCents(val);
+          return amountInCents > 0n;
+        } catch {
+          return false;
+        }
       }, 'Amount must be greater than 0')
       .refine((val) => {
-        const num = parseFloat(val);
-        return num <= Number.MAX_SAFE_INTEGER / HTR_DECIMAL_MULTIPLIER;
-      }, 'Amount is too large')
-      .refine((val) => {
-        const amountInCents = htrToCents(val);
-        return amountInCents <= availableBalance;
+        try {
+          const amountInCents = htrToCents(val);
+          return amountInCents <= availableBalance;
+        } catch {
+          return false;
+        }
       }, 'Insufficient balance'),
     address: z
       .string()
@@ -83,7 +87,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
   const { allTokens } = useTokens();
 
   // Get initial token balance for form setup
-  const initialBalance = allTokens.length > 0 ? allTokens[0].balance.available : 0;
+  const initialBalance = allTokens.length > 0 ? allTokens[0].balance.available : 0n;
 
   // Initialize form
   const {
@@ -129,7 +133,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
     return allTokens.find(t => t.uid === selectedTokenUid);
   }, [allTokens, selectedTokenUid]);
 
-  const availableBalance = selectedToken?.balance.available || 0;
+  const availableBalance = selectedToken?.balance.available || 0n;
 
   // Re-validate amount when token or balance changes to use current balance
   React.useEffect(() => {
@@ -157,12 +161,12 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
   }, [amount, selectedToken?.isNFT, setError, clearErrors, trigger]);
 
   const handleMaxClick = () => {
-    if (availableBalance > 0) {
+    if (availableBalance > 0n) {
       // NFTs are already in whole units, no conversion needed
       // Regular tokens need to be converted from base units (cents) to display units
       const maxAmount = selectedToken?.isNFT
         ? availableBalance.toString()
-        : centsToHTR(availableBalance).toString();
+        : centsToHTR(availableBalance);
       setValue('amount', maxAmount, {
         shouldValidate: true
       });
@@ -177,7 +181,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
       // For NFTs, amount is already in base units (whole numbers)
       // For regular tokens, convert from display units to base units (cents)
       const amountInBaseUnits = selectedToken?.isNFT
-        ? parseInt(data.amount, 10)
+        ? BigInt(parseInt(data.amount, 10))
         : htrToCents(data.amount);
 
       // Final balance check to ensure we have sufficient funds
