@@ -31,9 +31,9 @@ const NANO_BRAVO_URLS = {
 }
 
 const TESTNET_URLS = {
-  nodeURL: 'https://node1.india.testnet.hathor.network/v1a/',
-  walletServiceURL: 'https://wallet-service.india.testnet.hathor.network',
-  txMiningURL: 'https://txmining.india.testnet.hathor.network/',
+  nodeURL: 'https://node1.testnet.hathor.network/v1a/',
+  walletServiceURL: 'https://wallet-service.testnet.hathor.network',
+  txMiningURL: 'https://txmining.testnet.hathor.network/',
   network: 'testnet',
 }
 
