@@ -19,8 +19,8 @@ const AddressModeDialog: React.FC<AddressModeDialogProps> = ({ isOpen, onClose }
     }
   }, [isOpen, addressMode]);
 
-  const handleSave = () => {
-    setAddressMode(selectedMode);
+  const handleSave = async () => {
+    await setAddressMode(selectedMode);
     onClose();
   };
 

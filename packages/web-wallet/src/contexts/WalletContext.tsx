@@ -7,7 +7,7 @@ import type { TokenInfo, TokenFilter } from '../types/token';
 import { tokenRegistryService } from '../services/TokenRegistryService';
 import { tokenStorageService } from '../services/TokenStorageService';
 import { nftDetectionService } from '../services/NftDetectionService';
-import { loadAddressMode, saveAddressMode, type AddressMode } from '../utils/addressMode';
+import { loadAddressMode, saveAddressMode, getDisplayAddressForMode, type AddressMode } from '../utils/addressMode';
 
 const STORAGE_KEYS = {
   XPUB: 'hathor_wallet_xpub',
@@ -63,7 +63,7 @@ interface WalletContextType extends WalletState {
   connectWallet: () => Promise<void>;
   disconnectWallet: () => void;
   refreshBalance: () => Promise<void>;
-  refreshAddress: () => void;
+  refreshAddress: () => Promise<void>;
   getTransactionHistory: (count?: number, skip?: number, tokenId?: string) => Promise<TransactionHistoryItem[]>;
   sendTransaction: (params: SendTransactionParams) => Promise<unknown>;
   changeNetwork: (newNetwork: string) => Promise<void>;
@@ -75,7 +75,7 @@ interface WalletContextType extends WalletState {
   refreshTokenBalances: () => Promise<void>;
   setSelectedTokenFilter: (filter: TokenFilter) => void;
   getTokenBalance: (tokenUid: string) => TokenInfo | undefined;
-  setAddressMode: (mode: AddressMode) => void;
+  setAddressMode: (mode: AddressMode) => Promise<void>;
 }
 
 const initialState: WalletState = {
@@ -194,8 +194,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       let address = '';
       try {
-        const addressInfo = readOnlyWalletService.getCurrentAddress();
-        address = addressInfo?.address || '';
+        address = await getDisplayAddressForMode(loadAddressMode(), readOnlyWalletService);
       } catch {
         throw new Error('Failed to retrieve wallet address. The wallet may not be properly initialized.');
       }
@@ -406,8 +405,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       let address = '';
       try {
-        const addressInfo = readOnlyWalletService.getCurrentAddress();
-        address = addressInfo?.address || '';
+        address = await getDisplayAddressForMode(state.addressMode, readOnlyWalletService);
       } catch {
         throw new Error('Failed to retrieve wallet address. The wallet may not be properly initialized.');
       }
@@ -591,12 +589,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     }
   };
 
-  const refreshAddress = () => {
+  const refreshAddress = async () => {
     if (!state.isConnected || !readOnlyWalletService.isReady()) return;
 
     try {
-      const addressInfo = readOnlyWalletService.getCurrentAddress();
-      const address = addressInfo?.address || '';
+      const address = await getDisplayAddressForMode(state.addressMode, readOnlyWalletService);
       setState(prev => ({ ...prev, address, error: null }));
     } catch (error) {
       setState(prev => ({
@@ -667,8 +664,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       // Get fresh data from the new network
       let address = '';
       try {
-        const addressInfo = readOnlyWalletService.getCurrentAddress();
-        address = addressInfo?.address || '';
+        address = await getDisplayAddressForMode(state.addressMode, readOnlyWalletService);
       } catch (addressError) {
         console.error('Failed to get current address after network change:', addressError);
         throw new Error('Failed to retrieve wallet address on new network. The wallet may not be properly initialized.');
@@ -1025,9 +1021,19 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     return state.registeredTokens.find(t => t.uid === tokenUid);
   };
 
-  const setAddressMode = (mode: AddressMode) => {
+  const setAddressMode = async (mode: AddressMode) => {
     saveAddressMode(mode);
     setState(prev => ({ ...prev, addressMode: mode }));
+
+    // Refresh the displayed address to reflect the new mode
+    if (readOnlyWalletService.isReady()) {
+      try {
+        const address = await getDisplayAddressForMode(mode, readOnlyWalletService);
+        setState(prev => ({ ...prev, address }));
+      } catch (error) {
+        console.error('Failed to refresh address after mode change:', error);
+      }
+    }
   };
 
   const handleNewTransaction = async (tx: unknown) => {

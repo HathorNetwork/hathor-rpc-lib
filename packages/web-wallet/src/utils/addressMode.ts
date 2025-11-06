@@ -59,6 +59,35 @@ export async function getAddressInfoForMode(
 }
 
 /**
+ * Get address for display purposes based on the selected address mode.
+ * Unlike getAddressForMode, this does NOT mark addresses as used in dynamic mode.
+ *
+ * @param mode - 'single' for always using address at index 0, 'dynamic' for showing current address
+ * @param readOnlyWalletService - The wallet service instance
+ * @returns The address string
+ */
+export async function getDisplayAddressForMode(
+  mode: AddressMode,
+  readOnlyWalletService: ReadOnlyWalletService
+): Promise<string> {
+  if (mode === 'single') {
+    // Always use address at index 0
+    const addressInfo = await readOnlyWalletService.getAddressAtIndex(0);
+    if (!addressInfo) {
+      throw new Error('Failed to get address at index 0');
+    }
+    return addressInfo.address;
+  } else {
+    // Dynamic mode: get current address WITHOUT marking as used
+    const addressInfo = readOnlyWalletService.getCurrentAddress();
+    if (!addressInfo) {
+      throw new Error('Failed to get current address');
+    }
+    return addressInfo.address;
+  }
+}
+
+/**
  * Load address mode from localStorage
  *
  * @returns The stored address mode or default if not found
