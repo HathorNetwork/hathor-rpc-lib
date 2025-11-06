@@ -101,12 +101,18 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
     mode: 'onChange',
   });
 
-  // Update selected token when initialTokenUid changes and dialog opens
+  // Reset form with selected token when dialog opens
   React.useEffect(() => {
-    if (isOpen && initialTokenUid) {
-      setValue('selectedToken', initialTokenUid);
+    if (isOpen) {
+      reset({
+        selectedToken: initialTokenUid || TOKEN_IDS.HTR,
+        amount: '',
+        address: '',
+        timelock: '',
+        dataOutput: '',
+      });
     }
-  }, [isOpen, initialTokenUid, setValue]);
+  }, [isOpen, initialTokenUid, reset]);
 
   const amount = watch('amount');
   const selectedTokenUid = watch('selectedToken');
@@ -202,11 +208,12 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
               Select Token
             </label>
             <Select
+              key={isOpen ? selectedTokenUid : 'closed'}
               value={selectedTokenUid}
               onValueChange={(value) => setValue('selectedToken', value)}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Select a token..." />
               </SelectTrigger>
               <SelectContent>
                 {allTokens.map((token) => (
