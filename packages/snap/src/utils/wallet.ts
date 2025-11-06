@@ -143,4 +143,4 @@ export const getAndStartHathorWallet = async (): Promise<HathorWalletServiceWall
   await wallet.start({ pinCode: DEFAULT_PIN_CODE, password: DEFAULT_PIN_CODE });
 
   return wallet;
-}
+};

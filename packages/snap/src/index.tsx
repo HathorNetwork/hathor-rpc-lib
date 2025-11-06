@@ -59,7 +59,9 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
 }) => {
   // Almost all RPC requests need the network, so I add it here
   const networkData = await getNetworkData();
+
   request.params = { ...request.params, network: networkData.network };
+
   // Use read-only wallet for requests that don't require signing
   const isReadOnly = READ_ONLY_METHODS.has(request.method as RpcMethods);
 
