@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Globe, Menu, X } from 'lucide-react';
+import { Copy, Globe, Menu, X, Check } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { truncateAddress } from '../utils/hathor';
 import ChangeNetworkDialog from './ChangeNetworkDialog';
@@ -16,6 +16,7 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
   const { address, network } = useWallet();
   const [isNetworkDialogOpen, setIsNetworkDialogOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [copiedAddress, setCopiedAddress] = useState(false);
 
   // Prevent body scroll when mobile menu is open
   React.useEffect(() => {
@@ -29,9 +30,15 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
     };
   }, [isMenuOpen]);
 
-  const handleCopyAddress = () => {
+  const handleCopyAddress = async () => {
     if (address) {
-      navigator.clipboard.writeText(address);
+      try {
+        await navigator.clipboard.writeText(address);
+        setCopiedAddress(true);
+        setTimeout(() => setCopiedAddress(false), 2000);
+      } catch (error) {
+        console.error('Failed to copy address:', error);
+      }
     }
   };
 
@@ -48,6 +55,18 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
 
   return (
     <>
+      {/* Toast Notification */}
+      {copiedAddress && (
+        <div className="fixed bottom-4 right-4 z-[60] animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="bg-[#191C21] rounded-lg px-4 py-3 shadow-lg flex items-center gap-3">
+            <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+              <Check className="w-5 h-5 text-primary" />
+            </div>
+            <p className="text-sm font-medium text-white">Copied to clipboard</p>
+          </div>
+        </div>
+      )}
+
       <header>
         <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 py-4 md:py-6">
           {/* Mobile: Stacked layout, Desktop: Side by side */}
@@ -69,12 +88,12 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
               {/* Wallet Address */}
               <button
                 onClick={handleCopyAddress}
-                className="px-3 md:px-4 py-2 bg-[#191C21] border border-[#24292F] rounded-full flex items-center gap-1 md:gap-2 hover:bg-[#24292F] transition-colors"
+                className="px-3 md:px-4 py-2 bg-[#191C21] border border-[#24292F] rounded-full flex items-center gap-1 md:gap-2 hover:bg-[#24292F] transition-colors group"
               >
                 <span className="text-xs md:text-sm font-mono text-white">
                   {address ? truncateAddress(address) : 'Not connected'}
                 </span>
-                {address && <Copy className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground" />}
+                {address && <Copy className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground group-hover:text-primary transition-colors" />}
               </button>
 
               {/* Network Button */}

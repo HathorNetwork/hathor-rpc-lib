@@ -42,8 +42,8 @@ const WalletHome: React.FC = () => {
   const tokenUid = searchParams.get('token');
   const filterParam = searchParams.get('filter') as 'all' | 'tokens' | 'nfts' | null;
 
-  // Use filter from URL or default to 'all'
-  const selectedTokenFilter = filterParam || 'all';
+  // Use filter from URL or default to 'tokens'
+  const selectedTokenFilter = filterParam || 'tokens';
 
   const { tokens, tokenCount, nftCount, customTokenCount } = useTokens(selectedTokenFilter);
 

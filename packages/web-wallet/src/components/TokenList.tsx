@@ -31,7 +31,7 @@ const NFTMediaThumbnail: React.FC<NFTMediaThumbnailProps> = ({ token }) => {
   const file = token.metadata?.nft_media?.file;
 
   // Render icon for non-image types (or missing file)
-  const iconClassName = "w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-[#24292F] border border-[#3A4149] flex items-center justify-center text-muted-foreground";
+  const iconClassName = "w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-[#24292F] border border-[#3A4149] flex items-center justify-center text-muted-foreground";
 
   // Render actual image for image types with valid file
   if (mediaType === 'IMAGE' && file && !imageError) {
@@ -39,7 +39,7 @@ const NFTMediaThumbnail: React.FC<NFTMediaThumbnailProps> = ({ token }) => {
       <img
         src={file}
         alt={token.name}
-        className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover"
+        className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover"
         onError={() => setImageError(true)}
       />
     );
@@ -50,26 +50,26 @@ const NFTMediaThumbnail: React.FC<NFTMediaThumbnailProps> = ({ token }) => {
     case 'AUDIO':
       return (
         <div className={iconClassName}>
-          <Music className="w-6 h-6 sm:w-8 sm:h-8" />
+          <Music className="w-5 h-5 sm:w-6 sm:h-6" />
         </div>
       );
     case 'VIDEO':
       return (
         <div className={iconClassName}>
-          <Video className="w-6 h-6 sm:w-8 sm:h-8" />
+          <Video className="w-5 h-5 sm:w-6 sm:h-6" />
         </div>
       );
     case 'PDF':
       return (
         <div className={iconClassName}>
-          <FileText className="w-6 h-6 sm:w-8 sm:h-8" />
+          <FileText className="w-5 h-5 sm:w-6 sm:h-6" />
         </div>
       );
     default:
       // For UNKNOWN or missing media, show generic file icon
       return (
         <div className={iconClassName}>
-          <File className="w-6 h-6 sm:w-8 sm:h-8" />
+          <File className="w-5 h-5 sm:w-6 sm:h-6" />
         </div>
       );
   }
@@ -106,7 +106,7 @@ const TokenList: React.FC<TokenListProps> = ({
           <button
             key={token.uid}
             onClick={() => onTokenClick(token.uid)}
-            className="w-full bg-[#191C21] border border-[#24292F] rounded-lg px-4 md:px-6 py-4 md:py-8 hover:bg-primary-600/40 transition-colors group"
+            className="w-full bg-[#191C21] border border-[#24292F] rounded-lg px-4 md:px-6 py-4 md:py-6 hover:bg-primary-600/40 transition-colors group min-h-[100px] md:min-h-[112px]"
           >
             {/* Outer container - single row on desktop, stacked on mobile */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
