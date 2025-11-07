@@ -1160,7 +1160,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const handleNewTransactionRef = React.useRef(handleNewTransaction);
   React.useEffect(() => {
     handleNewTransactionRef.current = handleNewTransaction;
-  });
+  }, [handleNewTransaction]);
 
   const contextValue: WalletContextType = {
     ...state,

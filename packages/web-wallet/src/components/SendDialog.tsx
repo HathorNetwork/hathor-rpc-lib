@@ -181,7 +181,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
       // For NFTs, amount is already in base units (whole numbers)
       // For regular tokens, convert from display units to base units (cents)
       const amountInBaseUnits = selectedToken?.isNFT
-        ? BigInt(parseInt(data.amount, 10))
+        ? BigInt(data.amount)
         : htrToCents(data.amount);
 
       // Final balance check to ensure we have sufficient funds
