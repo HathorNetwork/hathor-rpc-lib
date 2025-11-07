@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { X, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, Loader2, Calendar } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { DayPicker } from 'react-day-picker';
+import 'react-day-picker/dist/style.css';
 import { useWallet } from '../contexts/WalletContext';
 import { useTokens } from '../hooks/useTokens';
 import { formatHTRAmount, htrToCents, centsToHTR } from '../utils/hathor';
+import { dateToUnixTimestamp, isFutureDate, getTimezoneOffset } from '../utils/timelock';
 import { Network } from '@hathor/wallet-lib';
 import Address from '@hathor/wallet-lib/lib/models/address';
 import { TOKEN_IDS } from '../constants';
@@ -72,7 +75,10 @@ const createSendFormSchema = (availableBalance: bigint, network: string, isNft: 
           });
         }
       }),
-    timelock: z.string().optional(),
+    timelock: z.date().optional().refine(
+      (date) => !date || isFutureDate(date),
+      'Timelock date must be in the future'
+    ),
     dataOutput: z.string().optional(),
   });
 
@@ -82,6 +88,11 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [transactionError, setTransactionError] = useState<string | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [timeHour, setTimeHour] = useState<string>('12');
+  const [timeMinute, setTimeMinute] = useState<string>('00');
+  const [timePeriod, setTimePeriod] = useState<'AM' | 'PM'>('PM');
 
   const { sendTransaction, network, refreshBalance, addressMode } = useWallet();
   const { allTokens } = useTokens();
@@ -106,7 +117,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
       selectedToken: initialTokenUid || TOKEN_IDS.HTR,
       amount: '',
       address: '',
-      timelock: '',
+      timelock: undefined,
       dataOutput: '',
     },
     mode: 'onChange',
@@ -119,9 +130,14 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
         selectedToken: initialTokenUid || TOKEN_IDS.HTR,
         amount: '',
         address: '',
-        timelock: '',
+        timelock: undefined,
         dataOutput: '',
       });
+      // Also reset UI state
+      setSelectedDate(undefined);
+      setTimeHour('12');
+      setTimeMinute('00');
+      setTimePeriod('PM');
     }
   }, [isOpen, initialTokenUid, reset]);
 
@@ -174,6 +190,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
   };
 
   const onSubmit = async (data: SendFormData) => {
+    console.log('[SendDialog] onSubmit called with data:', data);
     setIsLoading(true);
     setTransactionError(null);
 
@@ -183,6 +200,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
       const amountInBaseUnits = selectedToken?.isNFT
         ? BigInt(data.amount)
         : htrToCents(data.amount);
+      console.log('[SendDialog] Amount in base units:', amountInBaseUnits.toString());
 
       // Final balance check to ensure we have sufficient funds
       // This prevents race conditions where balance changed after form validation
@@ -208,17 +226,44 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
       }
 
       // Get change address based on address mode
+      console.log('[SendDialog] Getting change address for address mode:', addressMode);
       const changeAddress = await getAddressForMode(addressMode, readOnlyWalletService);
+      console.log('[SendDialog] Change address:', changeAddress);
+
+      // Prepare output with optional timelock
+      const output: {
+        address: string;
+        value: string;
+        token: string;
+        timelock?: number;
+      } = {
+        address: data.address.trim(),
+        value: amountInBaseUnits.toString(),
+        token: data.selectedToken
+      };
+
+      // Add timelock if provided (convert Date to Unix timestamp)
+      if (data.timelock) {
+        output.timelock = dateToUnixTimestamp(data.timelock);
+        console.log('[SendDialog] Timelock added:', {
+          date: data.timelock,
+          timestamp: output.timelock,
+          formatted: new Date(output.timelock * 1000).toLocaleString()
+        });
+      } else {
+        console.log('[SendDialog] No timelock specified');
+      }
+
+      console.log('[SendDialog] Final output object:', output);
+      console.log('[SendDialog] Calling sendTransaction...');
 
       const result = await sendTransaction({
         network,
-        outputs: [{
-          address: data.address.trim(),
-          value: amountInBaseUnits.toString(),
-          token: data.selectedToken
-        }],
+        outputs: [output],
         changeAddress,
       });
+
+      console.log('[SendDialog] Transaction result:', result);
 
       console.log('Transaction sent successfully:', result);
 
@@ -338,8 +383,20 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
           </div>
 
           {transactionError && (
-            <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/50 rounded-lg">
-              <span className="text-red-400 text-sm">{transactionError}</span>
+            <div className="flex flex-col gap-2 p-3 bg-red-500/10 border border-red-500/50 rounded-lg">
+              <span className="text-red-400 text-sm whitespace-pre-line">{transactionError}</span>
+              {transactionError.includes('permission') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    window.location.reload();
+                  }}
+                  className="text-xs text-primary hover:text-primary/80 underline self-start"
+                >
+                  Click here to refresh and reconnect
+                </button>
+              )}
             </div>
           )}
 
@@ -364,13 +421,175 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
                 <div>
                   <label className="block text-sm font-medium text-white mb-2">
                     Timelock (optional)
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      {getTimezoneOffset()}
+                    </span>
                   </label>
-                  <input
-                    type="text"
-                    {...register('timelock')}
-                    placeholder="MM / DD / YYYY"
-                    className="w-full px-3 py-2 bg-[#0D1117] border border-border rounded-lg text-white placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
+                  <div className="space-y-2">
+                    {/* Date selection */}
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setShowDatePicker(!showDatePicker)}
+                        className="w-full px-3 py-2 bg-[#0D1117] border border-border rounded-lg text-white text-left focus:outline-none focus:ring-2 focus:ring-primary flex items-center gap-2"
+                      >
+                        <Calendar className="w-4 h-4" />
+                        {selectedDate ? selectedDate.toLocaleDateString() : 'Select date'}
+                      </button>
+                      {showDatePicker && (
+                        <div className="absolute top-full left-0 mt-2 z-50 bg-[#0D1117] border border-border rounded-lg p-4 shadow-xl">
+                          <style>{`
+                            .rdp {
+                              --rdp-accent-color: #7c3aed;
+                              --rdp-background-color: #7c3aed;
+                            }
+                            .rdp-day_button {
+                              color: white;
+                            }
+                            .rdp-day_button:hover:not([disabled]) {
+                              background-color: rgba(124, 58, 237, 0.2);
+                            }
+                            .rdp-day_selected .rdp-day_button {
+                              background-color: #7c3aed;
+                              color: white;
+                            }
+                            .rdp-day_disabled {
+                              opacity: 0.3;
+                            }
+                            .rdp-nav_button {
+                              color: white !important;
+                            }
+                            .rdp-nav_button svg {
+                              fill: white !important;
+                              stroke: white !important;
+                              color: white !important;
+                            }
+                            .rdp-chevron {
+                              fill: white !important;
+                              stroke: white !important;
+                            }
+                            .rdp-caption_label {
+                              color: white;
+                              font-weight: 500;
+                            }
+                            .rdp-weekday {
+                              color: #9ca3af;
+                            }
+                          `}</style>
+                          <DayPicker
+                            mode="single"
+                            selected={selectedDate}
+                            onSelect={(date) => {
+                              setSelectedDate(date);
+                              setShowDatePicker(false);
+                              if (date) {
+                                // Combine date and time into a single Date object
+                                const hour24 = timePeriod === 'PM' && timeHour !== '12'
+                                  ? parseInt(timeHour) + 12
+                                  : timePeriod === 'AM' && timeHour === '12'
+                                  ? 0
+                                  : parseInt(timeHour);
+                                const combinedDate = new Date(date);
+                                combinedDate.setHours(hour24, parseInt(timeMinute), 0, 0);
+                                setValue('timelock', combinedDate, { shouldValidate: true });
+                              }
+                            }}
+                            disabled={{ before: new Date() }}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Time selection */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="1"
+                        max="12"
+                        value={timeHour}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === '' || (parseInt(val) >= 1 && parseInt(val) <= 12)) {
+                            setTimeHour(val);
+                            // Update form value if date is selected
+                            if (selectedDate) {
+                              const hour24 = timePeriod === 'PM' && val !== '12'
+                                ? parseInt(val) + 12
+                                : timePeriod === 'AM' && val === '12'
+                                ? 0
+                                : parseInt(val);
+                              const combinedDate = new Date(selectedDate);
+                              combinedDate.setHours(hour24, parseInt(timeMinute), 0, 0);
+                              setValue('timelock', combinedDate, { shouldValidate: true });
+                            }
+                          }
+                        }}
+                        className="w-16 px-2 py-2 bg-[#0D1117] border border-border rounded-lg text-white text-center focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <span className="text-white">:</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="59"
+                        value={timeMinute}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === '' || (parseInt(val) >= 0 && parseInt(val) <= 59)) {
+                            setTimeMinute(val.padStart(2, '0'));
+                            // Update form value if date is selected
+                            if (selectedDate) {
+                              const hour24 = timePeriod === 'PM' && timeHour !== '12'
+                                ? parseInt(timeHour) + 12
+                                : timePeriod === 'AM' && timeHour === '12'
+                                ? 0
+                                : parseInt(timeHour);
+                              const combinedDate = new Date(selectedDate);
+                              combinedDate.setHours(hour24, parseInt(val), 0, 0);
+                              setValue('timelock', combinedDate, { shouldValidate: true });
+                            }
+                          }
+                        }}
+                        className="w-16 px-2 py-2 bg-[#0D1117] border border-border rounded-lg text-white text-center focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <select
+                        value={timePeriod}
+                        onChange={(e) => {
+                          const period = e.target.value as 'AM' | 'PM';
+                          setTimePeriod(period);
+                          // Update form value if date is selected
+                          if (selectedDate) {
+                            const hour24 = period === 'PM' && timeHour !== '12'
+                              ? parseInt(timeHour) + 12
+                              : period === 'AM' && timeHour === '12'
+                              ? 0
+                              : parseInt(timeHour);
+                            const combinedDate = new Date(selectedDate);
+                            combinedDate.setHours(hour24, parseInt(timeMinute), 0, 0);
+                            setValue('timelock', combinedDate, { shouldValidate: true });
+                          }
+                        }}
+                        className="px-3 py-2 bg-[#0D1117] border border-border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        <option value="AM">AM</option>
+                        <option value="PM">PM</option>
+                      </select>
+                      {selectedDate && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedDate(undefined);
+                            setValue('timelock', undefined);
+                          }}
+                          className="ml-2 px-2 py-1 text-xs text-red-400 hover:text-red-300"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {errors.timelock && (
+                    <p className="mt-1 text-sm text-red-400">{errors.timelock.message}</p>
+                  )}
                 </div>
 
                 {/* Data Output */}

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, type ReactNode } from 'react';
-import { WalletServiceMethods } from '../services/HathorWalletService';
+import { WalletServiceMethods, SnapUnauthorizedError } from '../services/HathorWalletService';
 import { readOnlyWalletService } from '../services/ReadOnlyWalletService';
 import { useInvokeSnap, useRequestSnap, useMetaMaskContext } from '@hathor/snap-utils';
 import { DEFAULT_NETWORK, TOKEN_IDS } from '@/constants';
@@ -10,6 +10,7 @@ import { tokenStorageService } from '../services/TokenStorageService';
 import { nftDetectionService } from '../services/NftDetectionService';
 import { loadAddressMode, saveAddressMode, getDisplayAddressForMode, type AddressMode } from '../utils/addressMode';
 import { toBigInt } from '../utils/hathor';
+import { ConnectionLostModal } from '../components/ConnectionLostModal';
 
 // Re-export types for external use
 export type { TransactionHistoryItem };
@@ -97,6 +98,7 @@ interface WalletProviderProps {
 
 export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   const [state, setState] = useState<WalletState>(initialState);
+  const [showConnectionLostModal, setShowConnectionLostModal] = useState(false);
   const invokeSnap = useInvokeSnap();
   const requestSnap = useRequestSnap();
   const { error: metamaskError, setError: setMetamaskError } = useMetaMaskContext();
@@ -110,6 +112,24 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     // Register new listeners using stable ref wrapper
     readOnlyWalletService.on('new-tx', (tx) => handleNewTransactionRef.current(tx));
     readOnlyWalletService.on('update-tx', (tx) => handleNewTransactionRef.current(tx));
+  };
+
+  // Global error handler wrapper for snap calls
+  const handleSnapError = (error: unknown) => {
+    if (error instanceof SnapUnauthorizedError) {
+      console.error('[WalletContext] Snap unauthorized error detected - showing connection lost modal');
+      setShowConnectionLostModal(true);
+      throw error; // Re-throw for caller to handle
+    }
+    throw error; // Re-throw other errors
+  };
+
+  // Handler for reconnecting after connection lost
+  const handleReconnect = () => {
+    setShowConnectionLostModal(false);
+    disconnectWallet();
+    // Optionally trigger a page reload or navigation to home
+    window.location.reload();
   };
 
   const checkExistingConnection = async () => {
@@ -138,44 +158,77 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         return;
       }
 
-      setState(prev => ({ ...prev, loadingStep: 'Checking snap network...' }));
+      // Verify snap is properly installed and enabled using wallet_getSnaps
+      console.log('[WalletContext] Starting snap verification...');
+      setState(prev => ({ ...prev, loadingStep: 'Verifying snap installation...' }));
 
-      // Add timeout to snap network check
-      const networkCheckPromise = invokeSnap({
-        method: 'htr_getConnectedNetwork',
-        params: {}
-      });
-      const networkCheckTimeout = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Network check timeout')), 10000)
-      );
-
-      const networkTest = await Promise.race([networkCheckPromise, networkCheckTimeout]);
-      let parsedNetworkTest;
       try {
-        parsedNetworkTest = typeof networkTest === 'string' ? JSON.parse(networkTest) : networkTest;
-      } catch (parseError) {
-        console.error('Failed to parse network test response:', parseError, networkTest);
-        throw new Error(`Snap returned invalid JSON response: ${parseError instanceof Error ? parseError.message : 'Parse error'}`);
-      }
-      const currentSnapNetwork = parsedNetworkTest?.response?.network;
-      const targetNetwork = DEFAULT_NETWORK;
+        console.log('[WalletContext] Checking installed snaps via wallet_getSnaps...');
 
-      if (currentSnapNetwork !== targetNetwork) {
-        setState(prev => ({ ...prev, loadingStep: `Changing snap network to ${DEFAULT_NETWORK}...` }));
-
-        // Add timeout to network change
-        const changeNetworkPromise = invokeSnap({
-          method: 'htr_changeNetwork',
-          params: {
-            network: currentSnapNetwork,
-            newNetwork: targetNetwork
-          }
+        // Use wallet_getSnaps to check if our snap is installed and enabled
+        const snaps = await (window as any).ethereum?.request({
+          method: 'wallet_getSnaps',
         });
-        const changeNetworkTimeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Network change timeout')), 10000)
-        );
 
-        await Promise.race([changeNetworkPromise, changeNetworkTimeout]);
+        console.log('[WalletContext] Installed snaps:', snaps);
+
+        // Find our snap (using local:http://localhost:8080 for development)
+        const snapId = 'local:http://localhost:8080';
+        const ourSnap = snaps?.[snapId];
+
+        if (!ourSnap) {
+          console.error('[WalletContext] Snap not found in installed snaps');
+          throw new Error('Snap not installed');
+        }
+
+        console.log('[WalletContext] Snap found:', ourSnap);
+
+        // Check if snap is enabled
+        if (ourSnap.blocked) {
+          console.error('[WalletContext] Snap is blocked');
+          throw new Error('Snap is blocked');
+        }
+
+        if (!ourSnap.enabled) {
+          console.error('[WalletContext] Snap is not enabled');
+          throw new Error('Snap is disabled');
+        }
+
+        console.log('[WalletContext] Snap is installed and enabled - version:', ourSnap.version);
+        console.log('[WalletContext] Snap verification successful - snap is ready to use');
+      } catch (snapError) {
+        const errorMsg = snapError instanceof Error ? snapError.message : 'Unknown error';
+        const errorCode = (snapError as any)?.code;
+
+        console.error('[WalletContext] Snap verification failed:', errorMsg);
+        console.error('[WalletContext] Error code:', errorCode);
+        console.error('[WalletContext] Full error:', snapError);
+
+        // Clear stored data
+        console.warn('[WalletContext] Clearing stored wallet data...');
+        localStorage.removeItem(STORAGE_KEYS.XPUB);
+        localStorage.removeItem(STORAGE_KEYS.NETWORK);
+
+        // Determine appropriate error message
+        let userError = 'Snap connection lost. Please reconnect your wallet.';
+
+        if (errorCode === 4100 || errorMsg.includes('Unauthorized') || errorMsg.includes('permission')) {
+          userError = 'Snap permissions have changed. Please disconnect and reconnect your wallet.';
+        } else if (errorMsg.includes('blocked')) {
+          userError = 'Snap is blocked. Please enable it in MetaMask settings.';
+        } else if (errorMsg.includes('disabled')) {
+          userError = 'Snap is disabled. Please enable it in MetaMask settings.';
+        } else if (errorMsg.includes('not installed')) {
+          userError = 'Snap not installed. Please connect your wallet.';
+        }
+
+        setState(prev => ({
+          ...prev,
+          isCheckingConnection: false,
+          loadingStep: '',
+          error: userError,
+        }));
+        return;
       }
 
       setState(prev => ({ ...prev, loadingStep: 'Initializing read-only wallet...' }));
@@ -495,6 +548,17 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         error: tokenLoadWarning,
       }));
     } catch (error) {
+      // Check for unauthorized errors first
+      if (error instanceof SnapUnauthorizedError) {
+        handleSnapError(error);
+        setState(prev => ({
+          ...prev,
+          isConnecting: false,
+          loadingStep: '',
+        }));
+        return;
+      }
+
       const errorMessage = error instanceof Error ? error.message : String(error);
 
       // Check if snap crashed
@@ -576,8 +640,13 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   }, [metamaskError]);
 
   const disconnectWallet = () => {
-    localStorage.removeItem(STORAGE_KEYS.XPUB);
-    localStorage.removeItem(STORAGE_KEYS.NETWORK);
+    // Clear ALL localStorage keys that start with 'hathor'
+    // This includes: xpub, network, address mode, registered tokens, etc.
+    const keysToRemove = Object.keys(localStorage).filter(key =>
+      key.startsWith('hathor')
+    );
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+
     // stop() will call removeAllListeners() internally
     readOnlyWalletService.stop();
     setState(initialState);
@@ -638,7 +707,19 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   };
 
   const sendTransaction = async (params: SendTransactionParams) => {
-    return await WalletServiceMethods.sendTransaction(invokeSnap, params);
+    console.log('[WalletContext] sendTransaction wrapper called');
+    console.log('[WalletContext] Transaction params:', params);
+    console.log('[WalletContext] Wallet connected:', state.isConnected);
+    console.log('[WalletContext] Current network:', state.network);
+
+    try {
+      const result = await WalletServiceMethods.sendTransaction(invokeSnap, params);
+      console.log('[WalletContext] Transaction completed successfully');
+      return result;
+    } catch (error) {
+      console.error('[WalletContext] Transaction failed in wrapper:', error);
+      handleSnapError(error);
+    }
   };
 
   const changeNetwork = async (newNetwork: string) => {
@@ -764,6 +845,17 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       }));
 
     } catch (networkChangeError) {
+      // Check for unauthorized errors first
+      if (networkChangeError instanceof SnapUnauthorizedError) {
+        handleSnapError(networkChangeError);
+        setState(prev => ({
+          ...prev,
+          isCheckingConnection: false,
+          loadingStep: '',
+        }));
+        return;
+      }
+
       const originalError = networkChangeError instanceof Error ? networkChangeError.message : String(networkChangeError);
       console.error('Failed to change network:', networkChangeError);
 
@@ -1185,6 +1277,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   return (
     <WalletContext.Provider value={contextValue}>
       {children}
+      <ConnectionLostModal
+        isOpen={showConnectionLostModal}
+        onReconnect={handleReconnect}
+      />
     </WalletContext.Provider>
   );
 };

@@ -103,10 +103,10 @@ const TokenList: React.FC<TokenListProps> = ({
     <div className="space-y-4">
       {tokens.map((token) => {
         return (
-          <button
+          <div
             key={token.uid}
             onClick={() => onTokenClick(token.uid)}
-            className="w-full bg-[#191C21] border border-[#24292F] rounded-lg px-4 md:px-6 py-4 md:py-6 hover:bg-primary-600/40 transition-colors group min-h-[100px] md:min-h-[112px]"
+            className="w-full bg-[#191C21] border border-[#24292F] rounded-lg px-4 md:px-6 py-4 md:py-6 hover:bg-primary-600/40 transition-colors group min-h-[100px] md:min-h-[112px] cursor-pointer"
           >
             {/* Outer container - single row on desktop, stacked on mobile */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
@@ -143,7 +143,7 @@ const TokenList: React.FC<TokenListProps> = ({
                 </button>
               </div>
             </div>
-          </button>
+          </div>
         );
       })}
     </div>

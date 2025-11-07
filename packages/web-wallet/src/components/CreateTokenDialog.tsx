@@ -90,13 +90,6 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
   const amount = watch('amount');
   const tokenType = watch('tokenType');
 
-  // NFT logic: Set amount to 1 when NFT is toggled
-  React.useEffect(() => {
-    if (isNFT) {
-      setValue('amount', '1', { shouldValidate: true });
-    }
-  }, [isNFT, setValue]);
-
   // Calculate 1% HTR deposit (1 HTR per 100 tokens)
   // For every 100 tokens, 1 HTR (100 cents) deposit is required
   // Formula: (tokens / 100) * 100 cents = tokens * 1 cent
@@ -239,7 +232,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-start md:items-center justify-center z-50 overflow-y-auto p-4 md:p-0">
-      <div className="bg-[#191C21] border border-[#24292F] rounded-2xl w-full max-w-2xl my-4 md:my-0 md:mx-4">
+      <div className="bg-[#191C21] border border-[#24292F] rounded-2xl w-full max-w-lg my-4 md:my-0 md:mx-4">
         {successData ? (
           // Success State
           <>
@@ -368,11 +361,10 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
                     <input
                       type="text"
                       {...register('amount')}
-                      placeholder="1"
-                      disabled={isNFT}
+                      placeholder={isNFT ? "Enter quantity (e.g., 5)" : "1"}
                       className={`w-full sm:flex-1 px-4 py-3 bg-[#0D1117] border ${
                         errors.amount ? 'border-red-500' : 'border-border'
-                      } rounded-lg text-white placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed`}
+                      } rounded-lg text-white placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary`}
                     />
                     <label className="flex items-center gap-2 cursor-pointer">
                       <span className="text-sm md:text-base font-bold text-white whitespace-nowrap">Create as NFT</span>

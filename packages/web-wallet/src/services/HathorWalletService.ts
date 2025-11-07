@@ -35,10 +35,60 @@ export interface Transaction {
   confirmed: boolean;
 }
 
+/**
+ * Custom error class for unauthorized snap errors
+ */
+export class SnapUnauthorizedError extends Error {
+  code: number;
+
+  constructor(message: string, code: number = 4100) {
+    super(message);
+    this.name = 'SnapUnauthorizedError';
+    this.code = code;
+  }
+}
+
+/**
+ * Checks if an error is an unauthorized error (code 4100)
+ */
+function isUnauthorizedError(error: unknown): boolean {
+  if (typeof error === 'object' && error !== null) {
+    const errorObj = error as { code?: number; message?: string };
+    return errorObj.code === 4100 ||
+           (errorObj.message?.includes('Unauthorized') ?? false) ||
+           (errorObj.message?.includes('permission') ?? false);
+  }
+  return false;
+}
+
+/**
+ * Wraps snap calls with error handling for unauthorized errors
+ */
+async function wrapSnapCall<T>(
+  methodName: string,
+  snapCall: () => Promise<T>
+): Promise<T> {
+  try {
+    return await snapCall();
+  } catch (error) {
+    console.error(`[HathorWalletService] ${methodName} failed:`, error);
+
+    if (isUnauthorizedError(error)) {
+      console.error('[HathorWalletService] Unauthorized error detected - throwing SnapUnauthorizedError');
+      throw new SnapUnauthorizedError(
+        'Snap permissions have been revoked or changed. Please reconnect your wallet.',
+        4100
+      );
+    }
+
+    throw error;
+  }
+}
+
 // These will be used by the wallet context with the hooks
 export const WalletServiceMethods = {
   async getAddress(invokeSnap: InvokeSnapFunction, type: 'index' = 'index', index: number = 0): Promise<string> {
-    try {
+    return wrapSnapCall('getAddress', async () => {
       const response = await invokeSnap({
         method: 'htr_getAddress',
         params: {
@@ -50,14 +100,11 @@ export const WalletServiceMethods = {
         return '';
       }
       return response.response || '';
-    } catch (error) {
-      console.error('Failed to get address:', error);
-      throw error;
-    }
+    });
   },
 
   async getBalance(invokeSnap: InvokeSnapFunction, tokens: string[] = [TOKEN_IDS.HTR]): Promise<WalletBalance[]> {
-    try {
+    return wrapSnapCall('getBalance', async () => {
       const response = await invokeSnap({
         method: 'htr_getBalance',
         params: {
@@ -78,14 +125,11 @@ export const WalletServiceMethods = {
       })) || [];
 
       return balances;
-    } catch (error) {
-      console.error('Failed to get balance:', error);
-      throw error;
-    }
+    });
   },
 
   async getConnectedNetwork(invokeSnap: InvokeSnapFunction): Promise<string> {
-    try {
+    return wrapSnapCall('getConnectedNetwork', async () => {
       const response = await invokeSnap({
         method: 'htr_getConnectedNetwork'
       }) as { response?: string } | null;
@@ -93,28 +137,29 @@ export const WalletServiceMethods = {
         return DEFAULT_NETWORK;
       }
       return response.response || DEFAULT_NETWORK;
-    } catch (error) {
-      console.error('Failed to get network:', error);
-      throw error;
-    }
+    });
   },
 
   async sendTransaction(invokeSnap: InvokeSnapFunction, params: SendTransactionParams): Promise<unknown> {
-    try {
+    console.log('[HathorWalletService] sendTransaction called with params:', JSON.stringify(params, null, 2));
+
+    return wrapSnapCall('sendTransaction', async () => {
+      console.log('[HathorWalletService] Invoking snap with htr_sendTransaction...');
       const response = await invokeSnap({
         method: 'htr_sendTransaction',
         params: params as unknown as Record<string, unknown>
       }) as { response?: unknown } | null;
 
+      console.log('[HathorWalletService] Snap response:', response);
+
       if (!response) {
+        console.error('[HathorWalletService] No response from snap (user cancelled or rejected)');
         throw new Error('Transaction was cancelled or rejected');
       }
 
+      console.log('[HathorWalletService] Transaction sent successfully');
       return response.response || response;
-    } catch (error) {
-      console.error('Failed to send transaction:', error);
-      throw error;
-    }
+    });
   },
 
   async getUtxos(invokeSnap: InvokeSnapFunction, filters?: {
@@ -125,16 +170,13 @@ export const WalletServiceMethods = {
     maxUtxos?: number;
     maximumAmount?: number;
   }): Promise<unknown[]> {
-    try {
+    return wrapSnapCall('getUtxos', async () => {
       const response = await invokeSnap({
         method: 'htr_getUtxos',
         params: filters || {}
       }) as { response?: unknown[] } | null;
       return (response?.response as unknown[]) || [];
-    } catch (error) {
-      console.error('Failed to get UTXOs:', error);
-      throw error;
-    }
+    });
   },
 
   async getTransactionHistory(address: string, network: string = DEFAULT_NETWORK): Promise<Transaction[]> {

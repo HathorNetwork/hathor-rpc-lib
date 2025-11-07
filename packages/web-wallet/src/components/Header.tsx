@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Copy, Globe, Menu, X, Check } from 'lucide-react';
+import { Copy, Globe, Menu, X, Check, LogOut } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { truncateAddress } from '../utils/hathor';
 import ChangeNetworkDialog from './ChangeNetworkDialog';
+import { DisconnectConfirmModal } from './DisconnectConfirmModal';
 import htrLogo from '../htr_logo.svg';
 import { NETWORKS } from '../constants';
 
@@ -13,10 +14,11 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClick, onAddressModeClick }) => {
-  const { address, network } = useWallet();
+  const { address, network, disconnectWallet } = useWallet();
   const [isNetworkDialogOpen, setIsNetworkDialogOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState(false);
+  const [isDisconnectModalOpen, setIsDisconnectModalOpen] = useState(false);
 
   // Prevent body scroll when mobile menu is open
   React.useEffect(() => {
@@ -40,6 +42,18 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
         console.error('Failed to copy address:', error);
       }
     }
+  };
+
+  const handleDisconnectClick = () => {
+    setIsDisconnectModalOpen(true);
+  };
+
+  const handleDisconnect = () => {
+    setIsMenuOpen(false);
+    setIsDisconnectModalOpen(false);
+    disconnectWallet();
+    // Page will reload automatically via state reset
+    window.location.reload();
   };
 
   const getNetworkDisplayName = (networkId: string) => {
@@ -149,6 +163,14 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
                   >
                     Address mode
                   </button>
+                  <div className="border-t border-[#24292F] my-1" />
+                  <button
+                    onClick={handleDisconnectClick}
+                    className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-[#24292F] transition-colors flex items-center gap-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Disconnect
+                  </button>
                 </div>
               )}
             </div>
@@ -195,6 +217,14 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
               >
                 Address mode
               </button>
+              <div className="border-t border-[#24292F] my-2" />
+              <button
+                onClick={handleDisconnectClick}
+                className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-[#24292F] rounded-lg transition-colors flex items-center gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                Disconnect
+              </button>
             </div>
           </div>
         </div>
@@ -204,6 +234,13 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
       <ChangeNetworkDialog
         isOpen={isNetworkDialogOpen}
         onClose={() => setIsNetworkDialogOpen(false)}
+      />
+
+      {/* Disconnect Confirmation Modal */}
+      <DisconnectConfirmModal
+        isOpen={isDisconnectModalOpen}
+        onDisconnect={handleDisconnect}
+        onCancel={() => setIsDisconnectModalOpen(false)}
       />
     </>
   );
