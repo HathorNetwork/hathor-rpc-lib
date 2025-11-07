@@ -38,6 +38,7 @@ const OutputValueSchema = z.object({
   value: z.string().regex(/^\d+$/)
     .pipe(z.coerce.bigint().positive()),
   token: z.string().default(constants.NATIVE_TOKEN_UID),
+  timelock: z.number().optional(),
 });
 
 const OutputDataSchema = z.object({
