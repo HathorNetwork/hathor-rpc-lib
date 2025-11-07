@@ -33,8 +33,15 @@ export class NftDetectionService {
       return tokenMetadata || null;
     } catch (error) {
       console.warn(`Failed to detect NFT status for token ${tokenId}:`, error);
-      // Cache null result
-      this.cache.set(tokenId, null);
+
+      // Don't cache errors - only cache successful results
+      // This allows retries on next detection attempt
+      if (error instanceof Error && error.message.includes('not found')) {
+        // Token genuinely doesn't have metadata - cache null
+        this.cache.set(tokenId, null);
+      }
+      // For network/API errors, don't cache so it retries
+
       return null;
     }
   }

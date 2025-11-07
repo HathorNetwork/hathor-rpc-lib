@@ -44,8 +44,8 @@ export class TokenRegistryService {
           const balances = await readOnlyWalletService.getBalance(uid);
           if (balances && balances.length > 0) {
             existing.balance = {
-              available: balances[0].available || 0,
-              locked: balances[0].locked || 0,
+              available: balances[0].available || 0n,
+              locked: balances[0].locked || 0n,
             };
             needsSave = true; // Balance updated, need to save
           }
@@ -80,7 +80,10 @@ export class TokenRegistryService {
           const index = existingTokens.findIndex(t => t.uid === uid);
           if (index >= 0) {
             existingTokens[index] = existing;
-            tokenStorageService.saveTokens(network, genesisHash, existingTokens);
+            const saved = tokenStorageService.saveTokens(network, genesisHash, existingTokens);
+            if (!saved) {
+              console.warn(`Failed to save updated token ${uid} to storage`);
+            }
           }
         }
 
@@ -138,7 +141,11 @@ export class TokenRegistryService {
     // Save to storage
     const existingTokens = tokenStorageService.loadTokens(network, genesisHash);
     const updatedTokens = [...existingTokens, tokenInfo];
-    tokenStorageService.saveTokens(network, genesisHash, updatedTokens);
+    const saved = tokenStorageService.saveTokens(network, genesisHash, updatedTokens);
+
+    if (!saved) {
+      throw new Error('Failed to save token registration to browser storage. Storage may be full or disabled. Please check your browser settings.');
+    }
 
     return tokenInfo;
   }
@@ -149,7 +156,11 @@ export class TokenRegistryService {
   unregisterToken(tokenUid: string, network: string, genesisHash: string): void {
     const tokens = tokenStorageService.loadTokens(network, genesisHash);
     const filtered = tokens.filter(t => t.uid !== tokenUid);
-    tokenStorageService.saveTokens(network, genesisHash, filtered);
+    const saved = tokenStorageService.saveTokens(network, genesisHash, filtered);
+
+    if (!saved) {
+      throw new Error('Failed to save token unregistration to browser storage. The token may reappear on page refresh.');
+    }
 
     // Remove from cache
     this.tokenCache.delete(tokenUid);

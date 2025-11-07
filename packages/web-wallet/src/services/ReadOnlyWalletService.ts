@@ -305,7 +305,13 @@ export class ReadOnlyWalletService {
     }
 
     try {
-      return await this.wallet.getUtxos(options || {});
+      // Convert bigint to number for wallet-lib compatibility
+      const walletOptions = options ? {
+        ...options,
+        amount_bigger_than: options.amount_bigger_than !== undefined ? Number(options.amount_bigger_than) : undefined,
+        amount_smaller_than: options.amount_smaller_than !== undefined ? Number(options.amount_smaller_than) : undefined,
+      } : {};
+      return await this.wallet.getUtxos(walletOptions);
     } catch (error) {
       console.error('Failed to get UTXOs:', error);
       throw error;
@@ -321,7 +327,9 @@ export class ReadOnlyWalletService {
     }
 
     try {
-      return await this.wallet.getTokens();
+      const tokens = await this.wallet.getTokens();
+      // wallet-lib returns string[] but we need Record<string, unknown>[]
+      return tokens as unknown as Array<Record<string, unknown>>;
     } catch (error) {
       console.error('Failed to get tokens:', error);
       throw error;
@@ -333,19 +341,31 @@ export class ReadOnlyWalletService {
    */
   async stop(): Promise<void> {
     if (this.wallet) {
+      const errors: Error[] = [];
+
       try {
         // Remove all event listeners before stopping
         this.wallet.removeAllListeners();
+      } catch (error) {
+        console.error('Failed to remove listeners:', error);
+        errors.push(error instanceof Error ? error : new Error(String(error)));
+      }
+
+      try {
         await this.wallet.stop();
       } catch (error) {
         console.error('Failed to stop wallet:', error);
-        // Still clear the wallet reference even if stop() fails
-        // to prevent memory leaks and allow re-initialization
-        this.wallet = null;
-        throw error;
-      } finally {
-        // Always clear the wallet reference
-        this.wallet = null;
+        errors.push(error instanceof Error ? error : new Error(String(error)));
+      }
+
+      // Always clear reference
+      this.wallet = null;
+
+      // If any errors occurred, throw aggregate error
+      if (errors.length > 0) {
+        throw new Error(
+          `Wallet stop had ${errors.length} error(s): ${errors.map(e => e.message).join('; ')}`
+        );
       }
     }
   }

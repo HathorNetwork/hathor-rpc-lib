@@ -8,7 +8,7 @@ import { useTokens } from '../hooks/useTokens';
 import { formatHTRAmount, htrToCents, centsToHTR } from '../utils/hathor';
 import { Network } from '@hathor/wallet-lib';
 import Address from '@hathor/wallet-lib/lib/models/address';
-import { TOKEN_IDS, HTR_DECIMAL_MULTIPLIER } from '../constants';
+import { TOKEN_IDS } from '../constants';
 import { readOnlyWalletService } from '../services/ReadOnlyWalletService';
 import { getAddressForMode } from '../utils/addressMode';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -187,7 +187,22 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
       // Final balance check to ensure we have sufficient funds
       // This prevents race conditions where balance changed after form validation
       if (amountInBaseUnits > availableBalance) {
-        setTransactionError('Insufficient balance for this transaction');
+        const shortfall = amountInBaseUnits - availableBalance;
+        const displayAmount = selectedToken?.isNFT
+          ? amountInBaseUnits.toString()
+          : centsToHTR(amountInBaseUnits);
+        const displayAvailable = selectedToken?.isNFT
+          ? availableBalance.toString()
+          : centsToHTR(availableBalance);
+        const displayShortfall = selectedToken?.isNFT
+          ? shortfall.toString()
+          : centsToHTR(shortfall);
+
+        setTransactionError(
+          `Insufficient balance. You need ${displayAmount} ${selectedToken?.symbol} ` +
+          `but only have ${displayAvailable} ${selectedToken?.symbol} available. ` +
+          `Short by ${displayShortfall} ${selectedToken?.symbol}.`
+        );
         setIsLoading(false);
         return;
       }

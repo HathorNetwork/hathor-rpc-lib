@@ -90,29 +90,36 @@ export async function getDisplayAddressForMode(
 /**
  * Load address mode from localStorage
  *
- * @returns The stored address mode or default if not found
+ * @returns Object with mode and optional error message
  */
-export function loadAddressMode(): AddressMode {
+export function loadAddressMode(): { mode: AddressMode; error?: string } {
   try {
     const stored = localStorage.getItem(ADDRESS_MODE_STORAGE_KEY);
     if (stored === 'single' || stored === 'dynamic') {
-      return stored;
+      return { mode: stored };
     }
+    return { mode: DEFAULT_ADDRESS_MODE };
   } catch (error) {
     console.error('Failed to load address mode from localStorage:', error);
+    return {
+      mode: DEFAULT_ADDRESS_MODE,
+      error: 'Failed to load address preference'
+    };
   }
-  return DEFAULT_ADDRESS_MODE;
 }
 
 /**
  * Save address mode to localStorage
  *
  * @param mode - The address mode to save
+ * @returns true if save was successful, false otherwise
  */
-export function saveAddressMode(mode: AddressMode): void {
+export function saveAddressMode(mode: AddressMode): boolean {
   try {
     localStorage.setItem(ADDRESS_MODE_STORAGE_KEY, mode);
+    return true;
   } catch (error) {
     console.error('Failed to save address mode to localStorage:', error);
+    return false;
   }
 }

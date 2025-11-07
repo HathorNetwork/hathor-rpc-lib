@@ -293,7 +293,7 @@ const WalletHome: React.FC = () => {
         const tx = newTransaction as Record<string, unknown>;
         if (tx.tx_id) return null; // This is for history dialog, not notification
 
-        const notification = tx as { type: 'sent' | 'received'; amount: number; timestamp: number };
+        const notification = tx as { type: 'sent' | 'received'; amount: bigint; timestamp: number };
         return (
           <TransactionNotification
             transaction={notification}

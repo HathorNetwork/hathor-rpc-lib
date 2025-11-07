@@ -15,8 +15,9 @@ export class TokenStorageService {
 
   /**
    * Save tokens for specific network and genesisHash
+   * @returns true if save was successful, false otherwise
    */
-  saveTokens(network: string, genesisHash: string, tokens: TokenInfo[]): void {
+  saveTokens(network: string, genesisHash: string, tokens: TokenInfo[]): boolean {
     try {
       const storageData: TokenStorageData = {
         tokens: tokens.map((token) => ({
@@ -33,9 +34,11 @@ export class TokenStorageService {
 
       const key = this.getStorageKey(network, genesisHash);
       localStorage.setItem(key, JSON.stringify(storageData));
+      return true;
     } catch (error) {
       console.error("Failed to save tokens to localStorage:", error);
-      // Don't throw - localStorage failures shouldn't crash the app
+      // Return false to indicate failure - caller should handle appropriately
+      return false;
     }
   }
 
@@ -51,7 +54,20 @@ export class TokenStorageService {
         return [];
       }
 
-      const data = JSON.parse(stored);
+      let data;
+      try {
+        data = JSON.parse(stored);
+      } catch (parseError) {
+        console.error("Failed to parse token storage data (corrupted JSON):", parseError, stored);
+        // Clear corrupted data
+        try {
+          localStorage.removeItem(key);
+        } catch (removeError) {
+          console.error("Failed to clear corrupted storage:", removeError);
+        }
+        return [];
+      }
+
       const migrated = this.migrateIfNeeded(data);
 
       // Convert storage format to TokenInfo format

@@ -45,7 +45,7 @@ export const WalletServiceMethods = {
           type,
           index
         }
-      });
+      }) as { response?: string } | null;
       if (!response) {
         return '';
       }
@@ -64,14 +64,14 @@ export const WalletServiceMethods = {
           network: DEFAULT_NETWORK,
           tokens
         }
-      });
+      }) as { response?: Array<{ token_id?: string; token?: string; available?: number | bigint; locked?: number | bigint }> } | null;
 
       if (!response) {
         console.error('Received null response from snap - snap may not be responding');
         throw new Error('Failed to get balance: snap not responding');
       }
 
-      const balances = (response.response as Array<{ token_id?: string; token?: string; available?: number | bigint; locked?: number | bigint }> | undefined)?.map((balance) => ({
+      const balances = response.response?.map((balance) => ({
         token: balance.token_id || balance.token || '',
         available: balance.available ? (typeof balance.available === 'bigint' ? balance.available : BigInt(balance.available)) : 0n,
         locked: balance.locked ? (typeof balance.locked === 'bigint' ? balance.locked : BigInt(balance.locked)) : 0n
@@ -88,7 +88,7 @@ export const WalletServiceMethods = {
     try {
       const response = await invokeSnap({
         method: 'htr_getConnectedNetwork'
-      });
+      }) as { response?: string } | null;
       if (!response) {
         return DEFAULT_NETWORK;
       }
@@ -103,8 +103,8 @@ export const WalletServiceMethods = {
     try {
       const response = await invokeSnap({
         method: 'htr_sendTransaction',
-        params
-      });
+        params: params as unknown as Record<string, unknown>
+      }) as { response?: unknown } | null;
 
       if (!response) {
         throw new Error('Transaction was cancelled or rejected');
@@ -129,8 +129,8 @@ export const WalletServiceMethods = {
       const response = await invokeSnap({
         method: 'htr_getUtxos',
         params: filters || {}
-      });
-      return response.response || [];
+      }) as { response?: unknown[] } | null;
+      return (response?.response as unknown[]) || [];
     } catch (error) {
       console.error('Failed to get UTXOs:', error);
       throw error;

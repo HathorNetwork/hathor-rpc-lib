@@ -152,18 +152,26 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
         params,
       });
 
-      // Parse response
-      const parsedResponse = typeof result === 'string' ? JSON.parse(result) : result;
-      const transaction = parsedResponse?.response;
+      // Parse response with proper error handling
+      let parsedResponse;
+      try {
+        parsedResponse = typeof result === 'string' ? JSON.parse(result) : result;
+      } catch (parseError) {
+        console.error('Failed to parse token creation response:', result);
+        throw new Error('Received invalid response from snap. Please try again.');
+      }
 
-      if (!transaction) {
-        throw new Error('Invalid response from token creation');
+      const transaction = parsedResponse?.response;
+      if (!transaction || typeof transaction !== 'object') {
+        console.error('Invalid transaction structure:', parsedResponse);
+        throw new Error('Token creation response missing transaction data');
       }
 
       // Extract token UID from transaction
       // The token UID is the transaction hash for the first created token
-      if (!transaction.hash) {
-        throw new Error('Transaction hash not found in response');
+      if (!transaction.hash || typeof transaction.hash !== 'string') {
+        console.error('Invalid transaction hash:', transaction);
+        throw new Error('Token creation succeeded but transaction ID is missing');
       }
       const tokenUid = transaction.hash;
 

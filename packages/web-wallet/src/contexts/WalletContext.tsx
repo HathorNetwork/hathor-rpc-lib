@@ -11,6 +11,9 @@ import { nftDetectionService } from '../services/NftDetectionService';
 import { loadAddressMode, saveAddressMode, getDisplayAddressForMode, type AddressMode } from '../utils/addressMode';
 import { toBigInt } from '../utils/hathor';
 
+// Re-export types for external use
+export type { TransactionHistoryItem };
+
 const STORAGE_KEYS = {
   XPUB: 'hathor_wallet_xpub',
   NETWORK: 'hathor_wallet_network',
@@ -83,7 +86,7 @@ const initialState: WalletState = {
   registeredTokens: [],
   selectedTokenFilter: 'tokens',
   selectedTokenForSend: null,
-  addressMode: loadAddressMode(),
+  addressMode: loadAddressMode().mode,
 };
 
 const WalletContext = createContext<WalletContextType | null>(null);
@@ -147,7 +150,13 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       );
 
       const networkTest = await Promise.race([networkCheckPromise, networkCheckTimeout]);
-      const parsedNetworkTest = typeof networkTest === 'string' ? JSON.parse(networkTest) : networkTest;
+      let parsedNetworkTest;
+      try {
+        parsedNetworkTest = typeof networkTest === 'string' ? JSON.parse(networkTest) : networkTest;
+      } catch (parseError) {
+        console.error('Failed to parse network test response:', parseError, networkTest);
+        throw new Error(`Snap returned invalid JSON response: ${parseError instanceof Error ? parseError.message : 'Parse error'}`);
+      }
       const currentSnapNetwork = parsedNetworkTest?.response?.network;
       const targetNetwork = DEFAULT_NETWORK;
 
@@ -183,7 +192,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       let address = '';
       try {
-        address = await getDisplayAddressForMode(loadAddressMode(), readOnlyWalletService);
+        address = await getDisplayAddressForMode(loadAddressMode().mode, readOnlyWalletService);
       } catch {
         throw new Error('Failed to retrieve wallet address. The wallet may not be properly initialized.');
       }
@@ -219,7 +228,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       }
 
       // Fetch balances for all registered tokens
-      let failedTokenCount = 0;
+      const failedTokens: Array<{ uid: string; symbol: string; error: string }> = [];
       const tokensWithBalances = await Promise.all(
         registeredTokens.map(async (token) => {
           try {
@@ -236,16 +245,21 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
             }
             return token;
           } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : 'Unknown error';
             console.error(`Failed to fetch balance for token ${token.uid}:`, error);
-            failedTokenCount++;
+            failedTokens.push({
+              uid: token.uid,
+              symbol: token.symbol,
+              error: errorMsg
+            });
             return token;
           }
         })
       );
 
-      // Set warning if some tokens failed to load
-      const tokenLoadWarning = failedTokenCount > 0
-        ? `Warning: Failed to load balance for ${failedTokenCount} token${failedTokenCount > 1 ? 's' : ''}. Showing cached values.`
+      // Set warning if some tokens failed to load with specific token names
+      const tokenLoadWarning = failedTokens.length > 0
+        ? `Warning: Failed to load balance for: ${failedTokens.map(t => t.symbol).join(', ')}. Showing cached values. Check network connection.`
         : null;
 
       setState(prev => ({
@@ -320,7 +334,13 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         );
         const networkTest = await Promise.race([networkCheckPromise, networkCheckTimeout]);
 
-        const parsedNetworkTest = typeof networkTest === 'string' ? JSON.parse(networkTest) : networkTest;
+        let parsedNetworkTest;
+        try {
+          parsedNetworkTest = typeof networkTest === 'string' ? JSON.parse(networkTest) : networkTest;
+        } catch (parseError) {
+          console.error('Failed to parse network test response:', parseError, networkTest);
+          throw new Error(`Snap returned invalid JSON response: ${parseError instanceof Error ? parseError.message : 'Parse error'}`);
+        }
         currentSnapNetwork = parsedNetworkTest?.response?.network;
       } catch (testError) {
         console.error(testError);
@@ -371,8 +391,9 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       if (typeof xpubResponse === 'string') {
         try {
           parsedResponse = JSON.parse(xpubResponse);
-        } catch {
-          throw new Error('Invalid JSON response from snap');
+        } catch (parseError) {
+          console.error('Failed to parse xpub response:', parseError, xpubResponse);
+          throw new Error(`Invalid JSON response from snap: ${parseError instanceof Error ? parseError.message : 'Unknown parse error'}`);
         }
       }
 
@@ -523,12 +544,14 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       checkExistingConnection()
         .then(() => { })
-        .catch(() => {
+        .catch((error) => {
+          console.error('Failed to check existing connection:', error);
+          const errorMessage = error instanceof Error ? error.message : 'Failed to check connection';
           setState(prev => ({
             ...prev,
             isCheckingConnection: false,
             loadingStep: '',
-            error: 'Failed to check connection',
+            error: errorMessage,
           }));
         })
         .finally(() => {
@@ -594,12 +617,22 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   const getTransactionHistory = async (count: number = 10, skip: number = 0, tokenId: string = TOKEN_IDS.HTR): Promise<TransactionHistoryItem[]> => {
     if (!state.isConnected || !readOnlyWalletService.isReady()) {
+      // Return empty for disconnected state - this is expected
       return [];
     }
 
     try {
       return await readOnlyWalletService.getTransactionHistory(count, skip, tokenId);
-    } catch {
+    } catch (error) {
+      console.error('Failed to fetch transaction history:', error);
+
+      // Set error in state so UI can show it
+      setState(prev => ({
+        ...prev,
+        error: 'Failed to load transaction history. Please try again.',
+      }));
+
+      // Still return empty array, but user knows WHY it's empty
       return [];
     }
   };
@@ -730,17 +763,17 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         registeredTokens: tokensWithBalances,
       }));
 
-    } catch (error) {
-      console.error('Failed to change network:', error);
+    } catch (networkChangeError) {
+      const originalError = networkChangeError instanceof Error ? networkChangeError.message : String(networkChangeError);
+      console.error('Failed to change network:', networkChangeError);
 
       // Check if snap crashed (DataCloneError, unresponsive, etc.)
-      const errorMessage = error instanceof Error ? error.message : String(error);
       const snapCrashed =
-        errorMessage.includes('DataCloneError') ||
-        errorMessage.includes('postMessage') ||
-        errorMessage.includes('cloned') ||
-        errorMessage.includes('ERR_NETWORK') ||
-        errorMessage.includes('Network Error');
+        originalError.includes('DataCloneError') ||
+        originalError.includes('postMessage') ||
+        originalError.includes('cloned') ||
+        originalError.includes('ERR_NETWORK') ||
+        originalError.includes('Network Error');
 
       if (snapCrashed) {
         console.warn('Snap appears to have crashed, skipping rollback and forcing disconnect');
@@ -760,7 +793,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           isCheckingConnection: false,
           isConnecting: false,
           loadingStep: '',
-          error: 'Network change failed (MetaMask Snap may need to be reloaded). Please refresh the page and try again.',
+          error: `Network change failed: ${originalError}. MetaMask Snap may need to be reloaded. Please refresh the page and try again.`,
         });
         return;
       }
@@ -798,7 +831,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
         await Promise.race([rollbackPromise, timeoutPromise]);
 
-        // Restore previous state
+        // Restore previous state with original error preserved
         setState(prev => ({
           ...prev,
           network: previousNetwork,
@@ -806,10 +839,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           balances: previousBalances,
           isCheckingConnection: false,
           loadingStep: '',
-          error: error instanceof Error ? error.message : 'Failed to change network. Reverted to previous network.',
+          error: `Failed to change network: ${originalError}. Reverted to ${previousNetwork}.`,
         }));
       } catch (rollbackError) {
-        console.error('Failed to rollback:', rollbackError);
+        console.error('Rollback failed:', rollbackError);
         console.warn('Forcing wallet disconnect due to failed rollback');
 
         // Clear localStorage and stop wallet
@@ -827,13 +860,13 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           console.error('CRITICAL: Wallet still active after stop attempt - possible resource leak');
         }
 
-        // Reset to disconnected state - ALWAYS clear loading state
+        // Reset to disconnected state with both errors
         setState({
           ...initialState,
           isCheckingConnection: false,
           isConnecting: false,
           loadingStep: '',
-          error: 'Network change failed. Wallet has been disconnected. Please reconnect.',
+          error: `Network change failed (${originalError}) and rollback also failed. Please reconnect your wallet.`,
         });
       }
     } finally {
@@ -1011,7 +1044,14 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   };
 
   const setAddressMode = async (mode: AddressMode) => {
-    saveAddressMode(mode);
+    const saved = saveAddressMode(mode);
+    if (!saved) {
+      setState(prev => ({
+        ...prev,
+        error: 'Failed to save address mode preference. Your selection may not persist after page reload.'
+      }));
+    }
+
     setState(prev => ({ ...prev, addressMode: mode }));
 
     // Refresh the displayed address to reflect the new mode
@@ -1103,7 +1143,16 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       });
     } catch (error) {
       console.error('Failed to process transaction event:', error);
-      // Don't show error to user - they can manually refresh
+      // Set a subtle warning that user can see
+      setState(prev => ({
+        ...prev,
+        error: 'Failed to process new transaction notification. Please refresh balance to ensure accuracy.'
+      }));
+
+      // Auto-clear the warning after 10 seconds
+      setTimeout(() => {
+        setState(prev => ({ ...prev, error: null }));
+      }, 10000);
     }
   };
 
