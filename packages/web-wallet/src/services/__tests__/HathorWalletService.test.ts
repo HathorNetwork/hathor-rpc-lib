@@ -214,7 +214,7 @@ describe('HathorWalletService - Critical Issues', () => {
 
     it('should successfully return balance when snap works', async () => {
       const mockBalance = [
-        { token: TOKEN_IDS.HTR, available: 10000, locked: 500 },
+        { token: TOKEN_IDS.HTR, available: 10000n, locked: 500n },
       ];
       // The snap returns { response: [...] } format
       mockInvokeSnap.mockResolvedValueOnce({ response: mockBalance });

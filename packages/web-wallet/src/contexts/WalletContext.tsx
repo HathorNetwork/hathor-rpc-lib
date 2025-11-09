@@ -6,11 +6,12 @@ import { DEFAULT_NETWORK, TOKEN_IDS } from '@/constants';
 import type { TokenInfo, TokenFilter } from '../types/token';
 import type { WalletBalance, TransactionHistoryItem } from '../types/wallet';
 import { tokenRegistryService } from '../services/TokenRegistryService';
-import { tokenStorageService } from '../services/TokenStorageService';
-import { nftDetectionService } from '../services/NftDetectionService';
 import { loadAddressMode, saveAddressMode, getDisplayAddressForMode, type AddressMode } from '../utils/addressMode';
 import { toBigInt } from '../utils/hathor';
 import { ConnectionLostModal } from '../components/ConnectionLostModal';
+import { SNAP_TIMEOUTS } from '../constants/timeouts';
+import { createLogger } from '../utils/logger';
+import { loadTokensWithBalances, fetchTokenBalance } from '../utils/tokenLoading';
 
 // Re-export types for external use
 export type { TransactionHistoryItem };
@@ -19,6 +20,8 @@ const STORAGE_KEYS = {
   XPUB: 'hathor_wallet_xpub',
   NETWORK: 'hathor_wallet_network',
 };
+
+const log = createLogger('WalletContext');
 
 interface SendTransactionParams {
   network: string;
@@ -117,7 +120,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   // Global error handler wrapper for snap calls
   const handleSnapError = (error: unknown) => {
     if (error instanceof SnapUnauthorizedError) {
-      console.error('[WalletContext] Snap unauthorized error detected - showing connection lost modal');
+      log.error('Snap unauthorized error detected - showing connection lost modal');
       setShowConnectionLostModal(true);
       throw error; // Re-throw for caller to handle
     }
@@ -159,53 +162,53 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       }
 
       // Verify snap is properly installed and enabled using wallet_getSnaps
-      console.log('[WalletContext] Starting snap verification...');
+      log.debug('Starting snap verification...');
       setState(prev => ({ ...prev, loadingStep: 'Verifying snap installation...' }));
 
       try {
-        console.log('[WalletContext] Checking installed snaps via wallet_getSnaps...');
+        log.debug('Checking installed snaps via wallet_getSnaps...');
 
         // Use wallet_getSnaps to check if our snap is installed and enabled
         const snaps = await (window as any).ethereum?.request({
           method: 'wallet_getSnaps',
         });
 
-        console.log('[WalletContext] Installed snaps:', snaps);
+        log.debug('Installed snaps:', snaps);
 
         // Find our snap (using local:http://localhost:8080 for development)
         const snapId = 'local:http://localhost:8080';
         const ourSnap = snaps?.[snapId];
 
         if (!ourSnap) {
-          console.error('[WalletContext] Snap not found in installed snaps');
+          log.error('Snap not found in installed snaps');
           throw new Error('Snap not installed');
         }
 
-        console.log('[WalletContext] Snap found:', ourSnap);
+        log.debug('Snap found:', ourSnap);
 
         // Check if snap is enabled
         if (ourSnap.blocked) {
-          console.error('[WalletContext] Snap is blocked');
+          log.error('Snap is blocked');
           throw new Error('Snap is blocked');
         }
 
         if (!ourSnap.enabled) {
-          console.error('[WalletContext] Snap is not enabled');
+          log.error('Snap is not enabled');
           throw new Error('Snap is disabled');
         }
 
-        console.log('[WalletContext] Snap is installed and enabled - version:', ourSnap.version);
-        console.log('[WalletContext] Snap verification successful - snap is ready to use');
+        log.info('Snap is installed and enabled - version:', ourSnap.version);
+        log.debug('Snap verification successful - snap is ready to use');
       } catch (snapError) {
         const errorMsg = snapError instanceof Error ? snapError.message : 'Unknown error';
         const errorCode = (snapError as any)?.code;
 
-        console.error('[WalletContext] Snap verification failed:', errorMsg);
-        console.error('[WalletContext] Error code:', errorCode);
-        console.error('[WalletContext] Full error:', snapError);
+        log.error('Snap verification failed:', errorMsg);
+        log.error('Error code:', errorCode);
+        log.error('Full error:', snapError);
 
         // Clear stored data
-        console.warn('[WalletContext] Clearing stored wallet data...');
+        log.warn('Clearing stored wallet data...');
         localStorage.removeItem(STORAGE_KEYS.XPUB);
         localStorage.removeItem(STORAGE_KEYS.NETWORK);
 
@@ -254,66 +257,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       // Load registered tokens for this network
       const genesisHash = ''; // TODO: Get from RPC handler
-      const registeredTokens = tokenRegistryService.getRegisteredTokens(storedNetwork, genesisHash);
-
-      // Clear NFT detection cache to ensure fresh detection
-      nftDetectionService.clearCache();
-
-      // Detect NFT status for all tokens
-      const nftMetadata = await nftDetectionService.detectNftBatch(
-        registeredTokens.map(t => t.uid),
-        storedNetwork
-      );
-
-      // Update storage with detected NFT statuses and metadata
-      let storageNeedsUpdate = false;
-      registeredTokens.forEach((token) => {
-        const metadata = nftMetadata.get(token.uid);
-        const isNft = metadata?.nft ?? false;
-        if (token.isNFT !== isNft || (!token.metadata && metadata)) {
-          token.isNFT = isNft;
-          token.metadata = metadata || undefined;
-          storageNeedsUpdate = true;
-        }
+      const tokenLoadResult = await loadTokensWithBalances(storedNetwork, genesisHash, {
+        clearNftCache: true,
+        detailedErrors: true,
       });
-      if (storageNeedsUpdate) {
-        tokenStorageService.saveTokens(storedNetwork, genesisHash, registeredTokens);
-      }
-
-      // Fetch balances for all registered tokens
-      const failedTokens: Array<{ uid: string; symbol: string; error: string }> = [];
-      const tokensWithBalances = await Promise.all(
-        registeredTokens.map(async (token) => {
-          try {
-            const tokenBalances = await readOnlyWalletService.getBalance(token.uid);
-
-            if (tokenBalances && tokenBalances.length > 0) {
-              return {
-                ...token,
-                balance: {
-                  available: tokenBalances[0].available,
-                  locked: tokenBalances[0].locked,
-                },
-              };
-            }
-            return token;
-          } catch (error) {
-            const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-            console.error(`Failed to fetch balance for token ${token.uid}:`, error);
-            failedTokens.push({
-              uid: token.uid,
-              symbol: token.symbol,
-              error: errorMsg
-            });
-            return token;
-          }
-        })
-      );
-
-      // Set warning if some tokens failed to load with specific token names
-      const tokenLoadWarning = failedTokens.length > 0
-        ? `Warning: Failed to load balance for: ${failedTokens.map(t => t.symbol).join(', ')}. Showing cached values. Check network connection.`
-        : null;
 
       setState(prev => ({
         ...prev,
@@ -324,8 +271,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         network: storedNetwork,
         xpub: storedXpub,
         loadingStep: '',
-        registeredTokens: tokensWithBalances,
-        error: tokenLoadWarning,
+        registeredTokens: tokenLoadResult.tokens,
+        error: tokenLoadResult.warning,
       }));
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -383,7 +330,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           params: {}
         });
         const networkCheckTimeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Network check timeout')), 10000)
+          setTimeout(() => reject(new Error('Network check timeout')), SNAP_TIMEOUTS.NETWORK_CHECK)
         );
         const networkTest = await Promise.race([networkCheckPromise, networkCheckTimeout]);
 
@@ -414,7 +361,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
             }
           });
           const changeNetworkTimeout = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Network change timeout')), 10000)
+            setTimeout(() => reject(new Error('Network change timeout')), SNAP_TIMEOUTS.NETWORK_CHANGE)
           );
           await Promise.race([changeNetworkPromise, changeNetworkTimeout]);
         } catch (networkError) {
@@ -433,7 +380,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           params: {}
         });
         const xpubTimeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Get xpub timeout')), 10000)
+          setTimeout(() => reject(new Error('Get xpub timeout')), SNAP_TIMEOUTS.RPC_CALL)
         );
         xpubResponse = await Promise.race([xpubPromise, xpubTimeout]);
       } catch (snapError) {
@@ -479,61 +426,12 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       // Load registered tokens for this network
       const genesisHash = ''; // TODO: Get from RPC handler
-      const registeredTokens = tokenRegistryService.getRegisteredTokens(network, genesisHash);
-
-      // Detect NFT status for all tokens
-      const nftMetadata = await nftDetectionService.detectNftBatch(
-        registeredTokens.map(t => t.uid),
-        network
-      );
-
-      // Update storage with detected NFT statuses and metadata
-      let storageNeedsUpdate = false;
-      registeredTokens.forEach((token) => {
-        const metadata = nftMetadata.get(token.uid);
-        const isNft = metadata?.nft ?? false;
-        if (token.isNFT !== isNft || (!token.metadata && metadata)) {
-          token.isNFT = isNft;
-          token.metadata = metadata || undefined;
-          storageNeedsUpdate = true;
-        }
+      const tokenLoadResult = await loadTokensWithBalances(network, genesisHash, {
+        detailedErrors: false,
       });
-      if (storageNeedsUpdate) {
-        tokenStorageService.saveTokens(network, genesisHash, registeredTokens);
-      }
-
-      // Fetch balances for all registered tokens
-      let failedTokenCount = 0;
-      const tokensWithBalances = await Promise.all(
-        registeredTokens.map(async (token) => {
-          try {
-            const tokenBalances = await readOnlyWalletService.getBalance(token.uid);
-
-            if (tokenBalances && tokenBalances.length > 0) {
-              return {
-                ...token,
-                balance: {
-                  available: tokenBalances[0].available,
-                  locked: tokenBalances[0].locked,
-                },
-              };
-            }
-            return token;
-          } catch (error) {
-            console.error(`Failed to fetch balance for token ${token.uid}:`, error);
-            failedTokenCount++;
-            return token;
-          }
-        })
-      );
 
       localStorage.setItem(STORAGE_KEYS.XPUB, xpub);
       localStorage.setItem(STORAGE_KEYS.NETWORK, network);
-
-      // Set warning if some tokens failed to load
-      const tokenLoadWarning = failedTokenCount > 0
-        ? `Warning: Failed to load balance for ${failedTokenCount} token${failedTokenCount > 1 ? 's' : ''}. Showing cached values.`
-        : null;
 
       setState(prev => ({
         ...prev,
@@ -544,8 +442,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         xpub,
         isConnecting: false,
         loadingStep: '',
-        registeredTokens: tokensWithBalances,
-        error: tokenLoadWarning,
+        registeredTokens: tokenLoadResult.tokens,
+        error: tokenLoadResult.warning,
       }));
     } catch (error) {
       // Check for unauthorized errors first
@@ -707,17 +605,17 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   };
 
   const sendTransaction = async (params: SendTransactionParams) => {
-    console.log('[WalletContext] sendTransaction wrapper called');
-    console.log('[WalletContext] Transaction params:', params);
-    console.log('[WalletContext] Wallet connected:', state.isConnected);
-    console.log('[WalletContext] Current network:', state.network);
+    log.debug('sendTransaction wrapper called');
+    log.debug('Transaction params:', params);
+    log.debug('Wallet connected:', state.isConnected);
+    log.debug('Current network:', state.network);
 
     try {
       const result = await WalletServiceMethods.sendTransaction(invokeSnap, params);
-      console.log('[WalletContext] Transaction completed successfully');
+      log.info('Transaction completed successfully');
       return result;
     } catch (error) {
-      console.error('[WalletContext] Transaction failed in wrapper:', error);
+      log.error('Transaction failed in wrapper:', error);
       handleSnapError(error);
     }
   };
@@ -769,7 +667,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       try {
         address = await getDisplayAddressForMode(state.addressMode, readOnlyWalletService);
       } catch (addressError) {
-        console.error('Failed to get current address after network change:', addressError);
+        log.error('Failed to get current address after network change:', addressError);
         throw new Error('Failed to retrieve wallet address on new network. The wallet may not be properly initialized.');
       }
 
@@ -777,61 +675,12 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       // Load registered tokens for new network
       const genesisHash = ''; // TODO: Get from RPC handler
-      const registeredTokens = tokenRegistryService.getRegisteredTokens(newNetwork, genesisHash);
-
-      // Detect NFT status for all tokens
-      const nftMetadata = await nftDetectionService.detectNftBatch(
-        registeredTokens.map(t => t.uid),
-        newNetwork
-      );
-
-      // Update storage with detected NFT statuses and metadata
-      let storageNeedsUpdate = false;
-      registeredTokens.forEach((token) => {
-        const metadata = nftMetadata.get(token.uid);
-        const isNft = metadata?.nft ?? false;
-        if (token.isNFT !== isNft || (!token.metadata && metadata)) {
-          token.isNFT = isNft;
-          token.metadata = metadata || undefined;
-          storageNeedsUpdate = true;
-        }
+      const tokenLoadResult = await loadTokensWithBalances(newNetwork, genesisHash, {
+        detailedErrors: false,
       });
-      if (storageNeedsUpdate) {
-        tokenStorageService.saveTokens(newNetwork, genesisHash, registeredTokens);
-      }
-
-      // Fetch balances for all registered tokens
-      let failedTokenCount = 0;
-      const tokensWithBalances = await Promise.all(
-        registeredTokens.map(async (token) => {
-          try {
-            const tokenBalances = await readOnlyWalletService.getBalance(token.uid);
-
-            if (tokenBalances && tokenBalances.length > 0) {
-              return {
-                ...token,
-                balance: {
-                  available: tokenBalances[0].available,
-                  locked: tokenBalances[0].locked,
-                },
-              };
-            }
-            return token;
-          } catch (error) {
-            console.error(`Failed to fetch balance for token ${token.uid}:`, error);
-            failedTokenCount++;
-            return token;
-          }
-        })
-      );
 
       // Update localStorage with new network
       localStorage.setItem(STORAGE_KEYS.NETWORK, newNetwork);
-
-      // Set warning if some tokens failed to load
-      const tokenLoadWarning = failedTokenCount > 0
-        ? `Warning: Failed to load balance for ${failedTokenCount} token${failedTokenCount > 1 ? 's' : ''}. Showing cached values.`
-        : null;
 
       setState(prev => ({
         ...prev,
@@ -840,8 +689,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         balances,
         isCheckingConnection: false,
         loadingStep: '',
-        error: tokenLoadWarning,
-        registeredTokens: tokensWithBalances,
+        error: tokenLoadResult.warning,
+        registeredTokens: tokenLoadResult.tokens,
       }));
 
     } catch (networkChangeError) {
@@ -857,7 +706,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       }
 
       const originalError = networkChangeError instanceof Error ? networkChangeError.message : String(networkChangeError);
-      console.error('Failed to change network:', networkChangeError);
+      log.error('Failed to change network:', networkChangeError);
 
       // Check if snap crashed (DataCloneError, unresponsive, etc.)
       const snapCrashed =
@@ -868,7 +717,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         originalError.includes('Network Error');
 
       if (snapCrashed) {
-        console.warn('Snap appears to have crashed, skipping rollback and forcing disconnect');
+        log.warn('Snap appears to have crashed, skipping rollback and forcing disconnect');
 
         // Don't attempt rollback if snap crashed - just disconnect
         localStorage.removeItem(STORAGE_KEYS.XPUB);
@@ -877,7 +726,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         try {
           await readOnlyWalletService.stop();
         } catch (stopError) {
-          console.error('Failed to stop wallet during crash recovery:', stopError);
+          log.error('Failed to stop wallet during crash recovery:', stopError);
         }
 
         setState({
@@ -916,9 +765,9 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           }
         })();
 
-        // Timeout after 10 seconds
+        // Timeout after configured duration
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Rollback timeout')), 10000)
+          setTimeout(() => reject(new Error('Rollback timeout')), SNAP_TIMEOUTS.ROLLBACK)
         );
 
         await Promise.race([rollbackPromise, timeoutPromise]);
@@ -934,8 +783,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           error: `Failed to change network: ${originalError}. Reverted to ${previousNetwork}.`,
         }));
       } catch (rollbackError) {
-        console.error('Rollback failed:', rollbackError);
-        console.warn('Forcing wallet disconnect due to failed rollback');
+        log.error('Rollback failed:', rollbackError);
+        log.warn('Forcing wallet disconnect due to failed rollback');
 
         // Clear localStorage and stop wallet
         localStorage.removeItem(STORAGE_KEYS.XPUB);
@@ -944,12 +793,12 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         try {
           await readOnlyWalletService.stop();
         } catch (stopError) {
-          console.error('CRITICAL: Failed to cleanup wallet during forced disconnect:', stopError);
+          log.error('CRITICAL: Failed to cleanup wallet during forced disconnect:', stopError);
         }
 
         // Verify wallet is fully stopped to prevent memory leaks
         if (readOnlyWalletService.isReady()) {
-          console.error('CRITICAL: Wallet still active after stop attempt - possible resource leak');
+          log.error('CRITICAL: Wallet still active after stop attempt - possible resource leak');
         }
 
         // Reset to disconnected state with both errors
@@ -1006,30 +855,27 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     try {
       // genesisHash is empty string for now (TODO in RPC handler)
       const genesisHash = '';
-      console.log('[WalletContext] Registering token...');
+      log.debug('Registering token...');
       const tokenInfo = await tokenRegistryService.registerToken(
         configString,
         state.network,
         genesisHash
       );
-      console.log('[WalletContext] Token registered:', { uid: tokenInfo.uid, isNFT: tokenInfo.isNFT, symbol: tokenInfo.symbol });
+      log.info('Token registered:', { uid: tokenInfo.uid, isNFT: tokenInfo.isNFT, symbol: tokenInfo.symbol });
 
       // Fetch balance immediately after registration
-      const balances = await readOnlyWalletService.getBalance(tokenInfo.uid);
-      if (balances && balances.length > 0) {
-        tokenInfo.balance = {
-          available: balances[0].available,
-          locked: balances[0].locked,
-        };
+      const balance = await fetchTokenBalance(tokenInfo.uid);
+      if (balance) {
+        tokenInfo.balance = balance;
       }
-      console.log('[WalletContext] Balance fetched:', tokenInfo.balance);
+      log.debug('Balance fetched:', tokenInfo.balance);
 
       // Update state with new or updated token
       setState(prev => {
         const existingIndex = prev.registeredTokens.findIndex(t => t.uid === tokenInfo.uid);
         if (existingIndex >= 0) {
           // Update existing token
-          console.log('[WalletContext] Updating existing token at index', existingIndex);
+          log.debug('Updating existing token at index', existingIndex);
           const updatedTokens = [...prev.registeredTokens];
           updatedTokens[existingIndex] = tokenInfo;
           return {
@@ -1038,16 +884,16 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           };
         } else {
           // Add new token
-          console.log('[WalletContext] Adding new token, total will be:', prev.registeredTokens.length + 1);
+          log.debug('Adding new token, total will be:', prev.registeredTokens.length + 1);
           return {
             ...prev,
             registeredTokens: [...prev.registeredTokens, tokenInfo],
           };
         }
       });
-      console.log('[WalletContext] State updated with token');
+      log.debug('State updated with token');
     } catch (error) {
-      console.error('Failed to register token:', error);
+      log.error('Failed to register token:', error);
       throw error;
     }
   };
@@ -1059,7 +905,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
     // Prevent HTR from being unregistered
     if (tokenUid === TOKEN_IDS.HTR) {
-      console.error('Cannot unregister HTR token');
+      log.error('Cannot unregister HTR token');
       throw new Error('Cannot unregister the native HTR token');
     }
 
@@ -1073,7 +919,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         registeredTokens: prev.registeredTokens.filter(t => t.uid !== tokenUid),
       }));
     } catch (error) {
-      console.error('Failed to unregister token:', error);
+      log.error('Failed to unregister token:', error);
       throw error;
     }
   };
@@ -1092,22 +938,14 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       // Fetch balances for all tokens
       const balanceUpdates = await Promise.all(
         tokensSnapshot.map(async (token) => {
-          try {
-            const balances = await readOnlyWalletService.getBalance(token.uid);
-            if (balances && balances.length > 0) {
-              return {
-                uid: token.uid,
-                balance: {
-                  available: balances[0].available,
-                  locked: balances[0].locked,
-                },
-              };
-            }
-            return null;
-          } catch (error) {
-            console.error(`Failed to fetch balance for token ${token.uid}:`, error);
-            return null;
+          const balance = await fetchTokenBalance(token.uid);
+          if (balance) {
+            return {
+              uid: token.uid,
+              balance,
+            };
           }
+          return null;
         })
       );
 
@@ -1123,7 +961,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         }),
       }));
     } catch (error) {
-      console.error('Failed to refresh token balances:', error);
+      log.error('Failed to refresh token balances:', error);
     }
   };
 
