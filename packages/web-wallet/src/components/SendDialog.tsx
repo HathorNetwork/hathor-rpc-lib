@@ -98,7 +98,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
   const { allTokens } = useTokens();
 
   // Get initial token balance for form setup
-  const initialBalance = allTokens.length > 0 ? allTokens[0].balance.available : 0n;
+  const initialBalance = allTokens.length > 0 && allTokens[0].balance ? allTokens[0].balance.available : 0n;
 
   // Initialize form
   const {
@@ -149,7 +149,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
     return allTokens.find(t => t.uid === selectedTokenUid);
   }, [allTokens, selectedTokenUid]);
 
-  const availableBalance = selectedToken?.balance.available || 0n;
+  const availableBalance = selectedToken?.balance?.available || 0n;
 
   // Re-validate amount when token or balance changes to use current balance
   React.useEffect(() => {

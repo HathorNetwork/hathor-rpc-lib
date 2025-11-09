@@ -25,7 +25,7 @@ export class TokenStorageService {
           name: token.name,
           symbol: token.symbol,
           configString: token.configString || "",
-          registeredAt: token.registeredAt,
+          registeredAt: token.registeredAt ?? Date.now(),
           isNFT: token.isNFT,
           metadata: token.metadata,
         })),

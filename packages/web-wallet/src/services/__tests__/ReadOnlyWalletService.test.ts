@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { ReadOnlyWalletService } from '../ReadOnlyWalletService';
 
 describe('ReadOnlyWalletService - Initialization and Race Conditions', () => {
@@ -71,7 +71,6 @@ describe('ReadOnlyWalletService - Initialization and Race Conditions', () => {
 
       // Initialize for testnet
       await service.initialize(xpub, 'testnet').catch(() => {});
-      const testnetReady = service.isReady();
 
       // Stop and reinitialize for mainnet
       if (service.isReady()) {

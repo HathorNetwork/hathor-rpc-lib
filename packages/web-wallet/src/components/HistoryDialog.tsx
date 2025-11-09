@@ -274,10 +274,10 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Available balance</p>
                 <p className="text-base font-medium text-white">
-                  {formatHTRAmount(selectedToken.balance.available, selectedToken.isNFT)} {selectedToken.symbol}
+                  {selectedToken.balance ? formatHTRAmount(selectedToken.balance.available, selectedToken.isNFT) : '0'} {selectedToken.symbol}
                 </p>
                 {/* Locked Balance (Only if > 0) - Small secondary line */}
-                {selectedToken.balance.locked > 0n && (
+                {selectedToken.balance && selectedToken.balance.locked > 0n && (
                   <p className="text-xs text-[#6B7280] mt-1">
                     {formatHTRAmount(selectedToken.balance.locked, selectedToken.isNFT)} locked
                   </p>

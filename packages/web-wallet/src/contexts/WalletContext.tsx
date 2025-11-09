@@ -169,9 +169,9 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         log.debug('Checking installed snaps via wallet_getSnaps...');
 
         // Use wallet_getSnaps to check if our snap is installed and enabled
-        const snaps = await (window as any).ethereum?.request({
+        const snaps = await (window as { ethereum?: { request: (args: { method: string }) => Promise<unknown> } }).ethereum?.request({
           method: 'wallet_getSnaps',
-        });
+        }) as Record<string, { version: string; enabled: boolean; blocked: boolean }> | undefined;
 
         log.debug('Installed snaps:', snaps);
 
@@ -201,7 +201,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         log.debug('Snap verification successful - snap is ready to use');
       } catch (snapError) {
         const errorMsg = snapError instanceof Error ? snapError.message : 'Unknown error';
-        const errorCode = (snapError as any)?.code;
+        const errorCode = (snapError as { code?: number })?.code;
 
         log.error('Snap verification failed:', errorMsg);
         log.error('Error code:', errorCode);
@@ -550,7 +550,48 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     setState(initialState);
   };
 
-  const refreshBalance = async () => {
+  const refreshTokenBalances = React.useCallback(async () => {
+    if (!state.isConnected || !readOnlyWalletService.isReady()) return;
+
+    try {
+      // Get current tokens from state using functional update to avoid stale closure
+      let tokensSnapshot: TokenInfo[] = [];
+      setState(prev => {
+        tokensSnapshot = prev.registeredTokens;
+        return prev; // No state change yet
+      });
+
+      // Fetch balances for all tokens
+      const balanceUpdates = await Promise.all(
+        tokensSnapshot.map(async (token) => {
+          const balance = await fetchTokenBalance(token.uid);
+          if (balance) {
+            return {
+              uid: token.uid,
+              balance,
+            };
+          }
+          return null;
+        })
+      );
+
+      // Update state by merging balance updates into existing tokens
+      setState(prev => ({
+        ...prev,
+        registeredTokens: prev.registeredTokens.map(token => {
+          const update = balanceUpdates.find(u => u && u.uid === token.uid);
+          if (update) {
+            return { ...token, balance: update.balance };
+          }
+          return token;
+        }),
+      }));
+    } catch (error) {
+      log.error('Failed to refresh token balances:', error);
+    }
+  }, [state.isConnected]);
+
+  const refreshBalance = React.useCallback(async () => {
     if (!state.isConnected || !readOnlyWalletService.isReady()) return;
 
     try {
@@ -566,7 +607,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         error: error instanceof Error ? error.message : 'Failed to refresh balance',
       }));
     }
-  };
+  }, [state.isConnected, refreshTokenBalances]);
 
   const refreshAddress = async () => {
     if (!state.isConnected || !readOnlyWalletService.isReady()) return;
@@ -924,47 +965,6 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     }
   };
 
-  const refreshTokenBalances = async () => {
-    if (!state.isConnected || !readOnlyWalletService.isReady()) return;
-
-    try {
-      // Get current tokens from state using functional update to avoid stale closure
-      let tokensSnapshot: TokenInfo[] = [];
-      setState(prev => {
-        tokensSnapshot = prev.registeredTokens;
-        return prev; // No state change yet
-      });
-
-      // Fetch balances for all tokens
-      const balanceUpdates = await Promise.all(
-        tokensSnapshot.map(async (token) => {
-          const balance = await fetchTokenBalance(token.uid);
-          if (balance) {
-            return {
-              uid: token.uid,
-              balance,
-            };
-          }
-          return null;
-        })
-      );
-
-      // Update state by merging balance updates into existing tokens
-      setState(prev => ({
-        ...prev,
-        registeredTokens: prev.registeredTokens.map(token => {
-          const update = balanceUpdates.find(u => u && u.uid === token.uid);
-          if (update) {
-            return { ...token, balance: update.balance };
-          }
-          return token;
-        }),
-      }));
-    } catch (error) {
-      log.error('Failed to refresh token balances:', error);
-    }
-  };
-
   const setSelectedTokenFilter = (filter: TokenFilter) => {
     setState(prev => ({ ...prev, selectedTokenFilter: filter }));
   };
@@ -995,7 +995,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     }
   };
 
-  const handleNewTransaction = async (tx: unknown) => {
+  const handleNewTransaction = React.useCallback(async (tx: unknown) => {
     if (!state.isConnected || !readOnlyWalletService.isReady()) return;
 
     // Type cast the transaction
@@ -1084,7 +1084,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
         setState(prev => ({ ...prev, error: null }));
       }, 10000);
     }
-  };
+  }, [state.isConnected, refreshBalance]);
 
   // Use a ref to maintain stable event handler
   const handleNewTransactionRef = React.useRef(handleNewTransaction);

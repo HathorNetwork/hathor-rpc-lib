@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@hathor/snap-utils': path.resolve(__dirname, '../snap-utils/src'),
       'events': path.resolve(__dirname, 'node_modules/events'),
       'buffer': path.resolve(__dirname, 'node_modules/buffer'),
       'process/browser': path.resolve(__dirname, 'node_modules/process/browser.js'),

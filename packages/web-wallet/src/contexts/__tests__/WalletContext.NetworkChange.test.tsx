@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 describe('WalletContext - Network Change Rollback', () => {
   // These are behavioral tests for the network change rollback logic
@@ -19,7 +19,6 @@ describe('WalletContext - Network Change Rollback', () => {
 
     it('should include both errors when rollback also fails', () => {
       const originalError = 'Network RPC failed: timeout';
-      const rollbackError = 'Rollback timeout';
       const rollbackSucceeded = false;
 
       const finalError = rollbackSucceeded
@@ -101,12 +100,6 @@ describe('WalletContext - Network Change Rollback', () => {
         network: 'testnet',
         address: 'WTest123...',
         balances: [{ token: '00', available: 1000n, locked: 0n }],
-      };
-
-      const newState = {
-        network: 'mainnet',
-        address: 'WMain456...',
-        balances: [{ token: '00', available: 2000n, locked: 0n }],
       };
 
       // After rollback, state should match previous
@@ -289,10 +282,6 @@ describe('WalletContext - Network Change Rollback', () => {
       const previousBalances = [
         { token: '00', available: 1000n, locked: 0n },
         { token: 'token1', available: 500n, locked: 100n },
-      ];
-
-      const newBalances = [
-        { token: '00', available: 2000n, locked: 0n },
       ];
 
       // After rollback

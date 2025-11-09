@@ -149,7 +149,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
       let parsedResponse;
       try {
         parsedResponse = typeof result === 'string' ? JSON.parse(result) : result;
-      } catch (parseError) {
+      } catch {
         console.error('Failed to parse token creation response:', result);
         throw new Error('Received invalid response from snap. Please try again.');
       }

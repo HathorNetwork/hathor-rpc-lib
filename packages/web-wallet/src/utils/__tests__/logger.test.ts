@@ -2,8 +2,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { logger, createLogger } from '../logger';
 
 describe('logger utilities', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let consoleLogSpy: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let consoleWarnSpy: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let consoleErrorSpy: any;
 
   beforeEach(() => {
