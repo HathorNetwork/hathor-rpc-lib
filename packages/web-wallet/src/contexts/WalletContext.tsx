@@ -1,9 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 import { useInvokeSnap, useRequestSnap, useMetaMaskContext } from '@hathor/snap-utils';
 import { ConnectionLostModal } from '../components/ConnectionLostModal';
 import type { TransactionHistoryItem } from '../types/wallet';
-import type { TokenFilter } from '../types/token';
+import type { TokenFilter, DagMetadata } from '../types/token';
 import type { AddressMode } from '../utils/addressMode';
 
 // Import all our custom hooks
@@ -36,7 +36,7 @@ interface WalletState {
     symbol: string;
     balance?: { available: bigint; locked: bigint };
     isNFT: boolean;
-    metadata?: unknown;
+    metadata?: DagMetadata;
     configString?: string;
     registeredAt?: number;
   }>;

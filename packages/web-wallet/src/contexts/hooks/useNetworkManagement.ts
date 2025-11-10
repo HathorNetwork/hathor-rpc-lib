@@ -22,7 +22,7 @@ interface UseNetworkManagementOptions {
   address: string;
   balances: WalletBalance[];
   addressMode: AddressMode;
-  invokeSnap: (params: { method: string; params: unknown }) => Promise<unknown>;
+  invokeSnap: (params: { method: string; params?: Record<string, unknown> }) => Promise<unknown>;
   onSetupEventListeners: () => void;
   onSnapError: (error: unknown) => void;
   onNetworkChange: (params: {

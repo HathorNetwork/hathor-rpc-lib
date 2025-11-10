@@ -19,9 +19,9 @@ const STORAGE_KEYS = {
 
 interface UseWalletConnectionOptions {
   addressMode: AddressMode;
-  invokeSnap: (params: { method: string; params: unknown }) => Promise<unknown>;
+  invokeSnap: (params: { method: string; params?: Record<string, unknown> }) => Promise<unknown>;
   requestSnap: () => Promise<void>;
-  metamaskError: Error | undefined;
+  metamaskError: Error | null;
   onRefreshBalance: () => Promise<void>;
   onError: (error: string | null) => void;
   onShowConnectionLostModal: (show: boolean) => void;

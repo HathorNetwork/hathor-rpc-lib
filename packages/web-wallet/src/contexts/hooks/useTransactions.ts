@@ -22,7 +22,7 @@ interface SendTransactionParams {
 
 interface UseTransactionsOptions {
   isConnected: boolean;
-  invokeSnap: (params: { method: string; params: unknown }) => Promise<unknown>;
+  invokeSnap: (params: { method: string; params?: Record<string, unknown> }) => Promise<unknown>;
   onError: (error: string) => void;
   onSnapError: (error: unknown) => void;
 }
