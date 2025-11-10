@@ -1,69 +1,139 @@
-# React + TypeScript + Vite
+# Hathor Web Wallet
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Web interface for interacting with Hathor blockchain via MetaMask Snap.
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Browser-based wallet that connects to the Hathor network through a MetaMask Snap extension. Supports HTR and custom token transfers, transaction history, NFT detection, and network switching between mainnet and testnet.
 
-## Expanding the ESLint configuration
+## Prerequisites
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- Node.js 22+
+- Yarn 4.x
+- MetaMask browser extension with Snap support
+- Running Hathor Snap (local development or installed)
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Quick Start
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+```bash
+# Install dependencies (from monorepo root)
+yarn install
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Start development server
+yarn workspace @hathor/web-wallet dev
+
+# Access at http://localhost:5173
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Development
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+# Run tests
+yarn workspace @hathor/web-wallet test
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Run tests with UI
+yarn workspace @hathor/web-wallet test:ui
+
+# Run tests with coverage
+yarn workspace @hathor/web-wallet test:coverage
+
+# Lint code
+yarn workspace @hathor/web-wallet lint
+
+# Build for production
+yarn workspace @hathor/web-wallet build
+
+# Preview production build
+yarn workspace @hathor/web-wallet preview
 ```
+
+## Architecture
+
+### Tech Stack
+- **React 19** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool and dev server
+- **Vitest** - Testing framework
+- **Radix UI** - Headless UI components
+- **TailwindCSS** - Styling
+- **React Hook Form + Zod** - Form validation
+
+### Project Structure
+
+```
+src/
+├── components/         # React components (dialogs, UI elements)
+├── contexts/           # React Context + custom hooks
+│   └── hooks/         # Domain-specific hooks (connection, balance, tokens, etc.)
+├── services/          # Business logic services
+│   ├── HathorWalletService.ts      # Snap RPC interactions
+│   ├── ReadOnlyWalletService.ts    # Read-only wallet operations
+│   ├── TokenRegistryService.ts     # Token registration/storage
+│   ├── TokenStorageService.ts      # LocalStorage persistence
+│   └── NftDetectionService.ts      # NFT metadata fetching
+├── utils/             # Utility functions (logging, token loading, etc.)
+├── types/             # TypeScript type definitions
+└── constants/         # App constants (timeouts, token IDs, etc.)
+```
+
+### State Management
+
+Uses React Context API with custom hooks for state isolation:
+- `useWalletConnection` - Connection, initialization, snap verification
+- `useWalletBalance` - HTR balance and address management
+- `useTokenManagement` - Custom token registration and balances
+- `useTransactions` - Send transactions and history
+- `useNetworkManagement` - Network switching with rollback
+- `useAddressMode` - Address display mode (current/legacy)
+
+### Key Services
+
+**HathorWalletService**
+Handles MetaMask Snap RPC calls (getXpub, sendTransaction, changeNetwork). Implements error handling for unauthorized access and snap crashes.
+
+**ReadOnlyWalletService**
+Manages read-only wallet instance from @hathor/wallet-lib. Provides balance fetching, transaction history, and WebSocket event listeners for real-time updates.
+
+**TokenRegistryService**
+Validates and registers custom tokens. Coordinates with TokenStorageService for persistence and NftDetectionService for metadata.
+
+**NftDetectionService**
+Fetches NFT metadata from DAG API with caching and batch detection support.
+
+## Testing
+
+Test suites cover:
+- Service layer (wallet operations, token management)
+- Context hooks (connection, network switching, error handling)
+- Components (dialogs, forms)
+- Utilities (logging, token loading)
+
+Run `yarn test` for full test suite (157 tests).
+
+## Configuration
+
+### Environment Variables
+
+```env
+VITE_LOG_LEVEL=debug|info|warn|error  # Default: warn
+```
+
+### Network Configuration
+
+Default network is defined in `src/constants/index.ts`. Snap origin configured in `vite.config.ts`.
+
+## Build Output
+
+Production build creates optimized static assets in `dist/` directory. Build includes:
+- Minified JavaScript bundles
+- CSS with TailwindCSS purge
+- Static HTML entry point
+- Browser polyfills for Node.js modules (buffer, events, crypto, stream)
+
+## Browser Compatibility
+
+Requires modern browser with:
+- ES2022 support
+- MetaMask extension
+- WebSocket support
+- LocalStorage API
