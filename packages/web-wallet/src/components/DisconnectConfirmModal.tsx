@@ -26,7 +26,7 @@ export const DisconnectConfirmModal: React.FC<DisconnectConfirmModalProps> = ({
   onCancel
 }) => {
   return (
-    <Dialog open={isOpen} onOpenChange={onCancel}>
+    <Dialog open={isOpen}>
       <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <div className="flex items-center gap-2">

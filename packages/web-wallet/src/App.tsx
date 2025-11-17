@@ -4,18 +4,13 @@ import { WalletProvider } from './contexts/WalletContext'
 import WalletHome from './components/WalletHome'
 import { ErrorBoundary } from './components/ErrorBoundary'
 
-function App() {
-  return (
+function App() { return (
     <ErrorBoundary>
       <BrowserRouter>
         <MetaMaskProvider>
-          <ErrorBoundary>
-            <WalletProvider>
-              <ErrorBoundary>
-                <WalletHome />
-              </ErrorBoundary>
-            </WalletProvider>
-          </ErrorBoundary>
+          <WalletProvider>
+            <WalletHome />
+          </WalletProvider>
         </MetaMaskProvider>
       </BrowserRouter>
     </ErrorBoundary>
