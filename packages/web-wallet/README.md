@@ -10,8 +10,10 @@ Browser-based wallet that connects to the Hathor network through a MetaMask Snap
 
 - Node.js 22+
 - Yarn 4.x
-- MetaMask browser extension with Snap support
+- MetaMask Flask browser extension (required for development mode Snaps)
 - Running Hathor Snap (local development or installed)
+
+**Note:** MetaMask Flask is the development version of MetaMask that supports running Snaps in development mode. Download it from [metamask.io/flask](https://metamask.io/flask). For production use, the standard MetaMask extension can be used with published Snaps.
 
 ## Quick Start
 
