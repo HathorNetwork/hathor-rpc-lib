@@ -67,8 +67,6 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
     setIsMenuOpen(false);
     setIsDisconnectModalOpen(false);
     disconnectWallet();
-    // Page will reload automatically via state reset
-    window.location.reload();
   };
 
   const getNetworkDisplayName = (networkId: string) => {
@@ -81,6 +79,47 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
         return networkId;
     }
   };
+
+  // Shared menu items to avoid duplication between desktop and mobile
+  const MenuItems = ({ className = '' }: { className?: string }) => (
+    <>
+      <button
+        onClick={() => {
+          setIsMenuOpen(false);
+          onCreateTokenClick?.();
+        }}
+        className={className || "w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] transition-colors"}
+      >
+        Create Tokens
+      </button>
+      <button
+        onClick={() => {
+          setIsMenuOpen(false);
+          onRegisterTokenClick?.();
+        }}
+        className={className || "w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] transition-colors"}
+      >
+        Register Tokens
+      </button>
+      <button
+        onClick={() => {
+          setIsMenuOpen(false);
+          onAddressModeClick?.();
+        }}
+        className={className || "w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] transition-colors"}
+      >
+        Address mode
+      </button>
+      <div className="border-t border-[#24292F] my-1 md:my-2" />
+      <button
+        onClick={handleDisconnectClick}
+        className={(className || "w-full px-4 py-3 text-left text-sm hover:bg-[#24292F] transition-colors") + " text-red-400 flex items-center gap-2"}
+      >
+        <LogOut className="w-4 h-4" />
+        Disconnect
+      </button>
+    </>
+  );
 
   return (
     <>
@@ -151,41 +190,7 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
               {/* Desktop: Compact dropdown - only on desktop, stays in relative container */}
               {isMenuOpen && (
                 <div className="hidden md:block absolute top-full right-0 mt-2 w-48 bg-[#191C21] border border-[#24292F] rounded-lg shadow-lg overflow-hidden z-50">
-                  <button
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      onCreateTokenClick?.();
-                    }}
-                    className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] transition-colors"
-                  >
-                    Create Tokens
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      onRegisterTokenClick?.();
-                    }}
-                    className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] transition-colors"
-                  >
-                    Register Tokens
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      onAddressModeClick?.();
-                    }}
-                    className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] transition-colors"
-                  >
-                    Address mode
-                  </button>
-                  <div className="border-t border-[#24292F] my-1" />
-                  <button
-                    onClick={handleDisconnectClick}
-                    className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-[#24292F] transition-colors flex items-center gap-2"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Disconnect
-                  </button>
+                  <MenuItems />
                 </div>
               )}
             </div>
@@ -205,41 +210,7 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
           {/* Menu panel */}
           <div className="fixed left-4 right-4 top-[calc(100px+0.75rem)] bg-[#191C21] border border-[#24292F] rounded-xl shadow-lg z-50">
             <div className="px-4 py-2">
-              <button
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  onCreateTokenClick?.();
-                }}
-                className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] rounded-lg transition-colors"
-              >
-                Create Tokens
-              </button>
-              <button
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  onRegisterTokenClick?.();
-                }}
-                className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] rounded-lg transition-colors"
-              >
-                Register Tokens
-              </button>
-              <button
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  onAddressModeClick?.();
-                }}
-                className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] rounded-lg transition-colors"
-              >
-                Address mode
-              </button>
-              <div className="border-t border-[#24292F] my-2" />
-              <button
-                onClick={handleDisconnectClick}
-                className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-[#24292F] rounded-lg transition-colors flex items-center gap-2"
-              >
-                <LogOut className="w-4 h-4" />
-                Disconnect
-              </button>
+              <MenuItems className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] rounded-lg transition-colors" />
             </div>
           </div>
         </div>
