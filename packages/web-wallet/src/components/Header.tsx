@@ -19,6 +19,7 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState(false);
   const [isDisconnectModalOpen, setIsDisconnectModalOpen] = useState(false);
+  const copyTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Prevent body scroll when mobile menu is open
   React.useEffect(() => {
@@ -32,12 +33,26 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
     };
   }, [isMenuOpen]);
 
+  // Cleanup copy timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleCopyAddress = async () => {
     if (address) {
       try {
+        // Clear any existing timeout
+        if (copyTimeoutRef.current) {
+          clearTimeout(copyTimeoutRef.current);
+        }
+
         await navigator.clipboard.writeText(address);
         setCopiedAddress(true);
-        setTimeout(() => setCopiedAddress(false), 2000);
+        copyTimeoutRef.current = setTimeout(() => setCopiedAddress(false), 2000);
       } catch (error) {
         console.error('Failed to copy address:', error);
       }
