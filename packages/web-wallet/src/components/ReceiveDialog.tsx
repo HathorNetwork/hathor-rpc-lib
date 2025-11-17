@@ -15,6 +15,7 @@ const ReceiveDialog: React.FC<ReceiveDialogProps> = ({ isOpen, onClose }) => {
   const [copied, setCopied] = useState(false);
   const [displayAddress, setDisplayAddress] = useState<string>('');
   const { addressMode } = useWallet();
+  const copyTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Get address based on address mode when dialog opens
   useEffect(() => {
@@ -32,13 +33,27 @@ const ReceiveDialog: React.FC<ReceiveDialogProps> = ({ isOpen, onClose }) => {
     loadAddress();
   }, [isOpen, addressMode]);
 
+  // Cleanup copy timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleCopy = async () => {
     if (!displayAddress) return;
 
     try {
+      // Clear any existing timeout
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+
       await navigator.clipboard.writeText(displayAddress);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
     }
