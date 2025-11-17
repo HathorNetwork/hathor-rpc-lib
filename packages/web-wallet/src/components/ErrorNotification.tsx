@@ -8,7 +8,7 @@ interface ErrorNotificationProps {
 
 /**
  * Error notification component that displays errors in a toast-like notification.
- * Auto-dismisses after 10 seconds but can be manually dismissed.
+ * Can be manually dismissed by clicking the close button.
  */
 const ErrorNotification: React.FC<ErrorNotificationProps> = ({ error, onDismiss }) => {
   if (!error) return null;
