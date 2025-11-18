@@ -127,7 +127,7 @@ const TokenList: React.FC<TokenListProps> = ({
 
                 {/* Balance - aligned right on mobile, integrated in left side */}
                 <span className="text-base md:text-lg font-medium text-white flex-shrink-0 md:ml-4">
-                  {token.balance ? formatHTRAmount(token.balance.available, token.isNFT) : '0'} {token.symbol}
+                  {formatHTRAmount(token.balance ? token.balance.available : 0n, token.isNFT)} {token.symbol}
                 </span>
               </div>
 
