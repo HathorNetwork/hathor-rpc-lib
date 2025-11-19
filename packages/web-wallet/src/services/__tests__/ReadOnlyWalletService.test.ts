@@ -86,28 +86,7 @@ describe('ReadOnlyWalletService - Initialization and Race Conditions', () => {
   });
 
   describe('Wallet stop edge cases', () => {
-    it('should aggregate all errors when stop fails', async () => {
-      // This tests the new error aggregation logic
-      const service = new ReadOnlyWalletService();
 
-      try {
-        await service.initialize('xpub123', 'testnet');
-      } catch {
-        // Initialization might fail in test environment, that's ok
-      }
-
-      // Try to stop
-      try {
-        await service.stop();
-        // If it doesn't throw, that's also fine
-        expect(true).toBe(true);
-      } catch (error) {
-        // If it throws, error should contain details
-        if (error instanceof Error) {
-          expect(error.message).toBeTruthy();
-        }
-      }
-    });
 
     it('should clear wallet reference even when stop() throws', async () => {
       const service = new ReadOnlyWalletService();
@@ -218,25 +197,7 @@ describe('ReadOnlyWalletService - Initialization and Race Conditions', () => {
     });
   });
 
-  describe('"wallet-already-loaded" error handling', () => {
-    it('should not throw when wallet already loaded', async () => {
-      // The review noted this error should be handled gracefully
-      const service = new ReadOnlyWalletService();
 
-      // First initialization
-      try {
-        await service.initialize('xpub123', 'testnet');
-      } catch (error) {
-        // If error is "wallet-already-loaded", it should not throw
-        if (error instanceof Error && !error.message.includes('wallet-already-loaded')) {
-          // Other errors are fine for test environment
-        }
-      }
-
-      // Should complete without throwing "wallet-already-loaded" to user
-      expect(true).toBe(true);
-    });
-  });
 
   describe('WebSocket connection failures', () => {
     it('should handle WebSocket connection errors during initialization', async () => {
@@ -260,27 +221,5 @@ describe('ReadOnlyWalletService - Initialization and Race Conditions', () => {
     });
   });
 
-  describe('Cleanup on reinitialization', () => {
-    it('should cleanup previous instance when reinitializing', async () => {
-      const service = new ReadOnlyWalletService();
 
-      // First initialization
-      try {
-        await service.initialize('xpub_first', 'testnet');
-      } catch {
-        // Might fail in test env
-      }
-
-      // Second initialization should cleanup first
-      try {
-        await service.initialize('xpub_second', 'mainnet');
-      } catch {
-        // Might fail in test env
-      }
-
-      // Should not have resource leaks or multiple instances
-      // This is implicitly tested by not crashing
-      expect(true).toBe(true);
-    });
-  });
 });

@@ -13,15 +13,7 @@ test.describe('Hathor Wallet V1 UI - Disconnected State', () => {
     await expect(page.locator('button:has-text("Connect Wallet")')).toBeVisible();
   });
 
-  test('shows loading state when connecting', async ({ page }) => {
-    // Click connect button
-    await page.locator('button:has-text("Connect Wallet")').click();
 
-    // Should show loading indicator
-    await expect(page.locator('text=Connecting')).toBeVisible({ timeout: 2000 }).catch(() => {
-      // Expected to timeout without MetaMask, that's OK for this test
-    });
-  });
 
   test('has responsive layout', async ({ page }) => {
     // Test mobile viewport

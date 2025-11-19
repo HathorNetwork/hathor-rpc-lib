@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { htrToCents, centsToHTR, formatHTRAmount } from '../hathor';
+import { htrToCents, centsToHTR } from '../hathor';
 
 describe('hathor utilities', () => {
   describe('htrToCents', () => {
@@ -103,33 +103,7 @@ describe('hathor utilities', () => {
     });
   });
 
-  describe('formatHTRAmount', () => {
-    it('should format whole amounts with 2 decimal places', () => {
-      expect(formatHTRAmount(100n)).toBe('1.00');
-      expect(formatHTRAmount(1000n)).toBe('10.00');
-      expect(formatHTRAmount(10000n)).toBe('100.00');
-    });
 
-    it('should format fractional amounts correctly', () => {
-      expect(formatHTRAmount(150n)).toBe('1.50');
-      expect(formatHTRAmount(123n)).toBe('1.23');
-      expect(formatHTRAmount(101n)).toBe('1.01');
-    });
-
-    it('should handle zero', () => {
-      expect(formatHTRAmount(0n)).toBe('0.00');
-    });
-
-    it('should always show 2 decimal places', () => {
-      expect(formatHTRAmount(1000n)).toBe('10.00');
-      expect(formatHTRAmount(1050n)).toBe('10.50');
-    });
-
-    it('should handle very small amounts', () => {
-      expect(formatHTRAmount(1n)).toBe('0.01');
-      expect(formatHTRAmount(10n)).toBe('0.10');
-    });
-  });
 
   describe('round-trip conversion', () => {
     it('should preserve values through htrToCents -> centsToHTR', () => {

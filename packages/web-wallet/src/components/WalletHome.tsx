@@ -123,23 +123,6 @@ const WalletHome: React.FC = () => {
     navigate(queryString ? `?${queryString}` : '/', { replace: false });
   };
 
-  const handleButtonClick = (buttonName: string) => {
-    logger.debug(`${buttonName} button clicked`);
-
-    // Open appropriate dialog using URL navigation
-    switch (buttonName) {
-      case 'Send':
-      case 'SendHTR':
-        navigate('?dialog=send');
-        break;
-      case 'Receive':
-        navigate('?dialog=receive');
-        break;
-      case 'ViewHistory':
-        navigate('?dialog=history');
-        break;
-    }
-  };
 
   // Helper function to close dialogs
   const closeDialog = () => {
@@ -244,14 +227,14 @@ const WalletHome: React.FC = () => {
             {/* Right: Action Buttons */}
             <div className="flex gap-3 w-full md:w-auto">
               <button
-                onClick={() => handleButtonClick('Send')}
+                onClick={() => navigate('?dialog=send')}
                 className="flex-1 md:flex-none px-6 py-2.5 bg-primary hover:bg-primary/90 active:bg-primary/80 rounded-xl flex items-center justify-center gap-2 transition-colors"
               >
                 <ArrowUpRight className="w-4 h-4 text-white" />
                 <span className="text-sm font-medium text-white">Send</span>
               </button>
               <button
-                onClick={() => handleButtonClick('Receive')}
+                onClick={() => navigate('?dialog=receive')}
                 className="flex-1 md:flex-none px-6 py-2.5 bg-primary hover:bg-primary/90 active:bg-primary/80 rounded-xl flex items-center justify-center gap-2 transition-colors"
               >
                 <ArrowDownLeft className="w-4 h-4 text-white" />
