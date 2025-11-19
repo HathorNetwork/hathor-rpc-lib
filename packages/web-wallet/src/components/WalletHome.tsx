@@ -17,11 +17,11 @@ import htrLogoBlack from '../assets/htr_logo_black.svg';
 import htrLogoWhite from '../assets/htr_logo_white.svg';
 import htrLogoWhiteOutline from '../assets/htr_logo_white_outline.svg';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from './../utils/logger';
 
 const WalletHome: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [activeButton, setActiveButton] = useState<string | null>(null);
 
   const {
     isConnected,
@@ -124,8 +124,7 @@ const WalletHome: React.FC = () => {
   };
 
   const handleButtonClick = (buttonName: string) => {
-    setActiveButton(buttonName);
-    console.log(`${buttonName} button clicked`);
+    logger.debug(`${buttonName} button clicked`);
 
     // Open appropriate dialog using URL navigation
     switch (buttonName) {
@@ -140,9 +139,6 @@ const WalletHome: React.FC = () => {
         navigate('?dialog=history');
         break;
     }
-
-    // Reset active state after a brief moment
-    setTimeout(() => setActiveButton(null), 200);
   };
 
   // Helper function to close dialogs
@@ -249,16 +245,14 @@ const WalletHome: React.FC = () => {
             <div className="flex gap-3 w-full md:w-auto">
               <button
                 onClick={() => handleButtonClick('Send')}
-                className={`flex-1 md:flex-none px-6 py-2.5 bg-primary hover:bg-primary/90 rounded-xl flex items-center justify-center gap-2 transition-colors ${activeButton === 'Send' ? 'bg-primary/90' : ''
-                  }`}
+                className="flex-1 md:flex-none px-6 py-2.5 bg-primary hover:bg-primary/90 active:bg-primary/80 rounded-xl flex items-center justify-center gap-2 transition-colors"
               >
                 <ArrowUpRight className="w-4 h-4 text-white" />
                 <span className="text-sm font-medium text-white">Send</span>
               </button>
               <button
                 onClick={() => handleButtonClick('Receive')}
-                className={`flex-1 md:flex-none px-6 py-2.5 bg-primary hover:bg-primary/90 rounded-xl flex items-center justify-center gap-2 transition-colors ${activeButton === 'Receive' ? 'bg-primary/90' : ''
-                  }`}
+                className="flex-1 md:flex-none px-6 py-2.5 bg-primary hover:bg-primary/90 active:bg-primary/80 rounded-xl flex items-center justify-center gap-2 transition-colors"
               >
                 <ArrowDownLeft className="w-4 h-4 text-white" />
                 <span className="text-sm font-medium text-white">Receive</span>
