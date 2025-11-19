@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Copy, Globe, Menu, X, Check, LogOut } from 'lucide-react';
+import { Copy, Globe, Menu, X, LogOut } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { truncateAddress } from '../utils/hathor';
 import ChangeNetworkDialog from './ChangeNetworkDialog';
 import { DisconnectConfirmModal } from './DisconnectConfirmModal';
 import htrLogo from '../htr_logo.svg';
 import { NETWORKS } from '../constants';
+import { useToast } from '@/hooks/use-toast';
 
 interface HeaderProps {
   onRegisterTokenClick?: () => void;
@@ -17,9 +18,8 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
   const { address, network, disconnectWallet } = useWallet();
   const [isNetworkDialogOpen, setIsNetworkDialogOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [copiedAddress, setCopiedAddress] = useState(false);
   const [isDisconnectModalOpen, setIsDisconnectModalOpen] = useState(false);
-  const copyTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const { toast } = useToast();
 
   // Prevent body scroll when mobile menu is open
   React.useEffect(() => {
@@ -33,26 +33,14 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
     };
   }, [isMenuOpen]);
 
-  // Cleanup copy timeout on unmount
-  React.useEffect(() => {
-    return () => {
-      if (copyTimeoutRef.current) {
-        clearTimeout(copyTimeoutRef.current);
-      }
-    };
-  }, []);
-
   const handleCopyAddress = async () => {
     if (address) {
       try {
-        // Clear any existing timeout
-        if (copyTimeoutRef.current) {
-          clearTimeout(copyTimeoutRef.current);
-        }
-
         await navigator.clipboard.writeText(address);
-        setCopiedAddress(true);
-        copyTimeoutRef.current = setTimeout(() => setCopiedAddress(false), 2000);
+        toast({
+          variant: "success",
+          title: "Copied to clipboard",
+        });
       } catch (error) {
         console.error('Failed to copy address:', error);
       }
@@ -123,18 +111,6 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
 
   return (
     <>
-      {/* Toast Notification */}
-      {copiedAddress && (
-        <div className="fixed bottom-4 right-4 z-[60] animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <div className="bg-[#191C21] rounded-lg px-4 py-3 shadow-lg flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
-              <Check className="w-5 h-5 text-primary" />
-            </div>
-            <p className="text-sm font-medium text-white">Copied to clipboard</p>
-          </div>
-        </div>
-      )}
-
       <header>
         <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 py-4 md:py-6">
           {/* Mobile: Stacked layout, Desktop: Side by side */}

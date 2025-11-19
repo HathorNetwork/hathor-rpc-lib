@@ -10,6 +10,7 @@ import { formatHTRAmount } from '../utils/hathor';
 import { readOnlyWalletService } from '../services/ReadOnlyWalletService';
 import { getAddressForMode } from '../utils/addressMode';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { useToast } from '@/hooks/use-toast';
 
 interface CreateTokenDialogProps {
   isOpen: boolean;
@@ -60,6 +61,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
 
   const { registerToken, balances, addressMode } = useWallet();
   const invokeSnap = useInvokeSnap();
+  const { toast } = useToast();
 
   // Get HTR balance
   const htrBalance = balances.length > 0 ? balances[0].available : 0n;
@@ -207,6 +209,10 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
     if (successData?.configString) {
       try {
         await navigator.clipboard.writeText(successData.configString);
+        toast({
+          variant: "success",
+          title: "Configuration copied to clipboard",
+        });
       } catch (err) {
         console.error('Failed to copy:', err);
       }

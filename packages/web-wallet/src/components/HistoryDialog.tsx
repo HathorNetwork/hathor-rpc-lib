@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { ArrowUpRight, ArrowDownLeft, ExternalLink, Loader2, ArrowLeft, Clock, Copy, Check } from 'lucide-react'
+import { ArrowUpRight, ArrowDownLeft, ExternalLink, Loader2, ArrowLeft, Clock, Copy } from 'lucide-react'
 import { useWallet } from '../contexts/WalletContext'
 import { useTokens } from '../hooks/useTokens'
 import type { TransactionHistoryItem } from '../types/wallet'
@@ -7,6 +7,7 @@ import { formatHTRAmount, toBigInt, truncateAddress } from '../utils/hathor'
 import { HATHOR_EXPLORER_URLS, NETWORKS, TOKEN_IDS } from '../constants'
 import Header from './Header'
 import UnregisterTokenDialog from './UnregisterTokenDialog'
+import { useToast } from '@/hooks/use-toast'
 
 interface HistoryDialogProps {
   isOpen: boolean
@@ -31,10 +32,10 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
   const [hasMore, setHasMore] = useState(true)
   const [currentCount, setCurrentCount] = useState(0)
   const [unregisterDialogOpen, setUnregisterDialogOpen] = useState(false)
-  const [copiedUid, setCopiedUid] = useState(false)
   const PAGE_SIZE = 10
-  const { address, network, getTransactionHistory, newTransaction, setHistoryDialogState, clearNewTransaction, unregisterToken } = useWallet()
+  const { address, network, getTransactionHistory, newTransaction, setHistoryDialogState, clearNewTransaction } = useWallet()
   const { allTokens } = useTokens()
+  const { toast } = useToast()
 
   // Get token info for display
   const selectedToken = React.useMemo(() => {
@@ -190,22 +191,13 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
     if (!selectedToken) return;
     try {
       await navigator.clipboard.writeText(selectedToken.uid);
-      setCopiedUid(true);
-      setTimeout(() => setCopiedUid(false), 2000);
+      toast({
+        variant: "success",
+        title: "Copied to clipboard",
+      });
     } catch (error) {
       console.error('Failed to copy token UID:', error);
     }
-  }
-
-  const handleUnregisterToken = async () => {
-    if (!selectedToken || selectedToken.uid === TOKEN_IDS.HTR) return;
-
-    await unregisterToken(selectedToken.uid);
-    // Close dialog after success
-    setTimeout(() => {
-      setUnregisterDialogOpen(false);
-      onClose();
-    }, 1500);
   }
 
   if (!isOpen) return null
@@ -213,18 +205,6 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
   return (
     <div className="fixed inset-0 bg-background z-50 overflow-y-auto">
       <Header onRegisterTokenClick={onRegisterTokenClick} />
-
-      {/* Toast Notification */}
-      {copiedUid && (
-        <div className="fixed bottom-4 right-4 z-[60] animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <div className="bg-[#191C21] rounded-lg px-4 py-3 shadow-lg flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
-              <Check className="w-5 h-5 text-primary" />
-            </div>
-            <p className="text-sm font-medium text-white">Copied to clipboard</p>
-          </div>
-        </div>
-      )}
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 md:px-8 lg:px-16 py-6 md:py-12">
@@ -295,7 +275,7 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
                     <button
                       onClick={copyTokenUid}
                       className="p-1.5 rounded transition-colors group"
-                      title={copiedUid ? "Copied!" : "Copy token UID"}
+                      title="Copy token UID"
                     >
                       <Copy className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
                     </button>
@@ -397,8 +377,17 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
       {selectedToken && selectedToken.uid !== TOKEN_IDS.HTR && (
         <UnregisterTokenDialog
           isOpen={unregisterDialogOpen}
-          onClose={() => setUnregisterDialogOpen(false)}
-          onConfirm={handleUnregisterToken}
+          onClose={() => {
+            setUnregisterDialogOpen(false);
+            onClose();
+          }}
+          onSuccess={() => {
+            toast({
+              variant: "success",
+              title: "Token unregistered successfully!",
+            });
+          }}
+          tokenUid={selectedToken.uid}
           tokenSymbol={selectedToken.symbol}
           tokenName={selectedToken.name}
         />

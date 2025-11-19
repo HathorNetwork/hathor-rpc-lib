@@ -5,6 +5,7 @@ import { useWallet } from '../contexts/WalletContext';
 import { QR_CODE_SIZE } from '../constants';
 import { readOnlyWalletService } from '../services/ReadOnlyWalletService';
 import { getAddressForMode } from '../utils/addressMode';
+import { useToast } from '@/hooks/use-toast';
 
 interface ReceiveDialogProps {
   isOpen: boolean;
@@ -12,10 +13,9 @@ interface ReceiveDialogProps {
 }
 
 const ReceiveDialog: React.FC<ReceiveDialogProps> = ({ isOpen, onClose }) => {
-  const [copied, setCopied] = useState(false);
   const [displayAddress, setDisplayAddress] = useState<string>('');
   const { addressMode } = useWallet();
-  const copyTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const { toast } = useToast();
 
   // Get address based on address mode when dialog opens
   useEffect(() => {
@@ -33,27 +33,15 @@ const ReceiveDialog: React.FC<ReceiveDialogProps> = ({ isOpen, onClose }) => {
     loadAddress();
   }, [isOpen, addressMode]);
 
-  // Cleanup copy timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (copyTimeoutRef.current) {
-        clearTimeout(copyTimeoutRef.current);
-      }
-    };
-  }, []);
-
   const handleCopy = async () => {
     if (!displayAddress) return;
 
     try {
-      // Clear any existing timeout
-      if (copyTimeoutRef.current) {
-        clearTimeout(copyTimeoutRef.current);
-      }
-
       await navigator.clipboard.writeText(displayAddress);
-      setCopied(true);
-      copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
+      toast({
+        variant: "success",
+        title: "Address copied to clipboard",
+      });
     } catch (err) {
       console.error('Failed to copy:', err);
     }
@@ -114,7 +102,7 @@ const ReceiveDialog: React.FC<ReceiveDialogProps> = ({ isOpen, onClose }) => {
             className="px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors flex items-center gap-2 font-medium"
           >
             <Copy className="w-4 h-4" />
-            {copied ? 'Address copied!' : 'Copy address'}
+            Copy address
           </button>
         </div>
       </div>

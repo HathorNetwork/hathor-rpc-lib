@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { X, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { X, Loader2, AlertCircle } from 'lucide-react';
+import { useWallet } from '../contexts/WalletContext';
 
 interface UnregisterTokenDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => Promise<void>;
+  onSuccess: () => void;
+  tokenUid: string;
   tokenSymbol: string;
   tokenName: string;
 }
@@ -12,14 +14,16 @@ interface UnregisterTokenDialogProps {
 const UnregisterTokenDialog: React.FC<UnregisterTokenDialogProps> = ({
   isOpen,
   onClose,
-  onConfirm,
+  onSuccess,
+  tokenUid,
   tokenSymbol,
   tokenName,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+
+  const { unregisterToken } = useWallet();
 
   const handleUnregister = async () => {
     if (!isConfirmed) return;
@@ -27,19 +31,22 @@ const UnregisterTokenDialog: React.FC<UnregisterTokenDialogProps> = ({
     setIsLoading(true);
     setError(null);
     try {
-      await onConfirm();
-      setSuccess(true);
-      // Dialog will be closed by parent component after showing success
+      await unregisterToken(tokenUid);
+      setIsConfirmed(false);
+      setError(null);
+      onClose();
+      onSuccess();
     } catch (error) {
       console.error('Failed to unregister token:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to unregister token. Please try again.';
       setError(errorMessage);
+    } finally {
       setIsLoading(false);
     }
   };
 
   const handleClose = () => {
-    if (!isLoading && !success) {
+    if (!isLoading) {
       setIsConfirmed(false);
       setError(null);
       onClose();
@@ -105,18 +112,10 @@ const UnregisterTokenDialog: React.FC<UnregisterTokenDialogProps> = ({
             </div>
           )}
 
-          {/* Success Message */}
-          {success && (
-            <div className="flex items-start gap-3 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-green-500">Token unregistered successfully!</p>
-            </div>
-          )}
-
           {/* Unregister Button */}
           <button
             onClick={handleUnregister}
-            disabled={!isConfirmed || isLoading || success}
+            disabled={!isConfirmed || isLoading}
             className="w-full px-8 py-2.5 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
           >
             {isLoading ? (

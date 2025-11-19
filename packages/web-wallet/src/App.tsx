@@ -3,6 +3,7 @@ import { MetaMaskProvider } from '@hathor/snap-utils'
 import { WalletProvider } from './contexts/WalletContext'
 import WalletHome from './components/WalletHome'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { Toaster } from './components/ui/toaster'
 
 function App() { return (
     <ErrorBoundary>
@@ -10,6 +11,7 @@ function App() { return (
         <MetaMaskProvider>
           <WalletProvider>
             <WalletHome />
+            <Toaster />
           </WalletProvider>
         </MetaMaskProvider>
       </BrowserRouter>

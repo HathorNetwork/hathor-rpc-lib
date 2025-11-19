@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowUpRight, ArrowDownLeft, Loader2 } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, Loader2, Eye } from 'lucide-react';
 import SendDialog from './SendDialog';
 import ReceiveDialog from './ReceiveDialog';
 import HistoryDialog from './HistoryDialog';
@@ -10,14 +10,13 @@ import AddressModeDialog from './AddressModeDialog';
 import TokenTabs from './TokenTabs';
 import TokenList from './TokenList';
 import Header from './Header';
-import ErrorNotification from './ErrorNotification';
-import TransactionNotification from './TransactionNotification';
 import { useWallet } from '../contexts/WalletContext';
 import { useTokens } from '../hooks/useTokens';
 import { formatHTRAmount } from '../utils/hathor';
 import htrLogoBlack from '../assets/htr_logo_black.svg';
 import htrLogoWhite from '../assets/htr_logo_white.svg';
 import htrLogoWhiteOutline from '../assets/htr_logo_white_outline.svg';
+import { useToast } from '@/hooks/use-toast';
 
 const WalletHome: React.FC = () => {
   const navigate = useNavigate();
@@ -46,6 +45,62 @@ const WalletHome: React.FC = () => {
   const selectedTokenFilter = filterParam || 'tokens';
 
   const { tokens, tokenCount, nftCount, customTokenCount } = useTokens(selectedTokenFilter);
+  const { toast } = useToast();
+
+  // Show error toast when error changes
+  useEffect(() => {
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error,
+      });
+      setError(null); // Clear error after showing toast
+    }
+  }, [error, toast, setError]);
+
+  // Show transaction toast when new transaction arrives
+  useEffect(() => {
+    if (!newTransaction) return;
+
+    // Check if this is a notification (not for history dialog)
+    const tx = newTransaction as any;
+    if (tx.tx_id) {
+      return; // This is for history dialog, not notification
+    }
+
+    const notification = tx as { type: 'sent' | 'received'; amount: bigint; timestamp: number };
+    const isReceived = notification.type === 'received';
+
+    toast({
+      variant: isReceived ? "success" : "info",
+      title: `${isReceived ? 'Received' : 'Sent'} HTR`,
+      description: `${isReceived ? '+' : '-'}${formatHTRAmount(notification.amount, false)} HTR`,
+      icon: (
+        <div className={`p-1.5 rounded-lg ${isReceived ? 'bg-green-500/20' : 'bg-blue-500/20'} flex-shrink-0`}>
+          {isReceived ? (
+            <ArrowDownLeft className={`w-4 h-4 ${isReceived ? 'text-green-400' : 'text-blue-400'}`} />
+          ) : (
+            <ArrowUpRight className={`w-4 h-4 text-blue-400`} />
+          )}
+        </div>
+      ),
+      action: (
+        <button
+          onClick={() => {
+            clearNewTransaction();
+            navigate('?dialog=history');
+          }}
+          className={`text-xs ${isReceived ? 'text-green-400' : 'text-blue-400'} hover:underline flex items-center gap-1 mt-2`}
+        >
+          <Eye className="w-3 h-3" />
+          View History
+        </button>
+      ),
+    });
+
+    clearNewTransaction();
+  }, [newTransaction, toast, clearNewTransaction, navigate]);
 
   const sendDialogOpen = dialog === 'send';
   const receiveDialogOpen = dialog === 'receive';
@@ -112,13 +167,6 @@ const WalletHome: React.FC = () => {
             <p className="text-muted-foreground">{loadingStep}</p>
           </div>
         </div>
-        {/* Error notification */}
-        {error && (
-          <ErrorNotification
-            error={new Error(error)}
-            onDismiss={() => setError(null)}
-          />
-        )}
       </div>
     );
   }
@@ -140,11 +188,6 @@ const WalletHome: React.FC = () => {
             <p className="text-muted-foreground mb-6">
               Connect your MetaMask with Hathor Snap to get started
             </p>
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mb-4">
-                <p className="text-red-400 text-sm">{error}</p>
-              </div>
-            )}
             <button
               onClick={connectWallet}
               disabled={isConnecting}
@@ -278,33 +321,6 @@ const WalletHome: React.FC = () => {
         isOpen={addressModeOpen}
         onClose={closeDialog}
       />
-
-      {/* Error notification */}
-      {error && (
-        <ErrorNotification
-          error={new Error(error)}
-          onDismiss={() => setError(null)}
-        />
-      )}
-
-      {/* Transaction notification */}
-      {(() => {
-        if (!newTransaction) return null;
-        const tx = newTransaction as Record<string, unknown>;
-        if (tx.tx_id) return null; // This is for history dialog, not notification
-
-        const notification = tx as { type: 'sent' | 'received'; amount: bigint; timestamp: number };
-        return (
-          <TransactionNotification
-            transaction={notification}
-            onDismiss={clearNewTransaction}
-            onViewHistory={() => {
-              clearNewTransaction();
-              navigate('?dialog=history');
-            }}
-          />
-        );
-      })()}
     </div>
   );
 };
