@@ -33,7 +33,7 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
   const [currentCount, setCurrentCount] = useState(0)
   const [unregisterDialogOpen, setUnregisterDialogOpen] = useState(false)
   const PAGE_SIZE = 10
-  const { address, network, getTransactionHistory, newTransaction, setHistoryDialogState, clearNewTransaction } = useWallet()
+  const { address, network, getTransactionHistory, newTransaction, clearNewTransaction } = useWallet()
   const { allTokens } = useTokens()
   const { toast } = useToast()
 
@@ -45,16 +45,13 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
 
   useEffect(() => {
     if (isOpen && address) {
-      // Notify context that dialog is open on page 0 (page 1 in UI)
-      setHistoryDialogState(true, 0)
       // Reset pagination when dialog opens
       setTransactions([])
       setCurrentCount(0)
       setHasMore(true)
       loadTransactionHistory(0)
     } else if (!isOpen) {
-      // Notify context that dialog is closed
-      setHistoryDialogState(false, 0)
+      // Dialog is closed
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, address])

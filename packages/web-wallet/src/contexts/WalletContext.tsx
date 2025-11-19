@@ -57,8 +57,6 @@ interface WalletState {
    */
   error: string | null;
   xpub: string | null;
-  isHistoryDialogOpen: boolean;
-  currentHistoryPage: number;
   newTransaction: unknown | null;
   registeredTokens: Array<{
     uid: string;
@@ -260,27 +258,6 @@ interface WalletContextType extends WalletState {
    * ```
    */
   setError: (error: string | null) => void;
-
-  /**
-   * Controls the transaction history dialog visibility and pagination.
-   *
-   * Opens or closes the transaction history modal dialog and optionally sets
-   * the current page for pagination. Use this to show detailed transaction
-   * history to users.
-   *
-   * @param isOpen - Whether to show or hide the dialog
-   * @param page - Optional page number to display (default: 0)
-   *
-   * @example
-   * ```ts
-   * // Open dialog showing first page
-   * setHistoryDialogState(true, 0);
-   *
-   * // Close dialog
-   * setHistoryDialogState(false);
-   * ```
-   */
-  setHistoryDialogState: (isOpen: boolean, page?: number) => void;
 
   /**
    * Clears the new transaction notification state.
@@ -536,8 +513,6 @@ export function WalletProvider({ children }: WalletProviderProps) {
     selectedTokenForSend: null, // This was removed in refactor
 
     // Transaction state
-    isHistoryDialogOpen: transactions.isHistoryDialogOpen,
-    currentHistoryPage: transactions.currentHistoryPage,
     newTransaction: transactions.newTransaction,
 
     // Address mode
@@ -557,7 +532,6 @@ export function WalletProvider({ children }: WalletProviderProps) {
     // Transaction methods
     getTransactionHistory: transactions.getTransactionHistory,
     sendTransaction: transactions.sendTransaction,
-    setHistoryDialogState: transactions.setHistoryDialogState,
     clearNewTransaction: transactions.clearNewTransaction,
 
     // Token methods

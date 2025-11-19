@@ -30,8 +30,6 @@ interface UseTransactionsOptions {
 export function useTransactions(options: UseTransactionsOptions) {
   const { isConnected, invokeSnap, onError, onSnapError } = options;
   const [newTransaction, setNewTransaction] = useState<unknown | null>(null);
-  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
-  const [currentHistoryPage, setCurrentHistoryPage] = useState(0);
 
   const getTransactionHistory = async (
     count: number = 10,
@@ -71,25 +69,15 @@ export function useTransactions(options: UseTransactionsOptions) {
     }
   };
 
-  const setHistoryDialogState = (isOpen: boolean, page: number = 0) => {
-    setIsHistoryDialogOpen(isOpen);
-    setCurrentHistoryPage(page);
-    // Clear new transaction when opening dialog or changing pages
-    setNewTransaction(null);
-  };
-
   const clearNewTransaction = () => {
     setNewTransaction(null);
   };
 
   return {
     newTransaction,
-    isHistoryDialogOpen,
-    currentHistoryPage,
     setNewTransaction,
     getTransactionHistory,
     sendTransaction,
-    setHistoryDialogState,
     clearNewTransaction,
   };
 }
