@@ -211,7 +211,7 @@ const WalletHome: React.FC = () => {
                   className="w-5 h-5 md:w-6 md:h-6"
                 />
                 <span className="text-xl md:text-2xl font-medium text-white">
-                  {balances.length > 0 ? `${formatHTRAmount(balances[0].available, false)} HTR` : '0 HTR'}
+                  {`${formatHTRAmount(balances.length > 0 ? balances[0].available : 0n, false)} HTR`}
                 </span>
               </div>
               {/* Show custom token and NFT counts */}
