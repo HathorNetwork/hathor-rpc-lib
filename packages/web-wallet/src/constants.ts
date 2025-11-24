@@ -10,8 +10,8 @@ export const NETWORKS = {
 // WafpWYepbV13FVM9Qp9brmBTXgjrn3dnfx 
 // Hathor API endpoints
 export const HATHOR_API_URLS = {
-  MAINNET: 'https://node.hathor.network/v1a',
-  TESTNET: 'https://node1.india.testnet.hathor.network/v1a'
+  MAINNET: 'https://node1.mainnet.hathor.network/v1a',
+  TESTNET: 'https://node1.testnet.hathor.network/v1a'
 } as const;
 
 // Hathor explorer URLs
@@ -23,7 +23,7 @@ export const HATHOR_EXPLORER_URLS = {
 // Wallet service URLs
 export const WALLET_SERVICE_URLS = {
   MAINNET: 'https://wallet-service.hathor.network/',
-  TESTNET: 'https://wallet-service.india.testnet.hathor.network/'
+  TESTNET: 'https://wallet-service.testnet.hathor.network/'
 } as const;
 
 // Wallet service WebSocket URLs
