@@ -20,12 +20,12 @@ export function useWalletBalance(options: UseWalletBalanceOptions) {
     if (!isConnected || !readOnlyWalletService.isReady()) return;
 
     try {
+      // Fetch HTR balance (stored in this hook's balances state)
       const newBalances = await readOnlyWalletService.getBalance(TOKEN_IDS.HTR);
-
-      // Also refresh token balances
-      await onRefreshTokenBalances();
-
       setBalances(newBalances);
+
+      // Trigger token balance refresh (managed separately in useTokenManagement)
+      await onRefreshTokenBalances();
     } catch (error) {
       onError(error instanceof Error ? error.message : 'Failed to refresh balance');
     }

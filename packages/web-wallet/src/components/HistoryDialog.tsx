@@ -147,9 +147,6 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
         setTransactions(prev => [...prev, ...processed]);
         setCurrentCount(prev => prev + processed.length);
       }
-
-      // Notify context of page change
-      setHistoryDialogState(true, pageNum);
     } catch (error) {
       console.error('Failed to load transaction history:', error)
     } finally {
