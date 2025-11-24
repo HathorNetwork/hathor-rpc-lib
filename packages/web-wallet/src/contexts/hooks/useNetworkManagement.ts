@@ -112,9 +112,7 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
         detailedErrors: false,
       });
 
-      // Update localStorage with new network
-      localStorage.setItem(STORAGE_KEYS.NETWORK, newNetwork);
-
+      // Update app state first (can throw)
       onNetworkChange({
         network: newNetwork,
         address: newAddress,
@@ -122,6 +120,10 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
         tokens: tokenLoadResult.tokens,
         warning: tokenLoadResult.warning,
       });
+
+      // Only persist to localStorage after state update succeeds
+      localStorage.setItem(STORAGE_KEYS.NETWORK, newNetwork);
+
       onLoadingChange(false, '');
 
     } catch (networkChangeError) {
