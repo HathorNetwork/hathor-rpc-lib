@@ -5,12 +5,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useWallet } from '../contexts/WalletContext';
 import { useInvokeSnap } from '@hathor/snap-utils';
-import helpers from '@hathor/wallet-lib/lib/utils/helpers';
+import { helpersUtils, tokensUtils } from '@hathor/wallet-lib';
 import { formatHTRAmount } from '../utils/hathor';
 import { readOnlyWalletService } from '../services/ReadOnlyWalletService';
 import { getAddressForMode } from '../utils/addressMode';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { HTR_DECIMAL_MULTIPLIER } from '../constants';
 
 interface CreateTokenDialogProps {
   isOpen: boolean;
@@ -98,7 +99,10 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
   const depositInCents = useMemo(() => {
     const amountNum = parseInt(amount || '0', 10);
     if (isNaN(amountNum) || amountNum <= 0) return 0n;
-    return BigInt(Math.ceil(amountNum)); // 1 cent per token
+    // Convert tokens to cents (base unit) before calculating deposit
+    // 100 tokens = 10000 cents, deposit = 1% = 100 cents
+    const amountInCents = BigInt(amountNum) * BigInt(HTR_DECIMAL_MULTIPLIER);
+    return tokensUtils.getDepositAmount(amountInCents);
   }, [amount]);
 
   // Check if user has insufficient balance
@@ -172,7 +176,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
 
       // Generate config string: [name:symbol:uid:checksum]
       const partialConfig = `${data.name}:${data.symbol}:${tokenUid}`;
-      const checksumBuffer = helpers.getChecksum(Buffer.from(partialConfig));
+      const checksumBuffer = helpersUtils.getChecksum(Buffer.from(partialConfig));
       const checksum = checksumBuffer.toString('hex');
       const configString = `[${partialConfig}:${checksum}]`;
 
