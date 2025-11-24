@@ -63,7 +63,7 @@ export function useTokenManagement(options: UseTokenManagementOptions) {
         network,
         genesisHash
       );
-      log.info('Token registered:', { uid: tokenInfo.uid, isNFT: tokenInfo.isNFT, symbol: tokenInfo.symbol });
+      log.debug('Token registered:', { uid: tokenInfo.uid, isNFT: tokenInfo.isNFT, symbol: tokenInfo.symbol });
 
       // Fetch balance immediately after registration
       const balance = await fetchTokenBalance(tokenInfo.uid);
