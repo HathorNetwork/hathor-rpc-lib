@@ -17,7 +17,6 @@ import htrLogoBlack from '../assets/htr_logo_black.svg';
 import htrLogoWhite from '../assets/htr_logo_white.svg';
 import htrLogoWhiteOutline from '../assets/htr_logo_white_outline.svg';
 import { useToast } from '@/hooks/use-toast';
-import { logger } from './../utils/logger';
 
 const WalletHome: React.FC = () => {
   const navigate = useNavigate();
@@ -51,8 +50,8 @@ const WalletHome: React.FC = () => {
   useEffect(() => {
     if (error) {
       toast({
-        variant: "destructive",
-        title: "Error",
+        variant: 'destructive',
+        title: 'Error',
         description: error,
       });
       setError(null); // Clear error after showing toast
@@ -73,7 +72,7 @@ const WalletHome: React.FC = () => {
     const isReceived = notification.type === 'received';
 
     toast({
-      variant: isReceived ? "success" : "info",
+      variant: isReceived ? 'success' : 'info',
       title: `${isReceived ? 'Received' : 'Sent'} HTR`,
       description: `${isReceived ? '+' : '-'}${formatHTRAmount(notification.amount, false)} HTR`,
       icon: (
@@ -93,7 +92,7 @@ const WalletHome: React.FC = () => {
           }}
           className={`text-xs ${isReceived ? 'text-green-400' : 'text-blue-400'} hover:underline flex items-center gap-1 mt-2`}
         >
-          <Eye className="w-3 h-3" />
+          <Eye className='w-3 h-3' />
           View History
         </button>
       ),
@@ -132,18 +131,18 @@ const WalletHome: React.FC = () => {
   // Show loading screen while checking connection
   if (isCheckingConnection) {
     return (
-      <div className="min-h-screen bg-[#0d1117] text-white flex items-center justify-center">
-        <div className="text-center space-y-6">
-          <div className="w-16 h-16 flex items-center justify-center mx-auto">
+      <div className='min-h-screen bg-[#0d1117] text-white flex items-center justify-center'>
+        <div className='text-center space-y-6'>
+          <div className='w-16 h-16 flex items-center justify-center mx-auto'>
             <img
               src={htrLogoWhite}
-              alt="Hathor"
-              className="w-full h-full"
+              alt='Hathor'
+              className='w-full h-full'
             />
           </div>
           <div>
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">{loadingStep}</p>
+            <Loader2 className='w-8 h-8 animate-spin mx-auto mb-4' />
+            <p className='text-muted-foreground'>{loadingStep}</p>
           </div>
         </div>
       </div>
@@ -153,28 +152,28 @@ const WalletHome: React.FC = () => {
   // Show connection screen if not connected
   if (!isConnected) {
     return (
-      <div className="min-h-screen bg-[#0d1117] text-white flex items-center justify-center">
-        <div className="text-center space-y-6">
-          <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center mx-auto p-4 shadow-xl">
+      <div className='min-h-screen bg-[#0d1117] text-white flex items-center justify-center'>
+        <div className='text-center space-y-6'>
+          <div className='w-24 h-24 bg-white rounded-3xl flex items-center justify-center mx-auto p-4 shadow-xl'>
             <img
               src={htrLogoBlack}
-              alt="Hathor"
-              className="w-full h-full object-contain"
+              alt='Hathor'
+              className='w-full h-full object-contain'
             />
           </div>
           <div>
-            <h1 className="text-2xl font-medium mb-2">Connect to Hathor Wallet</h1>
-            <p className="text-muted-foreground mb-6">
+            <h1 className='text-2xl font-medium mb-2'>Connect to Hathor Wallet</h1>
+            <p className='text-muted-foreground mb-6'>
               Connect your MetaMask with Hathor Snap to get started
             </p>
             <button
               onClick={connectWallet}
               disabled={isConnecting}
-              className="px-6 py-3 bg-primary hover:bg-primary/80 disabled:bg-muted disabled:text-muted-foreground text-white rounded-lg transition-colors flex items-center justify-center gap-2 mx-auto"
+              className='px-6 py-3 bg-primary hover:bg-primary/80 disabled:bg-muted disabled:text-muted-foreground text-white rounded-lg transition-colors flex items-center justify-center gap-2 mx-auto'
             >
               {isConnecting ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className='w-4 h-4 animate-spin' />
                   {loadingStep || 'Connecting...'}
                 </>
               ) : (
@@ -188,7 +187,7 @@ const WalletHome: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white">
+    <div className='min-h-screen bg-[#0d1117] text-white'>
       <Header
         onRegisterTokenClick={() => navigate('?dialog=register')}
         onCreateTokenClick={() => navigate('?dialog=create')}
@@ -196,27 +195,27 @@ const WalletHome: React.FC = () => {
       />
 
       {/* Main Container - responsive layout */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 py-6 md:py-9 space-y-8 md:space-y-20">
+      <div className='max-w-7xl mx-auto px-4 md:px-8 lg:px-16 py-6 md:py-9 space-y-8 md:space-y-20'>
         {/* Assets Summary Card */}
-        <div className="bg-[#191C21] border border-[#24292F] rounded-2xl p-4 md:p-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-0">
+        <div className='bg-[#191C21] border border-[#24292F] rounded-2xl p-4 md:p-6'>
+          <div className='flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-0'>
             {/* Left: Assets Info */}
-            <div className="space-y-2">
-              <p className="text-xs text-primary-400 uppercase tracking-wider">assets summary</p>
-              <div className="flex items-center gap-3">
+            <div className='space-y-2'>
+              <p className='text-xs text-primary-400 uppercase tracking-wider'>assets summary</p>
+              <div className='flex items-center gap-3'>
                 {/* HTR Icon */}
                 <img
                   src={htrLogoWhiteOutline}
-                  alt="HTR"
-                  className="w-5 h-5 md:w-6 md:h-6"
+                  alt='HTR'
+                  className='w-5 h-5 md:w-6 md:h-6'
                 />
-                <span className="text-xl md:text-2xl font-medium text-white">
+                <span className='text-xl md:text-2xl font-medium text-white'>
                   {`${formatHTRAmount(balances.length > 0 ? balances[0].available : 0n, false)} HTR`}
                 </span>
               </div>
               {/* Show custom token and NFT counts */}
               {(customTokenCount > 0 || nftCount > 0) && (
-                <p className="text-xs text-muted-foreground">
+                <p className='text-xs text-muted-foreground'>
                   You also have {customTokenCount > 0 && `${customTokenCount} custom token${customTokenCount > 1 ? 's' : ''}`}
                   {customTokenCount > 0 && nftCount > 0 && ' and '}
                   {nftCount > 0 && `${nftCount} NFT${nftCount > 1 ? 's' : ''}`}
@@ -225,29 +224,29 @@ const WalletHome: React.FC = () => {
             </div>
 
             {/* Right: Action Buttons */}
-            <div className="flex gap-3 w-full md:w-auto">
+            <div className='flex gap-3 w-full md:w-auto'>
               <button
                 onClick={() => navigate('?dialog=send')}
-                className="flex-1 md:flex-none px-6 py-2.5 bg-primary hover:bg-primary/90 active:bg-primary/80 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                className='flex-1 md:flex-none px-6 py-2.5 bg-primary hover:bg-primary/90 active:bg-primary/80 rounded-xl flex items-center justify-center gap-2 transition-colors'
               >
-                <ArrowUpRight className="w-4 h-4 text-white" />
-                <span className="text-sm font-medium text-white">Send</span>
+                <ArrowUpRight className='w-4 h-4 text-white' />
+                <span className='text-sm font-medium text-white'>Send</span>
               </button>
               <button
                 onClick={() => navigate('?dialog=receive')}
-                className="flex-1 md:flex-none px-6 py-2.5 bg-primary hover:bg-primary/90 active:bg-primary/80 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                className='flex-1 md:flex-none px-6 py-2.5 bg-primary hover:bg-primary/90 active:bg-primary/80 rounded-xl flex items-center justify-center gap-2 transition-colors'
               >
-                <ArrowDownLeft className="w-4 h-4 text-white" />
-                <span className="text-sm font-medium text-white">Receive</span>
+                <ArrowDownLeft className='w-4 h-4 text-white' />
+                <span className='text-sm font-medium text-white'>Receive</span>
               </button>
             </div>
           </div>
         </div>
 
         {/* My Assets Section */}
-        <div className="space-y-6">
+        <div className='space-y-6'>
           {/* Section Header */}
-          <h2 className="text-xl font-medium text-white">My Assets</h2>
+          <h2 className='text-xl font-medium text-white'>My Assets</h2>
 
           {/* Token Tabs */}
           <TokenTabs

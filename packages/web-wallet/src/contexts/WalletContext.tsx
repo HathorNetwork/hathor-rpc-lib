@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, useRef, type ReactNode } from 'react';
 import { useInvokeSnap, useRequestSnap, useMetaMaskContext } from '@hathor/snap-utils';
 import { ConnectionLostModal } from '../components/ConnectionLostModal';
 import type { TransactionHistoryItem } from '../types/wallet';
@@ -417,6 +417,9 @@ export function WalletProvider({ children }: WalletProviderProps) {
   const [showConnectionLostModal, setShowConnectionLostModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Ref for transaction notification callback to avoid circular dependency
+  const onNewTransactionRef = useRef<(notification: { type: 'sent' | 'received'; amount: bigint; timestamp: number }) => void>(() => {});
+
   // Initialize address mode hook
   const { addressMode, setAddressMode: setAddressModeImpl } = useAddressMode({
     onError: setError,
@@ -437,6 +440,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     },
     onError: setError,
     onShowConnectionLostModal: setShowConnectionLostModal,
+    onNewTransaction: (notification) => onNewTransactionRef.current(notification),
   });
 
   // Initialize balance hook
@@ -462,6 +466,9 @@ export function WalletProvider({ children }: WalletProviderProps) {
     onError: setError,
     onSnapError: connection.handleSnapError,
   });
+
+  // Update ref after transactions is initialized
+  onNewTransactionRef.current = transactions.setNewTransaction;
 
   // Initialize network management hook
   const networkManagement = useNetworkManagement({

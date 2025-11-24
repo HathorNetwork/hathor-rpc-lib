@@ -25,6 +25,7 @@ interface UseWalletConnectionOptions {
   onRefreshBalance: () => Promise<void>;
   onError: (error: string | null) => void;
   onShowConnectionLostModal: (show: boolean) => void;
+  onNewTransaction: (notification: { type: 'sent' | 'received'; amount: bigint; timestamp: number }) => void;
 }
 
 export function useWalletConnection(options: UseWalletConnectionOptions) {
@@ -36,6 +37,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions) {
     onRefreshBalance,
     onError,
     onShowConnectionLostModal,
+    onNewTransaction,
   } = options;
 
   const [isConnected, setIsConnected] = useState(false);
@@ -403,28 +405,42 @@ export function useWalletConnection(options: UseWalletConnectionOptions) {
     const transaction = tx as Record<string, unknown>;
 
     try {
-      console.log('Processing new transaction:', transaction.tx_id);
-
       await onRefreshBalance();
 
       let receivedAmount = 0n;
       let sentAmount = 0n;
 
-      const currentAddress = readOnlyWalletService.getCurrentAddress()?.address;
-
-      if (Array.isArray(transaction.outputs) && currentAddress) {
+      if (Array.isArray(transaction.outputs)) {
         for (const output of transaction.outputs as Array<Record<string, unknown>>) {
-          if ((output.decoded as Record<string, unknown>)?.address === currentAddress && output.token === TOKEN_IDS.HTR) {
-            const value = toBigInt(output.value as number | bigint);
+          const decoded = output.decoded as Record<string, unknown>;
+          const outputAddress = decoded?.address as string | undefined;
+          const outputToken = output.token;
+          const outputValue = output.value;
+
+          if (!outputAddress) continue;
+
+          const isMyAddress = await readOnlyWalletService.isAddressMine(outputAddress);
+
+          if (isMyAddress && outputToken === TOKEN_IDS.HTR) {
+            const value = toBigInt(outputValue as number | bigint);
             receivedAmount += value;
           }
         }
       }
 
-      if (Array.isArray(transaction.inputs) && currentAddress) {
+      if (Array.isArray(transaction.inputs)) {
         for (const input of transaction.inputs as Array<Record<string, unknown>>) {
-          if ((input.decoded as Record<string, unknown>)?.address === currentAddress && input.token === TOKEN_IDS.HTR) {
-            const value = toBigInt(input.value as number | bigint);
+          const decoded = input.decoded as Record<string, unknown>;
+          const inputAddress = decoded?.address as string | undefined;
+          const inputToken = input.token;
+          const inputValue = input.value;
+
+          if (!inputAddress) continue;
+
+          const isMyAddress = await readOnlyWalletService.isAddressMine(inputAddress);
+
+          if (isMyAddress && inputToken === TOKEN_IDS.HTR) {
+            const value = toBigInt(inputValue as number | bigint);
             sentAmount += value;
           }
         }
@@ -433,10 +449,19 @@ export function useWalletConnection(options: UseWalletConnectionOptions) {
       if (receivedAmount === 0n && sentAmount === 0n) {
         return;
       }
+
+      // Trigger notification
+      const netAmount = receivedAmount > sentAmount ? receivedAmount - sentAmount : sentAmount - receivedAmount;
+      const notificationType = receivedAmount > sentAmount ? 'received' : 'sent';
+      onNewTransaction({
+        type: notificationType,
+        amount: netAmount,
+        timestamp: Date.now(),
+      });
     } catch (error) {
       console.error('Error processing new transaction:', error);
     }
-  }, [isConnected, onRefreshBalance]);
+  }, [isConnected, onRefreshBalance, onNewTransaction]);
 
   // Set the ref
   handleNewTransactionRef.current = handleNewTransaction;
