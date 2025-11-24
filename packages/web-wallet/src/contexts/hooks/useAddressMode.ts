@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { loadAddressMode, saveAddressMode, getDisplayAddressForMode, type AddressMode } from '../../utils/addressMode';
-import { readOnlyWalletService } from '../../services/ReadOnlyWalletService';
+import { loadAddressMode, saveAddressMode, type AddressMode } from '../../utils/addressMode';
 
 interface UseAddressModeOptions {
   onError: (error: string) => void;
-  onAddressUpdate: (address: string) => void;
+  onAddressUpdate: (mode: AddressMode) => Promise<void>;
 }
 
 export function useAddressMode(options: UseAddressModeOptions) {
@@ -19,14 +18,11 @@ export function useAddressMode(options: UseAddressModeOptions) {
 
     setAddressModeState(mode);
 
-    // Refresh the displayed address to reflect the new mode
-    if (readOnlyWalletService.isReady()) {
-      try {
-        const address = await getDisplayAddressForMode(mode, readOnlyWalletService);
-        onAddressUpdate(address);
-      } catch (error) {
-        console.error('Failed to refresh address after mode change:', error);
-      }
+    // Let WalletContext handle wallet state check and address refresh
+    try {
+      await onAddressUpdate(mode);
+    } catch (error) {
+      console.error('Failed to refresh address after mode change:', error);
     }
   };
 

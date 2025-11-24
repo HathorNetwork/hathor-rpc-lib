@@ -35,6 +35,9 @@ interface UseNetworkManagementOptions {
   onLoadingChange: (loading: boolean, step: string) => void;
   onError: (error: string | null) => void;
   onForceDisconnect: () => void;
+  // Wallet lifecycle methods from connection hook
+  stopWallet: () => Promise<void>;
+  reinitializeWallet: (xpub: string, network: string) => Promise<void>;
 }
 
 export function useNetworkManagement(options: UseNetworkManagementOptions) {
@@ -52,6 +55,8 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
     onLoadingChange,
     onError,
     onForceDisconnect,
+    stopWallet,
+    reinitializeWallet,
   } = options;
 
   const changeNetwork = async (newNetwork: string) => {
@@ -77,15 +82,13 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
 
       onLoadingChange(true, 'Stopping previous wallet...');
 
-      // Stop the old read-only wallet
-      if (readOnlyWalletService.isReady()) {
-        await readOnlyWalletService.stop();
-      }
+      // Stop the old read-only wallet (encapsulated with isReady check)
+      await stopWallet();
 
       onLoadingChange(true, 'Initializing wallet on new network...');
 
       // Reinitialize read-only wallet with new network
-      await readOnlyWalletService.initialize(xpub, newNetwork);
+      await reinitializeWallet(xpub, newNetwork);
 
       // Set up event listeners for real-time updates
       onSetupEventListeners();
@@ -148,7 +151,7 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
         localStorage.removeItem(STORAGE_KEYS.NETWORK);
 
         try {
-          await readOnlyWalletService.stop();
+          await stopWallet();
         } catch (stopError) {
           log.error('Failed to stop wallet during crash recovery:', stopError);
         }
@@ -174,14 +177,12 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
             }
           });
 
-          // Stop wallet if it was initialized
-          if (readOnlyWalletService.isReady()) {
-            await readOnlyWalletService.stop();
-          }
+          // Stop wallet if it was initialized (encapsulated with isReady check)
+          await stopWallet();
 
           // Reinitialize with previous network
           if (xpub) {
-            await readOnlyWalletService.initialize(xpub, previousNetwork);
+            await reinitializeWallet(xpub, previousNetwork);
           }
         })();
 
@@ -211,12 +212,13 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
         localStorage.removeItem(STORAGE_KEYS.NETWORK);
 
         try {
-          await readOnlyWalletService.stop();
+          await stopWallet();
         } catch (stopError) {
           log.error('CRITICAL: Failed to cleanup wallet during forced disconnect:', stopError);
         }
 
         // Verify wallet is fully stopped to prevent memory leaks
+        // Note: This direct check is intentional for diagnostics after stop attempt
         if (readOnlyWalletService.isReady()) {
           log.error('CRITICAL: Wallet still active after stop attempt - possible resource leak');
         }

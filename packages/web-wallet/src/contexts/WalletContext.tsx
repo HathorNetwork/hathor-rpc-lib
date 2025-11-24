@@ -423,9 +423,9 @@ export function WalletProvider({ children }: WalletProviderProps) {
   // Initialize address mode hook
   const { addressMode, setAddressMode: setAddressModeImpl } = useAddressMode({
     onError: setError,
-    onAddressUpdate: (newAddress) => {
-      // Update connection hook's address
-      connection.setAddress(newAddress);
+    onAddressUpdate: async (mode) => {
+      // Let connection hook handle wallet state check and address refresh
+      await connection.refreshAddressForMode(mode);
     },
   });
 
@@ -479,9 +479,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     balances: connection.balances,
     addressMode,
     invokeSnap,
-    onSetupEventListeners: () => {
-      // Setup event listeners (this would be handled by connection hook)
-    },
+    onSetupEventListeners: connection.setupEventListeners,
     onSnapError: connection.handleSnapError,
     onNetworkChange: ({ network, address, balances, tokens: newTokens, warning }) => {
       connection.setNetwork(network);
@@ -490,14 +488,14 @@ export function WalletProvider({ children }: WalletProviderProps) {
       connection.setRegisteredTokens(newTokens);
       setError(warning);
     },
-    onLoadingChange: () => {
-      // Loading state is managed internally by connection hook
-      // We could expose setters if needed
-    },
+    onLoadingChange: connection.setLoadingState,
     onError: setError,
     onForceDisconnect: () => {
       connection.disconnectWallet();
     },
+    // Wallet lifecycle methods from connection hook
+    stopWallet: connection.stopWallet,
+    reinitializeWallet: connection.reinitializeWallet,
   });
 
   // Aggregate state from all hooks

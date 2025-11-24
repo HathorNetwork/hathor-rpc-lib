@@ -505,6 +505,51 @@ export function useWalletConnection(options: UseWalletConnectionOptions) {
     }
   }, [metamaskError, onError]);
 
+  /**
+   * Refreshes the displayed address for the given address mode.
+   * This encapsulates the wallet ready check and address fetching logic.
+   */
+  const refreshAddressForMode = async (mode: AddressMode) => {
+    if (!readOnlyWalletService.isReady()) {
+      return;
+    }
+
+    try {
+      const newAddress = await getDisplayAddressForMode(mode, readOnlyWalletService);
+      setAddress(newAddress);
+    } catch (error) {
+      console.error('Failed to refresh address for mode:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Stops the read-only wallet service if it's ready.
+   * Used during network changes or wallet reinitialization.
+   */
+  const stopWallet = async () => {
+    if (readOnlyWalletService.isReady()) {
+      await readOnlyWalletService.stop();
+    }
+  };
+
+  /**
+   * Reinitializes the read-only wallet with new parameters.
+   * Encapsulates wallet lifecycle management.
+   */
+  const reinitializeWallet = async (newXpub: string, newNetwork: string) => {
+    await readOnlyWalletService.initialize(newXpub, newNetwork);
+  };
+
+  /**
+   * Updates loading state for network operations.
+   * Used by network management to show progress during network changes.
+   */
+  const setLoadingState = (loading: boolean, step: string) => {
+    setIsCheckingConnection(loading);
+    setLoadingStep(step);
+  };
+
   return {
     isConnected,
     isConnecting,
@@ -523,5 +568,10 @@ export function useWalletConnection(options: UseWalletConnectionOptions) {
     disconnectWallet,
     handleReconnect,
     handleSnapError,
+    refreshAddressForMode,
+    stopWallet,
+    reinitializeWallet,
+    setupEventListeners,
+    setLoadingState,
   };
 }
