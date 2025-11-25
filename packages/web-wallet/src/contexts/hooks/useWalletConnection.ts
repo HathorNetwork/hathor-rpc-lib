@@ -64,6 +64,7 @@ const STORAGE_KEYS = {
 
 interface UseWalletConnectionOptions {
   addressMode: AddressMode;
+  request: (params: { method: string; params?: unknown }) => Promise<unknown>;
   invokeSnap: (params: { method: string; params?: Record<string, unknown> }) => Promise<unknown>;
   requestSnap: () => Promise<void>;
   metamaskError: Error | null;
@@ -76,6 +77,7 @@ interface UseWalletConnectionOptions {
 export function useWalletConnection(options: UseWalletConnectionOptions) {
   const {
     addressMode,
+    request,
     invokeSnap,
     requestSnap,
     metamaskError,
@@ -156,7 +158,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions) {
       try {
         log.debug('Checking installed snaps via wallet_getSnaps...');
 
-        const snapsResponse = await (window as { ethereum?: { request: (args: { method: string }) => Promise<unknown> } }).ethereum?.request({
+        const snapsResponse = await request({
           method: 'wallet_getSnaps',
         });
 

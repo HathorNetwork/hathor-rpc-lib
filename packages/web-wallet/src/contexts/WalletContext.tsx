@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useRef, type ReactNode } from 'react';
-import { useInvokeSnap, useRequestSnap, useMetaMaskContext } from '@hathor/snap-utils';
+import { useInvokeSnap, useRequestSnap, useMetaMaskContext, useRequest } from '@hathor/snap-utils';
 import { ConnectionLostModal } from '../components/ConnectionLostModal';
 import type { TransactionHistoryItem } from '../types/wallet';
 import type { TokenFilter, DagMetadata } from '../types/token';
@@ -412,6 +412,7 @@ interface WalletProviderProps {
 export function WalletProvider({ children }: WalletProviderProps) {
   const invokeSnap = useInvokeSnap();
   const requestSnap = useRequestSnap();
+  const request = useRequest();
   const { error: metamaskError } = useMetaMaskContext();
 
   const [showConnectionLostModal, setShowConnectionLostModal] = useState(false);
@@ -432,6 +433,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
   // Initialize connection hook
   const connection = useWalletConnection({
     addressMode,
+    request,
     invokeSnap,
     requestSnap,
     metamaskError,
