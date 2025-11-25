@@ -7,6 +7,7 @@ import { loadTokensWithBalances } from '../../utils/tokenLoading';
 import { SNAP_TIMEOUTS } from '../../constants/timeouts';
 import { createLogger } from '../../utils/logger';
 import { toBigInt } from '../../utils/hathor';
+import { raceWithTimeout } from '../../utils/promise';
 import type { WalletBalance } from '../../types/wallet';
 import type { TokenInfo } from '../../types/token';
 import { z } from 'zod';
@@ -292,16 +293,11 @@ export function useWalletConnection(options: UseWalletConnectionOptions) {
           params: {}
         });
 
-        // Create timeout with cancellable reference
-        let timeoutId: NodeJS.Timeout;
-        const networkCheckTimeout = new Promise((_, reject) => {
-          timeoutId = setTimeout(() => reject(new Error('Network check timeout')), SNAP_TIMEOUTS.NETWORK_CHECK);
-        });
-
-        const networkTest = await Promise.race([networkCheckPromise, networkCheckTimeout]);
-
-        // Clear timeout to prevent background rejection
-        clearTimeout(timeoutId!);
+        const networkTest = await raceWithTimeout(
+          networkCheckPromise,
+          SNAP_TIMEOUTS.NETWORK_CHECK,
+          'Network check timeout'
+        );
 
         // Parse JSON if needed, then validate with Zod schema
         const rawResponse = typeof networkTest === 'string' ? JSON.parse(networkTest) : networkTest;
@@ -330,10 +326,12 @@ export function useWalletConnection(options: UseWalletConnectionOptions) {
               newNetwork: targetNetwork
             }
           });
-          const changeNetworkTimeout = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Network change timeout')), SNAP_TIMEOUTS.NETWORK_CHANGE)
+
+          await raceWithTimeout(
+            changeNetworkPromise,
+            SNAP_TIMEOUTS.NETWORK_CHANGE,
+            'Network change timeout'
           );
-          await Promise.race([changeNetworkPromise, changeNetworkTimeout]);
         } catch (networkError) {
           console.error(networkError);
           throw new Error(`Failed to change snap network to ${DEFAULT_NETWORK}`);
@@ -348,10 +346,12 @@ export function useWalletConnection(options: UseWalletConnectionOptions) {
           method: 'htr_getXpub',
           params: {}
         });
-        const xpubTimeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Get xpub timeout')), SNAP_TIMEOUTS.RPC_CALL)
+
+        xpubResponse = await raceWithTimeout(
+          xpubPromise,
+          SNAP_TIMEOUTS.RPC_CALL,
+          'Get xpub timeout'
         );
-        xpubResponse = await Promise.race([xpubPromise, xpubTimeout]);
       } catch (snapError) {
         throw new Error(`Failed to get xpub: ${snapError instanceof Error ? snapError.message : String(snapError)}`);
       }

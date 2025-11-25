@@ -5,6 +5,7 @@ import { loadTokensWithBalances } from '../../utils/tokenLoading';
 import { TOKEN_IDS } from '@/constants';
 import { SNAP_TIMEOUTS } from '../../constants/timeouts';
 import { createLogger } from '../../utils/logger';
+import { raceWithTimeout } from '../../utils/promise';
 import type { WalletBalance } from '../../types/wallet';
 import type { TokenInfo } from '../../types/token';
 
@@ -168,7 +169,7 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
       try {
         onLoadingChange(true, 'Rolling back to previous network...');
 
-        // Add timeout to rollback attempt
+        // Rollback with timeout to prevent hanging
         const rollbackPromise = (async () => {
           // Change snap back to previous network
           await invokeSnap({
@@ -188,12 +189,7 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
           }
         })();
 
-        // Timeout after configured duration
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Rollback timeout')), SNAP_TIMEOUTS.ROLLBACK)
-        );
-
-        await Promise.race([rollbackPromise, timeoutPromise]);
+        await raceWithTimeout(rollbackPromise, SNAP_TIMEOUTS.ROLLBACK, 'Rollback timeout');
 
         // Restore previous state with original error preserved
         onNetworkChange({
