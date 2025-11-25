@@ -75,7 +75,58 @@ interface UseWalletConnectionOptions {
   onNewTransaction: (notification: { type: 'sent' | 'received'; amount: bigint; timestamp: number }) => void;
 }
 
-export function useWalletConnection(options: UseWalletConnectionOptions) {
+/**
+ * Return type for useWalletConnection hook.
+ * Core wallet connection state and operations.
+ */
+export interface WalletConnectionResult {
+  /** Whether wallet is connected and ready */
+  isConnected: boolean;
+  /** Whether wallet connection is in progress */
+  isConnecting: boolean;
+  /** Whether checking for existing connection on mount */
+  isCheckingConnection: boolean;
+  /** Current loading step message for UI feedback */
+  loadingStep: string;
+  /** Extended public key from snap */
+  xpub: string | null;
+  /** Current wallet address */
+  address: string;
+  /** HTR token balances (available and locked) */
+  balances: WalletBalance[];
+  /** Current network (mainnet/testnet) */
+  network: string;
+  /** List of registered custom tokens with metadata */
+  registeredTokens: TokenInfo[];
+  /** Updates displayed address (internal use by other hooks) */
+  setAddress: (address: string) => void;
+  /** Updates balance state (internal use by other hooks) */
+  setBalances: (balances: WalletBalance[]) => void;
+  /** Updates network state (internal use by other hooks) */
+  setNetwork: (network: string) => void;
+  /** Updates registered tokens (internal use by other hooks) */
+  setRegisteredTokens: (tokens: TokenInfo[]) => void;
+  /** Initiates wallet connection via MetaMask Snap */
+  connectWallet: () => Promise<void>;
+  /** Disconnects wallet and clears all state */
+  disconnectWallet: () => void;
+  /** Handles reconnection after snap authorization lost */
+  handleReconnect: () => void;
+  /** Handles snap-specific errors (unauthorized, etc.) */
+  handleSnapError: (error: unknown) => void;
+  /** Refreshes address for given address mode */
+  refreshAddressForMode: (mode: AddressMode) => Promise<void>;
+  /** Stops wallet service (used during network changes) */
+  stopWallet: () => Promise<void>;
+  /** Reinitializes wallet with new xpub/network */
+  reinitializeWallet: (newXpub: string, newNetwork: string) => Promise<void>;
+  /** Sets up wallet event listeners */
+  setupEventListeners: () => void;
+  /** Updates loading state for network operations */
+  setLoadingState: (loading: boolean, step: string) => void;
+}
+
+export function useWalletConnection(options: UseWalletConnectionOptions): WalletConnectionResult {
   const {
     addressMode,
     request,
