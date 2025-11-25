@@ -93,8 +93,8 @@ export interface WalletConnectionResult {
   xpub: string | null;
   /** Current wallet address */
   address: string;
-  /** HTR token balances (available and locked) */
-  balances: WalletBalance[];
+  /** HTR token balances (available and locked) as Map for O(1) lookups */
+  balances: Map<string, WalletBalance>;
   /** Current network (mainnet/testnet) */
   network: string;
   /** List of registered custom tokens with metadata */
@@ -102,7 +102,7 @@ export interface WalletConnectionResult {
   /** Updates displayed address (internal use by other hooks) */
   setAddress: (address: string) => void;
   /** Updates balance state (internal use by other hooks) */
-  setBalances: (balances: WalletBalance[]) => void;
+  setBalances: (balances: Map<string, WalletBalance>) => void;
   /** Updates network state (internal use by other hooks) */
   setNetwork: (network: string) => void;
   /** Updates registered tokens (internal use by other hooks) */
@@ -146,7 +146,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
   const [loadingStep, setLoadingStep] = useState('');
   const [xpub, setXpub] = useState<string | null>(null);
   const [address, setAddress] = useState('');
-  const [balances, setBalances] = useState<WalletBalance[]>([]);
+  const [balances, setBalances] = useState<Map<string, WalletBalance>>(new Map());
   const [network, setNetwork] = useState('mainnet');
   const [registeredTokens, setRegisteredTokens] = useState<TokenInfo[]>([]);
 
@@ -210,11 +210,17 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
       setLoadingStep('Verifying snap installation...');
 
       try {
-        log.debug('Checking installed snaps via wallet_getSnaps...');
-
-        const snapsResponse = await request({
+        // wallet_getSnaps is a MetaMask wallet method, not a snap method
+        // So we need to call it via window.ethereum directly, not through snap-utils request
+        const snapsResponse = await window.ethereum.request({
           method: 'wallet_getSnaps',
         });
+
+        // Handle null/undefined response (MetaMask not initialized or no snaps)
+        if (!snapsResponse) {
+          log.error('wallet_getSnaps returned null - MetaMask may not be initialized');
+          throw new Error('Snap not installed');
+        }
 
         // Validate snaps response
         const snapsValidation = GetSnapsResponseSchema.safeParse(snapsResponse);

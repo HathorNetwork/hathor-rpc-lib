@@ -167,6 +167,11 @@ function TestConsumer({ onContext }: { onContext?: (ctx: ReturnType<typeof useWa
 describe('WalletContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Mock window.ethereum for wallet_getSnaps calls
+    global.window.ethereum = {
+      request: vi.fn(),
+    } as any;
     localStorage.clear();
 
     // Reset mock implementations
@@ -362,8 +367,8 @@ describe('WalletContext', () => {
       localStorage.setItem('hathor_wallet_xpub', 'xpub123');
       localStorage.setItem('hathor_wallet_network', 'testnet');
 
-      // Mock the request function for snap verification
-      mockRequest.mockResolvedValue({
+      // Mock window.ethereum.request for wallet_getSnaps
+      (window.ethereum.request as any).mockResolvedValue({
         'local:http://localhost:8080': {
           version: '1.0.0',
           enabled: true,
@@ -372,9 +377,9 @@ describe('WalletContext', () => {
       });
 
       mockReadOnlyWalletService.isReady.mockReturnValue(true);
-      mockReadOnlyWalletService.getBalance.mockResolvedValue([
-        { token: '00', available: 1000n, locked: 0n },
-      ]);
+      mockReadOnlyWalletService.getBalance.mockResolvedValue(
+        new Map([['00', { token: '00', available: 1000n, locked: 0n }]])
+      );
 
       render(
         <WalletProvider>

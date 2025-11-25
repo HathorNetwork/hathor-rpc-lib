@@ -9,6 +9,11 @@ export interface WalletBalance {
   locked: bigint;
 }
 
+/**
+ * Map of token UID to balance for O(1) lookups
+ */
+export type WalletBalanceMap = Map<string, WalletBalance>;
+
 export interface TransactionHistoryItem {
   tx_id: string;
   timestamp: number;

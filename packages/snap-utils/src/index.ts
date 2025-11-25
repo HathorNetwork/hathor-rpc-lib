@@ -4,3 +4,4 @@ export * from './react-hooks/useRequest';
 export * from './react-hooks/useRequestSnap';
 
 export * from './utils';
+export * from './config';

@@ -17,9 +17,9 @@ export function useTokens(selectedTokenFilter: TokenFilter = 'all') {
     balances,
   } = useWallet();
 
-  // Create HTR token info from balances
+  // Create HTR token info from balances (balances is already a Map for O(1) lookups)
   const htrToken: TokenInfo = useMemo(() => {
-    const htrBalance = balances.find(b => b.token === TOKEN_IDS.HTR) ?? { available: 0n, locked: 0n };
+    const htrBalance = balances.get(TOKEN_IDS.HTR) ?? { token: TOKEN_IDS.HTR, available: 0n, locked: 0n };
     return {
       uid: TOKEN_IDS.HTR,
       name: HTR_TOKEN_INFO.name,

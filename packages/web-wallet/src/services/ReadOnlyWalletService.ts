@@ -137,8 +137,9 @@ export class ReadOnlyWalletService {
 
   /**
    * Get balance for all tokens or specific tokens
+   * Returns a Map for O(1) token lookups
    */
-  async getBalance(tokenId?: string): Promise<WalletBalance[]> {
+  async getBalance(tokenId?: string): Promise<Map<string, WalletBalance>> {
     if (!this.wallet?.isReady()) {
       throw new Error('Wallet not initialized');
     }
@@ -146,15 +147,22 @@ export class ReadOnlyWalletService {
     try {
       const balance = await this.wallet.getBalance(tokenId);
 
-      // Transform the wallet-lib balance format to our interface
-      const balances: WalletBalance[] = Object.entries(balance).map(([token, data]) => {
-        const tokenData = data as { balance?: { unlocked?: number | bigint; locked?: number | bigint } };
-        return {
-          token,
-          available: tokenData.balance?.unlocked ? toBigInt(tokenData.balance.unlocked) : 0n,
-          locked: tokenData.balance?.locked ? toBigInt(tokenData.balance.locked) : 0n,
-        };
-      });
+      // Transform the wallet-lib balance format (array) to Map
+      const balances = new Map<string, WalletBalance>();
+
+      // wallet-lib returns an array of balance objects
+      if (Array.isArray(balance)) {
+        for (const item of balance) {
+          const tokenId = item.token?.id || item.token;
+          const balanceData = item.balance || {};
+
+          balances.set(tokenId, {
+            token: tokenId,
+            available: balanceData.unlocked ? toBigInt(balanceData.unlocked) : 0n,
+            locked: balanceData.locked ? toBigInt(balanceData.locked) : 0n,
+          });
+        }
+      }
 
       return balances;
     } catch (error) {

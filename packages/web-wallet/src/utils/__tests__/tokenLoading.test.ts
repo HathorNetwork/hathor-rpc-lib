@@ -12,12 +12,13 @@ vi.mock('../../services/ReadOnlyWalletService', () => ({
 vi.mock('../../services/TokenRegistryService', () => ({
   tokenRegistryService: {
     getRegisteredTokens: vi.fn(),
+    updateTokenMetadata: vi.fn(),
   },
 }));
 
 vi.mock('../../services/TokenStorageService', () => ({
   tokenStorageService: {
-    saveTokens: vi.fn(),
+    // No longer needed - using tokenRegistryService.updateTokenMetadata instead
   },
 }));
 
@@ -67,9 +68,9 @@ describe('tokenLoading utilities', () => {
     beforeEach(() => {
       vi.mocked(tokenRegistryService.getRegisteredTokens).mockReturnValue(createMockTokens());
       vi.mocked(nftDetectionService.detectNftBatch).mockResolvedValue(new Map());
-      vi.mocked(readOnlyWalletService.getBalance).mockResolvedValue([
-        { token: 'token1', available: 100n, locked: 0n },
-      ]);
+      vi.mocked(readOnlyWalletService.getBalance).mockResolvedValue(
+        new Map([['token1', { token: 'token1', available: 100n, locked: 0n }]])
+      );
     });
 
     it('should load tokens with balances successfully', async () => {
@@ -106,12 +107,12 @@ describe('tokenLoading utilities', () => {
 
       expect(result.tokens[0].isNFT).toBe(true);
       expect(result.tokens[0].metadata).toEqual({ id: 'token1', nft: true, banned: false, verified: false });
-      expect(tokenStorageService.saveTokens).toHaveBeenCalled();
+      expect(tokenRegistryService.updateTokenMetadata).toHaveBeenCalled();
     });
 
     it('should track failed token balance fetches with detailed errors', async () => {
       vi.mocked(readOnlyWalletService.getBalance)
-        .mockResolvedValueOnce([{ token: 'token1', available: 100n, locked: 0n }])
+        .mockResolvedValueOnce(new Map([['token1', { token: 'token1', available: 100n, locked: 0n }]]))
         .mockRejectedValueOnce(new Error('Network error'));
 
       const result = await loadTokensWithBalances('mainnet', '', { detailedErrors: true });
@@ -129,7 +130,7 @@ describe('tokenLoading utilities', () => {
 
     it('should track failed token balance fetches with simple count', async () => {
       vi.mocked(readOnlyWalletService.getBalance)
-        .mockResolvedValueOnce([{ token: 'token1', available: 100n, locked: 0n }])
+        .mockResolvedValueOnce(new Map([['token1', { token: 'token1', available: 100n, locked: 0n }]]))
         .mockRejectedValueOnce(new Error('Network error'));
 
       const result = await loadTokensWithBalances('mainnet', '', { detailedErrors: false });
@@ -149,7 +150,7 @@ describe('tokenLoading utilities', () => {
     });
 
     it('should handle tokens with no balance data', async () => {
-      vi.mocked(readOnlyWalletService.getBalance).mockResolvedValue([]);
+      vi.mocked(readOnlyWalletService.getBalance).mockResolvedValue(new Map());
 
       const result = await loadTokensWithBalances('mainnet', '');
 
@@ -158,7 +159,7 @@ describe('tokenLoading utilities', () => {
       expect(result.warning).toBeNull();
     });
 
-    it('should save tokens to storage when NFT status changes', async () => {
+    it('should update metadata when NFT status changes', async () => {
       const nftMetadata = new Map([
         ['token1', { id: 'token1', nft: true, banned: false, verified: false }],
       ]);
@@ -166,29 +167,28 @@ describe('tokenLoading utilities', () => {
 
       await loadTokensWithBalances('mainnet', 'genesis123');
 
-      expect(tokenStorageService.saveTokens).toHaveBeenCalledWith(
+      expect(tokenRegistryService.updateTokenMetadata).toHaveBeenCalledWith(
+        'token1',
         'mainnet',
         'genesis123',
-        expect.arrayContaining([
-          expect.objectContaining({ uid: 'token1', isNFT: true }),
-        ])
+        expect.objectContaining({ isNFT: true })
       );
     });
 
-    it('should not save tokens if NFT status unchanged', async () => {
+    it('should not update metadata if NFT status unchanged', async () => {
       vi.mocked(nftDetectionService.detectNftBatch).mockResolvedValue(new Map());
 
       await loadTokensWithBalances('mainnet', '');
 
-      expect(tokenStorageService.saveTokens).not.toHaveBeenCalled();
+      expect(tokenRegistryService.updateTokenMetadata).not.toHaveBeenCalled();
     });
   });
 
   describe('fetchTokenBalance', () => {
     it('should fetch balance successfully', async () => {
-      vi.mocked(readOnlyWalletService.getBalance).mockResolvedValue([
-        { token: 'token123', available: 500n, locked: 100n },
-      ]);
+      vi.mocked(readOnlyWalletService.getBalance).mockResolvedValue(
+        new Map([['token123', { token: 'token123', available: 500n, locked: 100n }]])
+      );
 
       const result = await fetchTokenBalance('token123');
 
@@ -237,9 +237,9 @@ describe('tokenLoading utilities', () => {
 
     it('should continue processing other tokens when one fails', async () => {
       vi.mocked(readOnlyWalletService.getBalance)
-        .mockResolvedValueOnce([{ token: 'token1', available: 100n, locked: 0n }])
+        .mockResolvedValueOnce(new Map([['token1', { token: 'token1', available: 100n, locked: 0n }]]))
         .mockRejectedValueOnce(new Error('Network error'))
-        .mockResolvedValueOnce([{ token: 'token3', available: 200n, locked: 0n }]);
+        .mockResolvedValueOnce(new Map([['token3', { token: 'token3', available: 200n, locked: 0n }]]));
 
       const threeTokens: TokenInfo[] = [
         { uid: 'token1', symbol: 'TKN1', name: 'Token 1', isNFT: false },

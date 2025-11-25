@@ -44,8 +44,8 @@ export async function loadTokensWithBalances(
     network
   );
 
-  // Update storage with detected NFT statuses and metadata
-  let storageNeedsUpdate = false;
+  // Update metadata storage with detected NFT statuses
+  // This only updates metadata, leaving token data unchanged
   registeredTokens.forEach((token) => {
     const metadata = nftMetadata.get(token.uid);
     const isNft = metadata?.nft ?? false;
@@ -53,17 +53,19 @@ export async function loadTokensWithBalances(
     const hasNftStatusChange = token.isNFT !== isNft;
 
     if (hasNftStatusChange || hasMetadataChange) {
+      // Update metadata only (not data)
+      tokenRegistryService.updateTokenMetadata(token.uid, network, genesisHash, {
+        isNFT: isNft,
+        metadata: metadata || undefined,
+      });
+
+      // Update the in-memory token for this load
       token.isNFT = isNft;
       if (metadata) {
         token.metadata = metadata;
       }
-      storageNeedsUpdate = true;
     }
   });
-
-  if (storageNeedsUpdate) {
-    tokenStorageService.saveTokens(network, genesisHash, registeredTokens);
-  }
 
   // Fetch balances for all registered tokens
   const failedTokens: Array<{ uid: string; symbol: string; error: string }> = [];
@@ -71,13 +73,14 @@ export async function loadTokensWithBalances(
     registeredTokens.map(async (token) => {
       try {
         const tokenBalances = await readOnlyWalletService.getBalance(token.uid);
+        const balance = tokenBalances.get(token.uid);
 
-        if (tokenBalances && tokenBalances.length > 0) {
+        if (balance) {
           return {
             ...token,
             balance: {
-              available: tokenBalances[0].available,
-              locked: tokenBalances[0].locked,
+              available: balance.available,
+              locked: balance.locked,
             },
           };
         }
@@ -140,10 +143,11 @@ export async function fetchTokenBalance(tokenUid: string): Promise<{
 } | null> {
   try {
     const balances = await readOnlyWalletService.getBalance(tokenUid);
-    if (balances && balances.length > 0) {
+    const balance = balances.get(tokenUid);
+    if (balance) {
       return {
-        available: balances[0].available,
-        locked: balances[0].locked,
+        available: balance.available,
+        locked: balance.locked,
       };
     }
     return null;

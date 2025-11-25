@@ -1,4 +1,4 @@
-import type { TokenInfo, TokenMetadata, ValidationResult, DagMetadata } from '../types/token';
+import type { TokenInfo, TokenData, TokenMetadata, ValidationResult, DagMetadata } from '../types/token';
 import { readOnlyWalletService } from './ReadOnlyWalletService';
 import { tokenStorageService } from './TokenStorageService';
 import helpers from '@hathor/wallet-lib/lib/utils/helpers';
@@ -11,6 +11,10 @@ import { nftDetectionService } from './NftDetectionService';
  * `[name:symbol:uid:checksum]`
  *
  * Example: `[MyToken:TKN:00001bc7043d0aa910e28aff4b2aad8b4de76c709da4d16a48bf713067245029:abc123]`
+ *
+ * This service maintains separation between:
+ * - Token data (stable: uid, name, symbol, configString)
+ * - Token metadata (changeable: isNFT, registeredAt, dagMetadata)
  */
 export class TokenRegistryService {
   private tokenCache: Map<string, TokenMetadata> = new Map();
@@ -33,80 +37,19 @@ export class TokenRegistryService {
 
     // Check if already registered (idempotent)
     if (tokenStorageService.isTokenRegistered(network, genesisHash, uid)) {
-      // Token already registered - fetch fresh balance and NFT status, then return
-      const existingTokens = tokenStorageService.loadTokens(network, genesisHash);
-      const existing = existingTokens.find(t => t.uid === uid);
-      if (existing) {
-        let needsSave = false;
-
-        // Update balance before returning
-        try {
-          const balances = await readOnlyWalletService.getBalance(uid);
-          if (balances && balances.length > 0) {
-            existing.balance = {
-              available: balances[0].available || 0n,
-              locked: balances[0].locked || 0n,
-            };
-            needsSave = true; // Balance updated, need to save
-          }
-        } catch (error) {
-          console.error(`Failed to update balance for existing token ${uid}:`, error);
-          // Keep existing balance if fetch fails
-        }
-
-        // Update NFT status and metadata
-        try {
-          const metadata = await nftDetectionService.detectNft(uid, network);
-          const isNft = metadata?.nft ?? false;
-          if (existing.isNFT !== isNft || (!existing.metadata && metadata)) {
-            existing.isNFT = isNft;
-            existing.metadata = metadata || undefined;
-            needsSave = true;
-            // Update cache
-            this.tokenCache.set(uid, {
-              uid: existing.uid,
-              name: existing.name,
-              symbol: existing.symbol,
-              isNFT: isNft,
-            });
-          }
-        } catch (error) {
-          console.warn(`Failed to update NFT status for existing token ${uid}:`, error);
-          // Keep existing NFT status
-        }
-
-        // Save to storage if anything changed
-        if (needsSave) {
-          const index = existingTokens.findIndex(t => t.uid === uid);
-          if (index >= 0) {
-            existingTokens[index] = existing;
-            const saved = tokenStorageService.saveTokens(network, genesisHash, existingTokens);
-            if (!saved) {
-              console.warn(`Failed to save updated token ${uid} to storage`);
-            }
-          }
-        }
-
-        return existing;
-      }
+      // Token already registered - update metadata and return
+      return await this.refreshTokenInfo(uid, network, genesisHash);
     }
 
-    // Try to fetch balance (but allow registration even if balance fetch fails)
-    let balance = { available: 0n, locked: 0n };
-    try {
-      const balances = await readOnlyWalletService.getBalance(uid);
-      if (balances && balances.length > 0) {
-        balance = {
-          available: balances[0].available || 0n,
-          locked: balances[0].locked || 0n,
-        };
-      }
-    } catch (error) {
-      console.warn(`Could not fetch balance for token ${uid}, registering with 0 balance:`, error);
-      // Continue with zero balance
-    }
+    // Create token data (stable)
+    const tokenData: TokenData = {
+      uid,
+      name,
+      symbol,
+      configString,
+    };
 
-    // Detect NFT status and metadata before creating token info
+    // Detect NFT status and metadata before creating metadata
     let isNFT = false;
     let dagMetadata: DagMetadata | null = null;
     try {
@@ -115,55 +58,179 @@ export class TokenRegistryService {
       dagMetadata = metadata;
     } catch (error) {
       console.warn(`Failed to detect NFT status for ${uid}, defaulting to false:`, error);
-      // Continue with isNFT: false
     }
 
-    // Create token info with detected NFT status and metadata
-    const tokenInfo: TokenInfo = {
+    // Create token metadata (changeable)
+    const tokenMetadata: TokenMetadata = {
       uid,
-      name,
-      symbol,
-      balance,
       isNFT,
-      metadata: dagMetadata || undefined,
-      configString,
       registeredAt: Date.now(),
+      metadata: dagMetadata || undefined,
     };
 
-    // Save to cache
-    this.tokenCache.set(uid, {
-      uid,
-      name,
-      symbol,
-      isNFT,
-    });
+    // Save data and metadata separately
+    const existingData = tokenStorageService.loadTokenData(network, genesisHash);
+    const updatedData = [...existingData, tokenData];
+    const dataSaved = tokenStorageService.saveTokenData(network, genesisHash, updatedData);
 
-    // Save to storage
-    const existingTokens = tokenStorageService.loadTokens(network, genesisHash);
-    const updatedTokens = [...existingTokens, tokenInfo];
-    const saved = tokenStorageService.saveTokens(network, genesisHash, updatedTokens);
-
-    if (!saved) {
-      throw new Error('Failed to save token registration to browser storage. Storage may be full or disabled. Please check your browser settings.');
+    if (!dataSaved) {
+      throw new Error('Failed to save token data to browser storage. Storage may be full or disabled.');
     }
 
-    return tokenInfo;
+    const metadataSaved = tokenStorageService.updateTokenMetadata(network, genesisHash, uid, tokenMetadata);
+    if (!metadataSaved) {
+      console.warn(`Failed to save token metadata for ${uid}. Metadata may be lost on refresh.`);
+    }
+
+    // Cache metadata
+    this.tokenCache.set(uid, tokenMetadata);
+
+    // Try to fetch balance
+    let balance = { available: 0n, locked: 0n };
+    try {
+      const balances = await readOnlyWalletService.getBalance(uid);
+      const tokenBalance = balances.get(uid);
+      if (tokenBalance) {
+        balance = {
+          available: tokenBalance.available || 0n,
+          locked: tokenBalance.locked || 0n,
+        };
+      }
+    } catch (error) {
+      console.warn(`Could not fetch balance for token ${uid}:`, error);
+    }
+
+    // Return combined TokenInfo
+    return {
+      ...tokenData,
+      ...tokenMetadata,
+      balance,
+    };
   }
 
   /**
-   * Unregister a token
+   * Refresh token info (fetch latest metadata and balance)
+   * This method only updates metadata, not core data
+   */
+  private async refreshTokenInfo(
+    uid: string,
+    network: string,
+    genesisHash: string
+  ): Promise<TokenInfo> {
+    const tokenData = tokenStorageService.loadTokenData(network, genesisHash).find(t => t.uid === uid);
+    if (!tokenData) {
+      throw new Error(`Token ${uid} not found in storage`);
+    }
+
+    let metadata = tokenStorageService.getTokenMetadata(network, genesisHash, uid);
+    let needsMetadataUpdate = false;
+
+    // Update NFT status and metadata
+    try {
+      const dagMetadata = await nftDetectionService.detectNft(uid, network);
+      const isNft = dagMetadata?.nft ?? false;
+
+      if (!metadata || metadata.isNFT !== isNft || (!metadata.metadata && dagMetadata)) {
+        metadata = {
+          uid,
+          isNFT: isNft,
+          registeredAt: metadata?.registeredAt || Date.now(),
+          metadata: dagMetadata || undefined,
+        };
+        needsMetadataUpdate = true;
+      }
+    } catch (error) {
+      console.warn(`Failed to update NFT status for ${uid}:`, error);
+      // Use existing metadata or create default
+      if (!metadata) {
+        metadata = {
+          uid,
+          isNFT: false,
+          registeredAt: Date.now(),
+        };
+        needsMetadataUpdate = true;
+      }
+    }
+
+    // Save metadata if it changed (data remains unchanged)
+    if (needsMetadataUpdate) {
+      const saved = tokenStorageService.updateTokenMetadata(network, genesisHash, uid, metadata);
+      if (saved) {
+        this.tokenCache.set(uid, metadata);
+      }
+    }
+
+    // Fetch balance
+    let balance = { available: 0n, locked: 0n };
+    try {
+      const balances = await readOnlyWalletService.getBalance(uid);
+      const tokenBalance = balances.get(uid);
+      if (tokenBalance) {
+        balance = {
+          available: tokenBalance.available || 0n,
+          locked: tokenBalance.locked || 0n,
+        };
+      }
+    } catch (error) {
+      console.error(`Failed to update balance for ${uid}:`, error);
+    }
+
+    return {
+      ...tokenData,
+      ...metadata,
+      balance,
+    };
+  }
+
+  /**
+   * Unregister a token (removes both data and metadata)
    */
   unregisterToken(tokenUid: string, network: string, genesisHash: string): void {
-    const tokens = tokenStorageService.loadTokens(network, genesisHash);
+    // Remove data
+    const tokens = tokenStorageService.loadTokenData(network, genesisHash);
     const filtered = tokens.filter(t => t.uid !== tokenUid);
-    const saved = tokenStorageService.saveTokens(network, genesisHash, filtered);
+    const dataSaved = tokenStorageService.saveTokenData(network, genesisHash, filtered);
 
-    if (!saved) {
-      throw new Error('Failed to save token unregistration to browser storage. The token may reappear on page refresh.');
+    if (!dataSaved) {
+      throw new Error('Failed to save token unregistration. The token may reappear on page refresh.');
     }
+
+    // Remove metadata
+    const allMetadata = tokenStorageService.loadTokenMetadata(network, genesisHash);
+    delete allMetadata[tokenUid];
+    tokenStorageService.saveTokenMetadata(network, genesisHash, allMetadata);
 
     // Remove from cache
     this.tokenCache.delete(tokenUid);
+  }
+
+  /**
+   * Update metadata for a specific token without affecting data or other tokens
+   * This is the key method that enables updating metadata independently
+   */
+  updateTokenMetadata(
+    tokenUid: string,
+    network: string,
+    genesisHash: string,
+    metadata: Partial<Omit<TokenMetadata, 'uid'>>
+  ): boolean {
+    const existing = tokenStorageService.getTokenMetadata(network, genesisHash, tokenUid);
+    if (!existing) {
+      console.warn(`Cannot update metadata for unregistered token ${tokenUid}`);
+      return false;
+    }
+
+    const updated: TokenMetadata = {
+      ...existing,
+      ...metadata,
+      uid: tokenUid, // Ensure uid doesn't change
+    };
+
+    const saved = tokenStorageService.updateTokenMetadata(network, genesisHash, tokenUid, updated);
+    if (saved) {
+      this.tokenCache.set(tokenUid, updated);
+    }
+    return saved;
   }
 
   /**
@@ -229,49 +296,29 @@ export class TokenRegistryService {
   }
 
   /**
-   * Fetch token metadata from wallet-lib
-   */
-  async fetchTokenMetadata(tokenUid: string, network: string): Promise<TokenMetadata> {
-    // Check cache first
-    const cached = this.tokenCache.get(tokenUid);
-    if (cached) {
-      return cached;
-    }
-
-    // Fetch from wallet-lib
-    try {
-      const tokens = await readOnlyWalletService.getTokens();
-      const tokenData = tokens.find((t: Record<string, unknown>) => t.uid === tokenUid) as Record<string, unknown> | undefined;
-
-      if (!tokenData) {
-        throw new Error('Token not found');
-      }
-
-      // Detect NFT status
-      const dagMetadata = await nftDetectionService.detectNft(tokenData.uid as string, network);
-      const isNft = dagMetadata?.nft ?? false;
-
-      const metadata: TokenMetadata = {
-        uid: tokenData.uid as string,
-        name: (tokenData.name as string) || 'Unknown',
-        symbol: (tokenData.symbol as string) || '???',
-        isNFT: isNft,
-      };
-
-      // Cache it
-      this.tokenCache.set(tokenUid, metadata);
-
-      return metadata;
-    } catch (error) {
-      throw new Error(`Failed to fetch token metadata: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  /**
    * Get all registered tokens for network
+   * Combines data and metadata to create TokenInfo objects
    */
   getRegisteredTokens(network: string, genesisHash: string): TokenInfo[] {
-    return tokenStorageService.loadTokens(network, genesisHash);
+    const tokenData = tokenStorageService.loadTokenData(network, genesisHash);
+    const allMetadata = tokenStorageService.loadTokenMetadata(network, genesisHash);
+
+    return tokenData.map(data => {
+      const metadata = allMetadata[data.uid] || {
+        uid: data.uid,
+        isNFT: false,
+        registeredAt: Date.now(),
+      };
+
+      return {
+        ...data,
+        ...metadata,
+        balance: {
+          available: 0n,
+          locked: 0n,
+        },
+      };
+    });
   }
 
   /**

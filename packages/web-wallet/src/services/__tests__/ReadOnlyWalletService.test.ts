@@ -187,20 +187,20 @@ describe('ReadOnlyWalletService', () => {
     });
 
     it('should return transformed balance data', async () => {
-      mockGetBalance.mockResolvedValue({
-        '00': { balance: { unlocked: 1000, locked: 500 } },
-        'token123': { balance: { unlocked: 200, locked: 0 } },
-      });
+      mockGetBalance.mockResolvedValue([
+        { token: { id: '00' }, balance: { unlocked: 1000, locked: 500 } },
+        { token: { id: 'token123' }, balance: { unlocked: 200, locked: 0 } },
+      ]);
 
       const balances = await service.getBalance();
 
-      expect(balances).toHaveLength(2);
-      expect(balances).toContainEqual({
+      expect(balances.size).toBe(2);
+      expect(balances.get('00')).toEqual({
         token: '00',
         available: 1000n,
         locked: 500n,
       });
-      expect(balances).toContainEqual({
+      expect(balances.get('token123')).toEqual({
         token: 'token123',
         available: 200n,
         locked: 0n,
@@ -208,13 +208,13 @@ describe('ReadOnlyWalletService', () => {
     });
 
     it('should handle missing balance fields', async () => {
-      mockGetBalance.mockResolvedValue({
-        '00': { balance: {} },
-      });
+      mockGetBalance.mockResolvedValue([
+        { token: { id: '00' }, balance: {} },
+      ]);
 
       const balances = await service.getBalance();
 
-      expect(balances[0]).toEqual({
+      expect(balances.get('00')).toEqual({
         token: '00',
         available: 0n,
         locked: 0n,
@@ -222,7 +222,7 @@ describe('ReadOnlyWalletService', () => {
     });
 
     it('should pass tokenId filter to wallet-lib', async () => {
-      mockGetBalance.mockResolvedValue({});
+      mockGetBalance.mockResolvedValue([]);
 
       await service.getBalance('specific-token');
 

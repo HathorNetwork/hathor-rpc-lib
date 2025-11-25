@@ -30,7 +30,7 @@ export interface WalletState {
   isCheckingConnection: boolean;
   loadingStep: string;
   address: string;
-  balances: Array<{ token: string; available: bigint; locked: bigint }>;
+  balances: Map<string, { token: string; available: bigint; locked: bigint }>;
   network: string;
   /**
    * User-facing error message for recoverable errors.
@@ -521,7 +521,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
 
     // Balance state
     address: balance.address || connection.address,
-    balances: balance.balances.length > 0 ? balance.balances : connection.balances,
+    balances: balance.balances.size > 0 ? balance.balances : connection.balances,
 
     // Token state
     registeredTokens: tokens.registeredTokens.length > 0 ? tokens.registeredTokens : connection.registeredTokens,

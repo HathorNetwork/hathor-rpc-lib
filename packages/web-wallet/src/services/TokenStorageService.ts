@@ -1,162 +1,177 @@
-import type { TokenInfo, TokenStorageData } from "../types/token";
+import type { TokenData, TokenMetadata, TokenDataStorage, TokenMetadataStorage } from "../types/token";
 
 /**
- * Service for persisting token registrations to localStorage with network-specific keys.
+ * Service for persisting token data and metadata to localStorage with network-specific keys.
  *
  * Storage format:
- * Key: `hathor_wallet_registered_tokens_{network}_{genesisHash}`
- * Value: JSON serialized TokenStorageData
+ * - Data Key: `hathor_wallet_token_data_{network}_{genesisHash}`
+ * - Metadata Key: `hathor_wallet_token_metadata_{network}_{genesisHash}`
+ *
+ * Separating data from metadata allows updating metadata (like NFT detection)
+ * without triggering updates to the stable token data list, avoiding unnecessary re-renders.
  *
  * Note: genesisHash is currently empty string, will be populated when RPC handler is updated
  */
 export class TokenStorageService {
-  private readonly STORAGE_PREFIX = "hathor_wallet_registered_tokens";
+  private readonly DATA_STORAGE_PREFIX = "hathor_wallet_token_data";
+  private readonly METADATA_STORAGE_PREFIX = "hathor_wallet_token_metadata";
   private readonly CURRENT_VERSION = 1;
 
   /**
-   * Save tokens for specific network and genesisHash
+   * Save token data (stable information)
    * @returns true if save was successful, false otherwise
    */
-  saveTokens(network: string, genesisHash: string, tokens: TokenInfo[]): boolean {
+  saveTokenData(network: string, genesisHash: string, tokens: TokenData[]): boolean {
     try {
-      const storageData: TokenStorageData = {
-        tokens: tokens.map((token) => ({
-          uid: token.uid,
-          name: token.name,
-          symbol: token.symbol,
-          configString: token.configString || "",
-          registeredAt: token.registeredAt ?? Date.now(),
-          isNFT: token.isNFT,
-          metadata: token.metadata,
-        })),
+      const storageData: TokenDataStorage = {
+        tokens,
         version: this.CURRENT_VERSION,
       };
 
-      const key = this.getStorageKey(network, genesisHash);
+      const key = this.getDataStorageKey(network, genesisHash);
       localStorage.setItem(key, JSON.stringify(storageData));
       return true;
     } catch (error) {
-      console.error("Failed to save tokens to localStorage:", error);
-      // Return false to indicate failure - caller should handle appropriately
+      console.error("Failed to save token data to localStorage:", error);
       return false;
     }
   }
 
   /**
-   * Load tokens for specific network and genesisHash
+   * Load token data for specific network and genesisHash
    */
-  loadTokens(network: string, genesisHash: string): TokenInfo[] {
+  loadTokenData(network: string, genesisHash: string): TokenData[] {
     try {
-      const key = this.getStorageKey(network, genesisHash);
+      const key = this.getDataStorageKey(network, genesisHash);
       const stored = localStorage.getItem(key);
 
       if (!stored) {
         return [];
       }
 
-      let data;
-      try {
-        data = JSON.parse(stored);
-      } catch (parseError) {
-        console.error("Failed to parse token storage data (corrupted JSON):", parseError, stored);
-        // Clear corrupted data
-        try {
-          localStorage.removeItem(key);
-        } catch (removeError) {
-          console.error("Failed to clear corrupted storage:", removeError);
-        }
-        return [];
-      }
-
-      const migrated = this.migrateIfNeeded(data);
-
-      // Convert storage format to TokenInfo format
-      return migrated.tokens.map((token) => ({
-        uid: token.uid,
-        name: token.name,
-        symbol: token.symbol,
-        balance: {
-          available: 0n, // Will be fetched separately
-          locked: 0n,
-        },
-        isNFT: token.isNFT || false,
-        metadata: token.metadata,
-        configString: token.configString,
-        registeredAt: token.registeredAt,
-      }));
+      const data = JSON.parse(stored) as TokenDataStorage;
+      return data.tokens || [];
     } catch (error) {
-      console.error("Failed to load tokens from localStorage:", error);
+      console.error("Failed to load token data from localStorage:", error);
       return [];
     }
   }
 
   /**
-   * Clear all tokens for specific network and genesisHash
+   * Save token metadata (changeable information)
+   * @returns true if save was successful, false otherwise
    */
-  clearTokens(network: string, genesisHash: string): void {
+  saveTokenMetadata(network: string, genesisHash: string, metadata: Record<string, TokenMetadata>): boolean {
     try {
-      const key = this.getStorageKey(network, genesisHash);
-      localStorage.removeItem(key);
+      const storageData: TokenMetadataStorage = {
+        metadata,
+        version: this.CURRENT_VERSION,
+      };
+
+      const key = this.getMetadataStorageKey(network, genesisHash);
+      localStorage.setItem(key, JSON.stringify(storageData));
+      return true;
     } catch (error) {
-      console.error("Failed to clear tokens from localStorage:", error);
+      console.error("Failed to save token metadata to localStorage:", error);
+      return false;
     }
   }
 
   /**
-   * Check if a token is already registered
+   * Load token metadata for specific network and genesisHash
    */
-  isTokenRegistered(
-    network: string,
-    genesisHash: string,
-    tokenUid: string,
-  ): boolean {
-    const tokens = this.loadTokens(network, genesisHash);
+  loadTokenMetadata(network: string, genesisHash: string): Record<string, TokenMetadata> {
+    try {
+      const key = this.getMetadataStorageKey(network, genesisHash);
+      const stored = localStorage.getItem(key);
+
+      if (!stored) {
+        return {};
+      }
+
+      const data = JSON.parse(stored) as TokenMetadataStorage;
+      return data.metadata || {};
+    } catch (error) {
+      console.error("Failed to load token metadata from localStorage:", error);
+      return {};
+    }
+  }
+
+  /**
+   * Update metadata for a specific token without affecting other tokens
+   * This is the key method that enables updating metadata independently
+   */
+  updateTokenMetadata(network: string, genesisHash: string, tokenUid: string, metadata: TokenMetadata): boolean {
+    try {
+      const allMetadata = this.loadTokenMetadata(network, genesisHash);
+      allMetadata[tokenUid] = metadata;
+      return this.saveTokenMetadata(network, genesisHash, allMetadata);
+    } catch (error) {
+      console.error("Failed to update token metadata:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Get metadata for a specific token
+   */
+  getTokenMetadata(network: string, genesisHash: string, tokenUid: string): TokenMetadata | null {
+    const allMetadata = this.loadTokenMetadata(network, genesisHash);
+    return allMetadata[tokenUid] || null;
+  }
+
+  /**
+   * Clear all token data for specific network and genesisHash
+   */
+  clearTokenData(network: string, genesisHash: string): void {
+    try {
+      const key = this.getDataStorageKey(network, genesisHash);
+      localStorage.removeItem(key);
+    } catch (error) {
+      console.error("Failed to clear token data from localStorage:", error);
+    }
+  }
+
+  /**
+   * Clear all token metadata for specific network and genesisHash
+   */
+  clearTokenMetadata(network: string, genesisHash: string): void {
+    try {
+      const key = this.getMetadataStorageKey(network, genesisHash);
+      localStorage.removeItem(key);
+    } catch (error) {
+      console.error("Failed to clear token metadata from localStorage:", error);
+    }
+  }
+
+  /**
+   * Clear both token data and metadata
+   */
+  clearAll(network: string, genesisHash: string): void {
+    this.clearTokenData(network, genesisHash);
+    this.clearTokenMetadata(network, genesisHash);
+  }
+
+  /**
+   * Check if a token is already registered (by checking data storage)
+   */
+  isTokenRegistered(network: string, genesisHash: string, tokenUid: string): boolean {
+    const tokens = this.loadTokenData(network, genesisHash);
     return tokens.some((token) => token.uid === tokenUid);
   }
 
   /**
-   * Get storage key for network and genesisHash
+   * Get storage key for token data
    */
-  private getStorageKey(network: string, genesisHash: string): string {
-    // Format: hathor_wallet_registered_tokens_{network}_{genesisHash}
-    // genesisHash is empty string for now until RPC handler is updated
-    return `${this.STORAGE_PREFIX}_${network}_${genesisHash}`;
+  private getDataStorageKey(network: string, genesisHash: string): string {
+    return `${this.DATA_STORAGE_PREFIX}_${network}_${genesisHash}`;
   }
 
   /**
-   * Migrate storage format if needed for backward compatibility
+   * Get storage key for token metadata
    */
-  private migrateIfNeeded(data: unknown): TokenStorageData {
-    // If data doesn't have version field, it's an old format or invalid
-    if (!data || typeof data !== "object") {
-      return { tokens: [], version: this.CURRENT_VERSION };
-    }
-
-    const obj = data as Record<string, unknown>;
-
-    // Check if it's already in current format
-    if (obj.version === this.CURRENT_VERSION && Array.isArray(obj.tokens)) {
-      return data as TokenStorageData;
-    }
-
-    // If it's an array directly (old format), migrate it
-    if (Array.isArray(data)) {
-      return {
-        tokens: data as TokenStorageData["tokens"],
-        version: this.CURRENT_VERSION,
-      };
-    }
-
-    // If version is missing, add it
-    if (!obj.version && Array.isArray(obj.tokens)) {
-      return {
-        tokens: obj.tokens as TokenStorageData["tokens"],
-        version: this.CURRENT_VERSION,
-      };
-    }
-
-    // Invalid format, return empty
-    return { tokens: [], version: this.CURRENT_VERSION };
+  private getMetadataStorageKey(network: string, genesisHash: string): string {
+    return `${this.METADATA_STORAGE_PREFIX}_${network}_${genesisHash}`;
   }
 }
 

@@ -14,7 +14,7 @@ interface UseWalletBalanceOptions {
 
 export function useWalletBalance(options: UseWalletBalanceOptions) {
   const { isConnected, addressMode, registeredTokens, onError } = options;
-  const [balances, setBalances] = useState<WalletBalance[]>([]);
+  const [balances, setBalances] = useState<Map<string, WalletBalance>>(new Map());
   const [address, setAddress] = useState<string>('');
 
   const refreshBalance = useCallback(async () => {
@@ -24,17 +24,20 @@ export function useWalletBalance(options: UseWalletBalanceOptions) {
       // Get all token UIDs to fetch (HTR + all registered custom tokens)
       const tokenIds = [TOKEN_IDS.HTR, ...registeredTokens.map(t => t.uid)];
 
-      // Fetch balances for all tokens
-      const allBalances = await Promise.all(
+      // Fetch balances for all tokens and merge into single Map
+      const allBalances = new Map<string, WalletBalance>();
+
+      await Promise.all(
         tokenIds.map(async (tokenId) => {
           const tokenBalances = await readOnlyWalletService.getBalance(tokenId);
-          return tokenBalances[0]; // getBalance returns array, we take first element
+          // Merge the returned Map into our combined Map
+          tokenBalances.forEach((balance, token) => {
+            allBalances.set(token, balance);
+          });
         })
       );
-      // Filter out any undefined/null
-      // XXX: This is needed because the wallet-service returns null, but will be
-      // changed to return 0 so it matches the fullnode facade.
-      setBalances(allBalances.filter(Boolean));
+
+      setBalances(allBalances);
     } catch (error) {
       onError(error instanceof Error ? error.message : 'Failed to refresh balance');
     }

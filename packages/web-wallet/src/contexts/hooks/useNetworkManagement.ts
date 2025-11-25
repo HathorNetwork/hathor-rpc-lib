@@ -22,7 +22,7 @@ interface UseNetworkManagementOptions {
   xpub: string | null;
   network: string;
   address: string;
-  balances: WalletBalance[];
+  balances: Map<string, WalletBalance>;
   addressMode: AddressMode;
   invokeSnap: (params: { method: string; params?: Record<string, unknown> }) => Promise<unknown>;
   onSetupEventListeners: () => void;
@@ -30,7 +30,7 @@ interface UseNetworkManagementOptions {
   onNetworkChange: (params: {
     network: string;
     address: string;
-    balances: WalletBalance[];
+    balances: Map<string, WalletBalance>;
     tokens: TokenInfo[];
     warning: string | null;
   }) => void;

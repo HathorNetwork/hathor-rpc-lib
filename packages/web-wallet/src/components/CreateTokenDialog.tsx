@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useWallet } from '../contexts/WalletContext';
 import { useInvokeSnap } from '@hathor/snap-utils';
-import { helpersUtils, tokensUtils } from '@hathor/wallet-lib';
+import { helpersUtils, tokensUtils, constants } from '@hathor/wallet-lib';
 import { formatHTRAmount } from '../utils/hathor';
 import { readOnlyWalletService } from '../services/ReadOnlyWalletService';
 import { getAddressForMode } from '../utils/addressMode';
@@ -65,7 +65,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
   const { toast } = useToast();
 
   // Get HTR balance
-  const htrBalance = balances.length > 0 ? balances[0].available : 0n;
+  const htrBalance = balances.get(constants.NATIVE_TOKEN_UID)?.available ?? 0n;
 
   const {
     register,
