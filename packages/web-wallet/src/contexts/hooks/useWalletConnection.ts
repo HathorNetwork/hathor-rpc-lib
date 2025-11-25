@@ -122,7 +122,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions) {
     window.location.reload();
   };
 
-  const checkExistingConnection = async () => {
+  const checkExistingConnection = async (signal?: AbortSignal) => {
     if (isCheckingRef.current) {
       return;
     }
@@ -130,6 +130,14 @@ export function useWalletConnection(options: UseWalletConnectionOptions) {
     isCheckingRef.current = true;
     setIsCheckingConnection(true);
     setLoadingStep('Checking existing connection...');
+
+    // Check if already aborted
+    if (signal?.aborted) {
+      isCheckingRef.current = false;
+      setIsCheckingConnection(false);
+      setLoadingStep('');
+      return;
+    }
 
     try {
       const storedXpub = localStorage.getItem(STORAGE_KEYS.XPUB);
@@ -215,7 +223,18 @@ export function useWalletConnection(options: UseWalletConnectionOptions) {
       if (readOnlyWalletService.isReady()) {
         await readOnlyWalletService.stop();
       }
+
+      // Check if aborted before initializing
+      if (signal?.aborted) {
+        throw new Error('Connection check aborted');
+      }
+
       await readOnlyWalletService.initialize(storedXpub, storedNetwork);
+
+      // Check if aborted after initialization
+      if (signal?.aborted) {
+        throw new Error('Connection check aborted');
+      }
 
       setupEventListeners();
 
@@ -236,6 +255,11 @@ export function useWalletConnection(options: UseWalletConnectionOptions) {
         detailedErrors: true,
       });
 
+      // Final abort check before updating state
+      if (signal?.aborted) {
+        throw new Error('Connection check aborted');
+      }
+
       setIsConnected(true);
       setIsCheckingConnection(false);
       setAddress(walletAddress);
@@ -247,6 +271,11 @@ export function useWalletConnection(options: UseWalletConnectionOptions) {
       onError(tokenLoadResult.warning);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
+
+      // Don't handle aborted errors - they're intentional cancellations
+      if (errorMessage.includes('aborted')) {
+        return;
+      }
 
       const snapCrashed =
         errorMessage.includes('DataCloneError') ||
@@ -521,32 +550,37 @@ export function useWalletConnection(options: UseWalletConnectionOptions) {
 
   // Check existing connection on mount
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    const abortController = new AbortController();
 
-    const timer = setTimeout(() => {
-      timeoutId = setTimeout(() => {
+    // Set timeout to abort if connection check takes too long
+    const timeoutId = setTimeout(() => {
+      abortController.abort();
+      setIsCheckingConnection(false);
+      setLoadingStep('');
+      onError(null);
+    }, CHECK_CONNECTION_TIMEOUT);
+
+    checkExistingConnection(abortController.signal)
+      .then(() => {})
+      .catch((error) => {
+        // Ignore aborted errors
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes('aborted')) {
+          return;
+        }
+
+        log.error('Failed to check existing connection:', error);
         setIsCheckingConnection(false);
         setLoadingStep('');
-        onError(null);
-      }, CHECK_CONNECTION_TIMEOUT);
-
-      checkExistingConnection()
-        .then(() => {})
-        .catch((error) => {
-          console.error('Failed to check existing connection:', error);
-          const errorMessage = error instanceof Error ? error.message : 'Failed to check connection';
-          setIsCheckingConnection(false);
-          setLoadingStep('');
-          onError(errorMessage);
-        })
-        .finally(() => {
-          clearTimeout(timeoutId);
-        });
-    }, 100);
+        onError(error instanceof Error ? error.message : 'Failed to check connection');
+      })
+      .finally(() => {
+        clearTimeout(timeoutId);
+      });
 
     return () => {
-      clearTimeout(timer);
-      if (timeoutId) clearTimeout(timeoutId);
+      abortController.abort();
+      clearTimeout(timeoutId);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
