@@ -40,7 +40,7 @@ export class ReadOnlyWalletService {
     this.isInitializing = true;
 
     try {
-      log.debug('Initializing read-only wallet with xpub:', xpub.substring(0, 20) + '...');
+      log.debug('Initializing read-only wallet');
 
       // Network URL Mapping:
       // - User-facing networks: 'mainnet', 'testnet'
@@ -96,7 +96,7 @@ export class ReadOnlyWalletService {
       // Start wallet in read-only mode
       try {
         await this.wallet.startReadOnly();
-        log.debug('Read-only wallet started successfully');
+        log.info('Read-only wallet started successfully');
       } catch (error: unknown) {
         // Check if this is a "wallet already loaded" error (400 status)
         // The wallet-service returns 400 when wallet already exists
@@ -109,7 +109,7 @@ export class ReadOnlyWalletService {
         }
       }
 
-      log.debug('Read-only wallet ready');
+      log.info('Read-only wallet ready');
     } catch (error) {
       log.error('Failed to initialize read-only wallet:', error);
       this.isInitializing = false; // Reset flag before clearing wallet

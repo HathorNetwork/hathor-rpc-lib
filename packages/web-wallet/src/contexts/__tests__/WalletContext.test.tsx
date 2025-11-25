@@ -6,6 +6,7 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 const {
   mockInvokeSnap,
   mockRequestSnap,
+  mockRequest,
   mockUseMetaMaskContext,
   mockReadOnlyWalletService,
   mockTokenRegistryService,
@@ -19,6 +20,7 @@ const {
 } = vi.hoisted(() => ({
   mockInvokeSnap: vi.fn(),
   mockRequestSnap: vi.fn(),
+  mockRequest: vi.fn(),
   mockUseMetaMaskContext: vi.fn(() => ({ error: null })),
   mockReadOnlyWalletService: {
     initialize: vi.fn(),
@@ -66,8 +68,10 @@ const {
 vi.mock('@hathor/snap-utils', () => ({
   useInvokeSnap: () => mockInvokeSnap,
   useRequestSnap: () => mockRequestSnap,
+  useRequest: () => mockRequest,
   useMetaMaskContext: mockUseMetaMaskContext,
   MetaMaskProvider: ({ children }: { children: React.ReactNode }) => children,
+  defaultSnapOrigin: 'local:http://localhost:8080',
 }));
 
 // Mock services
@@ -358,17 +362,14 @@ describe('WalletContext', () => {
       localStorage.setItem('hathor_wallet_xpub', 'xpub123');
       localStorage.setItem('hathor_wallet_network', 'testnet');
 
-      // Mock window.ethereum for snap verification
-      const mockEthereum = {
-        request: vi.fn().mockResolvedValue({
-          'local:http://localhost:8080': {
-            version: '1.0.0',
-            enabled: true,
-            blocked: false,
-          },
-        }),
-      };
-      (window as unknown as { ethereum: typeof mockEthereum }).ethereum = mockEthereum;
+      // Mock the request function for snap verification
+      mockRequest.mockResolvedValue({
+        'local:http://localhost:8080': {
+          version: '1.0.0',
+          enabled: true,
+          blocked: false,
+        },
+      });
 
       mockReadOnlyWalletService.isReady.mockReturnValue(true);
       mockReadOnlyWalletService.getBalance.mockResolvedValue([

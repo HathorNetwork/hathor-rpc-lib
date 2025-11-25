@@ -6,6 +6,7 @@ import { TOKEN_IDS } from '@/constants';
 import { SNAP_TIMEOUTS } from '../../constants/timeouts';
 import { createLogger } from '../../utils/logger';
 import { raceWithTimeout } from '../../utils/promise';
+import { isSnapCrashedError } from '../../utils/snapErrors';
 import type { WalletBalance } from '../../types/wallet';
 import type { TokenInfo } from '../../types/token';
 
@@ -139,10 +140,7 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
       log.error('Failed to change network:', networkChangeError);
 
       // Check if snap crashed (DataCloneError, unresponsive, etc.)
-      const snapCrashed =
-        originalError.includes('DataCloneError') ||
-        originalError.includes('postMessage') ||
-        originalError.includes('cloned') ||
+      const snapCrashed = isSnapCrashedError(originalError) ||
         originalError.includes('ERR_NETWORK') ||
         originalError.includes('Network Error');
 

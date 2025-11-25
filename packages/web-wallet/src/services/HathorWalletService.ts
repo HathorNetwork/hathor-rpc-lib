@@ -1,5 +1,8 @@
 import { HATHOR_API_URLS, NETWORKS, TOKEN_IDS, DEFAULT_NETWORK } from '../constants';
 import type { WalletBalance } from '../types/wallet';
+import { createLogger } from '../utils/logger';
+
+const log = createLogger('HathorWalletService');
 
 // Type for the invokeSnap function from snap-utils
 type InvokeSnapFunction = (params: { method: string; params?: Record<string, unknown> }) => Promise<unknown>;
@@ -71,10 +74,10 @@ async function wrapSnapCall<T>(
   try {
     return await snapCall();
   } catch (error) {
-    console.error(`[HathorWalletService] ${methodName} failed:`, error);
+    log.error(`${methodName} failed:`, error);
 
     if (isUnauthorizedError(error)) {
-      console.error('[HathorWalletService] Unauthorized error detected - throwing SnapUnauthorizedError');
+      log.error('Unauthorized error detected - throwing SnapUnauthorizedError');
       throw new SnapUnauthorizedError(
         'Snap permissions have been revoked or changed. Please reconnect your wallet.',
         4100
@@ -114,7 +117,7 @@ export const WalletServiceMethods = {
       }) as { response?: Array<{ token_id?: string; token?: string; available?: number | bigint; locked?: number | bigint }> } | null;
 
       if (!response) {
-        console.error('Received null response from snap - snap may not be responding');
+        log.error('Received null response from snap - snap may not be responding');
         throw new Error('Failed to get balance: snap not responding');
       }
 
@@ -141,23 +144,23 @@ export const WalletServiceMethods = {
   },
 
   async sendTransaction(invokeSnap: InvokeSnapFunction, params: SendTransactionParams): Promise<unknown> {
-    console.log('[HathorWalletService] sendTransaction called with params:', JSON.stringify(params, null, 2));
+    log.debug('sendTransaction called');
 
     return wrapSnapCall('sendTransaction', async () => {
-      console.log('[HathorWalletService] Invoking snap with htr_sendTransaction...');
+      log.debug('Invoking snap with htr_sendTransaction...');
       const response = await invokeSnap({
         method: 'htr_sendTransaction',
         params: params as unknown as Record<string, unknown>
       }) as { response?: unknown } | null;
 
-      console.log('[HathorWalletService] Snap response:', response);
+      log.debug('Snap response received');
 
       if (!response) {
-        console.error('[HathorWalletService] No response from snap (user cancelled or rejected)');
+        log.error('No response from snap (user cancelled or rejected)');
         throw new Error('Transaction was cancelled or rejected');
       }
 
-      console.log('[HathorWalletService] Transaction sent successfully');
+      log.info('Transaction sent successfully');
       return response.response || response;
     });
   },
@@ -209,7 +212,7 @@ export const WalletServiceMethods = {
         confirmed: tx.is_voided === false
       })) || [];
     } catch (error) {
-      console.error('Failed to get transaction history:', error);
+      log.error('Failed to get transaction history:', error);
       throw error;
     }
   }

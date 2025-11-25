@@ -8,6 +8,7 @@ import { SNAP_TIMEOUTS } from '../../constants/timeouts';
 import { createLogger } from '../../utils/logger';
 import { toBigInt } from '../../utils/hathor';
 import { raceWithTimeout } from '../../utils/promise';
+import { isSnapCrashedError, getSnapErrorUserMessage } from '../../utils/snapErrors';
 import type { WalletBalance } from '../../types/wallet';
 import type { TokenInfo } from '../../types/token';
 import { z } from 'zod';
@@ -149,6 +150,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
   const [network, setNetwork] = useState('mainnet');
   const [registeredTokens, setRegisteredTokens] = useState<TokenInfo[]>([]);
 
+  // Use a ref to prevent concurrent connection checks
   const isCheckingRef = useRef(false);
   const handleNewTransactionRef = useRef<(tx: unknown) => Promise<void>>(async () => {});
 
@@ -217,12 +219,12 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
         // Validate snaps response
         const snapsValidation = GetSnapsResponseSchema.safeParse(snapsResponse);
         if (!snapsValidation.success) {
-          log.error('Invalid wallet_getSnaps response:', snapsValidation.error, snapsResponse);
+          log.error('Invalid wallet_getSnaps response:', snapsValidation.error);
           throw new Error('Failed to parse installed snaps');
         }
 
         const snaps = snapsValidation.data;
-        log.debug('Installed snaps:', snaps);
+        log.debug('Found installed snaps');
 
         const ourSnap = snaps[defaultSnapOrigin];
 
@@ -231,7 +233,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
           throw new Error('Snap not installed');
         }
 
-        log.debug('Snap found:', ourSnap);
+        log.debug('Snap found, version:', ourSnap.version);
 
         if (ourSnap.blocked) {
           log.error('Snap is blocked');
@@ -243,7 +245,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
           throw new Error('Snap is disabled');
         }
 
-        log.info('Snap is installed and enabled - version:', ourSnap.version);
+        log.info('Snap is installed and enabled');
       } catch (snapError) {
         const errorMsg = snapError instanceof Error ? snapError.message : 'Unknown error';
         const errorCode = (snapError as { code?: number })?.code;
@@ -296,8 +298,11 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
       let walletAddress = '';
       try {
         walletAddress = await getDisplayAddressForMode(addressMode, readOnlyWalletService);
-      } catch {
-        throw new Error('Failed to retrieve wallet address. The wallet may not be properly initialized.');
+      } catch (addressError) {
+        // Preserve the original error for debugging
+        const originalMessage = addressError instanceof Error ? addressError.message : String(addressError);
+        log.error('Failed to get display address:', originalMessage);
+        throw new Error(`Failed to retrieve wallet address: ${originalMessage}`);
       }
 
       const walletBalances = await readOnlyWalletService.getBalance(TOKEN_IDS.HTR);
@@ -330,11 +335,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
         return;
       }
 
-      const snapCrashed =
-        errorMessage.includes('DataCloneError') ||
-        errorMessage.includes('postMessage') ||
-        errorMessage.includes('cloned') ||
-        errorMessage.includes('timeout');
+      const snapCrashed = isSnapCrashedError(errorMessage);
 
       const shouldClearStorage =
         snapCrashed ||
@@ -348,7 +349,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
       }
 
       const userMessage = snapCrashed
-        ? 'MetaMask Snap is not responding. Please refresh the page and try again.'
+        ? getSnapErrorUserMessage(errorMessage)
         : 'Failed to reconnect. Please try connecting manually.';
 
       onError(userMessage);
@@ -392,7 +393,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
 
         currentSnapNetwork = validationResult.data.response?.network;
       } catch (testError) {
-        console.error(testError);
+        log.error('Network check failed:', testError);
         throw new Error('Snap is not responding. Please make sure it is installed correctly.');
       }
 
@@ -415,7 +416,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
             'Network change timeout'
           );
         } catch (networkError) {
-          console.error(networkError);
+          log.error('Failed to change snap network:', networkError);
           throw new Error(`Failed to change snap network to ${DEFAULT_NETWORK}`);
         }
       }
@@ -461,8 +462,11 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
       let walletAddress = '';
       try {
         walletAddress = await getDisplayAddressForMode(addressMode, readOnlyWalletService);
-      } catch {
-        throw new Error('Failed to retrieve wallet address. The wallet may not be properly initialized.');
+      } catch (addressError) {
+        // Preserve the original error for debugging
+        const originalMessage = addressError instanceof Error ? addressError.message : String(addressError);
+        log.error('Failed to get display address during connect:', originalMessage);
+        throw new Error(`Failed to retrieve wallet address: ${originalMessage}`);
       }
 
       setLoadingStep('Loading balance...');
@@ -496,14 +500,10 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
 
       const errorMessage = error instanceof Error ? error.message : String(error);
 
-      const snapCrashed =
-        errorMessage.includes('DataCloneError') ||
-        errorMessage.includes('postMessage') ||
-        errorMessage.includes('cloned') ||
-        errorMessage.includes('timeout');
+      const snapCrashed = isSnapCrashedError(errorMessage);
 
       const userMessage = snapCrashed
-        ? 'MetaMask Snap is not responding. Please refresh the page and try again.'
+        ? getSnapErrorUserMessage(errorMessage)
         : errorMessage || 'Failed to connect to wallet';
 
       setIsConnecting(false);
@@ -594,7 +594,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Error processing new transaction:', error);
+      log.error('Error processing new transaction:', error);
     }
   }, [isConnected, onRefreshBalance, onNewTransaction]);
 
@@ -658,7 +658,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
       const newAddress = await getDisplayAddressForMode(mode, readOnlyWalletService);
       setAddress(newAddress);
     } catch (error) {
-      console.error('Failed to refresh address for mode:', error);
+      log.error('Failed to refresh address for mode:', error);
       throw error;
     }
   };

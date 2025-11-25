@@ -16,8 +16,15 @@ import { useNetworkManagement } from './hooks/useNetworkManagement';
 
 // Re-export types for external use
 export type { TransactionHistoryItem, SendTransactionParams };
+export type { TokenFilter, DagMetadata } from '../types/token';
+export type { AddressMode } from '../utils/addressMode';
+export type { WalletBalance } from '../types/wallet';
 
-interface WalletState {
+/**
+ * Core wallet state managed by the WalletContext.
+ * This represents all the data tracked by the wallet provider.
+ */
+export interface WalletState {
   isConnected: boolean;
   isConnecting: boolean;
   isCheckingConnection: boolean;
@@ -73,7 +80,11 @@ interface WalletState {
   addressMode: AddressMode;
 }
 
-interface WalletContextType extends WalletState {
+/**
+ * Complete wallet context type including state and all methods.
+ * This is the type returned by useWallet() hook.
+ */
+export interface WalletContextType extends WalletState {
   /**
    * Establishes connection to the Hathor wallet via MetaMask Snap.
    *
