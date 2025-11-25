@@ -11,6 +11,7 @@ import { raceWithTimeout } from '../../utils/promise';
 import type { WalletBalance } from '../../types/wallet';
 import type { TokenInfo } from '../../types/token';
 import { z } from 'zod';
+import { defaultSnapOrigin } from '@hathor/snap-utils';
 
 const log = createLogger('useWalletConnection');
 
@@ -172,8 +173,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions) {
         const snaps = snapsValidation.data;
         log.debug('Installed snaps:', snaps);
 
-        const snapId = 'local:http://localhost:8080';
-        const ourSnap = snaps[snapId];
+        const ourSnap = snaps[defaultSnapOrigin];
 
         if (!ourSnap) {
           log.error('Snap not found in installed snaps');

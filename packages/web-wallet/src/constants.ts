@@ -59,9 +59,3 @@ export const DEFAULT_ADDRESS_TYPE = 'index' as const;
 export const QR_CODE_SIZE = 200;
 export const TRANSACTION_HISTORY_LIMIT = 50;
 export const CHECK_CONNECTION_TIMEOUT = 10000;
-
-// Snap configuration (these should match the snap's configuration)
-export const SNAP_CONFIG = {
-  DEFAULT_PORT: 8080,
-  LOCAL_ORIGIN: `local:http://localhost:8080`
-} as const;
