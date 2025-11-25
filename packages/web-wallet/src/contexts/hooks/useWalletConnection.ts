@@ -9,8 +9,52 @@ import { createLogger } from '../../utils/logger';
 import { toBigInt } from '../../utils/hathor';
 import type { WalletBalance } from '../../types/wallet';
 import type { TokenInfo } from '../../types/token';
+import { z } from 'zod';
 
 const log = createLogger('useWalletConnection');
+
+// Zod schemas for snap response validation
+const SnapNetworkResponseSchema = z.object({
+  response: z.object({
+    network: z.string(),
+  }).optional(),
+}).passthrough();
+
+const XpubResponseSchema = z.object({
+  response: z.object({
+    xpub: z.string(),
+  }),
+}).passthrough();
+
+const GetSnapsResponseSchema = z.record(
+  z.string(),
+  z.object({
+    version: z.string(),
+    enabled: z.boolean(),
+    blocked: z.boolean(),
+  })
+);
+
+const TransactionSchema = z.object({
+  outputs: z.array(
+    z.object({
+      decoded: z.object({
+        address: z.string().optional(),
+      }).passthrough(),
+      token: z.string(),
+      value: z.union([z.number(), z.bigint()]),
+    }).passthrough()
+  ).optional(),
+  inputs: z.array(
+    z.object({
+      decoded: z.object({
+        address: z.string().optional(),
+      }).passthrough(),
+      token: z.string(),
+      value: z.union([z.number(), z.bigint()]),
+    }).passthrough()
+  ).optional(),
+}).passthrough();
 
 const STORAGE_KEYS = {
   XPUB: 'hathor_wallet_xpub',
@@ -103,14 +147,22 @@ export function useWalletConnection(options: UseWalletConnectionOptions) {
       try {
         log.debug('Checking installed snaps via wallet_getSnaps...');
 
-        const snaps = await (window as { ethereum?: { request: (args: { method: string }) => Promise<unknown> } }).ethereum?.request({
+        const snapsResponse = await (window as { ethereum?: { request: (args: { method: string }) => Promise<unknown> } }).ethereum?.request({
           method: 'wallet_getSnaps',
-        }) as Record<string, { version: string; enabled: boolean; blocked: boolean }> | undefined;
+        });
 
+        // Validate snaps response
+        const snapsValidation = GetSnapsResponseSchema.safeParse(snapsResponse);
+        if (!snapsValidation.success) {
+          log.error('Invalid wallet_getSnaps response:', snapsValidation.error, snapsResponse);
+          throw new Error('Failed to parse installed snaps');
+        }
+
+        const snaps = snapsValidation.data;
         log.debug('Installed snaps:', snaps);
 
         const snapId = 'local:http://localhost:8080';
-        const ourSnap = snaps?.[snapId];
+        const ourSnap = snaps[snapId];
 
         if (!ourSnap) {
           log.error('Snap not found in installed snaps');
@@ -239,19 +291,28 @@ export function useWalletConnection(options: UseWalletConnectionOptions) {
           method: 'htr_getConnectedNetwork',
           params: {}
         });
-        const networkCheckTimeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Network check timeout')), SNAP_TIMEOUTS.NETWORK_CHECK)
-        );
+
+        // Create timeout with cancellable reference
+        let timeoutId: NodeJS.Timeout;
+        const networkCheckTimeout = new Promise((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error('Network check timeout')), SNAP_TIMEOUTS.NETWORK_CHECK);
+        });
+
         const networkTest = await Promise.race([networkCheckPromise, networkCheckTimeout]);
 
-        let parsedNetworkTest;
-        try {
-          parsedNetworkTest = typeof networkTest === 'string' ? JSON.parse(networkTest) : networkTest;
-        } catch (parseError) {
-          console.error('Failed to parse network test response:', parseError, networkTest);
-          throw new Error(`Snap returned invalid JSON response: ${parseError instanceof Error ? parseError.message : 'Parse error'}`);
+        // Clear timeout to prevent background rejection
+        clearTimeout(timeoutId!);
+
+        // Parse JSON if needed, then validate with Zod schema
+        const rawResponse = typeof networkTest === 'string' ? JSON.parse(networkTest) : networkTest;
+        const validationResult = SnapNetworkResponseSchema.safeParse(rawResponse);
+
+        if (!validationResult.success) {
+          log.error('Network response validation failed:', validationResult.error, rawResponse);
+          throw new Error(`Invalid snap response: ${validationResult.error.message}`);
         }
-        currentSnapNetwork = parsedNetworkTest?.response?.network;
+
+        currentSnapNetwork = validationResult.data.response?.network;
       } catch (testError) {
         console.error(testError);
         throw new Error('Snap is not responding. Please make sure it is installed correctly.');
@@ -295,21 +356,16 @@ export function useWalletConnection(options: UseWalletConnectionOptions) {
         throw new Error(`Failed to get xpub: ${snapError instanceof Error ? snapError.message : String(snapError)}`);
       }
 
-      let parsedResponse = xpubResponse;
-      if (typeof xpubResponse === 'string') {
-        try {
-          parsedResponse = JSON.parse(xpubResponse);
-        } catch (parseError) {
-          console.error('Failed to parse xpub response:', parseError, xpubResponse);
-          throw new Error(`Invalid JSON response from snap: ${parseError instanceof Error ? parseError.message : 'Unknown parse error'}`);
-        }
+      // Parse and validate xpub response
+      const rawResponse = typeof xpubResponse === 'string' ? JSON.parse(xpubResponse) : xpubResponse;
+      const validationResult = XpubResponseSchema.safeParse(rawResponse);
+
+      if (!validationResult.success) {
+        log.error('Xpub response validation failed:', validationResult.error, rawResponse);
+        throw new Error(`Invalid xpub response: ${validationResult.error.message}`);
       }
 
-      const newXpub = (parsedResponse as { response?: { xpub?: string } })?.response?.xpub;
-
-      if (!newXpub) {
-        throw new Error('Failed to get xpub from snap - no xpub in response');
-      }
+      const newXpub = validationResult.data.response.xpub;
 
       setLoadingStep('Initializing read-only wallet...');
 
@@ -400,7 +456,14 @@ export function useWalletConnection(options: UseWalletConnectionOptions) {
   const handleNewTransaction = useCallback(async (tx: unknown) => {
     if (!isConnected || !readOnlyWalletService.isReady()) return;
 
-    const transaction = tx as Record<string, unknown>;
+    // Validate transaction structure
+    const txValidation = TransactionSchema.safeParse(tx);
+    if (!txValidation.success) {
+      log.error('Invalid transaction structure:', txValidation.error, tx);
+      return;
+    }
+
+    const transaction = txValidation.data;
 
     try {
       await onRefreshBalance();
@@ -408,37 +471,29 @@ export function useWalletConnection(options: UseWalletConnectionOptions) {
       let receivedAmount = 0n;
       let sentAmount = 0n;
 
-      if (Array.isArray(transaction.outputs)) {
-        for (const output of transaction.outputs as Array<Record<string, unknown>>) {
-          const decoded = output.decoded as Record<string, unknown>;
-          const outputAddress = decoded?.address as string | undefined;
-          const outputToken = output.token;
-          const outputValue = output.value;
-
+      if (transaction.outputs) {
+        for (const output of transaction.outputs) {
+          const outputAddress = output.decoded.address;
           if (!outputAddress) continue;
 
           const isMyAddress = await readOnlyWalletService.isAddressMine(outputAddress);
 
-          if (isMyAddress && outputToken === TOKEN_IDS.HTR) {
-            const value = toBigInt(outputValue as number | bigint);
+          if (isMyAddress && output.token === TOKEN_IDS.HTR) {
+            const value = toBigInt(output.value);
             receivedAmount += value;
           }
         }
       }
 
-      if (Array.isArray(transaction.inputs)) {
-        for (const input of transaction.inputs as Array<Record<string, unknown>>) {
-          const decoded = input.decoded as Record<string, unknown>;
-          const inputAddress = decoded?.address as string | undefined;
-          const inputToken = input.token;
-          const inputValue = input.value;
-
+      if (transaction.inputs) {
+        for (const input of transaction.inputs) {
+          const inputAddress = input.decoded.address;
           if (!inputAddress) continue;
 
           const isMyAddress = await readOnlyWalletService.isAddressMine(inputAddress);
 
-          if (isMyAddress && inputToken === TOKEN_IDS.HTR) {
-            const value = toBigInt(inputValue as number | bigint);
+          if (isMyAddress && input.token === TOKEN_IDS.HTR) {
+            const value = toBigInt(input.value);
             sentAmount += value;
           }
         }
