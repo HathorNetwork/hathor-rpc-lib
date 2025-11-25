@@ -443,20 +443,18 @@ export function WalletProvider({ children }: WalletProviderProps) {
     onNewTransaction: (notification) => onNewTransactionRef.current(notification),
   });
 
-  // Initialize balance hook
-  const balance = useWalletBalance({
-    isConnected: connection.isConnected,
-    addressMode,
-    onRefreshTokenBalances: async () => {
-      await tokens.refreshTokenBalances();
-    },
-    onError: setError,
-  });
-
   // Initialize token management hook
   const tokens = useTokenManagement({
     isConnected: connection.isConnected,
     network: connection.network,
+  });
+
+  // Initialize balance hook (fetches balances for all tokens)
+  const balance = useWalletBalance({
+    isConnected: connection.isConnected,
+    addressMode,
+    registeredTokens: tokens.registeredTokens,
+    onError: setError,
   });
 
   // Initialize transactions hook
@@ -542,7 +540,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     // Token methods
     registerToken: tokens.registerToken,
     unregisterToken: tokens.unregisterToken,
-    refreshTokenBalances: tokens.refreshTokenBalances,
+    refreshTokenBalances: balance.refreshBalance, // Now managed by balance hook
     setSelectedTokenFilter: tokens.setSelectedTokenFilter,
     getTokenBalance: tokens.getTokenBalance,
 

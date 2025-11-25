@@ -3,16 +3,17 @@ import { readOnlyWalletService } from '../../services/ReadOnlyWalletService';
 import { getDisplayAddressForMode, type AddressMode } from '../../utils/addressMode';
 import { TOKEN_IDS } from '@/constants';
 import type { WalletBalance } from '../../types/wallet';
+import type { TokenInfo } from '../../types/token';
 
 interface UseWalletBalanceOptions {
   isConnected: boolean;
   addressMode: AddressMode;
-  onRefreshTokenBalances: () => Promise<void>;
+  registeredTokens: TokenInfo[];
   onError: (error: string) => void;
 }
 
 export function useWalletBalance(options: UseWalletBalanceOptions) {
-  const { isConnected, addressMode, onRefreshTokenBalances, onError } = options;
+  const { isConnected, addressMode, registeredTokens, onError } = options;
   const [balances, setBalances] = useState<WalletBalance[]>([]);
   const [address, setAddress] = useState<string>('');
 
@@ -20,16 +21,24 @@ export function useWalletBalance(options: UseWalletBalanceOptions) {
     if (!isConnected || !readOnlyWalletService.isReady()) return;
 
     try {
-      // Fetch HTR balance (stored in this hook's balances state)
-      const newBalances = await readOnlyWalletService.getBalance(TOKEN_IDS.HTR);
-      setBalances(newBalances);
+      // Get all token UIDs to fetch (HTR + all registered custom tokens)
+      const tokenIds = [TOKEN_IDS.HTR, ...registeredTokens.map(t => t.uid)];
 
-      // Trigger token balance refresh (managed separately in useTokenManagement)
-      await onRefreshTokenBalances();
+      // Fetch balances for all tokens
+      const allBalances = await Promise.all(
+        tokenIds.map(async (tokenId) => {
+          const tokenBalances = await readOnlyWalletService.getBalance(tokenId);
+          return tokenBalances[0]; // getBalance returns array, we take first element
+        })
+      );
+      // Filter out any undefined/null
+      // XXX: This is needed because the wallet-service returns null, but will be
+      // changed to return 0 so it matches the fullnode facade.
+      setBalances(allBalances.filter(Boolean));
     } catch (error) {
       onError(error instanceof Error ? error.message : 'Failed to refresh balance');
     }
-  }, [isConnected, onRefreshTokenBalances, onError]);
+  }, [isConnected, registeredTokens, onError]);
 
   const refreshAddress = async () => {
     if (!isConnected || !readOnlyWalletService.isReady()) return;

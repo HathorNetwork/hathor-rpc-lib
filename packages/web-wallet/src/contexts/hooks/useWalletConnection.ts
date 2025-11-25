@@ -216,8 +216,6 @@ export function useWalletConnection(options: UseWalletConnectionOptions) {
         ? 'MetaMask Snap is not responding. Please refresh the page and try again.'
         : 'Failed to reconnect. Please try connecting manually.';
 
-      setIsCheckingConnection(false);
-      setLoadingStep('');
       onError(userMessage);
     } finally {
       isCheckingRef.current = false;
