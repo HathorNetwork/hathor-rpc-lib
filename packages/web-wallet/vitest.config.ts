@@ -29,6 +29,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // Resolve workspace packages to their source for tests
+      '@hathor/snap-utils': path.resolve(__dirname, '../snap-utils/src/index.ts'),
     },
   },
 });
