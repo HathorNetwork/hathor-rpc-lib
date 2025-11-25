@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { readOnlyWalletService } from '../../services/ReadOnlyWalletService';
 import { SnapUnauthorizedError } from '../../services/HathorWalletService';
-import { DEFAULT_NETWORK, TOKEN_IDS } from '@/constants';
+import { CHECK_CONNECTION_TIMEOUT, DEFAULT_NETWORK, TOKEN_IDS } from '@/constants';
 import { getDisplayAddressForMode, type AddressMode } from '../../utils/addressMode';
 import { loadTokensWithBalances } from '../../utils/tokenLoading';
 import { SNAP_TIMEOUTS } from '../../constants/timeouts';
@@ -528,7 +528,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions) {
         setIsCheckingConnection(false);
         setLoadingStep('');
         onError(null);
-      }, 10000);
+      }, CHECK_CONNECTION_TIMEOUT);
 
       checkExistingConnection()
         .then(() => {})

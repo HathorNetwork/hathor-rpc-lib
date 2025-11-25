@@ -58,6 +58,7 @@ export const DEFAULT_ADDRESS_TYPE = 'index' as const;
 // UI Constants
 export const QR_CODE_SIZE = 200;
 export const TRANSACTION_HISTORY_LIMIT = 50;
+export const CHECK_CONNECTION_TIMEOUT = 10000;
 
 // Snap configuration (these should match the snap's configuration)
 export const SNAP_CONFIG = {
