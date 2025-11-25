@@ -19,7 +19,7 @@ export function useTokens(selectedTokenFilter: TokenFilter = 'all') {
 
   // Create HTR token info from balances
   const htrToken: TokenInfo = useMemo(() => {
-    const htrBalance = balances.length > 0 ? balances[0] : { available: 0n, locked: 0n };
+    const htrBalance = balances.find(b => b.token === TOKEN_IDS.HTR) ?? { available: 0n, locked: 0n };
     return {
       uid: TOKEN_IDS.HTR,
       name: HTR_TOKEN_INFO.name,
