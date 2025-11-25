@@ -117,12 +117,34 @@ Run `yarn test` for full test suite (157 tests).
 ### Environment Variables
 
 ```env
-VITE_LOG_LEVEL=debug|info|warn|error  # Default: warn
+# Logging level (default: warn)
+VITE_LOG_LEVEL=debug|info|warn|error
+
+# Snap origin (default: local:http://localhost:8080)
+SNAP_ORIGIN=npm:@hathor/snap  # For production
+SNAP_ORIGIN=local:http://localhost:8080  # For local development
+```
+
+**Snap Origin Configuration:**
+
+The web wallet uses the `SNAP_ORIGIN` environment variable from `@hathor/snap-utils` to determine which MetaMask Snap to connect to:
+
+- **Development**: Defaults to `local:http://localhost:8080` for local snap development
+- **Production**: Set to your published snap (e.g., `npm:@hathor/snap`)
+- **Configuration**:
+  - For development, no configuration needed (uses localhost default)
+  - For production builds, create `.env.production` with your snap's published origin
+  - The snap origin is shared across all snap-utils hooks (`useInvokeSnap`, `useRequestSnap`, etc.)
+
+**Example `.env.production`:**
+```env
+SNAP_ORIGIN=npm:@hathor/snap
+VITE_LOG_LEVEL=error
 ```
 
 ### Network Configuration
 
-Default network is defined in `src/constants/index.ts`. Snap origin configured in `vite.config.ts`.
+Default network is defined in `src/constants/index.ts`.
 
 ## Build Output
 
