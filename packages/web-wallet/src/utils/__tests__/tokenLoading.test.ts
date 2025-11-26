@@ -208,7 +208,7 @@ describe('tokenLoading utilities', () => {
     });
 
     it('should return null when no balance data available', async () => {
-      vi.mocked(readOnlyWalletWrapper.getBalance).mockResolvedValue([]);
+      vi.mocked(readOnlyWalletWrapper.getBalance).mockResolvedValue(new Map());
 
       const result = await fetchTokenBalance('token123');
 

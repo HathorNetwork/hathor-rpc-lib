@@ -93,9 +93,9 @@ describe('useNetworkManagement', () => {
     mockStopWallet.mockResolvedValue(undefined);
     mockReinitializeWallet.mockResolvedValue(undefined);
     mockGetAddressForMode.mockResolvedValue('HNewAddr456');
-    mockReadOnlyWalletWrapper.getBalance.mockResolvedValue([
-      { token: '00', available: 2000n, locked: 0n },
-    ]);
+    mockReadOnlyWalletWrapper.getBalance.mockResolvedValue(
+      new Map([['00', { token: '00', available: 2000n, locked: 0n }]])
+    );
     mockLoadTokensWithBalances.mockResolvedValue({
       tokens: [],
       warning: null,
