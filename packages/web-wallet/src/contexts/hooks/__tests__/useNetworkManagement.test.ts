@@ -7,12 +7,12 @@ import type { WalletBalance } from '../../../types/wallet';
 
 // Hoisted mocks
 const {
-  mockReadOnlyWalletService,
+  mockReadOnlyWalletWrapper,
   mockLoadTokensWithBalances,
   mockGetDisplayAddressForMode,
   mockRaceWithTimeout,
 } = vi.hoisted(() => ({
-  mockReadOnlyWalletService: {
+  mockReadOnlyWalletWrapper: {
     initialize: vi.fn(),
     stop: vi.fn(),
     isReady: vi.fn(() => true),
@@ -23,8 +23,8 @@ const {
   mockRaceWithTimeout: vi.fn((promise) => promise),
 }));
 
-vi.mock('../../../services/ReadOnlyWalletService', () => ({
-  readOnlyWalletService: mockReadOnlyWalletService,
+vi.mock('../../../services/ReadOnlyWalletWrapper', () => ({
+  readOnlyWalletWrapper: mockReadOnlyWalletWrapper,
 }));
 
 vi.mock('../../../utils/tokenLoading', () => ({
@@ -93,7 +93,7 @@ describe('useNetworkManagement', () => {
     mockStopWallet.mockResolvedValue(undefined);
     mockReinitializeWallet.mockResolvedValue(undefined);
     mockGetDisplayAddressForMode.mockResolvedValue('HNewAddr456');
-    mockReadOnlyWalletService.getBalance.mockResolvedValue([
+    mockReadOnlyWalletWrapper.getBalance.mockResolvedValue([
       { token: '00', available: 2000n, locked: 0n },
     ]);
     mockLoadTokensWithBalances.mockResolvedValue({

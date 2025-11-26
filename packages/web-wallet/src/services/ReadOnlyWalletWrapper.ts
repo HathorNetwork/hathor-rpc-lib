@@ -6,7 +6,7 @@ import { toBigInt } from '../utils/hathor';
 import { createLogger } from '../utils/logger';
 import { ERROR_PATTERNS } from '../errors/WalletConnectionErrors';
 
-const log = createLogger('ReadOnlyWalletService');
+const log = createLogger('ReadOnlyWalletWrapper');
 
 export interface AddressInfo {
   address: string;
@@ -18,7 +18,7 @@ export interface AddressInfo {
  * Service for managing a read-only wallet instance using wallet-lib.
  * This wallet can perform all read operations but cannot sign transactions.
  */
-export class ReadOnlyWalletService {
+export class ReadOnlyWalletWrapper {
   private wallet: HathorWalletServiceWallet | null = null;
   private isInitializing = false;
 
@@ -87,7 +87,6 @@ export class ReadOnlyWalletService {
       }
     } catch (error) {
       log.error('Failed to initialize read-only wallet:', error);
-      this.isInitializing = false; // Reset flag before clearing wallet
       this.wallet = null;
       throw error;
     } finally {
@@ -366,4 +365,4 @@ export class ReadOnlyWalletService {
 }
 
 // Export a singleton instance
-export const readOnlyWalletService = new ReadOnlyWalletService();
+export const readOnlyWalletWrapper = new ReadOnlyWalletWrapper();

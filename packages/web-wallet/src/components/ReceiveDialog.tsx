@@ -3,7 +3,7 @@ import { X, Copy } from 'lucide-react';
 import QRCode from 'react-qr-code';
 import { useWallet } from '../contexts/WalletContext';
 import { QR_CODE_SIZE } from '../constants';
-import { readOnlyWalletService } from '../services/ReadOnlyWalletService';
+import { readOnlyWalletWrapper } from '../services/ReadOnlyWalletWrapper';
 import { getAddressForMode } from '../utils/addressMode';
 import { useToast } from '@/hooks/use-toast';
 
@@ -20,9 +20,9 @@ const ReceiveDialog: React.FC<ReceiveDialogProps> = ({ isOpen, onClose }) => {
   // Get address based on address mode when dialog opens
   useEffect(() => {
     const loadAddress = async () => {
-      if (isOpen && readOnlyWalletService.isReady()) {
+      if (isOpen && readOnlyWalletWrapper.isReady()) {
         try {
-          const addr = await getAddressForMode(addressMode, readOnlyWalletService);
+          const addr = await getAddressForMode(addressMode, readOnlyWalletWrapper);
           setDisplayAddress(addr);
         } catch (error) {
           console.error('Failed to get address for receive dialog:', error);

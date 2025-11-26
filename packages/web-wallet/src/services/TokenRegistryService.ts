@@ -1,5 +1,5 @@
 import type { TokenInfo, TokenData, TokenMetadata, ValidationResult, DagMetadata } from '../types/token';
-import { readOnlyWalletService } from './ReadOnlyWalletService';
+import { readOnlyWalletWrapper } from './ReadOnlyWalletWrapper';
 import { tokenStorageService } from './TokenStorageService';
 import helpers from '@hathor/wallet-lib/lib/utils/helpers';
 import { nftDetectionService } from './NftDetectionService';
@@ -88,7 +88,7 @@ export class TokenRegistryService {
     // Try to fetch balance
     let balance = { available: 0n, locked: 0n };
     try {
-      const balances = await readOnlyWalletService.getBalance(uid);
+      const balances = await readOnlyWalletWrapper.getBalance(uid);
       const tokenBalance = balances.get(uid);
       if (tokenBalance) {
         balance = {
@@ -163,7 +163,7 @@ export class TokenRegistryService {
     // Fetch balance
     let balance = { available: 0n, locked: 0n };
     try {
-      const balances = await readOnlyWalletService.getBalance(uid);
+      const balances = await readOnlyWalletWrapper.getBalance(uid);
       const tokenBalance = balances.get(uid);
       if (tokenBalance) {
         balance = {

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { tokenRegistryService } from '../../services/TokenRegistryService';
-import { readOnlyWalletService } from '../../services/ReadOnlyWalletService';
+import { readOnlyWalletWrapper } from '../../services/ReadOnlyWalletWrapper';
 import { fetchTokenBalance } from '../../utils/tokenLoading';
 import { TOKEN_IDS } from '@/constants';
 import { createLogger } from '../../utils/logger';
@@ -19,7 +19,7 @@ export function useTokenManagement(options: UseTokenManagementOptions) {
   const [selectedTokenFilter, setSelectedTokenFilter] = useState<TokenFilter>('tokens');
 
   const refreshTokenBalances = useCallback(async () => {
-    if (!isConnected || !readOnlyWalletService.isReady()) return;
+    if (!isConnected || !readOnlyWalletWrapper.isReady()) return;
 
     try {
       // Fetch balances for all tokens
@@ -50,7 +50,7 @@ export function useTokenManagement(options: UseTokenManagementOptions) {
   }, [isConnected, registeredTokens]);
 
   const registerToken = async (configString: string) => {
-    if (!isConnected || !readOnlyWalletService.isReady()) {
+    if (!isConnected || !readOnlyWalletWrapper.isReady()) {
       throw new Error('Wallet not connected');
     }
 

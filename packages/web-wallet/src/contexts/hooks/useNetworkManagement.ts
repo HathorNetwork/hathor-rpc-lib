@@ -1,4 +1,4 @@
-import { readOnlyWalletService } from '../../services/ReadOnlyWalletService';
+import { readOnlyWalletWrapper } from '../../services/ReadOnlyWalletWrapper';
 import { SnapUnauthorizedError } from '../../services/SnapService';
 import { getDisplayAddressForMode, type AddressMode } from '../../utils/addressMode';
 import { loadTokensWithBalances } from '../../utils/tokenLoading';
@@ -100,13 +100,13 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
       // Get fresh data from the new network
       let newAddress = '';
       try {
-        newAddress = await getDisplayAddressForMode(addressMode, readOnlyWalletService);
+        newAddress = await getDisplayAddressForMode(addressMode, readOnlyWalletWrapper);
       } catch (addressError) {
         log.error('Failed to get current address after network change:', addressError);
         throw new Error('Failed to retrieve wallet address on new network. The wallet may not be properly initialized.');
       }
 
-      const newBalances = await readOnlyWalletService.getBalance(TOKEN_IDS.HTR);
+      const newBalances = await readOnlyWalletWrapper.getBalance(TOKEN_IDS.HTR);
 
       // Load registered tokens for new network
       const genesisHash = '';
@@ -216,7 +216,7 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
 
         // Verify wallet is fully stopped to prevent memory leaks
         // Note: This direct check is intentional for diagnostics after stop attempt
-        if (readOnlyWalletService.isReady()) {
+        if (readOnlyWalletWrapper.isReady()) {
           log.error('CRITICAL: Wallet still active after stop attempt - possible resource leak');
         }
 

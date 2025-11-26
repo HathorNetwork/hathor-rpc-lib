@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { readOnlyWalletService } from '../../services/ReadOnlyWalletService';
+import { readOnlyWalletWrapper } from '../../services/ReadOnlyWalletWrapper';
 import { getDisplayAddressForMode, type AddressMode } from '../../utils/addressMode';
 import { TOKEN_IDS } from '@/constants';
 import type { WalletBalance } from '../../types/wallet';
@@ -18,7 +18,7 @@ export function useWalletBalance(options: UseWalletBalanceOptions) {
   const [address, setAddress] = useState<string>('');
 
   const refreshBalance = useCallback(async () => {
-    if (!isConnected || !readOnlyWalletService.isReady()) return;
+    if (!isConnected || !readOnlyWalletWrapper.isReady()) return;
 
     try {
       // Get all token UIDs to fetch (HTR + all registered custom tokens)
@@ -29,7 +29,7 @@ export function useWalletBalance(options: UseWalletBalanceOptions) {
 
       await Promise.all(
         tokenIds.map(async (tokenId) => {
-          const tokenBalances = await readOnlyWalletService.getBalance(tokenId);
+          const tokenBalances = await readOnlyWalletWrapper.getBalance(tokenId);
           // Merge the returned Map into our combined Map
           tokenBalances.forEach((balance, token) => {
             allBalances.set(token, balance);
@@ -44,10 +44,10 @@ export function useWalletBalance(options: UseWalletBalanceOptions) {
   }, [isConnected, registeredTokens, onError]);
 
   const refreshAddress = async () => {
-    if (!isConnected || !readOnlyWalletService.isReady()) return;
+    if (!isConnected || !readOnlyWalletWrapper.isReady()) return;
 
     try {
-      const newAddress = await getDisplayAddressForMode(addressMode, readOnlyWalletService);
+      const newAddress = await getDisplayAddressForMode(addressMode, readOnlyWalletWrapper);
       setAddress(newAddress);
     } catch (error) {
       onError(error instanceof Error ? error.message : 'Failed to refresh address. The wallet may not be properly initialized.');

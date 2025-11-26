@@ -69,7 +69,7 @@ src/
 │   └── hooks/         # Domain-specific hooks (connection, balance, tokens, etc.)
 ├── services/          # Business logic services
 │   ├── SnapService.ts      # Snap RPC interactions
-│   ├── ReadOnlyWalletService.ts    # Read-only wallet operations
+│   ├── ReadOnlyWalletWrapper.ts    # Read-only wallet operations
 │   ├── TokenRegistryService.ts     # Token registration/storage
 │   ├── TokenStorageService.ts      # LocalStorage persistence
 │   └── NftDetectionService.ts      # NFT metadata fetching
@@ -93,7 +93,7 @@ Uses React Context API with custom hooks for state isolation:
 **SnapService**
 Handles MetaMask Snap RPC calls (getXpub, sendTransaction, changeNetwork). Implements error handling for unauthorized access and snap crashes.
 
-**ReadOnlyWalletService**
+**ReadOnlyWalletWrapper**
 Manages read-only wallet instance from @hathor/wallet-lib. Provides balance fetching, transaction history, and WebSocket event listeners for real-time updates.
 
 **TokenRegistryService**

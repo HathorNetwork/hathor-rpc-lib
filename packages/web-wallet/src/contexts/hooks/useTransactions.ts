@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { readOnlyWalletService } from '../../services/ReadOnlyWalletService';
+import { readOnlyWalletWrapper } from '../../services/ReadOnlyWalletWrapper';
 import { WalletServiceMethods } from '../../services/SnapService';
 import { TOKEN_IDS } from '@/constants';
 import { createLogger } from '../../utils/logger';
@@ -36,13 +36,13 @@ export function useTransactions(options: UseTransactionsOptions) {
     skip: number = 0,
     tokenId: string = TOKEN_IDS.HTR
   ): Promise<TransactionHistoryItem[]> => {
-    if (!isConnected || !readOnlyWalletService.isReady()) {
+    if (!isConnected || !readOnlyWalletWrapper.isReady()) {
       // Return empty for disconnected state - this is expected
       return [];
     }
 
     try {
-      return await readOnlyWalletService.getTransactionHistory(count, skip, tokenId);
+      return await readOnlyWalletWrapper.getTransactionHistory(count, skip, tokenId);
     } catch (error) {
       console.error('Failed to fetch transaction history:', error);
 

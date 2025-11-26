@@ -3,8 +3,8 @@ import { loadTokensWithBalances, fetchTokenBalance } from '../tokenLoading';
 import type { TokenInfo } from '../../types/token';
 
 // Mock the dependencies
-vi.mock('../../services/ReadOnlyWalletService', () => ({
-  readOnlyWalletService: {
+vi.mock('../../services/ReadOnlyWalletWrapper', () => ({
+  readOnlyWalletWrapper: {
     getBalance: vi.fn(),
   },
 }));
@@ -38,7 +38,7 @@ vi.mock('../logger', () => ({
   },
 }));
 
-import { readOnlyWalletService } from '../../services/ReadOnlyWalletService';
+import { readOnlyWalletWrapper } from '../../services/ReadOnlyWalletWrapper';
 import { tokenRegistryService } from '../../services/TokenRegistryService';
 import { tokenStorageService } from '../../services/TokenStorageService';
 import { nftDetectionService } from '../../services/NftDetectionService';
@@ -68,7 +68,7 @@ describe('tokenLoading utilities', () => {
     beforeEach(() => {
       vi.mocked(tokenRegistryService.getRegisteredTokens).mockReturnValue(createMockTokens());
       vi.mocked(nftDetectionService.detectNftBatch).mockResolvedValue(new Map());
-      vi.mocked(readOnlyWalletService.getBalance).mockResolvedValue(
+      vi.mocked(readOnlyWalletWrapper.getBalance).mockResolvedValue(
         new Map([['token1', { token: 'token1', available: 100n, locked: 0n }]])
       );
     });
@@ -111,7 +111,7 @@ describe('tokenLoading utilities', () => {
     });
 
     it('should track failed token balance fetches with detailed errors', async () => {
-      vi.mocked(readOnlyWalletService.getBalance)
+      vi.mocked(readOnlyWalletWrapper.getBalance)
         .mockResolvedValueOnce(new Map([['token1', { token: 'token1', available: 100n, locked: 0n }]]))
         .mockRejectedValueOnce(new Error('Network error'));
 
@@ -129,7 +129,7 @@ describe('tokenLoading utilities', () => {
     });
 
     it('should track failed token balance fetches with simple count', async () => {
-      vi.mocked(readOnlyWalletService.getBalance)
+      vi.mocked(readOnlyWalletWrapper.getBalance)
         .mockResolvedValueOnce(new Map([['token1', { token: 'token1', available: 100n, locked: 0n }]]))
         .mockRejectedValueOnce(new Error('Network error'));
 
@@ -141,7 +141,7 @@ describe('tokenLoading utilities', () => {
     });
 
     it('should handle multiple failed tokens with plural message', async () => {
-      vi.mocked(readOnlyWalletService.getBalance).mockRejectedValue(new Error('Network error'));
+      vi.mocked(readOnlyWalletWrapper.getBalance).mockRejectedValue(new Error('Network error'));
 
       const result = await loadTokensWithBalances('mainnet', '', { detailedErrors: false });
 
@@ -150,7 +150,7 @@ describe('tokenLoading utilities', () => {
     });
 
     it('should handle tokens with no balance data', async () => {
-      vi.mocked(readOnlyWalletService.getBalance).mockResolvedValue(new Map());
+      vi.mocked(readOnlyWalletWrapper.getBalance).mockResolvedValue(new Map());
 
       const result = await loadTokensWithBalances('mainnet', '');
 
@@ -186,7 +186,7 @@ describe('tokenLoading utilities', () => {
 
   describe('fetchTokenBalance', () => {
     it('should fetch balance successfully', async () => {
-      vi.mocked(readOnlyWalletService.getBalance).mockResolvedValue(
+      vi.mocked(readOnlyWalletWrapper.getBalance).mockResolvedValue(
         new Map([['token123', { token: 'token123', available: 500n, locked: 100n }]])
       );
 
@@ -199,7 +199,7 @@ describe('tokenLoading utilities', () => {
     });
 
     it('should return null when balance fetch fails', async () => {
-      vi.mocked(readOnlyWalletService.getBalance).mockRejectedValue(
+      vi.mocked(readOnlyWalletWrapper.getBalance).mockRejectedValue(
         new Error('Network error')
       );
 
@@ -209,7 +209,7 @@ describe('tokenLoading utilities', () => {
     });
 
     it('should return null when no balance data available', async () => {
-      vi.mocked(readOnlyWalletService.getBalance).mockResolvedValue([]);
+      vi.mocked(readOnlyWalletWrapper.getBalance).mockResolvedValue([]);
 
       const result = await fetchTokenBalance('token123');
 
@@ -218,7 +218,7 @@ describe('tokenLoading utilities', () => {
 
     it('should handle null balance response', async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(readOnlyWalletService.getBalance).mockResolvedValue(null as any);
+      vi.mocked(readOnlyWalletWrapper.getBalance).mockResolvedValue(null as any);
 
       const result = await fetchTokenBalance('token123');
 
@@ -228,7 +228,7 @@ describe('tokenLoading utilities', () => {
 
   describe('error handling', () => {
     it('should handle unknown error types', async () => {
-      vi.mocked(readOnlyWalletService.getBalance).mockRejectedValue('String error');
+      vi.mocked(readOnlyWalletWrapper.getBalance).mockRejectedValue('String error');
 
       const result = await fetchTokenBalance('token123');
 
@@ -236,7 +236,7 @@ describe('tokenLoading utilities', () => {
     });
 
     it('should continue processing other tokens when one fails', async () => {
-      vi.mocked(readOnlyWalletService.getBalance)
+      vi.mocked(readOnlyWalletWrapper.getBalance)
         .mockResolvedValueOnce(new Map([['token1', { token: 'token1', available: 100n, locked: 0n }]]))
         .mockRejectedValueOnce(new Error('Network error'))
         .mockResolvedValueOnce(new Map([['token3', { token: 'token3', available: 200n, locked: 0n }]]));

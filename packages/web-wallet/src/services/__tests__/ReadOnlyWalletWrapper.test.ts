@@ -105,14 +105,14 @@ vi.mock('@hathor/wallet-lib', () => {
   };
 });
 
-import { ReadOnlyWalletService } from '../ReadOnlyWalletService';
+import { ReadOnlyWalletWrapper } from '../ReadOnlyWalletWrapper';
 
-describe('ReadOnlyWalletService', () => {
-  let service: ReadOnlyWalletService;
+describe('ReadOnlyWalletWrapper', () => {
+  let service: ReadOnlyWalletWrapper;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    service = new ReadOnlyWalletService();
+    service = new ReadOnlyWalletWrapper();
     mockIsReady.mockReturnValue(false);
     mockStartReadOnly.mockResolvedValue(undefined);
     mockStop.mockResolvedValue(undefined);
@@ -257,7 +257,7 @@ describe('ReadOnlyWalletService', () => {
     });
 
     it('should throw when wallet not initialized', async () => {
-      const uninitializedService = new ReadOnlyWalletService();
+      const uninitializedService = new ReadOnlyWalletWrapper();
 
       await expect(uninitializedService.getBalance()).rejects.toThrow('Wallet not initialized');
     });
@@ -318,7 +318,7 @@ describe('ReadOnlyWalletService', () => {
     });
 
     it('should throw when wallet not initialized', () => {
-      const uninitializedService = new ReadOnlyWalletService();
+      const uninitializedService = new ReadOnlyWalletWrapper();
 
       expect(() => uninitializedService.getCurrentAddress()).toThrow('Wallet not initialized');
     });
@@ -460,7 +460,7 @@ describe('ReadOnlyWalletService', () => {
     });
 
     it('should be safe to call stop when not initialized', async () => {
-      const uninitializedService = new ReadOnlyWalletService();
+      const uninitializedService = new ReadOnlyWalletWrapper();
 
       await expect(uninitializedService.stop()).resolves.toBeUndefined();
     });
@@ -495,7 +495,7 @@ describe('ReadOnlyWalletService', () => {
     });
 
     it('should not throw when calling event methods on uninitialized service', () => {
-      const uninitializedService = new ReadOnlyWalletService();
+      const uninitializedService = new ReadOnlyWalletWrapper();
       const callback = vi.fn();
 
       expect(() => uninitializedService.on('event', callback)).not.toThrow();

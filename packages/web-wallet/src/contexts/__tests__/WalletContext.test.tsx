@@ -8,7 +8,7 @@ const {
   mockRequestSnap,
   mockRequest,
   mockUseMetaMaskContext,
-  mockReadOnlyWalletService,
+  mockReadOnlyWalletWrapper,
   mockTokenRegistryService,
   mockTokenStorageService,
   mockNftDetectionService,
@@ -22,7 +22,7 @@ const {
   mockRequestSnap: vi.fn(),
   mockRequest: vi.fn(),
   mockUseMetaMaskContext: vi.fn(() => ({ error: null })),
-  mockReadOnlyWalletService: {
+  mockReadOnlyWalletWrapper: {
     initialize: vi.fn(),
     stop: vi.fn(),
     isReady: vi.fn(() => false),
@@ -75,8 +75,8 @@ vi.mock('@hathor/snap-utils', () => ({
 }));
 
 // Mock services
-vi.mock('../../services/ReadOnlyWalletService', () => ({
-  readOnlyWalletService: mockReadOnlyWalletService,
+vi.mock('../../services/ReadOnlyWalletWrapper', () => ({
+  readOnlyWalletWrapper: mockReadOnlyWalletWrapper,
 }));
 
 vi.mock('../../services/TokenRegistryService', () => ({
@@ -175,8 +175,8 @@ describe('WalletContext', () => {
     localStorage.clear();
 
     // Reset mock implementations
-    mockReadOnlyWalletService.isReady.mockReturnValue(false);
-    mockReadOnlyWalletService.getBalance.mockResolvedValue([]);
+    mockReadOnlyWalletWrapper.isReady.mockReturnValue(false);
+    mockReadOnlyWalletWrapper.getBalance.mockResolvedValue([]);
     mockUseMetaMaskContext.mockReturnValue({ error: null });
     mockLoadAddressMode.mockReturnValue({ mode: 'first' });
   });
@@ -358,7 +358,7 @@ describe('WalletContext', () => {
       expect(localStorage.getItem('hathor_wallet_network')).toBeNull();
 
       // Verify service cleanup
-      expect(mockReadOnlyWalletService.stop).toHaveBeenCalled();
+      expect(mockReadOnlyWalletWrapper.stop).toHaveBeenCalled();
     });
   });
 
@@ -376,8 +376,8 @@ describe('WalletContext', () => {
         },
       });
 
-      mockReadOnlyWalletService.isReady.mockReturnValue(true);
-      mockReadOnlyWalletService.getBalance.mockResolvedValue(
+      mockReadOnlyWalletWrapper.isReady.mockReturnValue(true);
+      mockReadOnlyWalletWrapper.getBalance.mockResolvedValue(
         new Map([['00', { token: '00', available: 1000n, locked: 0n }]])
       );
 
@@ -389,7 +389,7 @@ describe('WalletContext', () => {
 
       // Should attempt to initialize with stored xpub
       await waitFor(() => {
-        expect(mockReadOnlyWalletService.initialize).toHaveBeenCalledWith('xpub123', 'testnet');
+        expect(mockReadOnlyWalletWrapper.initialize).toHaveBeenCalledWith('xpub123', 'testnet');
       }, { timeout: 3000 });
     });
 
@@ -405,7 +405,7 @@ describe('WalletContext', () => {
       });
 
       // Should not attempt to initialize
-      expect(mockReadOnlyWalletService.initialize).not.toHaveBeenCalled();
+      expect(mockReadOnlyWalletWrapper.initialize).not.toHaveBeenCalled();
     });
   });
 

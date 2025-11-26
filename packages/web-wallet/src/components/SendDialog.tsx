@@ -11,7 +11,7 @@ import { formatHTRAmount, htrToCents, centsToHTR } from '../utils/hathor';
 import { dateToUnixTimestamp, isFutureDate, getTimezoneOffset } from '../utils/timelock';
 import { Address, Network } from '@hathor/wallet-lib';
 import { TOKEN_IDS } from '../constants';
-import { readOnlyWalletService } from '../services/ReadOnlyWalletService';
+import { readOnlyWalletWrapper } from '../services/ReadOnlyWalletWrapper';
 import { getAddressForMode } from '../utils/addressMode';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
@@ -226,7 +226,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
 
       // Get change address based on address mode
       console.log('[SendDialog] Getting change address for address mode:', addressMode);
-      const changeAddress = await getAddressForMode(addressMode, readOnlyWalletService);
+      const changeAddress = await getAddressForMode(addressMode, readOnlyWalletWrapper);
       console.log('[SendDialog] Change address:', changeAddress);
 
       // Prepare output with optional timelock

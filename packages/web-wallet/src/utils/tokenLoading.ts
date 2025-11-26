@@ -1,5 +1,5 @@
 import type { TokenInfo } from '../types/token';
-import { readOnlyWalletService } from '../services/ReadOnlyWalletService';
+import { readOnlyWalletWrapper } from '../services/ReadOnlyWalletWrapper';
 import { tokenRegistryService } from '../services/TokenRegistryService';
 import { tokenStorageService } from '../services/TokenStorageService';
 import { nftDetectionService } from '../services/NftDetectionService';
@@ -72,7 +72,7 @@ export async function loadTokensWithBalances(
   const tokensWithBalances = await Promise.all(
     registeredTokens.map(async (token) => {
       try {
-        const tokenBalances = await readOnlyWalletService.getBalance(token.uid);
+        const tokenBalances = await readOnlyWalletWrapper.getBalance(token.uid);
         const balance = tokenBalances.get(token.uid);
 
         if (balance) {
@@ -142,7 +142,7 @@ export async function fetchTokenBalance(tokenUid: string): Promise<{
   locked: bigint;
 } | null> {
   try {
-    const balances = await readOnlyWalletService.getBalance(tokenUid);
+    const balances = await readOnlyWalletWrapper.getBalance(tokenUid);
     const balance = balances.get(tokenUid);
     if (balance) {
       return {

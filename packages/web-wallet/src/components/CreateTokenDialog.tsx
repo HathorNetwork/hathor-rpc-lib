@@ -7,7 +7,7 @@ import { useWallet } from '../contexts/WalletContext';
 import { useInvokeSnap } from '@hathor/snap-utils';
 import { helpersUtils, tokensUtils, constants } from '@hathor/wallet-lib';
 import { formatHTRAmount } from '../utils/hathor';
-import { readOnlyWalletService } from '../services/ReadOnlyWalletService';
+import { readOnlyWalletWrapper } from '../services/ReadOnlyWalletWrapper';
 import { getAddressForMode } from '../utils/addressMode';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useToast } from '@/hooks/use-toast';
@@ -126,8 +126,8 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
         : data.tokenType === 'deposit';
 
       // Get addresses based on address mode
-      const changeAddress = await getAddressForMode(addressMode, readOnlyWalletService);
-      const mintAddress = await getAddressForMode(addressMode, readOnlyWalletService);
+      const changeAddress = await getAddressForMode(addressMode, readOnlyWalletWrapper);
+      const mintAddress = await getAddressForMode(addressMode, readOnlyWalletWrapper);
 
       // Prepare RPC params matching createTokenRpcSchema
       const params = {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { readOnlyWalletService } from '../../services/ReadOnlyWalletService';
+import { readOnlyWalletWrapper } from '../../services/ReadOnlyWalletWrapper';
 import { SnapUnauthorizedError } from '../../services/SnapService';
 import { CHECK_CONNECTION_TIMEOUT, DEFAULT_NETWORK, TOKEN_IDS } from '@/constants';
 import { getDisplayAddressForMode, type AddressMode } from '../../utils/addressMode';
@@ -170,11 +170,11 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
 
   const setupEventListeners = () => {
     // Remove all existing listeners to prevent duplicates
-    readOnlyWalletService.removeAllListeners();
+    readOnlyWalletWrapper.removeAllListeners();
 
     // Register new listeners using stable ref wrapper
-    readOnlyWalletService.on('new-tx', (tx) => handleNewTransactionRef.current(tx));
-    readOnlyWalletService.on('update-tx', (tx) => handleNewTransactionRef.current(tx));
+    readOnlyWalletWrapper.on('new-tx', (tx) => handleNewTransactionRef.current(tx));
+    readOnlyWalletWrapper.on('update-tx', (tx) => handleNewTransactionRef.current(tx));
   };
 
   const handleSnapError = (error: unknown) => {
@@ -243,11 +243,11 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     storedXpub: string,
     storedNetwork: string
   ): Promise<string> => {
-    if (readOnlyWalletService.isReady()) {
-      await readOnlyWalletService.stop();
+    if (readOnlyWalletWrapper.isReady()) {
+      await readOnlyWalletWrapper.stop();
     }
 
-    await readOnlyWalletService.initialize(storedXpub, storedNetwork);
+    await readOnlyWalletWrapper.initialize(storedXpub, storedNetwork);
     setupEventListeners();
 
     return storedNetwork;
@@ -269,7 +269,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     // Get wallet address
     let walletAddress: string;
     try {
-      walletAddress = await getDisplayAddressForMode(addressMode, readOnlyWalletService);
+      walletAddress = await getDisplayAddressForMode(addressMode, readOnlyWalletWrapper);
     } catch (addressError) {
       const originalMessage = addressError instanceof Error ? addressError.message : String(addressError);
       log.error('Failed to get display address:', originalMessage);
@@ -277,7 +277,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     }
 
     // Get balances
-    const walletBalances = await readOnlyWalletService.getBalance(TOKEN_IDS.HTR);
+    const walletBalances = await readOnlyWalletWrapper.getBalance(TOKEN_IDS.HTR);
 
     // Load registered tokens with NFT detection and balance fetching
     const genesisHash = '';
@@ -517,7 +517,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
       setLoadingStep('Initializing read-only wallet...');
 
       const newNetwork = DEFAULT_NETWORK;
-      await readOnlyWalletService.initialize(newXpub, newNetwork);
+      await readOnlyWalletWrapper.initialize(newXpub, newNetwork);
 
       setupEventListeners();
 
@@ -525,7 +525,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
 
       let walletAddress = '';
       try {
-        walletAddress = await getDisplayAddressForMode(addressMode, readOnlyWalletService);
+        walletAddress = await getDisplayAddressForMode(addressMode, readOnlyWalletWrapper);
       } catch (addressError) {
         // Preserve the original error for debugging
         const originalMessage = addressError instanceof Error ? addressError.message : String(addressError);
@@ -535,7 +535,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
 
       setLoadingStep('Loading balance...');
 
-      const walletBalances = await readOnlyWalletService.getBalance(TOKEN_IDS.HTR);
+      const walletBalances = await readOnlyWalletWrapper.getBalance(TOKEN_IDS.HTR);
 
       const genesisHash = '';
       const tokenLoadResult = await loadTokensWithBalances(newNetwork, genesisHash, {
@@ -591,7 +591,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     );
     keysToRemove.forEach(key => localStorage.removeItem(key));
 
-    readOnlyWalletService.stop();
+    readOnlyWalletWrapper.stop();
 
     setIsConnected(false);
     setIsConnecting(false);
@@ -606,7 +606,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
   };
 
   const handleNewTransaction = useCallback(async (tx: unknown) => {
-    if (!isConnected || !readOnlyWalletService.isReady()) return;
+    if (!isConnected || !readOnlyWalletWrapper.isReady()) return;
 
     // Validate transaction structure
     const txValidation = TransactionSchema.safeParse(tx);
@@ -628,7 +628,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
           const outputAddress = output.decoded.address;
           if (!outputAddress) continue;
 
-          const isMyAddress = await readOnlyWalletService.isAddressMine(outputAddress);
+          const isMyAddress = await readOnlyWalletWrapper.isAddressMine(outputAddress);
 
           if (isMyAddress && output.token === TOKEN_IDS.HTR) {
             const value = toBigInt(output.value);
@@ -642,7 +642,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
           const inputAddress = input.decoded.address;
           if (!inputAddress) continue;
 
-          const isMyAddress = await readOnlyWalletService.isAddressMine(inputAddress);
+          const isMyAddress = await readOnlyWalletWrapper.isAddressMine(inputAddress);
 
           if (isMyAddress && input.token === TOKEN_IDS.HTR) {
             const value = toBigInt(input.value);
@@ -729,12 +729,12 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
    * This encapsulates the wallet ready check and address fetching logic.
    */
   const refreshAddressForMode = async (mode: AddressMode) => {
-    if (!readOnlyWalletService.isReady()) {
+    if (!readOnlyWalletWrapper.isReady()) {
       return;
     }
 
     try {
-      const newAddress = await getDisplayAddressForMode(mode, readOnlyWalletService);
+      const newAddress = await getDisplayAddressForMode(mode, readOnlyWalletWrapper);
       setAddress(newAddress);
     } catch (error) {
       log.error('Failed to refresh address for mode:', error);
@@ -747,8 +747,8 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
    * Used during network changes or wallet reinitialization.
    */
   const stopWallet = async () => {
-    if (readOnlyWalletService.isReady()) {
-      await readOnlyWalletService.stop();
+    if (readOnlyWalletWrapper.isReady()) {
+      await readOnlyWalletWrapper.stop();
     }
   };
 
@@ -757,7 +757,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
    * Encapsulates wallet lifecycle management.
    */
   const reinitializeWallet = async (newXpub: string, newNetwork: string) => {
-    await readOnlyWalletService.initialize(newXpub, newNetwork);
+    await readOnlyWalletWrapper.initialize(newXpub, newNetwork);
   };
 
   /**
