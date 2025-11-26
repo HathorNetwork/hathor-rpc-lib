@@ -154,23 +154,6 @@ export const WalletServiceMethods = {
     });
   },
 
-  async getUtxos(invokeSnap: InvokeSnapFunction, filters?: {
-    token?: string;
-    filterAddress?: string;
-    amountBiggerThan?: number;
-    amountSmallerThan?: number;
-    maxUtxos?: number;
-    maximumAmount?: number;
-  }): Promise<unknown[]> {
-    return wrapSnapCall('getUtxos', async () => {
-      const response = await invokeSnap({
-        method: 'htr_getUtxos',
-        params: filters || {}
-      }) as { response?: unknown[] } | null;
-      return (response?.response as unknown[]) || [];
-    });
-  },
-
   async getTransactionHistory(address: string, network: string = DEFAULT_NETWORK): Promise<Transaction[]> {
     try {
       // Use Hathor public API to get transaction history

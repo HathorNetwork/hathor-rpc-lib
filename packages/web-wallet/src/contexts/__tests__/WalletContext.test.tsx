@@ -59,7 +59,6 @@ const {
     getAddress: vi.fn(),
     getBalance: vi.fn(),
     getConnectedNetwork: vi.fn(),
-    getUtxos: vi.fn(),
     getTransactionHistory: vi.fn(),
   },
 }));

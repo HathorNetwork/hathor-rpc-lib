@@ -257,34 +257,6 @@ export class ReadOnlyWalletWrapper {
   }
 
   /**
-   * Get UTXOs for the wallet
-   */
-  async getUtxos(options?: {
-    token?: string;
-    max_utxos?: number;
-    filter_address?: string;
-    amount_bigger_than?: bigint;
-    amount_smaller_than?: bigint;
-  }): Promise<unknown> {
-    if (!this.wallet?.isReady()) {
-      throw new Error('Wallet not initialized');
-    }
-
-    try {
-      // Convert bigint to number for wallet-lib compatibility
-      const walletOptions = options ? {
-        ...options,
-        amount_bigger_than: options.amount_bigger_than !== undefined ? Number(options.amount_bigger_than) : undefined,
-        amount_smaller_than: options.amount_smaller_than !== undefined ? Number(options.amount_smaller_than) : undefined,
-      } : {};
-      return await this.wallet.getUtxos(walletOptions);
-    } catch (error) {
-      log.error('Failed to get UTXOs:', error);
-      throw error;
-    }
-  }
-
-  /**
    * Get tokens in the wallet
    */
   async getTokens(): Promise<Array<Record<string, unknown>>> {

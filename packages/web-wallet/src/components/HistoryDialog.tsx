@@ -111,9 +111,6 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
       setIsLoadingMore(true);
     }
 
-    // Calculate page number (0-indexed)
-    const pageNum = Math.floor(skip / PAGE_SIZE);
-
     // Use provided tokenUid or default to HTR
     const activeTokenUid = tokenUid || TOKEN_IDS.HTR;
 

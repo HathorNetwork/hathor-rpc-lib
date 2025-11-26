@@ -14,7 +14,6 @@ const {
   mockGetAddressAtIndex,
   mockGetAllAddresses,
   mockIsAddressMine,
-  mockGetUtxos,
   mockGetTokens,
   mockSetWalletServiceBaseUrl,
   mockSetWalletServiceBaseWsUrl,
@@ -32,7 +31,6 @@ const {
   mockGetAddressAtIndex: vi.fn(),
   mockGetAllAddresses: vi.fn(),
   mockIsAddressMine: vi.fn(),
-  mockGetUtxos: vi.fn(),
   mockGetTokens: vi.fn(),
   mockSetWalletServiceBaseUrl: vi.fn(),
   mockSetWalletServiceBaseWsUrl: vi.fn(),
@@ -62,7 +60,6 @@ vi.mock('@hathor/wallet-lib', () => {
     getAddressAtIndex = mockGetAddressAtIndex;
     getAllAddresses = mockGetAllAddresses;
     isAddressMine = mockIsAddressMine;
-    getUtxos = mockGetUtxos;
     getTokens = mockGetTokens;
   }
 
@@ -374,28 +371,6 @@ describe('ReadOnlyWalletWrapper', () => {
     });
   });
 
-  describe('getUtxos', () => {
-    beforeEach(async () => {
-      mockIsReady.mockReturnValue(true);
-      await service.initialize('xpub123', 'testnet');
-    });
-
-    it('should convert bigint options to numbers for wallet-lib', async () => {
-      mockGetUtxos.mockResolvedValue([]);
-
-      await service.getUtxos({
-        token: '00',
-        amount_bigger_than: 1000n,
-        amount_smaller_than: 5000n,
-      });
-
-      expect(mockGetUtxos).toHaveBeenCalledWith({
-        token: '00',
-        amount_bigger_than: 1000,
-        amount_smaller_than: 5000,
-      });
-    });
-  });
 
   describe('stop', () => {
     beforeEach(async () => {
