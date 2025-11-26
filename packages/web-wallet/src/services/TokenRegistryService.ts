@@ -189,19 +189,13 @@ export class TokenRegistryService {
    * Unregister a token (removes both data and metadata)
    */
   unregisterToken(tokenUid: string, network: string, genesisHash: string): void {
-    // Remove data
-    const tokens = tokenStorageService.loadTokenData(network, genesisHash);
-    const filtered = tokens.filter(t => t.uid !== tokenUid);
-    const dataSaved = tokenStorageService.saveTokenData(network, genesisHash, filtered);
+    const dataSaved = tokenStorageService.removeTokenData(network, genesisHash, tokenUid);
 
     if (!dataSaved) {
       throw new Error('Failed to save token unregistration. The token may reappear on page refresh.');
     }
 
-    // Remove metadata
-    const allMetadata = tokenStorageService.loadTokenMetadata(network, genesisHash);
-    delete allMetadata[tokenUid];
-    tokenStorageService.saveTokenMetadata(network, genesisHash, allMetadata);
+    tokenStorageService.removeTokenMetadata(network, genesisHash, tokenUid);
 
     // Remove from cache
     this.tokenCache.delete(tokenUid);

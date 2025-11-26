@@ -1,4 +1,7 @@
 import type { TokenData, TokenMetadata, TokenDataStorage, TokenMetadataStorage } from "../types/token";
+import { createLogger } from '../utils/logger';
+
+const log = createLogger('TokenStorageService');
 
 /**
  * Service for persisting token data and metadata to localStorage with network-specific keys.
@@ -32,7 +35,7 @@ export class TokenStorageService {
       localStorage.setItem(key, JSON.stringify(storageData));
       return true;
     } catch (error) {
-      console.error("Failed to save token data to localStorage:", error);
+      log.error("Failed to save token data to localStorage:", error);
       return false;
     }
   }
@@ -52,7 +55,7 @@ export class TokenStorageService {
       const data = JSON.parse(stored) as TokenDataStorage;
       return data.tokens || [];
     } catch (error) {
-      console.error("Failed to load token data from localStorage:", error);
+      log.error("Failed to load token data from localStorage:", error);
       return [];
     }
   }
@@ -72,7 +75,7 @@ export class TokenStorageService {
       localStorage.setItem(key, JSON.stringify(storageData));
       return true;
     } catch (error) {
-      console.error("Failed to save token metadata to localStorage:", error);
+      log.error("Failed to save token metadata to localStorage:", error);
       return false;
     }
   }
@@ -92,7 +95,7 @@ export class TokenStorageService {
       const data = JSON.parse(stored) as TokenMetadataStorage;
       return data.metadata || {};
     } catch (error) {
-      console.error("Failed to load token metadata from localStorage:", error);
+      log.error("Failed to load token metadata from localStorage:", error);
       return {};
     }
   }
@@ -107,7 +110,7 @@ export class TokenStorageService {
       allMetadata[tokenUid] = metadata;
       return this.saveTokenMetadata(network, genesisHash, allMetadata);
     } catch (error) {
-      console.error("Failed to update token metadata:", error);
+      log.error("Failed to update token metadata:", error);
       return false;
     }
   }
@@ -121,6 +124,42 @@ export class TokenStorageService {
   }
 
   /**
+   * Remove a single token's data from storage
+   * @returns true if removal was successful, false otherwise
+   */
+  removeTokenData(network: string, genesisHash: string, tokenUid: string): boolean {
+    try {
+      const tokens = this.loadTokenData(network, genesisHash);
+      const filtered = tokens.filter(t => t.uid !== tokenUid);
+
+      if (filtered.length === tokens.length) {
+        // Token was not found, nothing to remove
+        return true;
+      }
+
+      return this.saveTokenData(network, genesisHash, filtered);
+    } catch (error) {
+      log.error(`Failed to remove token ${tokenUid} from localStorage:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Remove a single token's metadata from storage
+   * @returns true if removal was successful, false otherwise
+   */
+  removeTokenMetadata(network: string, genesisHash: string, tokenUid: string): boolean {
+    try {
+      const allMetadata = this.loadTokenMetadata(network, genesisHash);
+      delete allMetadata[tokenUid];
+      return this.saveTokenMetadata(network, genesisHash, allMetadata);
+    } catch (error) {
+      log.error(`Failed to remove token ${tokenUid} metadata from localStorage:`, error);
+      return false;
+    }
+  }
+
+  /**
    * Clear all token data for specific network and genesisHash
    */
   clearTokenData(network: string, genesisHash: string): void {
@@ -128,7 +167,7 @@ export class TokenStorageService {
       const key = this.getDataStorageKey(network, genesisHash);
       localStorage.removeItem(key);
     } catch (error) {
-      console.error("Failed to clear token data from localStorage:", error);
+      log.error("Failed to clear token data from localStorage:", error);
     }
   }
 
@@ -140,7 +179,7 @@ export class TokenStorageService {
       const key = this.getMetadataStorageKey(network, genesisHash);
       localStorage.removeItem(key);
     } catch (error) {
-      console.error("Failed to clear token metadata from localStorage:", error);
+      log.error("Failed to clear token metadata from localStorage:", error);
     }
   }
 
