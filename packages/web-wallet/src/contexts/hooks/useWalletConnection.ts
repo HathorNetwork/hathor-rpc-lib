@@ -131,7 +131,6 @@ export interface WalletConnectionResult {
 export function useWalletConnection(options: UseWalletConnectionOptions): WalletConnectionResult {
   const {
     addressMode,
-    request,
     invokeSnap,
     requestSnap,
     metamaskError,

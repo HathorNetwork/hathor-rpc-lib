@@ -40,7 +40,6 @@ vi.mock('../logger', () => ({
 
 import { readOnlyWalletWrapper } from '../../services/ReadOnlyWalletWrapper';
 import { tokenRegistryService } from '../../services/TokenRegistryService';
-import { registeredTokenStorageService } from '../../services/RegisteredTokenStorageService';
 import { nftDetectionService } from '../../services/NftDetectionService';
 
 describe('tokenLoading utilities', () => {

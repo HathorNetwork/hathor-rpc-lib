@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowUpRight, ArrowDownLeft, Loader2, Eye } from 'lucide-react';
 import SendDialog from './SendDialog';
@@ -63,7 +63,7 @@ const WalletHome: React.FC = () => {
     if (!newTransaction) return;
 
     // Check if this is a notification (not for history dialog)
-    const tx = newTransaction as any;
+    const tx = newTransaction as Record<string, unknown>;
     if (tx.tx_id) {
       return; // This is for history dialog, not notification
     }

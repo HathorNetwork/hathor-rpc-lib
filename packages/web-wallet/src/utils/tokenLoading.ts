@@ -1,7 +1,6 @@
 import type { TokenInfo } from '../types/token';
 import { readOnlyWalletWrapper } from '../services/ReadOnlyWalletWrapper';
 import { tokenRegistryService } from '../services/TokenRegistryService';
-import { registeredTokenStorageService } from '../services/RegisteredTokenStorageService';
 import { nftDetectionService } from '../services/NftDetectionService';
 import { logger } from './logger';
 

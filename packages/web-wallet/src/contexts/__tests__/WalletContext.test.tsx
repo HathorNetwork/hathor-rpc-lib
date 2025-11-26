@@ -170,7 +170,7 @@ describe('WalletContext', () => {
     // Mock window.ethereum for wallet_getSnaps calls
     global.window.ethereum = {
       request: vi.fn(),
-    } as any;
+    } as unknown as typeof window.ethereum;
     localStorage.clear();
 
     // Reset mock implementations
@@ -367,7 +367,7 @@ describe('WalletContext', () => {
       localStorage.setItem('hathor_wallet_network', 'testnet');
 
       // Mock window.ethereum.request for wallet_getSnaps
-      (window.ethereum.request as any).mockResolvedValue({
+      vi.mocked(window.ethereum!.request).mockResolvedValue({
         'local:http://localhost:8080': {
           version: '1.0.0',
           enabled: true,
