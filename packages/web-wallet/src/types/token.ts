@@ -71,7 +71,7 @@ export interface ValidationResult {
  * Storage format for token data - stable, rarely changes
  */
 export interface TokenDataStorage {
-  tokens: TokenData[];
+  tokens: Record<string, TokenData>; // Keyed by token uid for O(1) lookup/removal
   version: number; // For future migrations
 }
 

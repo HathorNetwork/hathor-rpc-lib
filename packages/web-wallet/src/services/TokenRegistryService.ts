@@ -72,9 +72,7 @@ export class TokenRegistryService {
     };
 
     // Save data and metadata separately
-    const existingData = tokenStorageService.loadTokenData(network, genesisHash);
-    const updatedData = [...existingData, tokenData];
-    const dataSaved = tokenStorageService.saveTokenData(network, genesisHash, updatedData);
+    const dataSaved = tokenStorageService.addTokenData(network, genesisHash, tokenData);
 
     if (!dataSaved) {
       throw new Error('Failed to save token data to browser storage. Storage may be full or disabled.');
@@ -120,7 +118,7 @@ export class TokenRegistryService {
     network: string,
     genesisHash: string
   ): Promise<TokenInfo> {
-    const tokenData = tokenStorageService.loadTokenData(network, genesisHash).find(t => t.uid === uid);
+    const tokenData = tokenStorageService.getTokenData(network, genesisHash, uid);
     if (!tokenData) {
       throw new Error(`Token ${uid} not found in storage`);
     }
@@ -265,10 +263,10 @@ export class TokenRegistryService {
    * Combines data and metadata to create TokenInfo objects
    */
   getRegisteredTokens(network: string, genesisHash: string): TokenInfo[] {
-    const tokenData = tokenStorageService.loadTokenData(network, genesisHash);
+    const tokenDataRecord = tokenStorageService.loadTokenData(network, genesisHash);
     const allMetadata = tokenStorageService.loadTokenMetadata(network, genesisHash);
 
-    return tokenData.map(data => {
+    return Object.values(tokenDataRecord).map(data => {
       const metadata = allMetadata[data.uid] || {
         uid: data.uid,
         isNFT: false,

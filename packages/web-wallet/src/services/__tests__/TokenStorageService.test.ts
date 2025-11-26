@@ -20,10 +20,10 @@ describe('TokenStorageService', () => {
   describe('Token Data Storage', () => {
     describe('saveTokenData', () => {
       it('should save token data to localStorage successfully', () => {
-        const tokens: TokenData[] = [
-          { uid: 'token1', name: 'Token 1', symbol: 'TK1', configString: '[Token 1:TK1:token1:checksum]' },
-          { uid: 'token2', name: 'Token 2', symbol: 'TK2', configString: '[Token 2:TK2:token2:checksum]' },
-        ];
+        const tokens: Record<string, TokenData> = {
+          'token1': { uid: 'token1', name: 'Token 1', symbol: 'TK1', configString: '[Token 1:TK1:token1:checksum]' },
+          'token2': { uid: 'token2', name: 'Token 2', symbol: 'TK2', configString: '[Token 2:TK2:token2:checksum]' },
+        };
 
         const result = service.saveTokenData(network, genesisHash, tokens);
 
@@ -32,8 +32,8 @@ describe('TokenStorageService', () => {
         expect(stored).toBeTruthy();
         const parsed = JSON.parse(stored!);
         expect(parsed.version).toBe(1);
-        expect(parsed.tokens).toHaveLength(2);
-        expect(parsed.tokens[0].uid).toBe('token1');
+        expect(Object.keys(parsed.tokens)).toHaveLength(2);
+        expect(parsed.tokens['token1'].uid).toBe('token1');
       });
 
       it('should return false when localStorage quota is exceeded', () => {
@@ -41,7 +41,7 @@ describe('TokenStorageService', () => {
           throw new Error('QuotaExceededError');
         });
 
-        const result = service.saveTokenData(network, genesisHash, []);
+        const result = service.saveTokenData(network, genesisHash, {});
 
         expect(result).toBe(false);
       });
@@ -51,38 +51,38 @@ describe('TokenStorageService', () => {
           throw new Error('localStorage is disabled');
         });
 
-        const result = service.saveTokenData(network, genesisHash, []);
+        const result = service.saveTokenData(network, genesisHash, {});
 
         expect(result).toBe(false);
       });
     });
 
     describe('loadTokenData', () => {
-      it('should return empty array when no tokens stored', () => {
+      it('should return empty object when no tokens stored', () => {
         const tokens = service.loadTokenData(network, genesisHash);
 
-        expect(tokens).toEqual([]);
+        expect(tokens).toEqual({});
       });
 
       it('should load token data successfully', () => {
-        const tokens: TokenData[] = [
-          { uid: 'token1', name: 'Token 1', symbol: 'TK1', configString: '[Token 1:TK1:token1:checksum]' },
-        ];
+        const tokens: Record<string, TokenData> = {
+          'token1': { uid: 'token1', name: 'Token 1', symbol: 'TK1', configString: '[Token 1:TK1:token1:checksum]' },
+        };
 
         service.saveTokenData(network, genesisHash, tokens);
         const loaded = service.loadTokenData(network, genesisHash);
 
-        expect(loaded).toHaveLength(1);
-        expect(loaded[0].uid).toBe('token1');
-        expect(loaded[0].name).toBe('Token 1');
+        expect(Object.keys(loaded)).toHaveLength(1);
+        expect(loaded['token1'].uid).toBe('token1');
+        expect(loaded['token1'].name).toBe('Token 1');
       });
 
-      it('should return empty array when JSON is corrupted', () => {
+      it('should return empty object when JSON is corrupted', () => {
         localStorage.setItem(`hathor_wallet_token_data_${network}_${genesisHash}`, 'invalid{json}');
 
         const tokens = service.loadTokenData(network, genesisHash);
 
-        expect(tokens).toEqual([]);
+        expect(tokens).toEqual({});
       });
 
       it('should handle localStorage.getItem throwing error', () => {
@@ -92,7 +92,94 @@ describe('TokenStorageService', () => {
 
         const tokens = service.loadTokenData(network, genesisHash);
 
-        expect(tokens).toEqual([]);
+        expect(tokens).toEqual({});
+      });
+
+      it('should migrate from old array format to record format', () => {
+        // Simulate old array format in localStorage
+        const oldFormat = {
+          tokens: [
+            { uid: 'token1', name: 'Token 1', symbol: 'TK1' },
+            { uid: 'token2', name: 'Token 2', symbol: 'TK2' },
+          ],
+          version: 1,
+        };
+        localStorage.setItem(`hathor_wallet_token_data_${network}_${genesisHash}`, JSON.stringify(oldFormat));
+
+        const loaded = service.loadTokenData(network, genesisHash);
+
+        expect(Object.keys(loaded)).toHaveLength(2);
+        expect(loaded['token1'].name).toBe('Token 1');
+        expect(loaded['token2'].name).toBe('Token 2');
+
+        // Verify it was saved in new format
+        const stored = localStorage.getItem(`hathor_wallet_token_data_${network}_${genesisHash}`);
+        const parsed = JSON.parse(stored!);
+        expect(Array.isArray(parsed.tokens)).toBe(false);
+        expect(parsed.tokens['token1']).toBeDefined();
+      });
+    });
+
+    describe('addTokenData', () => {
+      it('should add a single token to storage', () => {
+        const token: TokenData = { uid: 'token1', name: 'Token 1', symbol: 'TK1' };
+
+        const result = service.addTokenData(network, genesisHash, token);
+
+        expect(result).toBe(true);
+        const loaded = service.loadTokenData(network, genesisHash);
+        expect(loaded['token1']).toEqual(token);
+      });
+
+      it('should add token to existing tokens', () => {
+        const tokens: Record<string, TokenData> = {
+          'token1': { uid: 'token1', name: 'Token 1', symbol: 'TK1' },
+        };
+        service.saveTokenData(network, genesisHash, tokens);
+
+        const newToken: TokenData = { uid: 'token2', name: 'Token 2', symbol: 'TK2' };
+        service.addTokenData(network, genesisHash, newToken);
+
+        const loaded = service.loadTokenData(network, genesisHash);
+        expect(Object.keys(loaded)).toHaveLength(2);
+        expect(loaded['token2']).toEqual(newToken);
+      });
+    });
+
+    describe('getTokenData', () => {
+      it('should return token data for specific token', () => {
+        const tokens: Record<string, TokenData> = {
+          'token1': { uid: 'token1', name: 'Token 1', symbol: 'TK1' },
+        };
+        service.saveTokenData(network, genesisHash, tokens);
+
+        const result = service.getTokenData(network, genesisHash, 'token1');
+
+        expect(result).toEqual({ uid: 'token1', name: 'Token 1', symbol: 'TK1' });
+      });
+
+      it('should return null for non-existent token', () => {
+        const result = service.getTokenData(network, genesisHash, 'nonexistent');
+
+        expect(result).toBeNull();
+      });
+    });
+
+    describe('removeTokenData', () => {
+      it('should remove a single token from storage', () => {
+        const tokens: Record<string, TokenData> = {
+          'token1': { uid: 'token1', name: 'Token 1', symbol: 'TK1' },
+          'token2': { uid: 'token2', name: 'Token 2', symbol: 'TK2' },
+        };
+        service.saveTokenData(network, genesisHash, tokens);
+
+        const result = service.removeTokenData(network, genesisHash, 'token1');
+
+        expect(result).toBe(true);
+        const loaded = service.loadTokenData(network, genesisHash);
+        expect(Object.keys(loaded)).toHaveLength(1);
+        expect(loaded['token1']).toBeUndefined();
+        expect(loaded['token2']).toBeDefined();
       });
     });
   });
@@ -175,15 +262,15 @@ describe('TokenStorageService', () => {
 
   describe('Clear operations', () => {
     it('should clear token data for specific network', () => {
-      const tokens: TokenData[] = [
-        { uid: 'token1', name: 'Token 1', symbol: 'TK1' },
-      ];
+      const tokens: Record<string, TokenData> = {
+        'token1': { uid: 'token1', name: 'Token 1', symbol: 'TK1' },
+      };
       service.saveTokenData(network, genesisHash, tokens);
 
       service.clearTokenData(network, genesisHash);
 
       const loaded = service.loadTokenData(network, genesisHash);
-      expect(loaded).toEqual([]);
+      expect(loaded).toEqual({});
     });
 
     it('should clear token metadata for specific network', () => {
@@ -199,9 +286,9 @@ describe('TokenStorageService', () => {
     });
 
     it('should clear both data and metadata', () => {
-      const tokens: TokenData[] = [
-        { uid: 'token1', name: 'Token 1', symbol: 'TK1' },
-      ];
+      const tokens: Record<string, TokenData> = {
+        'token1': { uid: 'token1', name: 'Token 1', symbol: 'TK1' },
+      };
       const metadata: Record<string, TokenMetadata> = {
         'token1': { uid: 'token1', isNFT: false, registeredAt: 12345 },
       };
@@ -210,7 +297,7 @@ describe('TokenStorageService', () => {
 
       service.clearAll(network, genesisHash);
 
-      expect(service.loadTokenData(network, genesisHash)).toEqual([]);
+      expect(service.loadTokenData(network, genesisHash)).toEqual({});
       expect(service.loadTokenMetadata(network, genesisHash)).toEqual({});
     });
 
@@ -221,9 +308,9 @@ describe('TokenStorageService', () => {
 
   describe('isTokenRegistered', () => {
     it('should return true when token is registered', () => {
-      const tokens: TokenData[] = [
-        { uid: 'token1', name: 'Token 1', symbol: 'TK1' },
-      ];
+      const tokens: Record<string, TokenData> = {
+        'token1': { uid: 'token1', name: 'Token 1', symbol: 'TK1' },
+      };
       service.saveTokenData(network, genesisHash, tokens);
 
       const result = service.isTokenRegistered(network, genesisHash, 'token1');
@@ -238,9 +325,9 @@ describe('TokenStorageService', () => {
     });
 
     it('should return false when different network', () => {
-      const tokens: TokenData[] = [
-        { uid: 'token1', name: 'Token 1', symbol: 'TK1' },
-      ];
+      const tokens: Record<string, TokenData> = {
+        'token1': { uid: 'token1', name: 'Token 1', symbol: 'TK1' },
+      };
       service.saveTokenData('mainnet', genesisHash, tokens);
 
       const result = service.isTokenRegistered('testnet', genesisHash, 'token1');
@@ -251,12 +338,12 @@ describe('TokenStorageService', () => {
 
   describe('Network isolation', () => {
     it('should isolate tokens by network', () => {
-      const mainnetTokens: TokenData[] = [
-        { uid: 'token1', name: 'Mainnet Token', symbol: 'MTK' },
-      ];
-      const testnetTokens: TokenData[] = [
-        { uid: 'token2', name: 'Testnet Token', symbol: 'TTK' },
-      ];
+      const mainnetTokens: Record<string, TokenData> = {
+        'token1': { uid: 'token1', name: 'Mainnet Token', symbol: 'MTK' },
+      };
+      const testnetTokens: Record<string, TokenData> = {
+        'token2': { uid: 'token2', name: 'Testnet Token', symbol: 'TTK' },
+      };
 
       service.saveTokenData('mainnet', genesisHash, mainnetTokens);
       service.saveTokenData('testnet', genesisHash, testnetTokens);
@@ -264,10 +351,10 @@ describe('TokenStorageService', () => {
       const mainnetLoaded = service.loadTokenData('mainnet', genesisHash);
       const testnetLoaded = service.loadTokenData('testnet', genesisHash);
 
-      expect(mainnetLoaded).toHaveLength(1);
-      expect(mainnetLoaded[0].uid).toBe('token1');
-      expect(testnetLoaded).toHaveLength(1);
-      expect(testnetLoaded[0].uid).toBe('token2');
+      expect(Object.keys(mainnetLoaded)).toHaveLength(1);
+      expect(mainnetLoaded['token1'].uid).toBe('token1');
+      expect(Object.keys(testnetLoaded)).toHaveLength(1);
+      expect(testnetLoaded['token2'].uid).toBe('token2');
     });
   });
 });

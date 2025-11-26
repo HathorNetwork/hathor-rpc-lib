@@ -24,7 +24,7 @@ export class TokenStorageService {
    * Save token data (stable information)
    * @returns true if save was successful, false otherwise
    */
-  saveTokenData(network: string, genesisHash: string, tokens: TokenData[]): boolean {
+  saveTokenData(network: string, genesisHash: string, tokens: Record<string, TokenData>): boolean {
     try {
       const storageData: TokenDataStorage = {
         tokens,
@@ -42,22 +42,58 @@ export class TokenStorageService {
 
   /**
    * Load token data for specific network and genesisHash
+   * Handles migration from old array format to new record format
    */
-  loadTokenData(network: string, genesisHash: string): TokenData[] {
+  loadTokenData(network: string, genesisHash: string): Record<string, TokenData> {
     try {
       const key = this.getDataStorageKey(network, genesisHash);
       const stored = localStorage.getItem(key);
 
       if (!stored) {
-        return [];
+        return {};
       }
 
-      const data = JSON.parse(stored) as TokenDataStorage;
-      return data.tokens || [];
+      const data = JSON.parse(stored);
+
+      // Handle migration from old array format
+      if (Array.isArray(data.tokens)) {
+        const migrated: Record<string, TokenData> = {};
+        for (const token of data.tokens) {
+          migrated[token.uid] = token;
+        }
+        // Save migrated data
+        this.saveTokenData(network, genesisHash, migrated);
+        return migrated;
+      }
+
+      return data.tokens || {};
     } catch (error) {
       log.error("Failed to load token data from localStorage:", error);
-      return [];
+      return {};
     }
+  }
+
+  /**
+   * Add a single token to storage
+   * @returns true if save was successful, false otherwise
+   */
+  addTokenData(network: string, genesisHash: string, token: TokenData): boolean {
+    try {
+      const tokens = this.loadTokenData(network, genesisHash);
+      tokens[token.uid] = token;
+      return this.saveTokenData(network, genesisHash, tokens);
+    } catch (error) {
+      log.error(`Failed to add token ${token.uid} to localStorage:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Get a single token's data from storage
+   */
+  getTokenData(network: string, genesisHash: string, tokenUid: string): TokenData | null {
+    const tokens = this.loadTokenData(network, genesisHash);
+    return tokens[tokenUid] || null;
   }
 
   /**
@@ -124,20 +160,14 @@ export class TokenStorageService {
   }
 
   /**
-   * Remove a single token's data from storage
+   * Remove a single token's data from storage (O(1) lookup)
    * @returns true if removal was successful, false otherwise
    */
   removeTokenData(network: string, genesisHash: string, tokenUid: string): boolean {
     try {
       const tokens = this.loadTokenData(network, genesisHash);
-      const filtered = tokens.filter(t => t.uid !== tokenUid);
-
-      if (filtered.length === tokens.length) {
-        // Token was not found, nothing to remove
-        return true;
-      }
-
-      return this.saveTokenData(network, genesisHash, filtered);
+      delete tokens[tokenUid];
+      return this.saveTokenData(network, genesisHash, tokens);
     } catch (error) {
       log.error(`Failed to remove token ${tokenUid} from localStorage:`, error);
       return false;
@@ -192,11 +222,11 @@ export class TokenStorageService {
   }
 
   /**
-   * Check if a token is already registered (by checking data storage)
+   * Check if a token is already registered (O(1) lookup)
    */
   isTokenRegistered(network: string, genesisHash: string, tokenUid: string): boolean {
     const tokens = this.loadTokenData(network, genesisHash);
-    return tokens.some((token) => token.uid === tokenUid);
+    return tokenUid in tokens;
   }
 
   /**
