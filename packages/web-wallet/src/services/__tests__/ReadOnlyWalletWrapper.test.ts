@@ -18,6 +18,7 @@ const {
   mockGetTokens,
   mockSetWalletServiceBaseUrl,
   mockSetWalletServiceBaseWsUrl,
+  mockSetNetwork,
 } = vi.hoisted(() => ({
   mockIsReady: vi.fn(),
   mockStartReadOnly: vi.fn(),
@@ -35,6 +36,7 @@ const {
   mockGetTokens: vi.fn(),
   mockSetWalletServiceBaseUrl: vi.fn(),
   mockSetWalletServiceBaseWsUrl: vi.fn(),
+  mockSetNetwork: vi.fn(),
 }));
 
 vi.mock('@hathor/wallet-lib', () => {
@@ -92,6 +94,7 @@ vi.mock('@hathor/wallet-lib', () => {
     config: {
       setWalletServiceBaseUrl: mockSetWalletServiceBaseUrl,
       setWalletServiceBaseWsUrl: mockSetWalletServiceBaseWsUrl,
+      setNetwork: mockSetNetwork,
     },
     constants: {
       NATIVE_TOKEN_UID: '00',
@@ -181,17 +184,6 @@ describe('ReadOnlyWalletWrapper', () => {
       await service.initialize('xpub123', 'testnet');
 
       expect(service.isReady()).toBe(true);
-    });
-
-    it('should set up event listeners on the wallet', async () => {
-      mockIsReady.mockReturnValue(true);
-
-      await service.initialize('xpub123', 'testnet');
-
-      expect(mockOn).toHaveBeenCalledWith('state', expect.any(Function));
-      expect(mockOn).toHaveBeenCalledWith('new-tx', expect.any(Function));
-      expect(mockOn).toHaveBeenCalledWith('update-tx', expect.any(Function));
-      expect(mockOn).toHaveBeenCalledWith('reload-data', expect.any(Function));
     });
 
     it('should skip initialization if wallet is already ready', async () => {

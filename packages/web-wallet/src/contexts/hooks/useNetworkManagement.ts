@@ -1,6 +1,6 @@
 import { readOnlyWalletWrapper } from '../../services/ReadOnlyWalletWrapper';
 import { SnapUnauthorizedError } from '../../services/SnapService';
-import { getDisplayAddressForMode, type AddressMode } from '../../utils/addressMode';
+import { getAddressForMode, type AddressMode } from '../../utils/addressMode';
 import { loadTokensWithBalances } from '../../utils/tokenLoading';
 import { TOKEN_IDS } from '@/constants';
 import { SNAP_TIMEOUTS } from '../../constants/timeouts';
@@ -100,7 +100,7 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
       // Get fresh data from the new network
       let newAddress = '';
       try {
-        newAddress = await getDisplayAddressForMode(addressMode, readOnlyWalletWrapper);
+        newAddress = await getAddressForMode(addressMode, readOnlyWalletWrapper);
       } catch (addressError) {
         log.error('Failed to get current address after network change:', addressError);
         throw new Error('Failed to retrieve wallet address on new network. The wallet may not be properly initialized.');

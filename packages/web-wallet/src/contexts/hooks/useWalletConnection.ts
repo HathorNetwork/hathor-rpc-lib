@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { readOnlyWalletWrapper } from '../../services/ReadOnlyWalletWrapper';
 import { SnapUnauthorizedError } from '../../services/SnapService';
 import { CHECK_CONNECTION_TIMEOUT, DEFAULT_NETWORK, TOKEN_IDS } from '@/constants';
-import { getDisplayAddressForMode, type AddressMode } from '../../utils/addressMode';
+import { getAddressForMode, type AddressMode } from '../../utils/addressMode';
 import { loadTokensWithBalances } from '../../utils/tokenLoading';
 import { SNAP_TIMEOUTS } from '../../constants/timeouts';
 import { createLogger } from '../../utils/logger';
@@ -269,7 +269,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     // Get wallet address
     let walletAddress: string;
     try {
-      walletAddress = await getDisplayAddressForMode(addressMode, readOnlyWalletWrapper);
+      walletAddress = await getAddressForMode(addressMode, readOnlyWalletWrapper);
     } catch (addressError) {
       const originalMessage = addressError instanceof Error ? addressError.message : String(addressError);
       log.error('Failed to get display address:', originalMessage);
@@ -525,7 +525,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
 
       let walletAddress = '';
       try {
-        walletAddress = await getDisplayAddressForMode(addressMode, readOnlyWalletWrapper);
+        walletAddress = await getAddressForMode(addressMode, readOnlyWalletWrapper);
       } catch (addressError) {
         // Preserve the original error for debugging
         const originalMessage = addressError instanceof Error ? addressError.message : String(addressError);
@@ -734,7 +734,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     }
 
     try {
-      const newAddress = await getDisplayAddressForMode(mode, readOnlyWalletWrapper);
+      const newAddress = await getAddressForMode(mode, readOnlyWalletWrapper);
       setAddress(newAddress);
     } catch (error) {
       log.error('Failed to refresh address for mode:', error);

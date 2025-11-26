@@ -13,7 +13,7 @@ const {
   mockRegisteredTokenStorageService,
   mockNftDetectionService,
   mockLoadTokensWithBalances,
-  mockGetDisplayAddressForMode,
+  mockGetAddressForMode,
   mockLoadAddressMode,
   mockSaveAddressMode,
   mockWalletServiceMethods,
@@ -51,7 +51,7 @@ const {
     warning: null,
     failedTokens: [],
   })),
-  mockGetDisplayAddressForMode: vi.fn(() => Promise.resolve('HTestAddress123')),
+  mockGetAddressForMode: vi.fn(() => Promise.resolve('HTestAddress123')),
   mockLoadAddressMode: vi.fn(() => ({ mode: 'first' })),
   mockSaveAddressMode: vi.fn(() => true),
   mockWalletServiceMethods: {
@@ -110,7 +110,7 @@ vi.mock('../../utils/tokenLoading', () => ({
 }));
 
 vi.mock('../../utils/addressMode', () => ({
-  getDisplayAddressForMode: mockGetDisplayAddressForMode,
+  getAddressForMode: mockGetAddressForMode,
   loadAddressMode: mockLoadAddressMode,
   saveAddressMode: mockSaveAddressMode,
 }));

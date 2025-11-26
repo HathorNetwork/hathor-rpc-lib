@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { readOnlyWalletWrapper } from '../../services/ReadOnlyWalletWrapper';
-import { getDisplayAddressForMode, type AddressMode } from '../../utils/addressMode';
+import { getAddressForMode, type AddressMode } from '../../utils/addressMode';
 import { TOKEN_IDS } from '@/constants';
 import type { WalletBalance } from '../../types/wallet';
 import type { TokenInfo } from '../../types/token';
@@ -47,7 +47,7 @@ export function useWalletBalance(options: UseWalletBalanceOptions) {
     if (!isConnected || !readOnlyWalletWrapper.isReady()) return;
 
     try {
-      const newAddress = await getDisplayAddressForMode(addressMode, readOnlyWalletWrapper);
+      const newAddress = await getAddressForMode(addressMode, readOnlyWalletWrapper);
       setAddress(newAddress);
     } catch (error) {
       onError(error instanceof Error ? error.message : 'Failed to refresh address. The wallet may not be properly initialized.');

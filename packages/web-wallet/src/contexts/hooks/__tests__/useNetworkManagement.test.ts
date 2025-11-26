@@ -9,7 +9,7 @@ import type { WalletBalance } from '../../../types/wallet';
 const {
   mockReadOnlyWalletWrapper,
   mockLoadTokensWithBalances,
-  mockGetDisplayAddressForMode,
+  mockGetAddressForMode,
   mockRaceWithTimeout,
 } = vi.hoisted(() => ({
   mockReadOnlyWalletWrapper: {
@@ -19,7 +19,7 @@ const {
     getBalance: vi.fn(),
   },
   mockLoadTokensWithBalances: vi.fn(),
-  mockGetDisplayAddressForMode: vi.fn(),
+  mockGetAddressForMode: vi.fn(),
   mockRaceWithTimeout: vi.fn((promise) => promise),
 }));
 
@@ -32,7 +32,7 @@ vi.mock('../../../utils/tokenLoading', () => ({
 }));
 
 vi.mock('../../../utils/addressMode', () => ({
-  getDisplayAddressForMode: mockGetDisplayAddressForMode,
+  getAddressForMode: mockGetAddressForMode,
 }));
 
 vi.mock('../../../utils/promise', () => ({
@@ -92,7 +92,7 @@ describe('useNetworkManagement', () => {
     mockInvokeSnap.mockResolvedValue({ response: { success: true } });
     mockStopWallet.mockResolvedValue(undefined);
     mockReinitializeWallet.mockResolvedValue(undefined);
-    mockGetDisplayAddressForMode.mockResolvedValue('HNewAddr456');
+    mockGetAddressForMode.mockResolvedValue('HNewAddr456');
     mockReadOnlyWalletWrapper.getBalance.mockResolvedValue([
       { token: '00', available: 2000n, locked: 0n },
     ]);
@@ -265,7 +265,7 @@ describe('useNetworkManagement', () => {
     });
 
     it('should handle address fetch failure during network change', async () => {
-      mockGetDisplayAddressForMode.mockRejectedValue(new Error('Address derivation failed'));
+      mockGetAddressForMode.mockRejectedValue(new Error('Address derivation failed'));
 
       const { result } = renderHook(() => useNetworkManagement(defaultOptions));
 

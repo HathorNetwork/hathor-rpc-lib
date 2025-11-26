@@ -8,7 +8,7 @@ export const DEFAULT_ADDRESS_MODE: AddressMode = 'dynamic';
 /**
  * Get address based on the selected address mode
  *
- * @param mode - 'single' for always using address at index 0, 'dynamic' for generating new addresses
+ * @param mode - 'single' for always using address at index 0, 'dynamic' for current unused address
  * @param readOnlyWalletWrapper - The wallet service instance
  * @returns The address string
  */
@@ -16,21 +16,8 @@ export async function getAddressForMode(
   mode: AddressMode,
   readOnlyWalletWrapper: ReadOnlyWalletWrapper
 ): Promise<string> {
-  if (mode === 'single') {
-    // Always use address at index 0
-    const addressInfo = await readOnlyWalletWrapper.getAddressAtIndex(0);
-    if (!addressInfo) {
-      throw new Error('Failed to get address at index 0');
-    }
-    return addressInfo.address;
-  } else {
-    // Dynamic mode: get current unused address
-    const addressInfo = readOnlyWalletWrapper.getCurrentAddress();
-    if (!addressInfo) {
-      throw new Error('Failed to get current address');
-    }
-    return addressInfo.address;
-  }
+  const { address } = await getAddressInfoForMode(mode, readOnlyWalletWrapper);
+  return address;
 }
 
 /**
@@ -64,34 +51,6 @@ export async function getAddressInfoForMode(
   }
 }
 
-/**
- * Get address for display purposes based on the selected address mode.
- * Unlike getAddressForMode, this does NOT mark addresses as used in dynamic mode.
- *
- * @param mode - 'single' for always using address at index 0, 'dynamic' for showing current address
- * @param readOnlyWalletWrapper - The wallet service instance
- * @returns The address string
- */
-export async function getDisplayAddressForMode(
-  mode: AddressMode,
-  readOnlyWalletWrapper: ReadOnlyWalletWrapper
-): Promise<string> {
-  if (mode === 'single') {
-    // Always use address at index 0
-    const addressInfo = await readOnlyWalletWrapper.getAddressAtIndex(0);
-    if (!addressInfo) {
-      throw new Error('Failed to get address at index 0');
-    }
-    return addressInfo.address;
-  } else {
-    // Dynamic mode: get current address WITHOUT marking as used
-    const addressInfo = readOnlyWalletWrapper.getCurrentAddress();
-    if (!addressInfo) {
-      throw new Error('Failed to get current address');
-    }
-    return addressInfo.address;
-  }
-}
 
 /**
  * Load address mode from localStorage
