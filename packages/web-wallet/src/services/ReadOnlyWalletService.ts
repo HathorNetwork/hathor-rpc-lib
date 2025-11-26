@@ -61,6 +61,7 @@ export class ReadOnlyWalletService {
       // Set global wallet-lib config
       config.setWalletServiceBaseUrl(walletServiceUrl);
       config.setWalletServiceBaseWsUrl(walletServiceWsUrl);
+      config.setNetwork(actualNetwork);
 
       // Create wallet instance with xpub only
       this.wallet = new HathorWalletServiceWallet({
