@@ -26,6 +26,9 @@ export async function getAddressForMode(
   } else {
     // Dynamic mode: get next available address
     const addressInfo = readOnlyWalletWrapper.getNextAddress();
+    if (!addressInfo) {
+      throw new Error('Failed to get next address');
+    }
     return addressInfo.address;
   }
 }
@@ -51,6 +54,9 @@ export async function getAddressInfoForMode(
   } else {
     // Dynamic mode: get next available address
     const addressInfo = readOnlyWalletWrapper.getNextAddress();
+    if (!addressInfo) {
+      throw new Error('Failed to get next address');
+    }
     return {
       address: addressInfo.address,
       index: addressInfo.index,
