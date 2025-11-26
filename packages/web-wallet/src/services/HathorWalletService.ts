@@ -1,6 +1,7 @@
 import { HATHOR_API_URLS, NETWORKS, TOKEN_IDS, DEFAULT_NETWORK } from '../constants';
 import type { WalletBalance } from '../types/wallet';
 import { createLogger } from '../utils/logger';
+import { PROVIDER_ERROR_CODES, hasErrorCode } from '../errors/WalletConnectionErrors';
 
 const log = createLogger('HathorWalletService');
 
@@ -52,19 +53,6 @@ export class SnapUnauthorizedError extends Error {
 }
 
 /**
- * Checks if an error is an unauthorized error (code 4100)
- */
-function isUnauthorizedError(error: unknown): boolean {
-  if (typeof error === 'object' && error !== null) {
-    const errorObj = error as { code?: number; message?: string };
-    return errorObj.code === 4100 ||
-           (errorObj.message?.includes('Unauthorized') ?? false) ||
-           (errorObj.message?.includes('permission') ?? false);
-  }
-  return false;
-}
-
-/**
  * Wraps snap calls with error handling for unauthorized errors
  */
 async function wrapSnapCall<T>(
@@ -76,14 +64,15 @@ async function wrapSnapCall<T>(
   } catch (error) {
     log.error(`${methodName} failed:`, error);
 
-    if (isUnauthorizedError(error)) {
-      log.error('Unauthorized error detected - throwing SnapUnauthorizedError');
+    // Check for unauthorized error (code 4100)
+    if (hasErrorCode(error, PROVIDER_ERROR_CODES.UNAUTHORIZED)) {
       throw new SnapUnauthorizedError(
         'Snap permissions have been revoked or changed. Please reconnect your wallet.',
         4100
       );
     }
 
+    // Re-throw the original error
     throw error;
   }
 }

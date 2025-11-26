@@ -4,6 +4,7 @@ import { NETWORKS, WALLET_SERVICE_URLS, WALLET_SERVICE_WS_URLS, TOKEN_IDS } from
 import type { WalletBalance, TransactionHistoryItem } from '../types/wallet';
 import { toBigInt } from '../utils/hathor';
 import { createLogger } from '../utils/logger';
+import { ERROR_PATTERNS } from '../errors/WalletConnectionErrors';
 
 const log = createLogger('ReadOnlyWalletService');
 
@@ -29,19 +30,16 @@ export class ReadOnlyWalletService {
    */
   async initialize(xpub: string, network: string = NETWORKS.MAINNET): Promise<void> {
     if (this.isInitializing) {
-      throw new Error('Wallet is already initializing');
+      throw new Error(ERROR_PATTERNS.ALREADY_INITIALIZING);
     }
 
     if (this.wallet?.isReady()) {
-      log.debug('Wallet already initialized and ready');
       return;
     }
 
     this.isInitializing = true;
 
     try {
-      log.debug('Initializing read-only wallet');
-
       // Network URL Mapping:
       // - User-facing networks: 'mainnet', 'testnet'
       // - wallet-lib networks: only 'mainnet' or 'testnet'
@@ -60,10 +58,6 @@ export class ReadOnlyWalletService {
         actualNetwork = 'mainnet';
       }
 
-      log.debug('Using wallet service URL:', walletServiceUrl);
-      log.debug('Using wallet service WS URL:', walletServiceWsUrl);
-      log.debug('Using network for wallet-lib:', actualNetwork);
-
       // Set global wallet-lib config
       config.setWalletServiceBaseUrl(walletServiceUrl);
       config.setWalletServiceBaseWsUrl(walletServiceWsUrl);
@@ -77,39 +71,36 @@ export class ReadOnlyWalletService {
       });
 
       // Set up event listeners for wallet state changes
-      this.wallet.on('state', (state: unknown) => {
-        log.debug('Read-only wallet state:', state);
+      this.wallet.on('state', () => {
+        // State changes are handled by the wallet
       });
 
-      this.wallet.on('new-tx', (tx: { tx_id: string }) => {
-        log.debug('New transaction received:', tx.tx_id);
+      this.wallet.on('new-tx', () => {
+        // New transactions are handled by event listeners
       });
 
-      this.wallet.on('update-tx', (tx: { tx_id: string }) => {
-        log.debug('Transaction updated:', tx.tx_id);
+      this.wallet.on('update-tx', () => {
+        // Transaction updates are handled by event listeners
       });
 
       this.wallet.on('reload-data', () => {
-        log.debug('Connection restored, data should be reloaded');
+        // Data reload is handled automatically
       });
 
       // Start wallet in read-only mode
       try {
         await this.wallet.startReadOnly();
-        log.info('Read-only wallet started successfully');
       } catch (error: unknown) {
         // Check if this is a "wallet already loaded" error (400 status)
         // The wallet-service returns 400 when wallet already exists
         const errorObj = error as { response?: { data?: { error?: string } } };
-        if (errorObj?.response?.data?.error === 'wallet-already-loaded') {
-          log.debug('Wallet already exists on wallet-service (read-only mode)');
+        if (errorObj?.response?.data?.error === ERROR_PATTERNS.WALLET_ALREADY_LOADED) {
+          // Wallet already exists, continue
         } else {
           // For other errors, re-throw
           throw error;
         }
       }
-
-      log.info('Read-only wallet ready');
     } catch (error) {
       log.error('Failed to initialize read-only wallet:', error);
       this.isInitializing = false; // Reset flag before clearing wallet
@@ -351,33 +342,14 @@ export class ReadOnlyWalletService {
    * Stop the wallet and cleanup resources
    */
   async stop(): Promise<void> {
-    if (this.wallet) {
-      const errors: Error[] = [];
+    if (!this.wallet) return;
 
-      try {
-        // Remove all event listeners before stopping
-        this.wallet.removeAllListeners();
-      } catch (error) {
-        log.error('Failed to remove listeners:', error);
-        errors.push(error instanceof Error ? error : new Error(String(error)));
-      }
-
-      try {
-        await this.wallet.stop();
-      } catch (error) {
-        log.error('Failed to stop wallet:', error);
-        errors.push(error instanceof Error ? error : new Error(String(error)));
-      }
-
-      // Always clear reference
+    try {
+      this.wallet.removeAllListeners();
+      await this.wallet.stop();
+    } finally {
+      // Always clear reference even if errors occur
       this.wallet = null;
-
-      // If any errors occurred, throw aggregate error
-      if (errors.length > 0) {
-        throw new Error(
-          `Wallet stop had ${errors.length} error(s): ${errors.map(e => e.message).join('; ')}`
-        );
-      }
     }
   }
 

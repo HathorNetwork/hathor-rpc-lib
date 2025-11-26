@@ -64,6 +64,28 @@ vi.mock('@hathor/wallet-lib', () => {
     getTokens = mockGetTokens;
   }
 
+  // Mock error classes
+  class MockXPubError extends Error {
+    constructor(message: string) {
+      super(message);
+      this.name = 'XPubError';
+    }
+  }
+
+  class MockWalletError extends Error {
+    constructor(message: string) {
+      super(message);
+      this.name = 'WalletError';
+    }
+  }
+
+  class MockUninitializedWalletError extends Error {
+    constructor(message: string) {
+      super(message);
+      this.name = 'UninitializedWalletError';
+    }
+  }
+
   return {
     HathorWalletServiceWallet: MockHathorWalletServiceWallet,
     Network: MockNetwork,
@@ -74,6 +96,11 @@ vi.mock('@hathor/wallet-lib', () => {
     constants: {
       NATIVE_TOKEN_UID: '00',
       DECIMAL_PLACES: 2,
+    },
+    errors: {
+      XPubError: MockXPubError,
+      WalletError: MockWalletError,
+      UninitializedWalletError: MockUninitializedWalletError,
     },
   };
 });
@@ -417,18 +444,18 @@ describe('ReadOnlyWalletService', () => {
     it('should clear wallet reference even when stop throws', async () => {
       mockStop.mockRejectedValue(new Error('Stop failed'));
 
-      await expect(service.stop()).rejects.toThrow('Wallet stop had 1 error(s)');
+      await expect(service.stop()).rejects.toThrow('Stop failed');
 
       expect(service.isReady()).toBe(false);
     });
 
-    it('should aggregate multiple errors during stop', async () => {
+    it('should throw first error when removeListeners fails', async () => {
       mockRemoveAllListeners.mockImplementation(() => {
         throw new Error('Listener error');
       });
       mockStop.mockRejectedValue(new Error('Stop error'));
 
-      await expect(service.stop()).rejects.toThrow('Wallet stop had 2 error(s)');
+      await expect(service.stop()).rejects.toThrow('Listener error');
       expect(service.isReady()).toBe(false);
     });
 

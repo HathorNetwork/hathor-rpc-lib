@@ -8,11 +8,12 @@ import { SNAP_TIMEOUTS } from '../../constants/timeouts';
 import { createLogger } from '../../utils/logger';
 import { toBigInt } from '../../utils/hathor';
 import { raceWithTimeout } from '../../utils/promise';
-import { isSnapCrashedError, getSnapErrorUserMessage } from '../../utils/snapErrors';
 import type { WalletBalance } from '../../types/wallet';
 import type { TokenInfo } from '../../types/token';
 import { z } from 'zod';
 import { defaultSnapOrigin } from '@hathor/snap-utils';
+import { ERROR_PATTERNS, WalletLibErrors, PROVIDER_ERROR_CODES, hasErrorCode } from '../../errors/WalletConnectionErrors';
+import { isSnapCrashedError, getSnapErrorUserMessage } from '../../utils/snapErrors';
 
 const log = createLogger('useWalletConnection');
 
@@ -140,10 +141,19 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     onNewTransaction,
   } = options;
 
+  // Check localStorage synchronously to determine initial state
+  const hasStoredConnection = (() => {
+    try {
+      return !!localStorage.getItem(STORAGE_KEYS.XPUB);
+    } catch {
+      return false;
+    }
+  })();
+
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [isCheckingConnection, setIsCheckingConnection] = useState(false);
-  const [loadingStep, setLoadingStep] = useState('');
+  const [isCheckingConnection, setIsCheckingConnection] = useState(hasStoredConnection);
+  const [loadingStep, setLoadingStep] = useState(hasStoredConnection ? 'Checking for existing connection...' : '');
   const [xpub, setXpub] = useState<string | null>(null);
   const [address, setAddress] = useState('');
   const [balances, setBalances] = useState<Map<string, WalletBalance>>(new Map());
@@ -152,7 +162,11 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
 
   // Use a ref to prevent concurrent connection checks
   const isCheckingRef = useRef(false);
-  const handleNewTransactionRef = useRef<(tx: unknown) => Promise<void>>(async () => {});
+  const isMountedRef = useRef(false);
+
+  // Ref for stable transaction handler to prevent stale closures
+  // Initialized with no-op function, updated after handler is defined
+  const handleNewTransactionRef = useRef<(tx: unknown) => Promise<void>>(() => Promise.resolve());
 
   const setupEventListeners = () => {
     // Remove all existing listeners to prevent duplicates
@@ -178,7 +192,114 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     window.location.reload();
   };
 
+  /**
+   * Verifies snap installation and permissions.
+   * Throws typed errors for different snap states.
+   */
+  const verifySnapInstallation = async (): Promise<void> => {
+    // wallet_getSnaps is a MetaMask wallet method, not a snap method
+    // So we need to call it via window.ethereum directly
+    const snapsResponse = await window.ethereum.request({
+      method: 'wallet_getSnaps',
+    });
+
+    // Handle null/undefined response (MetaMask not initialized or no snaps)
+    if (!snapsResponse) {
+      log.error('wallet_getSnaps returned null - MetaMask may not be initialized');
+      throw new Error(ERROR_PATTERNS.SNAP_NOT_INSTALLED);
+    }
+
+    // Validate snaps response
+    const snapsValidation = GetSnapsResponseSchema.safeParse(snapsResponse);
+    if (!snapsValidation.success) {
+      log.error('Invalid wallet_getSnaps response:', snapsValidation.error);
+      throw new Error(ERROR_PATTERNS.SNAP_NOT_INSTALLED);
+    }
+
+    const snaps = snapsValidation.data;
+    const ourSnap = snaps[defaultSnapOrigin];
+
+    if (!ourSnap) {
+      log.error('Snap not found in installed snaps');
+      throw new Error(ERROR_PATTERNS.SNAP_NOT_INSTALLED);
+    }
+
+    if (ourSnap.blocked) {
+      log.error('Snap is blocked');
+      throw new Error(ERROR_PATTERNS.SNAP_BLOCKED);
+    }
+
+    if (!ourSnap.enabled) {
+      log.error('Snap is not enabled');
+      throw new Error(ERROR_PATTERNS.SNAP_DISABLED);
+    }
+  };
+
+  /**
+   * Initializes the read-only wallet service with stored credentials.
+   * Returns the network used for initialization.
+   */
+  const initializeWalletFromStorage = async (
+    storedXpub: string,
+    storedNetwork: string
+  ): Promise<string> => {
+    if (readOnlyWalletService.isReady()) {
+      await readOnlyWalletService.stop();
+    }
+
+    await readOnlyWalletService.initialize(storedXpub, storedNetwork);
+    setupEventListeners();
+
+    return storedNetwork;
+  };
+
+  /**
+   * Loads wallet state including address, balances, and registered tokens.
+   * Returns all loaded data for state updates.
+   */
+  const loadWalletState = async (
+    network: string,
+    addressMode: AddressMode
+  ): Promise<{
+    address: string;
+    balances: Map<string, WalletBalance>;
+    tokens: TokenInfo[];
+    warning: string | null;
+  }> => {
+    // Get wallet address
+    let walletAddress: string;
+    try {
+      walletAddress = await getDisplayAddressForMode(addressMode, readOnlyWalletService);
+    } catch (addressError) {
+      const originalMessage = addressError instanceof Error ? addressError.message : String(addressError);
+      log.error('Failed to get display address:', originalMessage);
+      throw new Error(`Failed to retrieve wallet address: ${originalMessage}`);
+    }
+
+    // Get balances
+    const walletBalances = await readOnlyWalletService.getBalance(TOKEN_IDS.HTR);
+
+    // Load registered tokens with NFT detection and balance fetching
+    const genesisHash = '';
+    const tokenLoadResult = await loadTokensWithBalances(network, genesisHash, {
+      clearNftCache: true,
+      detailedErrors: true,
+    });
+
+    return {
+      address: walletAddress,
+      balances: walletBalances,
+      tokens: tokenLoadResult.tokens,
+      warning: tokenLoadResult.warning,
+    };
+  };
+
   const checkExistingConnection = async (signal?: AbortSignal) => {
+    // Check if already aborted before starting
+    if (signal?.aborted) {
+      return;
+    }
+
     if (isCheckingRef.current) {
       return;
     }
@@ -187,13 +308,10 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     setIsCheckingConnection(true);
     setLoadingStep('Checking existing connection...');
 
-    // Check if already aborted
-    if (signal?.aborted) {
+    // Reset checking flag if aborted
+    signal?.addEventListener('abort', () => {
       isCheckingRef.current = false;
-      setIsCheckingConnection(false);
-      setLoadingStep('');
-      return;
-    }
+    });
 
     try {
       const storedXpub = localStorage.getItem(STORAGE_KEYS.XPUB);
@@ -205,164 +323,104 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
         return;
       }
 
-      // Verify snap is properly installed and enabled
-      log.debug('Starting snap verification...');
-      setLoadingStep('Verifying snap installation...');
-
+      // Step 1: Request snap connection to ensure it's active
+      setLoadingStep('Connecting to snap...');
       try {
-        // wallet_getSnaps is a MetaMask wallet method, not a snap method
-        // So we need to call it via window.ethereum directly, not through snap-utils request
-        const snapsResponse = await window.ethereum.request({
-          method: 'wallet_getSnaps',
-        });
+        await requestSnap();
+      } catch (snapRequestError) {
+        log.error('Failed to request snap:', snapRequestError);
+        throw new Error(ERROR_PATTERNS.SNAP_CONNECTION_FAILED);
+      }
 
-        // Handle null/undefined response (MetaMask not initialized or no snaps)
-        if (!snapsResponse) {
-          log.error('wallet_getSnaps returned null - MetaMask may not be initialized');
-          throw new Error('Snap not installed');
-        }
+      // Step 2: Verify snap installation and permissions
+      setLoadingStep('Verifying snap installation...');
+      await verifySnapInstallation();
 
-        // Validate snaps response
-        const snapsValidation = GetSnapsResponseSchema.safeParse(snapsResponse);
-        if (!snapsValidation.success) {
-          log.error('Invalid wallet_getSnaps response:', snapsValidation.error);
-          throw new Error('Failed to parse installed snaps');
-        }
+      // Step 3: Initialize wallet service
+      setLoadingStep('Initializing read-only wallet...');
+      await initializeWalletFromStorage(storedXpub, storedNetwork);
 
-        const snaps = snapsValidation.data;
-        log.debug('Found installed snaps');
+      // Step 4: Load wallet state
+      setLoadingStep('Loading wallet data...');
+      const walletState = await loadWalletState(storedNetwork, addressMode);
 
-        const ourSnap = snaps[defaultSnapOrigin];
-
-        if (!ourSnap) {
-          log.error('Snap not found in installed snaps');
-          throw new Error('Snap not installed');
-        }
-
-        log.debug('Snap found, version:', ourSnap.version);
-
-        if (ourSnap.blocked) {
-          log.error('Snap is blocked');
-          throw new Error('Snap is blocked');
-        }
-
-        if (!ourSnap.enabled) {
-          log.error('Snap is not enabled');
-          throw new Error('Snap is disabled');
-        }
-
-        log.info('Snap is installed and enabled');
-      } catch (snapError) {
-        const errorMsg = snapError instanceof Error ? snapError.message : 'Unknown error';
-        const errorCode = (snapError as { code?: number })?.code;
-
-        log.error('Snap verification failed:', errorMsg);
-
-        localStorage.removeItem(STORAGE_KEYS.XPUB);
-        localStorage.removeItem(STORAGE_KEYS.NETWORK);
-
-        let userError = 'Snap connection lost. Please reconnect your wallet.';
-
-        if (errorCode === 4100 || errorMsg.includes('Unauthorized') || errorMsg.includes('permission')) {
-          userError = 'Snap permissions have changed. Please disconnect and reconnect your wallet.';
-        } else if (errorMsg.includes('blocked')) {
-          userError = 'Snap is blocked. Please enable it in MetaMask settings.';
-        } else if (errorMsg.includes('disabled')) {
-          userError = 'Snap is disabled. Please enable it in MetaMask settings.';
-        } else if (errorMsg.includes('not installed')) {
-          userError = 'Snap not installed. Please connect your wallet.';
-        }
-
-        setIsCheckingConnection(false);
-        setLoadingStep('');
-        onError(userError);
+      // Check if we should still update state (component might have unmounted)
+      if (!isMountedRef.current) {
         return;
       }
 
-      setLoadingStep('Initializing read-only wallet...');
-
-      if (readOnlyWalletService.isReady()) {
-        await readOnlyWalletService.stop();
-      }
-
-      // Check if aborted before initializing
-      if (signal?.aborted) {
-        throw new Error('Connection check aborted');
-      }
-
-      await readOnlyWalletService.initialize(storedXpub, storedNetwork);
-
-      // Check if aborted after initialization
-      if (signal?.aborted) {
-        throw new Error('Connection check aborted');
-      }
-
-      setupEventListeners();
-
-      setLoadingStep('Loading wallet data...');
-
-      let walletAddress = '';
-      try {
-        walletAddress = await getDisplayAddressForMode(addressMode, readOnlyWalletService);
-      } catch (addressError) {
-        // Preserve the original error for debugging
-        const originalMessage = addressError instanceof Error ? addressError.message : String(addressError);
-        log.error('Failed to get display address:', originalMessage);
-        throw new Error(`Failed to retrieve wallet address: ${originalMessage}`);
-      }
-
-      const walletBalances = await readOnlyWalletService.getBalance(TOKEN_IDS.HTR);
-
-      const genesisHash = '';
-      const tokenLoadResult = await loadTokensWithBalances(storedNetwork, genesisHash, {
-        clearNftCache: true,
-        detailedErrors: true,
-      });
-
-      // Final abort check before updating state
-      if (signal?.aborted) {
-        throw new Error('Connection check aborted');
-      }
-
+      // Update all state
       setIsConnected(true);
       setIsCheckingConnection(false);
-      setAddress(walletAddress);
-      setBalances(walletBalances);
+      setAddress(walletState.address);
+      setBalances(walletState.balances);
       setNetwork(storedNetwork);
       setXpub(storedXpub);
       setLoadingStep('');
-      setRegisteredTokens(tokenLoadResult.tokens);
-      onError(tokenLoadResult.warning);
+      setRegisteredTokens(walletState.tokens);
+      onError(walletState.warning);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
 
-      // Don't handle aborted errors - they're intentional cancellations
-      if (errorMessage.includes('aborted')) {
+      // Ignore concurrent initialization (React Strict Mode double-mount)
+      if (errorMessage.includes(ERROR_PATTERNS.ALREADY_INITIALIZING)) {
         return;
       }
 
-      const snapCrashed = isSnapCrashedError(errorMessage);
+      // Ignore user cancellations
+      if (
+        hasErrorCode(error, PROVIDER_ERROR_CODES.USER_REJECTED) ||
+        errorMessage.toLowerCase().includes('rejected') ||
+        errorMessage.toLowerCase().includes('cancelled') ||
+        errorMessage.includes(ERROR_PATTERNS.ABORTED)
+      ) {
+        return;
+      }
 
+      log.error('Error in checkExistingConnection:', error);
+
+      // Determine if we should clear storage
+      const snapCrashed = isSnapCrashedError(errorMessage);
       const shouldClearStorage =
+        error instanceof WalletLibErrors.XPubError ||
+        error instanceof WalletLibErrors.UninitializedWalletError ||
+        hasErrorCode(error, PROVIDER_ERROR_CODES.UNAUTHORIZED) ||
         snapCrashed ||
-        errorMessage.includes('Invalid xpub') ||
-        errorMessage.includes('authentication') ||
-        errorMessage.includes('unauthorized');
+        errorMessage.includes(ERROR_PATTERNS.SNAP_NOT_INSTALLED) ||
+        errorMessage.includes(ERROR_PATTERNS.SNAP_BLOCKED) ||
+        errorMessage.includes(ERROR_PATTERNS.SNAP_DISABLED) ||
+        errorMessage.includes(ERROR_PATTERNS.SNAP_CONNECTION_FAILED) ||
+        errorMessage.includes(ERROR_PATTERNS.AUTHENTICATION);
 
       if (shouldClearStorage) {
         localStorage.removeItem(STORAGE_KEYS.XPUB);
         localStorage.removeItem(STORAGE_KEYS.NETWORK);
       }
 
-      const userMessage = snapCrashed
-        ? getSnapErrorUserMessage(errorMessage)
-        : 'Failed to reconnect. Please try connecting manually.';
+      // Generate user-friendly message
+      let userMessage: string;
+      if (error instanceof WalletLibErrors.XPubError) {
+        userMessage = 'Invalid wallet key. Please reconnect your wallet.';
+      } else if (snapCrashed) {
+        userMessage = getSnapErrorUserMessage(errorMessage);
+      } else if (errorMessage.includes(ERROR_PATTERNS.SNAP_BLOCKED)) {
+        userMessage = 'Snap is blocked. Please enable it in MetaMask settings.';
+      } else if (errorMessage.includes(ERROR_PATTERNS.SNAP_DISABLED)) {
+        userMessage = 'Snap is disabled. Please enable it in MetaMask settings.';
+      } else if (errorMessage.includes(ERROR_PATTERNS.SNAP_NOT_INSTALLED)) {
+        userMessage = 'Snap not installed. Please connect your wallet.';
+      } else if (errorMessage.includes(ERROR_PATTERNS.SNAP_CONNECTION_FAILED)) {
+        userMessage = 'Failed to connect to snap. Please reconnect your wallet.';
+      } else {
+        userMessage = 'Failed to reconnect. Please try connecting manually.';
+      }
 
+      setIsCheckingConnection(false);
+      setLoadingStep('');
       onError(userMessage);
     } finally {
       isCheckingRef.current = false;
-      setIsCheckingConnection(false);
-      setLoadingStep('');
+      // Don't reset checking state here - let the success/error handlers do it
     }
   };
 
@@ -497,17 +555,23 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
       setRegisteredTokens(tokenLoadResult.tokens);
       onError(tokenLoadResult.warning);
     } catch (error) {
-      if (error instanceof SnapUnauthorizedError) {
-        handleSnapError(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+
+      // Check for unauthorized (code 4100)
+      if (hasErrorCode(error, PROVIDER_ERROR_CODES.UNAUTHORIZED)) {
+        log.error('Snap unauthorized - showing connection lost modal');
+        localStorage.removeItem(STORAGE_KEYS.XPUB);
+        localStorage.removeItem(STORAGE_KEYS.NETWORK);
+        onShowConnectionLostModal(true);
         setIsConnecting(false);
         setLoadingStep('');
         return;
       }
 
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      log.error('Error in connectWallet:', error);
 
+      // Generate user message
       const snapCrashed = isSnapCrashedError(errorMessage);
-
       const userMessage = snapCrashed
         ? getSnapErrorUserMessage(errorMessage)
         : errorMessage || 'Failed to connect to wallet';
@@ -534,7 +598,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     setIsCheckingConnection(false);
     setLoadingStep('');
     setAddress('');
-    setBalances([]);
+    setBalances(new Map());
     setNetwork('mainnet');
     setXpub(null);
     setRegisteredTokens([]);
@@ -607,12 +671,20 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
   // Set the ref
   handleNewTransactionRef.current = handleNewTransaction;
 
-  // Check existing connection on mount
+  // Check existing connection on mount (only if we have stored credentials)
   useEffect(() => {
+    // Only check if we have stored credentials
+    if (!hasStoredConnection) {
+      return;
+    }
+
+    isMountedRef.current = true;
+
     const abortController = new AbortController();
 
     // Set timeout to abort if connection check takes too long
     const timeoutId = setTimeout(() => {
+      log.warn('Connection check timeout reached after', CHECK_CONNECTION_TIMEOUT, 'ms - aborting');
       abortController.abort();
       setIsCheckingConnection(false);
       setLoadingStep('');
@@ -638,6 +710,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
       });
 
     return () => {
+      isMountedRef.current = false;
       abortController.abort();
       clearTimeout(timeoutId);
     };
