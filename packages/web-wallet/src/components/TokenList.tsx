@@ -106,10 +106,10 @@ const TokenList: React.FC<TokenListProps> = ({
           <div
             key={token.uid}
             onClick={() => onTokenClick(token.uid)}
-            className="w-full bg-[#191C21] border border-[#24292F] rounded-lg px-4 md:px-6 py-4 md:py-6 hover:bg-primary-600/40 transition-colors group min-h-[100px] md:min-h-[112px] cursor-pointer"
+            className="w-full bg-[#191C21] border border-[#24292F] rounded-lg px-4 md:px-6 py-4 md:py-6 hover:bg-primary-600/40 transition-colors group min-h-[100px] md:min-h-[112px] cursor-pointer flex items-center"
           >
             {/* Outer container - single row on desktop, stacked on mobile */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4 w-full">
               {/* Left side: Token Info + Balance (side by side on mobile) */}
               <div className="flex items-center justify-between md:justify-start gap-3 md:gap-4 min-w-0 flex-1">
                 <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
@@ -126,7 +126,7 @@ const TokenList: React.FC<TokenListProps> = ({
                 </div>
 
                 {/* Balance - aligned right on mobile, integrated in left side */}
-                <span className="text-base md:text-lg font-medium text-white flex-shrink-0 md:ml-4">
+                <span className="text-base md:text-lg font-medium text-white flex-shrink-0 md:ml-4 text-right min-w-[120px] md:min-w-[150px]">
                   {formatHTRAmount(token.balance ? token.balance.available : 0n, token.isNFT)} {token.symbol}
                 </span>
               </div>
