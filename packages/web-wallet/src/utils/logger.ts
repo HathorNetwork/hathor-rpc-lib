@@ -23,7 +23,7 @@ function shouldLog(level: LogLevel): boolean {
 export const logger = {
   debug: (message: string, ...args: unknown[]) => {
     if (shouldLog('debug')) {
-      console.log(`[DEBUG] ${message}`, ...args);
+      console.debug(`[DEBUG] ${message}`, ...args);
     }
   },
 

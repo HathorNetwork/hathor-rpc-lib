@@ -9,6 +9,12 @@ import Header from './Header'
 import UnregisterTokenDialog from './UnregisterTokenDialog'
 import { useToast } from '@/hooks/use-toast'
 
+/**
+ * Full-screen dialog displaying transaction history for a specific token.
+ * Shows token details (name, symbol, balance, UID), paginated transaction list,
+ * and provides actions like viewing on explorer and unregistering custom tokens.
+ * Supports real-time updates via WebSocket for incoming transactions.
+ */
 interface HistoryDialogProps {
   isOpen: boolean
   onClose: () => void
