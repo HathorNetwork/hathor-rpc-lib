@@ -111,6 +111,7 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
       // Load registered tokens for new network
       const genesisHash = '';
       const tokenLoadResult = await loadTokensWithBalances(newNetwork, genesisHash, {
+        clearNftCache: true,
         detailedErrors: false,
       });
 
