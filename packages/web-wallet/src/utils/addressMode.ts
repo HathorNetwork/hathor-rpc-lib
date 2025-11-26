@@ -1,4 +1,7 @@
 import type { ReadOnlyWalletWrapper } from '../services/ReadOnlyWalletWrapper';
+import { createLogger } from './logger';
+
+const log = createLogger('addressMode');
 
 export type AddressMode = 'single' | 'dynamic';
 
@@ -65,7 +68,7 @@ export function loadAddressMode(): { mode: AddressMode; error?: string } {
     }
     return { mode: DEFAULT_ADDRESS_MODE };
   } catch (error) {
-    console.error('Failed to load address mode from localStorage:', error);
+    log.error('Failed to load address mode from localStorage:', error);
     return {
       mode: DEFAULT_ADDRESS_MODE,
       error: 'Failed to load address preference'
@@ -84,7 +87,7 @@ export function saveAddressMode(mode: AddressMode): boolean {
     localStorage.setItem(ADDRESS_MODE_STORAGE_KEY, mode);
     return true;
   } catch (error) {
-    console.error('Failed to save address mode to localStorage:', error);
+    log.error('Failed to save address mode to localStorage:', error);
     return false;
   }
 }

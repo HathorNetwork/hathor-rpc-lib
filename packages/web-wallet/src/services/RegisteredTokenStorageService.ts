@@ -61,7 +61,6 @@ export class RegisteredTokenStorageService {
         for (const token of data.tokens) {
           migrated[token.uid] = token;
         }
-        // Save migrated data
         this.saveTokenData(network, genesisHash, migrated);
         return migrated;
       }
@@ -78,14 +77,9 @@ export class RegisteredTokenStorageService {
    * @returns true if save was successful, false otherwise
    */
   addTokenData(network: string, genesisHash: string, token: TokenData): boolean {
-    try {
-      const tokens = this.loadTokenData(network, genesisHash);
-      tokens[token.uid] = token;
-      return this.saveTokenData(network, genesisHash, tokens);
-    } catch (error) {
-      log.error(`Failed to add token ${token.uid} to localStorage:`, error);
-      return false;
-    }
+    const tokens = this.loadTokenData(network, genesisHash);
+    tokens[token.uid] = token;
+    return this.saveTokenData(network, genesisHash, tokens);
   }
 
   /**
@@ -191,25 +185,31 @@ export class RegisteredTokenStorageService {
 
   /**
    * Clear all token data for specific network and genesisHash
+   * @returns true if successful, false otherwise
    */
-  clearTokenData(network: string, genesisHash: string): void {
+  clearTokenData(network: string, genesisHash: string): boolean {
     try {
       const key = this.getDataStorageKey(network, genesisHash);
       localStorage.removeItem(key);
+      return true;
     } catch (error) {
       log.error("Failed to clear token data from localStorage:", error);
+      return false;
     }
   }
 
   /**
    * Clear all token metadata for specific network and genesisHash
+   * @returns true if successful, false otherwise
    */
-  clearTokenMetadata(network: string, genesisHash: string): void {
+  clearTokenMetadata(network: string, genesisHash: string): boolean {
     try {
       const key = this.getMetadataStorageKey(network, genesisHash);
       localStorage.removeItem(key);
+      return true;
     } catch (error) {
       log.error("Failed to clear token metadata from localStorage:", error);
+      return false;
     }
   }
 

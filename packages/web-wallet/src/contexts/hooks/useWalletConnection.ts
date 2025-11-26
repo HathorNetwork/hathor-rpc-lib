@@ -111,7 +111,7 @@ export interface WalletConnectionResult {
   /** Initiates wallet connection via MetaMask Snap */
   connectWallet: () => Promise<void>;
   /** Disconnects wallet and clears all state */
-  disconnectWallet: () => void;
+  disconnectWallet: () => Promise<void>;
   /** Handles reconnection after snap authorization lost */
   handleReconnect: () => void;
   /** Handles snap-specific errors (unauthorized, etc.) */
@@ -585,13 +585,17 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     }
   };
 
-  const disconnectWallet = () => {
+  const disconnectWallet = async () => {
     const keysToRemove = Object.keys(localStorage).filter(key =>
       key.startsWith('hathor')
     );
     keysToRemove.forEach(key => localStorage.removeItem(key));
 
-    readOnlyWalletWrapper.stop();
+    try {
+      await readOnlyWalletWrapper.stop();
+    } catch (error) {
+      log.error('Error stopping wallet during disconnect:', error);
+    }
 
     setIsConnected(false);
     setIsConnecting(false);
