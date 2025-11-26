@@ -10,7 +10,7 @@ const {
   mockUseMetaMaskContext,
   mockReadOnlyWalletWrapper,
   mockTokenRegistryService,
-  mockTokenStorageService,
+  mockRegisteredTokenStorageService,
   mockNftDetectionService,
   mockLoadTokensWithBalances,
   mockGetDisplayAddressForMode,
@@ -38,7 +38,7 @@ const {
     registerToken: vi.fn(),
     unregisterToken: vi.fn(),
   },
-  mockTokenStorageService: {
+  mockRegisteredTokenStorageService: {
     loadTokens: vi.fn(() => []),
     saveTokens: vi.fn(),
   },
@@ -83,8 +83,8 @@ vi.mock('../../services/TokenRegistryService', () => ({
   tokenRegistryService: mockTokenRegistryService,
 }));
 
-vi.mock('../../services/TokenStorageService', () => ({
-  tokenStorageService: mockTokenStorageService,
+vi.mock('../../services/RegisteredTokenStorageService', () => ({
+  registeredTokenStorageService: mockRegisteredTokenStorageService,
 }));
 
 vi.mock('../../services/NftDetectionService', () => ({

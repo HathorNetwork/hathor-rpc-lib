@@ -71,7 +71,7 @@ src/
 │   ├── SnapService.ts      # Snap RPC interactions
 │   ├── ReadOnlyWalletWrapper.ts    # Read-only wallet operations
 │   ├── TokenRegistryService.ts     # Token registration/storage
-│   ├── TokenStorageService.ts      # LocalStorage persistence
+│   ├── RegisteredTokenStorageService.ts      # LocalStorage persistence
 │   └── NftDetectionService.ts      # NFT metadata fetching
 ├── utils/             # Utility functions (logging, token loading, etc.)
 ├── types/             # TypeScript type definitions
@@ -97,7 +97,7 @@ Handles MetaMask Snap RPC calls (getXpub, sendTransaction, changeNetwork). Imple
 Manages read-only wallet instance from @hathor/wallet-lib. Provides balance fetching, transaction history, and WebSocket event listeners for real-time updates.
 
 **TokenRegistryService**
-Validates and registers custom tokens. Coordinates with TokenStorageService for persistence and NftDetectionService for metadata.
+Validates and registers custom tokens. Coordinates with RegisteredTokenStorageService for persistence and NftDetectionService for metadata.
 
 **NftDetectionService**
 Fetches NFT metadata from DAG API with caching and batch detection support.

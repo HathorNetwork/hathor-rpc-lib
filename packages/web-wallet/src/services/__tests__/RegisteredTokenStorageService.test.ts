@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { TokenStorageService } from '../TokenStorageService';
+import { RegisteredTokenStorageService } from '../RegisteredTokenStorageService';
 import type { TokenData, TokenMetadata } from '../../types/token';
 
-describe('TokenStorageService', () => {
-  let service: TokenStorageService;
+describe('RegisteredTokenStorageService', () => {
+  let service: RegisteredTokenStorageService;
   const network = 'mainnet';
   const genesisHash = '';
 
   beforeEach(() => {
-    service = new TokenStorageService();
+    service = new RegisteredTokenStorageService();
     localStorage.clear();
     vi.clearAllMocks();
   });

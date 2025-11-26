@@ -1,7 +1,7 @@
 import type { TokenData, TokenMetadata, TokenDataStorage, TokenMetadataStorage } from "../types/token";
 import { createLogger } from '../utils/logger';
 
-const log = createLogger('TokenStorageService');
+const log = createLogger('RegisteredTokenStorageService');
 
 /**
  * Service for persisting token data and metadata to localStorage with network-specific keys.
@@ -15,7 +15,7 @@ const log = createLogger('TokenStorageService');
  *
  * Note: genesisHash is currently empty string, will be populated when RPC handler is updated
  */
-export class TokenStorageService {
+export class RegisteredTokenStorageService {
   private readonly DATA_STORAGE_PREFIX = "hathor_wallet_token_data";
   private readonly METADATA_STORAGE_PREFIX = "hathor_wallet_token_metadata";
   private readonly CURRENT_VERSION = 1;
@@ -245,4 +245,4 @@ export class TokenStorageService {
 }
 
 // Export singleton instance
-export const tokenStorageService = new TokenStorageService();
+export const registeredTokenStorageService = new RegisteredTokenStorageService();

@@ -1,6 +1,6 @@
 import type { TokenInfo, TokenData, TokenMetadata, ValidationResult, DagMetadata } from '../types/token';
 import { readOnlyWalletWrapper } from './ReadOnlyWalletWrapper';
-import { tokenStorageService } from './TokenStorageService';
+import { registeredTokenStorageService } from './RegisteredTokenStorageService';
 import { tokensUtils } from '@hathor/wallet-lib';
 import { nftDetectionService } from './NftDetectionService';
 import { createLogger } from '../utils/logger';
@@ -39,7 +39,7 @@ export class TokenRegistryService {
     const { uid, name, symbol } = validation.parsed;
 
     // Check if already registered (idempotent)
-    if (tokenStorageService.isTokenRegistered(network, genesisHash, uid)) {
+    if (registeredTokenStorageService.isTokenRegistered(network, genesisHash, uid)) {
       // Token already registered - update metadata and return
       return await this.refreshTokenInfo(uid, network, genesisHash);
     }
@@ -72,13 +72,13 @@ export class TokenRegistryService {
     };
 
     // Save data and metadata separately
-    const dataSaved = tokenStorageService.addTokenData(network, genesisHash, tokenData);
+    const dataSaved = registeredTokenStorageService.addTokenData(network, genesisHash, tokenData);
 
     if (!dataSaved) {
       throw new Error('Failed to save token data to browser storage. Storage may be full or disabled.');
     }
 
-    const metadataSaved = tokenStorageService.updateTokenMetadata(network, genesisHash, uid, tokenMetadata);
+    const metadataSaved = registeredTokenStorageService.updateTokenMetadata(network, genesisHash, uid, tokenMetadata);
     if (!metadataSaved) {
       log.warn(`Failed to save token metadata for ${uid}. Metadata may be lost on refresh.`);
     }
@@ -118,12 +118,12 @@ export class TokenRegistryService {
     network: string,
     genesisHash: string
   ): Promise<TokenInfo> {
-    const tokenData = tokenStorageService.getTokenData(network, genesisHash, uid);
+    const tokenData = registeredTokenStorageService.getTokenData(network, genesisHash, uid);
     if (!tokenData) {
       throw new Error(`Token ${uid} not found in storage`);
     }
 
-    let metadata = tokenStorageService.getTokenMetadata(network, genesisHash, uid);
+    let metadata = registeredTokenStorageService.getTokenMetadata(network, genesisHash, uid);
     let needsMetadataUpdate = false;
 
     // Update NFT status and metadata
@@ -155,7 +155,7 @@ export class TokenRegistryService {
 
     // Save metadata if it changed (data remains unchanged)
     if (needsMetadataUpdate) {
-      const saved = tokenStorageService.updateTokenMetadata(network, genesisHash, uid, metadata);
+      const saved = registeredTokenStorageService.updateTokenMetadata(network, genesisHash, uid, metadata);
       if (saved) {
         this.tokenCache.set(uid, metadata);
       }
@@ -187,13 +187,13 @@ export class TokenRegistryService {
    * Unregister a token (removes both data and metadata)
    */
   unregisterToken(tokenUid: string, network: string, genesisHash: string): void {
-    const dataSaved = tokenStorageService.removeTokenData(network, genesisHash, tokenUid);
+    const dataSaved = registeredTokenStorageService.removeTokenData(network, genesisHash, tokenUid);
 
     if (!dataSaved) {
       throw new Error('Failed to save token unregistration. The token may reappear on page refresh.');
     }
 
-    tokenStorageService.removeTokenMetadata(network, genesisHash, tokenUid);
+    registeredTokenStorageService.removeTokenMetadata(network, genesisHash, tokenUid);
 
     // Remove from cache
     this.tokenCache.delete(tokenUid);
@@ -209,7 +209,7 @@ export class TokenRegistryService {
     genesisHash: string,
     metadata: Partial<Omit<TokenMetadata, 'uid'>>
   ): boolean {
-    const existing = tokenStorageService.getTokenMetadata(network, genesisHash, tokenUid);
+    const existing = registeredTokenStorageService.getTokenMetadata(network, genesisHash, tokenUid);
     if (!existing) {
       log.warn(`Cannot update metadata for unregistered token ${tokenUid}`);
       return false;
@@ -221,7 +221,7 @@ export class TokenRegistryService {
       uid: tokenUid, // Ensure uid doesn't change
     };
 
-    const saved = tokenStorageService.updateTokenMetadata(network, genesisHash, tokenUid, updated);
+    const saved = registeredTokenStorageService.updateTokenMetadata(network, genesisHash, tokenUid, updated);
     if (saved) {
       this.tokenCache.set(tokenUid, updated);
     }
@@ -263,8 +263,8 @@ export class TokenRegistryService {
    * Combines data and metadata to create TokenInfo objects
    */
   getRegisteredTokens(network: string, genesisHash: string): TokenInfo[] {
-    const tokenDataRecord = tokenStorageService.loadTokenData(network, genesisHash);
-    const allMetadata = tokenStorageService.loadTokenMetadata(network, genesisHash);
+    const tokenDataRecord = registeredTokenStorageService.loadTokenData(network, genesisHash);
+    const allMetadata = registeredTokenStorageService.loadTokenMetadata(network, genesisHash);
 
     return Object.values(tokenDataRecord).map(data => {
       const metadata = allMetadata[data.uid] || {
@@ -288,7 +288,7 @@ export class TokenRegistryService {
    * Check if token is registered
    */
   isTokenRegistered(network: string, genesisHash: string, tokenUid: string): boolean {
-    return tokenStorageService.isTokenRegistered(network, genesisHash, tokenUid);
+    return registeredTokenStorageService.isTokenRegistered(network, genesisHash, tokenUid);
   }
 
   /**
