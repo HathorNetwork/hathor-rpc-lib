@@ -70,23 +70,6 @@ export class ReadOnlyWalletService {
         enableWs: true, // Enable WebSocket for real-time updates
       });
 
-      // Set up event listeners for wallet state changes
-      this.wallet.on('state', () => {
-        // State changes are handled by the wallet
-      });
-
-      this.wallet.on('new-tx', () => {
-        // New transactions are handled by event listeners
-      });
-
-      this.wallet.on('update-tx', () => {
-        // Transaction updates are handled by event listeners
-      });
-
-      this.wallet.on('reload-data', () => {
-        // Data reload is handled automatically
-      });
-
       // Start wallet in read-only mode
       try {
         await this.wallet.startReadOnly();
