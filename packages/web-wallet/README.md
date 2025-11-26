@@ -102,6 +102,23 @@ Validates and registers custom tokens. Coordinates with RegisteredTokenStorageSe
 **NftDetectionService**
 Fetches NFT metadata from DAG API with caching and batch detection support.
 
+### Local Storage
+
+The wallet persists the following data to localStorage:
+
+| Key | Description | Updated By | Cleared On |
+|-----|-------------|------------|------------|
+| `hathor_wallet_xpub` | User's extended public key | `useWalletConnection` on connect | Disconnect |
+| `hathor_wallet_network` | Selected network (mainnet/testnet) | `useWalletConnection` on connect, `useNetworkManagement` on switch | Disconnect |
+| `hathor_wallet_address_mode` | Address mode preference (single/dynamic) | `addressMode.saveAddressMode()` | Never (user preference) |
+| `hathor_wallet_token_data_{network}_{genesisHash}` | Registered token data (uid, name, symbol) | `RegisteredTokenStorageService` | Disconnect, network change |
+| `hathor_wallet_token_metadata_{network}_{genesisHash}` | Token metadata (isNFT flags) | `RegisteredTokenStorageService` | Disconnect, network change |
+
+**Notes:**
+- Token data is network-specific to prevent mixing mainnet/testnet tokens
+- On disconnect, all wallet data is cleared except address mode preference
+- The `genesisHash` parameter is reserved for future multi-wallet support
+
 ## Testing
 
 Test suites cover:
