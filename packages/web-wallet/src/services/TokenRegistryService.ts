@@ -1,8 +1,11 @@
 import type { TokenInfo, TokenData, TokenMetadata, ValidationResult, DagMetadata } from '../types/token';
 import { readOnlyWalletWrapper } from './ReadOnlyWalletWrapper';
 import { tokenStorageService } from './TokenStorageService';
-import helpers from '@hathor/wallet-lib/lib/utils/helpers';
+import { tokensUtils } from '@hathor/wallet-lib';
 import { nftDetectionService } from './NftDetectionService';
+import { createLogger } from '../utils/logger';
+
+const log = createLogger('TokenRegistryService');
 
 /**
  * Service for managing token registration, validation, and metadata.
@@ -57,7 +60,7 @@ export class TokenRegistryService {
       isNFT = metadata?.nft ?? false;
       dagMetadata = metadata;
     } catch (error) {
-      console.warn(`Failed to detect NFT status for ${uid}, defaulting to false:`, error);
+      log.warn(`Failed to detect NFT status for ${uid}, defaulting to false:`, error);
     }
 
     // Create token metadata (changeable)
@@ -79,7 +82,7 @@ export class TokenRegistryService {
 
     const metadataSaved = tokenStorageService.updateTokenMetadata(network, genesisHash, uid, tokenMetadata);
     if (!metadataSaved) {
-      console.warn(`Failed to save token metadata for ${uid}. Metadata may be lost on refresh.`);
+      log.warn(`Failed to save token metadata for ${uid}. Metadata may be lost on refresh.`);
     }
 
     // Cache metadata
@@ -97,7 +100,7 @@ export class TokenRegistryService {
         };
       }
     } catch (error) {
-      console.warn(`Could not fetch balance for token ${uid}:`, error);
+      log.warn(`Could not fetch balance for token ${uid}:`, error);
     }
 
     // Return combined TokenInfo
@@ -140,7 +143,7 @@ export class TokenRegistryService {
         needsMetadataUpdate = true;
       }
     } catch (error) {
-      console.warn(`Failed to update NFT status for ${uid}:`, error);
+      log.warn(`Failed to update NFT status for ${uid}:`, error);
       // Use existing metadata or create default
       if (!metadata) {
         metadata = {
@@ -172,7 +175,7 @@ export class TokenRegistryService {
         };
       }
     } catch (error) {
-      console.error(`Failed to update balance for ${uid}:`, error);
+      log.error(`Failed to update balance for ${uid}:`, error);
     }
 
     return {
@@ -216,7 +219,7 @@ export class TokenRegistryService {
   ): boolean {
     const existing = tokenStorageService.getTokenMetadata(network, genesisHash, tokenUid);
     if (!existing) {
-      console.warn(`Cannot update metadata for unregistered token ${tokenUid}`);
+      log.warn(`Cannot update metadata for unregistered token ${tokenUid}`);
       return false;
     }
 
@@ -234,58 +237,26 @@ export class TokenRegistryService {
   }
 
   /**
-   * Validate configuration string format and checksum
+   * Validate configuration string format and checksum using wallet-lib
    */
   validateConfigString(configString: string): ValidationResult {
     try {
-      // Remove brackets if present
-      let cleaned = configString.trim();
-      if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
-        cleaned = cleaned.slice(1, -1);
-      }
+      const tokenData = tokensUtils.getTokenFromConfigurationString(configString);
 
-      // Split into parts: name:symbol:uid:checksum
-      const parts = cleaned.split(':');
-      if (parts.length !== 4) {
+      if (!tokenData) {
         return {
           valid: false,
-          error: 'Invalid format. Expected: [name:symbol:uid:checksum]',
-        };
-      }
-
-      const [name, symbol, uid, providedChecksum] = parts;
-
-      // Validate each part
-      if (!name || name.length === 0) {
-        return { valid: false, error: 'Token name cannot be empty' };
-      }
-
-      if (!symbol || symbol.length === 0) {
-        return { valid: false, error: 'Token symbol cannot be empty' };
-      }
-
-      if (!uid || !/^[0-9a-f]{64}$/i.test(uid)) {
-        return {
-          valid: false,
-          error: 'Token UID must be 64 hexadecimal characters',
-        };
-      }
-
-      // Verify checksum
-      const partialConfig = `${name}:${symbol}:${uid}`;
-      const buffer = Buffer.from(partialConfig);
-      const calculatedChecksum = helpers.getChecksum(buffer).toString('hex');
-
-      if (calculatedChecksum !== providedChecksum.toLowerCase()) {
-        return {
-          valid: false,
-          error: 'Invalid checksum. The configuration string may be corrupted.',
+          error: 'Invalid configuration string',
         };
       }
 
       return {
         valid: true,
-        parsed: { uid, name, symbol },
+        parsed: {
+          uid: tokenData.uid,
+          name: tokenData.name,
+          symbol: tokenData.symbol,
+        },
       };
     } catch (error) {
       return {
