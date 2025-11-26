@@ -11,3 +11,5 @@ coverage/
 public/
 *.swp
 *.swo
+.claude
+packages/web-wallet/playwright-report/*

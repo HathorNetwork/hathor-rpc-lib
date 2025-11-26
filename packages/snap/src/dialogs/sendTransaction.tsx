@@ -72,11 +72,16 @@ const renderOutputs = (outputs, tokenDetails) => {
         </Box>
       );
     }
-    
+
     return (
       <Box key={`output-${index}`}>
         <Text>{output.address}</Text>
         {renderTokenAmountSymbol(output, tokenDetails)}
+        {output.timelock && (
+          <Text>
+            <Bold>Timelock:</Bold> {new Date(output.timelock * 1000).toLocaleString()}
+          </Text>
+        )}
         {index < outputs.length - 1 ? <Divider /> : null}
       </Box>
     );
