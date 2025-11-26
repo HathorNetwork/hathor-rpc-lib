@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Mock } from 'vitest';
-import { WalletServiceMethods } from '../HathorWalletService';
+import { WalletServiceMethods } from '../SnapService';
 import { NETWORKS, TOKEN_IDS } from '../../constants';
 
-describe('HathorWalletService - Critical Issues', () => {
+describe('SnapService - Critical Issues', () => {
   let mockInvokeSnap: Mock;
 
   beforeEach(() => {

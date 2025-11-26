@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { readOnlyWalletService } from '../../services/ReadOnlyWalletService';
-import { WalletServiceMethods } from '../../services/HathorWalletService';
+import { WalletServiceMethods } from '../../services/SnapService';
 import { TOKEN_IDS } from '@/constants';
 import { createLogger } from '../../utils/logger';
 import type { TransactionHistoryItem } from '../../types/wallet';

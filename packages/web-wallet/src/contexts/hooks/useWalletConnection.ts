@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { readOnlyWalletService } from '../../services/ReadOnlyWalletService';
-import { SnapUnauthorizedError } from '../../services/HathorWalletService';
+import { SnapUnauthorizedError } from '../../services/SnapService';
 import { CHECK_CONNECTION_TIMEOUT, DEFAULT_NETWORK, TOKEN_IDS } from '@/constants';
 import { getDisplayAddressForMode, type AddressMode } from '../../utils/addressMode';
 import { loadTokensWithBalances } from '../../utils/tokenLoading';

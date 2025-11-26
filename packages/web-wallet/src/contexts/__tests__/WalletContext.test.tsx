@@ -91,7 +91,7 @@ vi.mock('../../services/NftDetectionService', () => ({
   nftDetectionService: mockNftDetectionService,
 }));
 
-vi.mock('../../services/HathorWalletService', () => ({
+vi.mock('../../services/SnapService', () => ({
   WalletServiceMethods: mockWalletServiceMethods,
   SnapUnauthorizedError: class SnapUnauthorizedError extends Error {
     code: number;

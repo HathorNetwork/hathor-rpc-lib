@@ -47,7 +47,7 @@ User → UI Components → WalletContext → Custom Hooks → Services → Snap/
 - React Context API for global state
 
 **Business Logic** (`src/services/`)
-- HathorWalletService: Snap RPC calls (write operations)
+- SnapService: Snap RPC calls (write operations)
 - ReadOnlyWalletService: Balance/history queries (read operations)
 - TokenRegistryService: Token validation and registration
 - NftDetectionService: Fetch NFT metadata from DAG
@@ -81,7 +81,7 @@ User → UI Components → WalletContext → Custom Hooks → Services → Snap/
 
 ## 3. Services Layer - Business Logic
 
-### HathorWalletService.ts (~200 lines)
+### SnapService.ts (~200 lines)
 **Purpose:** Write operations via MetaMask Snap RPC
 
 **Key methods:**
@@ -190,7 +190,7 @@ User → UI Components → WalletContext → Custom Hooks → Services → Snap/
 ### Test Coverage (10 test files, 157 tests)
 
 **Service Tests:**
-- `HathorWalletService.test.ts` (13 tests) - RPC error handling, null responses
+- `SnapService.test.ts` (13 tests) - RPC error handling, null responses
 - `ReadOnlyWalletService.test.ts` (16 tests) - Race conditions, concurrent init, cleanup
 - `TokenStorageService.test.ts` (15 tests) - LocalStorage errors, JSON parsing, migration
 
@@ -228,7 +228,7 @@ User → UI Components → WalletContext → Custom Hooks → Services → Snap/
 - Unauthorized access detection (SnapUnauthorizedError)
 - Snap crash detection (DataCloneError, timeout errors)
 - User cancellation handling (code 4001)
-- Check: `HathorWalletService.ts`, `useWalletConnection.ts`
+- Check: `SnapService.ts`, `useWalletConnection.ts`
 
 **3. Storage Security**
 - No private keys stored (only xpub in localStorage)
@@ -360,7 +360,7 @@ yarn workspace @hathor/web-wallet test:coverage # Coverage report
 ## Questions for Reviewer
 
 1. **Architecture:** Does the hook-based state management make the code more maintainable than a monolithic Context?
-2. **Services:** Is the split between HathorWalletService (write) and ReadOnlyWalletService (read) clear?
+2. **Services:** Is the split between SnapService (write) and ReadOnlyWalletService (read) clear?
 3. **Error Handling:** Are error messages clear enough for users to recover?
 4. **Testing:** Is test coverage sufficient for critical paths (connection, send, network switch)?
 5. **Security:** Are there any security concerns with storing xpub in localStorage?

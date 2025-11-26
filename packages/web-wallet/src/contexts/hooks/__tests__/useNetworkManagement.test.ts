@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useNetworkManagement } from '../useNetworkManagement';
-import { SnapUnauthorizedError } from '../../../services/HathorWalletService';
+import { SnapUnauthorizedError } from '../../../services/SnapService';
 import type { AddressMode } from '../../../utils/addressMode';
 import type { WalletBalance } from '../../../types/wallet';
 

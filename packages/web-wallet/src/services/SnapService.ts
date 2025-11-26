@@ -3,7 +3,7 @@ import type { WalletBalance } from '../types/wallet';
 import { createLogger } from '../utils/logger';
 import { PROVIDER_ERROR_CODES, hasErrorCode } from '../errors/WalletConnectionErrors';
 
-const log = createLogger('HathorWalletService');
+const log = createLogger('SnapService');
 
 // Type for the invokeSnap function from snap-utils
 type InvokeSnapFunction = (params: { method: string; params?: Record<string, unknown> }) => Promise<unknown>;

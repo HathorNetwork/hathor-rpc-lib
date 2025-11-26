@@ -1,5 +1,5 @@
 import { readOnlyWalletService } from '../../services/ReadOnlyWalletService';
-import { SnapUnauthorizedError } from '../../services/HathorWalletService';
+import { SnapUnauthorizedError } from '../../services/SnapService';
 import { getDisplayAddressForMode, type AddressMode } from '../../utils/addressMode';
 import { loadTokensWithBalances } from '../../utils/tokenLoading';
 import { TOKEN_IDS } from '@/constants';
