@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { DayPicker } from 'react-day-picker';
-import 'react-day-picker/dist/style.css';
+import 'react-day-picker/style.css';
 import { useWallet } from '../contexts/WalletContext';
 import { useTokens } from '../hooks/useTokens';
 import { formatHTRAmount, htrToCents, centsToHTR } from '../utils/hathor';
