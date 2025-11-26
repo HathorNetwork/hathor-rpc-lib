@@ -24,10 +24,10 @@ export async function getAddressForMode(
     }
     return addressInfo.address;
   } else {
-    // Dynamic mode: get next available address
-    const addressInfo = readOnlyWalletWrapper.getNextAddress();
+    // Dynamic mode: get current unused address
+    const addressInfo = readOnlyWalletWrapper.getCurrentAddress();
     if (!addressInfo) {
-      throw new Error('Failed to get next address');
+      throw new Error('Failed to get current address');
     }
     return addressInfo.address;
   }
@@ -52,10 +52,10 @@ export async function getAddressInfoForMode(
     }
     return { address: addressInfo.address, index: 0 };
   } else {
-    // Dynamic mode: get next available address
-    const addressInfo = readOnlyWalletWrapper.getNextAddress();
+    // Dynamic mode: get current unused address
+    const addressInfo = readOnlyWalletWrapper.getCurrentAddress();
     if (!addressInfo) {
-      throw new Error('Failed to get next address');
+      throw new Error('Failed to get current address');
     }
     return {
       address: addressInfo.address,

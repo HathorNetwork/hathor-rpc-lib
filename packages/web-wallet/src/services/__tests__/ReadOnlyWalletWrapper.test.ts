@@ -332,28 +332,6 @@ describe('ReadOnlyWalletWrapper', () => {
     });
   });
 
-  describe('getNextAddress', () => {
-    beforeEach(async () => {
-      mockIsReady.mockReturnValue(true);
-      await service.initialize('xpub123', 'testnet');
-    });
-
-    it('should mark current address as used and return next', () => {
-      mockGetCurrentAddress
-        .mockReturnValueOnce({ address: 'HAddr1', index: 0 }) // markAsUsed call
-        .mockReturnValueOnce({ address: 'HAddr2', index: 1 }); // get next call
-
-      const result = service.getNextAddress();
-
-      expect(mockGetCurrentAddress).toHaveBeenCalledWith({ markAsUsed: true });
-      expect(result).toEqual({
-        address: 'HAddr2',
-        index: 1,
-        transactions: 0,
-      });
-    });
-  });
-
   describe('getAddressAtIndex', () => {
     beforeEach(async () => {
       mockIsReady.mockReturnValue(true);

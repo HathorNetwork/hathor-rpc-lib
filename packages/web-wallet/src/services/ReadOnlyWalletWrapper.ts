@@ -195,25 +195,6 @@ export class ReadOnlyWalletWrapper {
   }
 
   /**
-   * Get next available address (marks current as used and returns next)
-   */
-  getNextAddress(): AddressInfo {
-    if (!this.wallet?.isReady()) {
-      throw new Error('Wallet not initialized');
-    }
-
-    // First mark the current address as used, then return the next
-    this.wallet.getCurrentAddress({ markAsUsed: true });
-    const addressInfo: AddressInfoObject = this.wallet.getCurrentAddress();
-
-    return {
-      address: addressInfo.address,
-      index: addressInfo.index,
-      transactions: 0,
-    };
-  }
-
-  /**
    * Get address at a specific index
    */
   async getAddressAtIndex(index: number): Promise<AddressInfo | null> {
