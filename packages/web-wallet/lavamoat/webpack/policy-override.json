@@ -1,0 +1,15 @@
+{
+  "resources": {
+    "object-keys": {
+      "globals": {
+        "Object.keys": "write"
+      }
+    },
+    "js-sha256": {
+      "globals": {
+        "Array.isArray": "write",
+        "ArrayBuffer.isView": "write"
+      }
+    }
+  }
+}

@@ -1,10 +1,5 @@
 {
   "resources": {
-    "react-day-picker>@date-fns/tz": {
-      "globals": {
-        "Intl.DateTimeFormat": true
-      }
-    },
     "@radix-ui/react-select>@radix-ui/react-popper>@floating-ui/react-dom>@floating-ui/dom>@floating-ui/core": {
       "packages": {
         "@radix-ui/react-select>@radix-ui/react-popper>@floating-ui/react-dom>@floating-ui/dom>@floating-ui/utils": true
@@ -722,11 +717,6 @@
         "crypto-browserify": true
       }
     },
-    "date-fns": {
-      "globals": {
-        "console.warn": true
-      }
-    },
     "assert>is-nan>define-properties>define-data-property": {
       "packages": {
         "assert>call-bind>es-define-property": true,
@@ -1048,18 +1038,6 @@
         "dispatchEvent": true,
         "process": true,
         "reportError": true
-      }
-    },
-    "react-day-picker": {
-      "globals": {
-        "HTMLElement": true,
-        "Intl.DateTimeFormat": true,
-        "Intl.NumberFormat": true
-      },
-      "packages": {
-        "react-day-picker>@date-fns/tz": true,
-        "date-fns": true,
-        "react": true
       }
     },
     "react-dom": {

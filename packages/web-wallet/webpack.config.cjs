@@ -82,6 +82,11 @@ module.exports = (env, argv) => {
       new webpack.DefinePlugin({
         'process.env.SNAP_ORIGIN': JSON.stringify(process.env.SNAP_ORIGIN || 'local:http://localhost:8080'),
         'process.env.LOG_LEVEL': JSON.stringify(process.env.LOG_LEVEL || 'debug'),
+        'process.env': JSON.stringify({
+          SNAP_ORIGIN: process.env.SNAP_ORIGIN || 'local:http://localhost:8080',
+          LOG_LEVEL: process.env.LOG_LEVEL || 'debug',
+          NODE_ENV: isProduction ? 'production' : 'development',
+        }),
       }),
       new webpack.NormalModuleReplacementPlugin(
         /^\/.*\/node_modules\/node-stdlib-browser\/node_modules\/buffer$/,
@@ -92,15 +97,16 @@ module.exports = (env, argv) => {
         inject: 'body',
       }),
       new NodePolyfillPlugin({
-        includeAliases: ['Buffer', 'process']
+        includeAliases: ['Buffer']
       }),
       new MiniCssExtractPlugin({
         filename: isProduction ? '[name].[contenthash].css' : '[name].css'
       }),
-      // Only enable LavaMoat in production builds
+      // Re-enabled LavaMoat after replacing date-fns with native date inputs
       ...(isProduction ? [new LavaMoatPlugin({
         generatePolicy: true,
         policyLocation: path.resolve(__dirname, 'lavamoat/webpack'),
+        policyOverride: path.resolve(__dirname, 'lavamoat/webpack/policy-override.json'),
         HtmlWebpackPluginInterop: true,
         readableResourceIds: true,
       })] : []),
