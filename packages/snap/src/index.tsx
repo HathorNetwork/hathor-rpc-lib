@@ -6,10 +6,11 @@
  */
 
 import type { OnRpcRequestHandler, OnInstallHandler } from '@metamask/snaps-sdk';
-import { SnapError } from '@metamask/snaps-sdk';
+import { SnapError, UnauthorizedError } from '@metamask/snaps-sdk';
 import { getAndStartHathorWallet, getAndStartReadOnlyHathorWallet, initializeWalletOnService } from './utils/wallet';
 import { getNetworkData } from './utils/network';
 import { promptHandler } from './utils/prompt';
+import { isRequestAllowed } from './utils/helpers';
 import { installPage } from './dialogs/install';
 import { handleRpcRequest, RpcMethods } from '@hathor/hathor-rpc-handler';
 import { bigIntUtils } from '@hathor/wallet-lib';
@@ -57,6 +58,13 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
   origin,
   request,
 }) => {
+  // Check if this is a valid request from this origin
+  if (!isRequestAllowed(request.method, origin)) {
+    throw new UnauthorizedError(
+      `Method ${request.method} not authorized for origin ${origin}.`
+    )
+  }
+
   // Almost all RPC requests need the network, so I add it here
   const networkData = await getNetworkData();
   request.params = { ...request.params, network: networkData.network };
