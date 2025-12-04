@@ -444,7 +444,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
   // Initialize connection hook
   const connection = useWalletConnection({
     addressMode,
-    request,
+    request: request as (params: { method: string; params?: unknown }) => Promise<unknown>,
     invokeSnap,
     requestSnap,
     metamaskError,

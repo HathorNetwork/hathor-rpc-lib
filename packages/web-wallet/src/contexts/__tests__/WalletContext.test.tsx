@@ -21,7 +21,7 @@ const {
   mockInvokeSnap: vi.fn(),
   mockRequestSnap: vi.fn(),
   mockRequest: vi.fn(),
-  mockUseMetaMaskContext: vi.fn(() => ({ error: null })),
+  mockUseMetaMaskContext: vi.fn(() => ({ error: null as Error | null })),
   mockReadOnlyWalletWrapper: {
     initialize: vi.fn(),
     stop: vi.fn(),
