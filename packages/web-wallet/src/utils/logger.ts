@@ -14,7 +14,7 @@ const LOG_LEVELS: Record<LogLevel, number> = {
 };
 
 // Set to 'warn' or 'error' in production to reduce console noise
-const CURRENT_LOG_LEVEL: LogLevel = (import.meta.env.VITE_LOG_LEVEL as LogLevel) || 'debug';
+const CURRENT_LOG_LEVEL: LogLevel = (process.env.LOG_LEVEL as LogLevel) || 'debug';
 
 function shouldLog(level: LogLevel): boolean {
   return LOG_LEVELS[level] >= LOG_LEVELS[CURRENT_LOG_LEVEL];
