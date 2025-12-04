@@ -127,7 +127,7 @@ export class ReadOnlyWalletWrapper {
       // wallet-lib returns an array of balance objects
       if (Array.isArray(balance)) {
         for (const item of balance) {
-          const tokenId = item.token?.id || item.token;
+          const tokenId = typeof item.token === 'string' ? item.token : item.token?.id || '';
           const balanceData = item.balance || {};
 
           balances.set(tokenId, {
