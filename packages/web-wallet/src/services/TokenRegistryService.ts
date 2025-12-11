@@ -4,6 +4,7 @@ import { registeredTokenStorageService } from './RegisteredTokenStorageService';
 import { tokensUtils } from '@hathor/wallet-lib';
 import { nftDetectionService } from './NftDetectionService';
 import { createLogger } from '../utils/logger';
+import { TOKEN_IDS } from '../constants';
 
 const log = createLogger('TokenRegistryService');
 
@@ -37,6 +38,11 @@ export class TokenRegistryService {
     }
 
     const { uid, name, symbol } = validation.parsed;
+
+    // Prevent registering HTR - it's the native token and always present
+    if (uid === TOKEN_IDS.HTR) {
+      throw new Error('Cannot register the native HTR token');
+    }
 
     // Check if already registered (idempotent)
     if (registeredTokenStorageService.isTokenRegistered(network, genesisHash, uid)) {
