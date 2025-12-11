@@ -57,7 +57,7 @@ export interface TokenInfo extends TokenData {
 
 export type TokenFilter = 'all' | 'tokens' | 'nfts';
 
-export interface ValidationResult {
+export interface ConfigStringValidationResult {
   valid: boolean;
   error?: string;
   parsed?: {

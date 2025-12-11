@@ -1,4 +1,4 @@
-import type { TokenInfo, TokenData, TokenMetadata, ValidationResult, DagMetadata } from '../types/token';
+import type { TokenInfo, TokenData, TokenMetadata, ConfigStringValidationResult, DagMetadata } from '../types/token';
 import { readOnlyWalletWrapper } from './ReadOnlyWalletWrapper';
 import { registeredTokenStorageService } from './RegisteredTokenStorageService';
 import { tokensUtils } from '@hathor/wallet-lib';
@@ -231,7 +231,7 @@ export class TokenRegistryService {
   /**
    * Validate configuration string format and checksum using wallet-lib
    */
-  validateConfigString(configString: string): ValidationResult {
+  validateConfigString(configString: string): ConfigStringValidationResult {
     try {
       const tokenData = tokensUtils.getTokenFromConfigurationString(configString);
 
