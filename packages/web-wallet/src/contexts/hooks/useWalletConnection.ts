@@ -711,7 +711,6 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     }, CHECK_CONNECTION_TIMEOUT);
 
     checkExistingConnection(abortController.signal)
-      .then(() => {})
       .catch((error) => {
         // Ignore aborted errors
         const errorMessage = error instanceof Error ? error.message : String(error);
