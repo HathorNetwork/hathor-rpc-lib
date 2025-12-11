@@ -129,6 +129,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
   }, [isOpen, initialTokenUid, reset]);
 
   const amount = watch('amount');
+  const address = watch('address');
   const selectedTokenUid = watch('selectedToken');
 
   // Get the selected token's balance
@@ -610,7 +611,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
           {/* Send Button */}
           <button
             type="submit"
-            disabled={isLoading || !amount}
+            disabled={isLoading || !amount || !address}
             className="w-auto mx-auto px-8 py-2.5 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
           >
             {isLoading ? (

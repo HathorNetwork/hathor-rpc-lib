@@ -2076,7 +2076,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@hathor/hathor-rpc-handler@workspace:*, @hathor/hathor-rpc-handler@workspace:packages/hathor-rpc-handler":
+"@hathor/hathor-rpc-handler@workspace:, @hathor/hathor-rpc-handler@workspace:*, @hathor/hathor-rpc-handler@workspace:packages/hathor-rpc-handler":
   version: 0.0.0-use.local
   resolution: "@hathor/hathor-rpc-handler@workspace:packages/hathor-rpc-handler"
   dependencies:
@@ -2214,6 +2214,7 @@ __metadata:
   resolution: "@hathor/web-wallet@workspace:packages/web-wallet"
   dependencies:
     "@eslint/js": "npm:9.33.0"
+    "@hathor/hathor-rpc-handler": "workspace:"
     "@hathor/snap-utils": "workspace:"
     "@hathor/wallet-lib": "npm:2.9.0"
     "@hookform/resolvers": "npm:5.2.2"

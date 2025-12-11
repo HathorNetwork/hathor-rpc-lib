@@ -1,5 +1,6 @@
 import { HATHOR_API_URLS, NETWORKS, TOKEN_IDS, DEFAULT_NETWORK } from '../constants';
 import type { WalletBalance } from '../types/wallet';
+import type { SendTransactionRpcRequest } from '@hathor/hathor-rpc-handler';
 import { createLogger } from '../utils/logger';
 import { PROVIDER_ERROR_CODES, hasErrorCode } from '../errors/WalletConnectionErrors';
 
@@ -8,20 +9,8 @@ const log = createLogger('SnapService');
 // Type for the invokeSnap function from snap-utils
 type InvokeSnapFunction = (params: { method: string; params?: Record<string, unknown> }) => Promise<unknown>;
 
-export interface TransactionOutput {
-  address?: string;
-  value?: string;
-  token?: string;
-  type?: string;
-  data?: string;
-}
-
-export interface SendTransactionParams {
-  network: string;
-  outputs: TransactionOutput[];
-  inputs?: Array<{ txId: string; index: number }>;
-  changeAddress?: string;
-}
+// Re-export for use in other files
+export type SendTransactionParams = SendTransactionRpcRequest['params'];
 
 export interface Transaction {
   txId: string;
