@@ -22,7 +22,8 @@ export function useTokenManagement(options: UseTokenManagementOptions) {
     if (!isConnected || !readOnlyWalletWrapper.isReady()) return;
 
     try {
-      // Fetch balances for all tokens
+      // Fetch balances for registered tokens only (not HTR).
+      // HTR balance is fetched separately in useWalletConnection via getBalance().
       const balanceUpdates = await Promise.all(
         registeredTokens.map(async (token) => {
           const balance = await fetchTokenBalance(token.uid);

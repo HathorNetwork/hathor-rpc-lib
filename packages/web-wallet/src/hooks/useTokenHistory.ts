@@ -38,6 +38,7 @@ export function useTokenHistory(tokenUid: string) {
   );
 
   const refresh = useCallback(() => {
+    // Reset hasMore since we're starting fresh and don't know if there are more pages
     setHasMore(true);
     return loadHistory(10, 0);
   }, [loadHistory]);
