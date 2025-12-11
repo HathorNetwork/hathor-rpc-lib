@@ -31,6 +31,22 @@ interface ProcessedTransaction {
   status: 'confirmed' | 'pending'
 }
 
+// Helper to transform raw transaction data into ProcessedTransaction
+const processTransaction = (tx: { tx_id: string; balance: number | bigint; timestamp: number; is_voided: boolean }): ProcessedTransaction => {
+  const balanceValue = toBigInt(tx.balance);
+  const type = balanceValue >= 0n ? 'received' : 'sent';
+  const amount = balanceValue >= 0n ? balanceValue : -balanceValue;
+
+  return {
+    id: tx.tx_id,
+    type,
+    amount,
+    timestamp: new Date(tx.timestamp * 1000).toISOString(),
+    txHash: tx.tx_id,
+    status: !tx.is_voided ? 'confirmed' : 'pending'
+  };
+};
+
 const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid, onRegisterTokenClick }) => {
   const [transactions, setTransactions] = useState<ProcessedTransaction[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -71,24 +87,19 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
 
     // Only process if we have transaction data with tx_id (for history list)
     if (transaction.tx_id) {
-      const balanceValue = toBigInt(transaction.balance as number | bigint);
-      const type = balanceValue >= 0n ? 'received' : 'sent'
-      const amount = balanceValue >= 0n ? balanceValue : -balanceValue
-
-      const processedTx: ProcessedTransaction = {
-        id: transaction.tx_id as string,
-        type,
-        amount,
-        timestamp: new Date((transaction.timestamp as number) * 1000).toISOString(),
-        txHash: transaction.tx_id as string,
-        status: !(transaction.is_voided as boolean) ? 'confirmed' : 'pending'
-      };
+      const processedTx = processTransaction({
+        tx_id: transaction.tx_id as string,
+        balance: transaction.balance as number | bigint,
+        timestamp: transaction.timestamp as number,
+        is_voided: transaction.is_voided as boolean
+      });
 
       // Use functional update to avoid race conditions with duplicate check
+      // Don't slice - preserve all already-loaded pages
       setTransactions(prev => {
         const isDuplicate = prev.some(tx => tx.id === transaction.tx_id);
         if (isDuplicate) return prev;
-        return [processedTx, ...prev].slice(0, PAGE_SIZE);
+        return [processedTx, ...prev];
       });
 
       setCurrentCount(prev => prev + 1);
@@ -129,20 +140,9 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
         setHasMore(false);
       }
 
-      const processed: ProcessedTransaction[] = history.map((tx: TransactionHistoryItem) => {
-        const balanceValue = toBigInt(tx.balance);
-        const type = balanceValue >= 0n ? 'received' : 'sent'
-        const amount = balanceValue >= 0n ? balanceValue : -balanceValue
-
-        return {
-          id: tx.tx_id,
-          type,
-          amount,
-          timestamp: new Date(tx.timestamp * 1000).toISOString(),
-          txHash: tx.tx_id,
-          status: !tx.is_voided ? 'confirmed' : 'pending'
-        }
-      })
+      const processed: ProcessedTransaction[] = history.map((tx: TransactionHistoryItem) =>
+        processTransaction(tx)
+      )
       if (isInitialLoad) {
         setTransactions(processed);
         setCurrentCount(processed.length);
