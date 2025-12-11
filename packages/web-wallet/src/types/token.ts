@@ -68,7 +68,7 @@ export interface ValidationResult {
 }
 
 /**
- * Storage format for token data - stable, rarely changes
+ * Storage format for token data
  */
 export interface TokenDataStorage {
   tokens: Record<string, TokenData>; // Keyed by token uid for O(1) lookup/removal
@@ -76,7 +76,7 @@ export interface TokenDataStorage {
 }
 
 /**
- * Storage format for token metadata - can change frequently
+ * Storage format for token metadata
  */
 export interface TokenMetadataStorage {
   metadata: Record<string, TokenMetadata>; // Keyed by token uid for O(1) lookup
