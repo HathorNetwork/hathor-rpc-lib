@@ -11,19 +11,15 @@ interface TokenTabsProps {
 const TokenTabs: React.FC<TokenTabsProps> = ({
   selectedFilter,
   onFilterChange,
-  tokenCount,
-  nftCount,
 }) => {
   const tabs = [
     {
       id: 'tokens' as TokenFilter,
-      label: 'Tokens',
-      count: tokenCount,
+      label: 'Tokens'
     },
     {
       id: 'nfts' as TokenFilter,
-      label: 'NFT',
-      count: nftCount,
+      label: 'NFT'
     },
   ];
 
