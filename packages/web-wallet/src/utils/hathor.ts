@@ -38,23 +38,24 @@ export const formatAmount = (amount: number | bigint, isNft: boolean = false): s
 };
 
 /**
- * Parse HTR amount string to cents (satoshis) using precise BigInt arithmetic.
+ * Parse amount string to cents (satoshis) using precise BigInt arithmetic.
  * Avoids floating-point precision loss by using string manipulation and BigInt.
  *
  * @example
- * htrToCents("123.45") // 12345n
- * htrToCents("10") // 1000n
- * htrToCents("0.01") // 1n
+ * amountToCents("123.45") // 12345n
+ * amountToCents("10") // 1000n
+ * amountToCents("0.01") // 1n
  *
  * @param amount Amount as string (e.g., "10.50")
  * @returns Amount in cents as BigInt
  * @throws Error if amount format is invalid
  */
-export const htrToCents = (amount: string): bigint => {
-  // Validate format - must be digits with optional decimal (max 2 places)
+export const amountToCents = (amount: string): bigint => {
+  // Validate format - must be digits with optional decimal (limited by DECIMAL_PLACES)
   const trimmed = amount.trim();
-  if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) {
-    throw new Error('Invalid amount format. Use up to 2 decimal places.');
+  const decimalRegex = new RegExp(`^\\d+(\\.\\d{1,${DECIMAL_PLACES}})?$`);
+  if (!decimalRegex.test(trimmed)) {
+    throw new Error(`Invalid amount format. Use up to ${DECIMAL_PLACES} decimal places.`);
   }
 
   // Split into integer and decimal parts
