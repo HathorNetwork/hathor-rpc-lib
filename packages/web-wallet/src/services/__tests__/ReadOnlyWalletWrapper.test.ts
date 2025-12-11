@@ -244,6 +244,12 @@ describe('ReadOnlyWalletWrapper', () => {
 
       expect(mockGetBalance).toHaveBeenCalledWith('specific-token');
     });
+
+    it('should throw when wallet is null', async () => {
+      const uninitializedService = new ReadOnlyWalletWrapper();
+
+      await expect(uninitializedService.getBalance()).rejects.toThrow('Wallet not initialized');
+    });
   });
 
   describe('getTransactionHistory', () => {

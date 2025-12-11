@@ -114,6 +114,10 @@ export class ReadOnlyWalletWrapper {
    * Returns a Map for O(1) token lookups
    */
   async getBalance(tokenId?: string): Promise<Map<string, WalletBalance>> {
+    if (!this.wallet) {
+      throw new Error('Wallet not initialized');
+    }
+
     try {
       const balance = await this.wallet.getBalance(tokenId);
 
@@ -145,7 +149,7 @@ export class ReadOnlyWalletWrapper {
    * Get transaction history
    */
   async getTransactionHistory(count: number = 10, skip: number = 0, tokenId: string = TOKEN_IDS.HTR): Promise<TransactionHistoryItem[]> {
-    if (!this.wallet?.isReady()) {
+    if (!this.wallet) {
       throw new Error('Wallet not initialized');
     }
 
@@ -173,7 +177,7 @@ export class ReadOnlyWalletWrapper {
    * Get current address
    */
   getCurrentAddress(): AddressInfo | null {
-    if (!this.wallet?.isReady()) {
+    if (!this.wallet) {
       throw new Error('Wallet not initialized');
     }
 
@@ -194,7 +198,7 @@ export class ReadOnlyWalletWrapper {
    * Get address at a specific index
    */
   async getAddressAtIndex(index: number): Promise<AddressInfo | null> {
-    if (!this.wallet?.isReady()) {
+    if (!this.wallet) {
       throw new Error('Wallet not initialized');
     }
 
@@ -215,7 +219,7 @@ export class ReadOnlyWalletWrapper {
    * Get all addresses (returns an async generator)
    */
   async *getAllAddresses(): AsyncGenerator<AddressInfo> {
-    if (!this.wallet?.isReady()) {
+    if (!this.wallet) {
       throw new Error('Wallet not initialized');
     }
 
@@ -238,7 +242,7 @@ export class ReadOnlyWalletWrapper {
    * Check if an address belongs to this wallet
    */
   async isAddressMine(address: string): Promise<boolean> {
-    if (!this.wallet?.isReady()) {
+    if (!this.wallet) {
       throw new Error('Wallet not initialized');
     }
 
@@ -256,7 +260,7 @@ export class ReadOnlyWalletWrapper {
    * Get tokens in the wallet
    */
   async getTokens(): Promise<Array<Record<string, unknown>>> {
-    if (!this.wallet?.isReady()) {
+    if (!this.wallet) {
       throw new Error('Wallet not initialized');
     }
 
