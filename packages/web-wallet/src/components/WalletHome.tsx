@@ -14,7 +14,6 @@ import { useWallet } from '../contexts/WalletContext';
 import { useTokens } from '../hooks/useTokens';
 import { formatAmount } from '../utils/hathor';
 import htrLogoBlack from '../assets/htr_logo_black.svg';
-import htrLogoWhite from '../assets/htr_logo_white.svg';
 import htrLogoWhiteOutline from '../assets/htr_logo_white_outline.svg';
 import { useToast } from '@/hooks/use-toast';
 
@@ -134,11 +133,11 @@ const WalletHome: React.FC = () => {
     return (
       <div className='min-h-screen bg-[#0d1117] text-white flex items-center justify-center'>
         <div className='text-center space-y-6'>
-          <div className='w-16 h-16 flex items-center justify-center mx-auto'>
+          <div className='w-24 h-24 bg-white rounded-3xl flex items-center justify-center mx-auto p-4 shadow-xl'>
             <img
-              src={htrLogoWhite}
+              src={htrLogoBlack}
               alt='Hathor'
-              className='w-full h-full'
+              className='w-full h-full object-contain'
             />
           </div>
           <div>

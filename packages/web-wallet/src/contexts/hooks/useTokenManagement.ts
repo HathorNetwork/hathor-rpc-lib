@@ -118,7 +118,7 @@ export function useTokenManagement(options: UseTokenManagementOptions) {
     }
   };
 
-  const getTokenBalance = (tokenUid: string): TokenInfo | undefined => {
+  const getTokenInfo = (tokenUid: string): TokenInfo | undefined => {
     return registeredTokens.find(t => t.uid === tokenUid);
   };
 
@@ -130,6 +130,6 @@ export function useTokenManagement(options: UseTokenManagementOptions) {
     refreshTokenBalances,
     registerToken,
     unregisterToken,
-    getTokenBalance,
+    getTokenInfo,
   };
 }

@@ -436,7 +436,7 @@ describe('WalletContext', () => {
       expect(typeof capturedContext!.unregisterToken).toBe('function');
       expect(typeof capturedContext!.refreshTokenBalances).toBe('function');
       expect(typeof capturedContext!.setSelectedTokenFilter).toBe('function');
-      expect(typeof capturedContext!.getTokenBalance).toBe('function');
+      expect(typeof capturedContext!.getTokenInfo).toBe('function');
       expect(typeof capturedContext!.setAddressMode).toBe('function');
     });
 

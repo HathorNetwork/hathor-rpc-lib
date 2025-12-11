@@ -12,7 +12,7 @@ export function useTokens(selectedTokenFilter: TokenFilter = 'all') {
     registerToken,
     unregisterToken,
     refreshTokenBalances,
-    getTokenBalance,
+    getTokenInfo,
     network,
     balances,
   } = useWallet();
@@ -75,7 +75,7 @@ export function useTokens(selectedTokenFilter: TokenFilter = 'all') {
     registerToken,
     unregisterToken,
     refreshTokenBalances,
-    getTokenBalance,
+    getTokenInfo,
     network,
     htrToken,
   };

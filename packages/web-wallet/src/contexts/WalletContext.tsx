@@ -377,17 +377,17 @@ export interface WalletContextType extends WalletState {
    * Useful for displaying individual token balances in UI components.
    *
    * @param tokenUid - Unique identifier of the token
-   * @returns Object containing available and locked balance amounts, or undefined if token not found
+   * @returns TokenInfo object containing token details and balance, or undefined if token not found
    *
    * @example
    * ```ts
-   * const balance = getTokenBalance('00abc123');
-   * if (balance) {
-   *   console.log(`Available: ${balance.available}, Locked: ${balance.locked}`);
+   * const tokenInfo = getTokenInfo('00abc123');
+   * if (tokenInfo) {
+   *   console.log(`Available: ${tokenInfo.balance?.available}, Locked: ${tokenInfo.balance?.locked}`);
    * }
    * ```
    */
-  getTokenBalance: (tokenUid: string) => ReturnType<ReturnType<typeof useTokenManagement>['getTokenBalance']>;
+  getTokenInfo: (tokenUid: string) => ReturnType<ReturnType<typeof useTokenManagement>['getTokenInfo']>;
 
   /**
    * Changes the address mode for the wallet.
@@ -555,7 +555,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     unregisterToken: tokens.unregisterToken,
     refreshTokenBalances: balance.refreshBalance, // Now managed by balance hook
     setSelectedTokenFilter: tokens.setSelectedTokenFilter,
-    getTokenBalance: tokens.getTokenBalance,
+    getTokenInfo: tokens.getTokenInfo,
 
     // Network methods
     changeNetwork: networkManagement.changeNetwork,
