@@ -78,18 +78,18 @@ export const amountToCents = (amount: string): bigint => {
 };
 
 /**
- * Convert cents (satoshis) to HTR decimal string for form inputs.
+ * Convert cents (satoshis) to decimal string for form inputs.
  * Returns plain numeric string without formatting (no thousand separators).
  *
  * @example
- * centsToHTR(12345n) // "123.45"
- * centsToHTR(1000000n) // "10000.00"
- * centsToHTR(1n) // "0.01"
+ * centsToAmount(12345n) // "123.45"
+ * centsToAmount(1000000n) // "10000.00"
+ * centsToAmount(1n) // "0.01"
  *
  * @param cents Amount in cents (can be number or BigInt)
  * @returns Amount as string with decimal point
  */
-export const centsToHTR = (cents: number | bigint): string => {
+export const centsToAmount = (cents: number | bigint): string => {
   const amount = toBigInt(cents);
 
   // Perform BigInt division and modulo to split integer and decimal parts

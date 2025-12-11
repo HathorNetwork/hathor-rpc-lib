@@ -37,63 +37,61 @@ export async function loadTokensWithBalances(
   // Load registered tokens for this network
   const registeredTokens = tokenRegistryService.getRegisteredTokens(network, genesisHash);
 
-  // Detect NFT status for all tokens
-  const nftMetadata = await nftDetectionService.detectNftBatch(
-    registeredTokens.map(t => t.uid),
-    network
-  );
+  // Detect NFT status for all tokens (non-blocking - failures don't affect balance loading)
+  try {
+    const nftMetadata = await nftDetectionService.detectNftBatch(
+      registeredTokens.map(t => t.uid),
+      network
+    );
 
-  // Update metadata storage with detected NFT statuses
-  // This only updates metadata, leaving token data unchanged
-  registeredTokens.forEach((token) => {
-    const metadata = nftMetadata.get(token.uid);
-    const isNft = metadata?.nft ?? false;
-    const hasMetadataChange = metadata && !token.metadata;
-    const hasNftStatusChange = token.isNFT !== isNft;
+    // Update metadata storage with detected NFT statuses
+    // This only updates metadata, leaving token data unchanged
+    registeredTokens.forEach((token) => {
+      const metadata = nftMetadata.get(token.uid);
+      const isNft = metadata?.nft ?? false;
+      const hasMetadataChange = metadata && !token.metadata;
+      const hasNftStatusChange = token.isNFT !== isNft;
 
-    if (hasNftStatusChange || hasMetadataChange) {
-      // Update metadata only (not data)
-      tokenRegistryService.updateTokenMetadata(token.uid, network, genesisHash, {
-        isNFT: isNft,
-        metadata: metadata || undefined,
-      });
+      if (hasNftStatusChange || hasMetadataChange) {
+        // Update metadata only (not data)
+        tokenRegistryService.updateTokenMetadata(token.uid, network, genesisHash, {
+          isNFT: isNft,
+          metadata: metadata || undefined,
+        });
 
-      // Update the in-memory token for this load
-      token.isNFT = isNft;
-      if (metadata) {
-        token.metadata = metadata;
+        // Update the in-memory token for this load
+        token.isNFT = isNft;
+        if (metadata) {
+          token.metadata = metadata;
+        }
       }
-    }
-  });
+    });
+  } catch (error) {
+    // NFT metadata detection failed - continue with balance loading
+    // Tokens will use their cached/default isNFT status
+    logger.warn('Failed to detect NFT metadata, continuing with cached values:', error);
+  }
 
   // Fetch balances for all registered tokens
   const failedTokens: Array<{ uid: string; symbol: string; error: string }> = [];
   const tokensWithBalances = await Promise.all(
     registeredTokens.map(async (token) => {
-      try {
-        const tokenBalances = await readOnlyWalletWrapper.getBalance(token.uid);
-        const balance = tokenBalances.get(token.uid);
+      const balance = await fetchTokenBalance(token.uid);
 
-        if (balance) {
-          return {
-            ...token,
-            balance: {
-              available: balance.available,
-              locked: balance.locked,
-            },
-          };
-        }
-        return token;
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-        logger.error(`Failed to fetch balance for token ${token.uid}:`, error);
-        failedTokens.push({
-          uid: token.uid,
-          symbol: token.symbol,
-          error: errorMsg,
-        });
-        return token;
+      if (balance) {
+        return {
+          ...token,
+          balance,
+        };
       }
+
+      // fetchTokenBalance returns null on error (already logged)
+      failedTokens.push({
+        uid: token.uid,
+        symbol: token.symbol,
+        error: 'Failed to fetch balance',
+      });
+      return token;
     })
   );
 
@@ -143,13 +141,13 @@ export async function fetchTokenBalance(tokenUid: string): Promise<{
   try {
     const balances = await readOnlyWalletWrapper.getBalance(tokenUid);
     const balance = balances.get(tokenUid);
-    if (balance) {
-      return {
-        available: balance.available,
-        locked: balance.locked,
-      };
-    }
-    return null;
+    // Return balance if found, otherwise return zero balance (token exists but has no balance).
+    // TODO: Remove this fallback after https://github.com/HathorNetwork/hathor-wallet-service/pull/324
+    // is merged - wallet-service will then always return balance for registered tokens.
+    return {
+      available: balance?.available ?? 0n,
+      locked: balance?.locked ?? 0n,
+    };
   } catch (error) {
     logger.error(`Failed to fetch balance for token ${tokenUid}:`, error);
     return null;

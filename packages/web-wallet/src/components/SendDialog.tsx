@@ -7,7 +7,7 @@ import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/style.css';
 import { useWallet } from '../contexts/WalletContext';
 import { useTokens } from '../hooks/useTokens';
-import { formatAmount, htrToCents, centsToHTR } from '../utils/hathor';
+import { formatAmount, amountToCents, centsToAmount } from '../utils/hathor';
 import { dateToUnixTimestamp, isFutureDate, getTimezoneOffset } from '../utils/timelock';
 import { Address, Network } from '@hathor/wallet-lib';
 import { TOKEN_IDS } from '../constants';
@@ -36,7 +36,7 @@ const createSendFormSchema = (availableBalance: bigint, network: string, isNft: 
       )
       .refine((val) => {
         try {
-          const amountInCents = htrToCents(val);
+          const amountInCents = amountToCents(val);
           return amountInCents > 0n;
         } catch {
           return false;
@@ -44,7 +44,7 @@ const createSendFormSchema = (availableBalance: bigint, network: string, isNft: 
       }, 'Amount must be greater than 0')
       .refine((val) => {
         try {
-          const amountInCents = htrToCents(val);
+          const amountInCents = amountToCents(val);
           return amountInCents <= availableBalance;
         } catch {
           return false;
@@ -181,7 +181,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
       // Regular tokens need to be converted from base units (cents) to display units
       const maxAmount = selectedToken?.isNFT
         ? availableBalance.toString()
-        : centsToHTR(availableBalance);
+        : centsToAmount(availableBalance);
       setValue('amount', maxAmount, {
         shouldValidate: true
       });
@@ -198,7 +198,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
       // For regular tokens, convert from display units to base units (cents)
       const amountInBaseUnits = selectedToken?.isNFT
         ? BigInt(data.amount)
-        : htrToCents(data.amount);
+        : amountToCents(data.amount);
       console.log('[SendDialog] Amount in base units:', amountInBaseUnits.toString());
 
       // Final balance check to ensure we have sufficient funds
@@ -207,13 +207,13 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
         const shortfall = amountInBaseUnits - availableBalance;
         const displayAmount = selectedToken?.isNFT
           ? amountInBaseUnits.toString()
-          : centsToHTR(amountInBaseUnits);
+          : centsToAmount(amountInBaseUnits);
         const displayAvailable = selectedToken?.isNFT
           ? availableBalance.toString()
-          : centsToHTR(availableBalance);
+          : centsToAmount(availableBalance);
         const displayShortfall = selectedToken?.isNFT
           ? shortfall.toString()
-          : centsToHTR(shortfall);
+          : centsToAmount(shortfall);
 
         setTransactionError(
           `Insufficient balance. You need ${displayAmount} ${selectedToken?.symbol} ` +
