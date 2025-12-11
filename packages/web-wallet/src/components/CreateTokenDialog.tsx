@@ -1,15 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { X, Loader2, AlertCircle, CheckCircle, Copy, Info } from 'lucide-react';
+import { X, Loader2, AlertCircle, CheckCircle, Copy } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useWallet } from '../contexts/WalletContext';
 import { useInvokeSnap } from '@hathor/snap-utils';
 import { helpersUtils, tokensUtils, constants } from '@hathor/wallet-lib';
-import { formatAmount } from '../utils/hathor';
+import { formatAmount, amountToCents } from '../utils/hathor';
 import { readOnlyWalletWrapper } from '../services/ReadOnlyWalletWrapper';
 import { getAddressForMode } from '../utils/addressMode';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+// TODO: Re-enable when fee token feature is ready
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { HTR_DECIMAL_MULTIPLIER } from '../constants';
 
@@ -28,23 +29,67 @@ const createTokenSchema = z.object({
     .string()
     .min(1, 'Symbol is required')
     .max(5, 'Symbol must be 5 characters or less'),
-  amount: z
-    .string()
-    .min(1, 'Amount is required')
-    .regex(/^\d+$/, 'Amount must be a whole number')
-    .refine((val) => {
-      try {
-        const num = BigInt(val);
-        return num > 0n;
-      } catch {
-        return false;
-      }
-    }, 'Amount must be greater than 0'),
+  amount: z.string().min(1, 'Amount is required'),
   tokenType: z.enum(['deposit', 'fee']),
   isNFT: z.boolean(),
   nftData: z.string().max(150, 'NFT data must be 150 characters or less').optional(),
   createMintAuthority: z.boolean().optional(),
   createMeltAuthority: z.boolean().optional(),
+}).superRefine((data, ctx) => {
+  // Validate amount based on token type
+  if (data.isNFT) {
+    // NFTs: must be whole numbers
+    if (!/^\d+$/.test(data.amount)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'NFT amount must be a whole number',
+        path: ['amount'],
+      });
+      return;
+    }
+    try {
+      const num = BigInt(data.amount);
+      if (num <= 0n) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Amount must be greater than 0',
+          path: ['amount'],
+        });
+      }
+    } catch {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Invalid amount',
+        path: ['amount'],
+      });
+    }
+  } else {
+    // Regular tokens: allow up to 2 decimal places
+    if (!/^\d+(\.\d{1,2})?$/.test(data.amount)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Invalid amount format. Use up to 2 decimal places.',
+        path: ['amount'],
+      });
+      return;
+    }
+    try {
+      const amountInCents = amountToCents(data.amount);
+      if (amountInCents <= 0n) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Amount must be greater than 0',
+          path: ['amount'],
+        });
+      }
+    } catch {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Amount must be greater than 0',
+        path: ['amount'],
+      });
+    }
+  }
 });
 
 type CreateTokenFormData = z.infer<typeof createTokenSchema>;
@@ -70,7 +115,8 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
     handleSubmit,
     formState: { errors },
     watch,
-    setValue,
+    // TODO: Re-enable when fee token feature is ready
+    // setValue,
     reset,
   } = useForm<CreateTokenFormData>({
     resolver: zodResolver(createTokenSchema),
@@ -89,19 +135,33 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
 
   const isNFT = watch('isNFT');
   const amount = watch('amount');
-  const tokenType = watch('tokenType');
+  // TODO: Re-enable when fee token feature is ready
+  // const tokenType = watch('tokenType');
 
   // Calculate 1% HTR deposit (1 HTR per 100 tokens)
   // For every 100 tokens, 1 HTR (100 cents) deposit is required
   // Formula: (tokens / 100) * 100 cents = tokens * 1 cent
   const depositInCents = useMemo(() => {
-    const amountNum = parseInt(amount || '0', 10);
-    if (isNaN(amountNum) || amountNum <= 0) return 0n;
-    // Convert tokens to cents (base unit) before calculating deposit
-    // 100 tokens = 10000 cents, deposit = 1% = 100 cents
-    const amountInCents = BigInt(amountNum) * BigInt(HTR_DECIMAL_MULTIPLIER);
-    return tokensUtils.getDepositAmount(amountInCents);
-  }, [amount]);
+    try {
+      if (!amount || amount === '0') return 0n;
+
+      let amountInBaseUnits: bigint;
+      if (isNFT) {
+        // NFTs: whole numbers only, multiply by decimal multiplier
+        const amountBigInt = BigInt(amount);
+        if (amountBigInt <= 0n) return 0n;
+        amountInBaseUnits = amountBigInt * BigInt(HTR_DECIMAL_MULTIPLIER);
+      } else {
+        // Regular tokens: support decimals, use amountToCents for conversion
+        amountInBaseUnits = amountToCents(amount);
+        if (amountInBaseUnits <= 0n) return 0n;
+      }
+
+      return tokensUtils.getDepositAmount(amountInBaseUnits);
+    } catch {
+      return 0n;
+    }
+  }, [amount, isNFT]);
 
   // Check if user has insufficient balance
   const hasInsufficientBalance = useMemo(() => {
@@ -127,11 +187,16 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
       const changeAddress = await getAddressForMode(addressMode, readOnlyWalletWrapper);
       const mintAddress = await getAddressForMode(addressMode, readOnlyWalletWrapper);
 
+      // Convert amount to base units for the RPC
+      const amountInBaseUnits = data.isNFT
+        ? BigInt(data.amount) * BigInt(HTR_DECIMAL_MULTIPLIER)
+        : amountToCents(data.amount);
+
       // Prepare RPC params matching createTokenRpcSchema
       const params = {
         name: data.name,
         symbol: data.symbol,
-        amount: data.amount,
+        amount: String(amountInBaseUnits),
         change_address: changeAddress,
         create_mint: createMint,
         create_melt: createMelt,
@@ -467,8 +532,8 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
                 </div>
               </div>
 
-              {/* Token Type Dropdown - Only shown for regular tokens */}
-              {!isNFT && (
+              {/* TODO: Re-enable Token Type dropdown when fee token feature is ready */}
+              {/* {!isNFT && (
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
                 <div className="flex items-center gap-2 md:w-[120px]">
                   <label className="text-sm md:text-base font-bold text-white">Token Type</label>
@@ -509,10 +574,10 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
                   </ul>
                 </div>
               </div>
-              )}
+              )} */}
 
               {/* Deposit Display */}
-              {amount && parseInt(amount) > 0 && depositInCents > 0 && (
+              {amount && depositInCents > 0n && (
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">
                     <span className="uppercase tracking-wide font-medium">DEPOSIT:</span> {formatAmount(depositInCents, false)} HTR
@@ -524,7 +589,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
               )}
 
               {/* Insufficient Balance Warning */}
-              {hasInsufficientBalance && amount && parseInt(amount) > 0 && (
+              {hasInsufficientBalance && amount && parseFloat(amount) > 0 && (
                 <div className="flex items-start gap-2 p-3 bg-yellow-500/10 border border-yellow-500/50 rounded-lg">
                   <AlertCircle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
                   <span className="text-yellow-400 text-sm">

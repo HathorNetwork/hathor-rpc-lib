@@ -22,18 +22,17 @@ interface SendDialogProps {
 }
 
 // Create a Zod schema factory for form validation
-const createSendFormSchema = (availableBalance: bigint, network: string, isNft: boolean) =>
+// Note: Balance validation is done separately in useEffect to handle dynamic token changes
+const createSendFormSchema = (network: string) =>
   z.object({
     selectedToken: z.string(),
     amount: z
       .string()
       .min(1, 'Amount is required')
-      .regex(
-        isNft ? /^\d+$/ : /^\d+(\.\d{1,2})?$/,
-        isNft
-          ? 'NFT amounts must be whole numbers only.'
-          : 'Invalid amount format. Use up to 2 decimal places.'
-      )
+      .refine((val) => {
+        // Basic format validation - allows both whole numbers and decimals
+        return /^\d+(\.\d{1,2})?$/.test(val);
+      }, 'Invalid amount format. Use up to 2 decimal places.')
       .refine((val) => {
         try {
           const amountInCents = amountToCents(val);
@@ -41,15 +40,7 @@ const createSendFormSchema = (availableBalance: bigint, network: string, isNft: 
         } catch {
           return false;
         }
-      }, 'Amount must be greater than 0')
-      .refine((val) => {
-        try {
-          const amountInCents = amountToCents(val);
-          return amountInCents <= availableBalance;
-        } catch {
-          return false;
-        }
-      }, 'Insufficient balance'),
+      }, 'Amount must be greater than 0'),
     address: z
       .string()
       .min(1, 'Address is required')
@@ -96,9 +87,6 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
   const { sendTransaction, network, refreshBalance, addressMode } = useWallet();
   const { allTokens } = useTokens();
 
-  // Get initial token balance for form setup
-  const initialBalance = allTokens.length > 0 && allTokens[0].balance ? allTokens[0].balance.available : 0n;
-
   // Initialize form
   const {
     register,
@@ -111,7 +99,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
     setError,
     clearErrors,
   } = useForm<SendFormData>({
-    resolver: zodResolver(createSendFormSchema(initialBalance, network, false)),
+    resolver: zodResolver(createSendFormSchema(network)),
     defaultValues: {
       selectedToken: initialTokenUid || TOKEN_IDS.HTR,
       amount: '',
@@ -150,30 +138,42 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
 
   const availableBalance = selectedToken?.balance?.available || 0n;
 
-  // Re-validate amount when token or balance changes to use current balance
+  // Validate amount: NFT format and balance check
+  // This runs separately from Zod schema to handle dynamic token changes
   React.useEffect(() => {
-    if (amount) {
-      trigger('amount');
-    }
-  }, [selectedTokenUid, availableBalance, amount, trigger]);
+    if (!amount) return;
 
-  // Validate NFT amounts must be integers
-  React.useEffect(() => {
-    if (amount && selectedToken?.isNFT) {
-      // Check if amount contains decimal point
-      if (amount.includes('.')) {
+    // First check NFT format
+    if (selectedToken?.isNFT && amount.includes('.')) {
+      setError('amount', {
+        type: 'manual',
+        message: 'NFT amounts must be whole numbers only.',
+      });
+      return;
+    }
+
+    // Then check balance
+    try {
+      const amountInBaseUnits = selectedToken?.isNFT
+        ? BigInt(amount)
+        : amountToCents(amount);
+
+      if (amountInBaseUnits > availableBalance) {
         setError('amount', {
           type: 'manual',
-          message: 'NFT amounts must be whole numbers only.',
+          message: 'Insufficient balance',
         });
-      } else {
-        // Clear the error if it was set by us
-        clearErrors('amount');
-        // Re-trigger validation to check other constraints
-        trigger('amount');
+        return;
       }
+    } catch {
+      // amountToCents will throw for invalid formats, let Zod handle that
+      return;
     }
-  }, [amount, selectedToken?.isNFT, setError, clearErrors, trigger]);
+
+    // Clear manual errors and re-trigger Zod validation
+    clearErrors('amount');
+    trigger('amount');
+  }, [amount, selectedToken?.isNFT, availableBalance, setError, clearErrors, trigger]);
 
   const handleMaxClick = () => {
     if (availableBalance > 0n) {
