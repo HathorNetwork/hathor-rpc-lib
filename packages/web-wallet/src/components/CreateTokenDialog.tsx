@@ -33,13 +33,13 @@ const createTokenSchema = z.object({
     .min(1, 'Amount is required')
     .regex(/^\d+$/, 'Amount must be a whole number')
     .refine((val) => {
-      const num = parseInt(val, 10);
-      return num > 0;
-    }, 'Amount must be greater than 0')
-    .refine((val) => {
-      const num = parseInt(val, 10);
-      return num <= Number.MAX_SAFE_INTEGER;
-    }, 'Amount is too large'),
+      try {
+        const num = BigInt(val);
+        return num > 0n;
+      } catch {
+        return false;
+      }
+    }, 'Amount must be greater than 0'),
   tokenType: z.enum(['deposit', 'fee']),
   isNFT: z.boolean(),
   nftData: z.string().max(150, 'NFT data must be 150 characters or less').optional(),
@@ -421,53 +421,51 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
                 </div>
               )}
 
-              {/* NFT Mint/Melt Authority Checkboxes - Only shown for NFTs */}
-              {isNFT && (
-                <div className="flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
-                  <div className="md:w-[120px]"></div>
-                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Create a mint authority */}
-                    <label className="flex items-start gap-3 cursor-pointer group">
-                      <input
-                        type="checkbox"
-                        {...register('createMintAuthority')}
-                        className="sr-only"
-                      />
-                      <div className="relative flex-shrink-0 mt-0.5 w-5 h-5 border-2 border-border rounded bg-[#0D1117] group-has-[:checked]:bg-primary group-has-[:checked]:border-primary transition-all flex items-center justify-center">
-                        <svg className="w-3 h-3 text-white opacity-0 group-has-[:checked]:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                      </div>
-                      <div>
-                        <span className="text-sm text-white font-medium block">Create a mint authority</span>
-                        <span className="text-xs text-muted-foreground block mt-1">
-                          If you want to be able to mint more units of this NFT.
-                        </span>
-                      </div>
-                    </label>
+              {/* Mint/Melt Authority Checkboxes */}
+              <div className="flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
+                <div className="md:w-[120px]"></div>
+                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Create a mint authority */}
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      {...register('createMintAuthority')}
+                      className="sr-only"
+                    />
+                    <div className="relative flex-shrink-0 mt-0.5 w-5 h-5 border-2 border-border rounded bg-[#0D1117] group-has-[:checked]:bg-primary group-has-[:checked]:border-primary transition-all flex items-center justify-center">
+                      <svg className="w-3 h-3 text-white opacity-0 group-has-[:checked]:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="text-sm text-white font-medium block">Create a mint authority</span>
+                      <span className="text-xs text-muted-foreground block mt-1">
+                        If you want to be able to mint more units of this token.
+                      </span>
+                    </div>
+                  </label>
 
-                    {/* Create a melt authority */}
-                    <label className="flex items-start gap-3 cursor-pointer group">
-                      <input
-                        type="checkbox"
-                        {...register('createMeltAuthority')}
-                        className="sr-only"
-                      />
-                      <div className="relative flex-shrink-0 mt-0.5 w-5 h-5 border-2 border-border rounded bg-[#0D1117] group-has-[:checked]:bg-primary group-has-[:checked]:border-primary transition-all flex items-center justify-center">
-                        <svg className="w-3 h-3 text-white opacity-0 group-has-[:checked]:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                      </div>
-                      <div>
-                        <span className="text-sm text-white font-medium block">Create a melt authority</span>
-                        <span className="text-xs text-muted-foreground block mt-1">
-                          If you want to be able to melt units of this NFT.
-                        </span>
-                      </div>
-                    </label>
-                  </div>
+                  {/* Create a melt authority */}
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      {...register('createMeltAuthority')}
+                      className="sr-only"
+                    />
+                    <div className="relative flex-shrink-0 mt-0.5 w-5 h-5 border-2 border-border rounded bg-[#0D1117] group-has-[:checked]:bg-primary group-has-[:checked]:border-primary transition-all flex items-center justify-center">
+                      <svg className="w-3 h-3 text-white opacity-0 group-has-[:checked]:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="text-sm text-white font-medium block">Create a melt authority</span>
+                      <span className="text-xs text-muted-foreground block mt-1">
+                        If you want to be able to melt units of this token.
+                      </span>
+                    </div>
+                  </label>
                 </div>
-              )}
+              </div>
 
               {/* Token Type Dropdown - Only shown for regular tokens */}
               {!isNFT && (
