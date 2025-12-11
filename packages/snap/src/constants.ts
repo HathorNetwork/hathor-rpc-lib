@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { RpcMethods } from '@hathor/hathor-rpc-handler';
+
 export enum REQUEST_METHODS {
   MANAGE_STATE = 'snap_manageState',
   GET_BIP32_ENTROPY = 'snap_getBip32Entropy',
@@ -55,3 +57,13 @@ export const NETWORK_MAP = {
 export const DEFAULT_NETWORK = 'mainnet';
 
 export const DEFAULT_PIN_CODE = '123';
+
+/*
+ * List of allowed dApps that can request each RPC request.
+ * If the RPC method is not in the list, any dApp can request it.
+ */
+export const RPC_RESTRICTIONS = {
+  [RpcMethods.GetXpub]: [
+    'https://wallet.hathor.network'
+  ],
+};

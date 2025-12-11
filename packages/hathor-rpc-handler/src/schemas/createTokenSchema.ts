@@ -50,6 +50,6 @@ export const createTokenRpcSchema = z.object({
     meltAuthorityAddress: data.melt_authority_address,
     allowExternalMeltAuthorityAddress: data.allow_external_melt_authority_address,
     data: data.data,
-    mintAddress: data.address,
+    address: data.address,
   }
 })); 
