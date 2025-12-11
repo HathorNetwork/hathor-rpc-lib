@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { constants } from '@hathor/wallet-lib';
+import { constants, Transaction } from '@hathor/wallet-lib';
 import type { DataScriptOutputRequestObj, IHathorWallet } from '@hathor/wallet-lib';
 import type { IDataOutput } from '@hathor/wallet-lib/lib/types';
 import {
@@ -50,17 +50,23 @@ const OutputDataSchema = z.object({
 
 const OutputSchema = z.union([OutputValueSchema, OutputDataSchema]);
 
+const ParamsSchema = z.object({
+  network: z.string().min(1),
+  outputs: z.array(OutputSchema).min(1),
+  inputs: z.array(z.object({
+    txId: z.string(),
+    index: z.number().nonnegative(),
+  })).optional(),
+  changeAddress: z.string().optional(),
+  push_tx: z.boolean().default(true),
+}).transform((params) => ({
+  ...params,
+  pushTx: params.push_tx,
+}));
+
 const sendTransactionSchema = z.object({
   method: z.literal(RpcMethods.SendTransaction),
-  params: z.object({
-    network: z.string().min(1),
-    outputs: z.array(OutputSchema).min(1),
-    inputs: z.array(z.object({
-      txId: z.string(),
-      index: z.number().nonnegative(),
-    })).optional(),
-    changeAddress: z.string().optional(),
-  }),
+  params: ParamsSchema,
 });
 
 /**
@@ -163,7 +169,13 @@ export async function sendTransaction(
 
   try {
     // Now execute the prepared transaction
-    const response = await sendTransaction.run(null, pinResponse.data.pinCode);
+    let response: Transaction | string;
+    if (params.pushTx === false) {
+      const transaction = await sendTransaction.run('prepare-tx', pinResponse.data.pinCode);
+      response = transaction.toHex();
+    } else {
+      response = await sendTransaction.run(null, pinResponse.data.pinCode);
+    }
 
     const loadingFinishedTrigger: SendTransactionLoadingFinishedTrigger = {
       type: TriggerTypes.SendTransactionLoadingFinishedTrigger,

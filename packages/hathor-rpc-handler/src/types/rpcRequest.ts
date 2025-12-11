@@ -127,6 +127,7 @@ export interface SendTransactionRpcRequest {
       index: number;
     }>;
     changeAddress?: string;
+    push_tx: boolean;
   }
 }
 
