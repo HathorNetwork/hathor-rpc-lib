@@ -140,7 +140,7 @@ export async function fetchTokenBalance(tokenUid: string): Promise<{
 } | null> {
   try {
     const balances = await readOnlyWalletWrapper.getBalance(tokenUid);
-    const balance = balances.get(tokenUid);
+    const balance = balances?.get(tokenUid);
     // Return balance if found, otherwise return zero balance (token exists but has no balance).
     // TODO: Remove this fallback after https://github.com/HathorNetwork/hathor-wallet-service/pull/324
     // is merged - wallet-service will then always return balance for registered tokens.

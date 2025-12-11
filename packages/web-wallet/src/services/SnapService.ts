@@ -1,4 +1,4 @@
-import { HATHOR_API_URLS, NETWORKS, TOKEN_IDS, DEFAULT_NETWORK } from '../constants';
+import { TOKEN_IDS, DEFAULT_NETWORK } from '../constants';
 import type { WalletBalance } from '../types/wallet';
 import type { SendTransactionRpcRequest } from '@hathor/hathor-rpc-handler';
 import { createLogger } from '../utils/logger';
@@ -11,22 +11,6 @@ type InvokeSnapFunction = (params: { method: string; params?: Record<string, unk
 
 // Re-export for use in other files
 export type SendTransactionParams = SendTransactionRpcRequest['params'];
-
-export interface Transaction {
-  txId: string;
-  timestamp: number;
-  inputs: Array<{
-    address: string;
-    value: bigint;
-    token: string;
-  }>;
-  outputs: Array<{
-    address: string;
-    value: bigint;
-    token: string;
-  }>;
-  confirmed: boolean;
-}
 
 /**
  * Custom error class for unauthorized snap errors
@@ -68,14 +52,15 @@ async function wrapSnapCall<T>(
 
 // These will be used by the wallet context with the hooks
 export const WalletServiceMethods = {
-  async getAddress(invokeSnap: InvokeSnapFunction, type: 'index' = 'index', index: number = 0): Promise<string> {
+  async getAddress(invokeSnap: InvokeSnapFunction, type: 'index' | 'first_empty' = 'index', index?: number): Promise<string> {
     return wrapSnapCall('getAddress', async () => {
+      const params: { type: string; index?: number } = { type };
+      if (type === 'index') {
+        params.index = index ?? 0;
+      }
       const response = await invokeSnap({
         method: 'htr_getAddress',
-        params: {
-          type,
-          index
-        }
+        params
       }) as { response?: string } | null;
       if (!response) {
         return '';
@@ -88,10 +73,7 @@ export const WalletServiceMethods = {
     return wrapSnapCall('getBalance', async () => {
       const response = await invokeSnap({
         method: 'htr_getBalance',
-        params: {
-          network: DEFAULT_NETWORK,
-          tokens
-        }
+        params: { tokens }
       }) as { response?: Array<{ token_id?: string; token?: string; available?: number | bigint; locked?: number | bigint }> } | null;
 
       if (!response) {
@@ -142,41 +124,6 @@ export const WalletServiceMethods = {
       return response.response || response;
     });
   },
-
-  async getTransactionHistory(address: string, network: string = DEFAULT_NETWORK): Promise<Transaction[]> {
-    try {
-      // Use Hathor public API to get transaction history
-      const baseUrl = network === NETWORKS.MAINNET
-        ? HATHOR_API_URLS.MAINNET
-        : HATHOR_API_URLS.TESTNET;
-
-      const response = await fetch(`${baseUrl}/thin_wallet/address_history?addresses[]=${address}`);
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch transaction history');
-      }
-
-      const data = await response.json() as { history?: Array<{
-        tx_id: string;
-        timestamp: number;
-        inputs?: Transaction['inputs'];
-        outputs?: Transaction['outputs'];
-        is_voided?: boolean;
-      }> };
-
-      // Transform the API response to our Transaction interface
-      return data.history?.map((tx) => ({
-        txId: tx.tx_id,
-        timestamp: tx.timestamp * 1000, // Convert to milliseconds
-        inputs: tx.inputs || [],
-        outputs: tx.outputs || [],
-        confirmed: tx.is_voided === false
-      })) || [];
-    } catch (error) {
-      log.error('Failed to get transaction history:', error);
-      throw error;
-    }
-  }
 };
 
 export default WalletServiceMethods;

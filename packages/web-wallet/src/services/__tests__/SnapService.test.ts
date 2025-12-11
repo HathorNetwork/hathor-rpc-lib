@@ -63,66 +63,9 @@ describe('SnapService - Critical Issues', () => {
 
   });
 
-  describe('Critical Issue #2: Silent Transaction History Failures', () => {
-    it('should throw error instead of returning empty array on fetch failure', async () => {
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        statusText: 'Internal Server Error',
-      });
+  // Note: getTransactionHistory tests moved to HathorApiService.test.ts
 
-      // Should throw instead of silently returning []
-      await expect(
-        WalletServiceMethods.getTransactionHistory('HAddr123', NETWORKS.MAINNET)
-      ).rejects.toThrow();
-    });
-
-    it('should throw error on network failures', async () => {
-      (global.fetch as Mock).mockRejectedValueOnce(new Error('Network timeout'));
-
-      await expect(
-        WalletServiceMethods.getTransactionHistory('HAddr123', NETWORKS.MAINNET)
-      ).rejects.toThrow('Network timeout');
-    });
-
-    it('should throw error on invalid JSON response', async () => {
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockRejectedValue(new Error('Invalid JSON')),
-      });
-
-      await expect(
-        WalletServiceMethods.getTransactionHistory('HAddr123', NETWORKS.MAINNET)
-      ).rejects.toThrow('Invalid JSON');
-    });
-
-    it('should successfully return transaction history when API works', async () => {
-      const mockHistory = {
-        history: [
-          {
-            tx_id: 'abc123',
-            timestamp: 1000,
-            is_voided: false,
-            inputs: [],
-            outputs: [{ value: 100 }],
-          },
-        ],
-      };
-
-      (global.fetch as Mock).mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockHistory),
-      });
-
-      const result = await WalletServiceMethods.getTransactionHistory('HAddr123', NETWORKS.MAINNET);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].txId).toBe('abc123'); // Changed from tx_id to txId (camelCase)
-      expect(result[0].timestamp).toBe(1000000); // Converted to milliseconds
-    });
-  });
-
-  describe('Critical Issue #3: sendTransaction Error Handling', () => {
+  describe('Critical Issue #2: sendTransaction Error Handling', () => {
     it('should distinguish user rejection from other errors', async () => {
       // User rejected transaction (snap returns null)
       mockInvokeSnap.mockResolvedValueOnce(null);
@@ -195,7 +138,7 @@ describe('SnapService - Critical Issues', () => {
     });
   });
 
-  describe('Critical Issue #4: getBalance Silent Failures', () => {
+  describe('Critical Issue #3: getBalance Silent Failures', () => {
     it('should throw error when snap returns null', async () => {
       mockInvokeSnap.mockResolvedValueOnce(null);
 

@@ -121,7 +121,7 @@ describe('tokenLoading utilities', () => {
       expect(result.failedTokens[0]).toEqual({
         uid: 'token2',
         symbol: 'TKN2',
-        error: 'Network error',
+        error: 'Failed to fetch balance', // fetchTokenBalance returns null on error, so we get generic message
       });
       expect(result.warning).toContain('TKN2');
       expect(result.warning).toContain('Showing cached values');
@@ -149,12 +149,14 @@ describe('tokenLoading utilities', () => {
     });
 
     it('should handle tokens with no balance data', async () => {
+      // When balance Map is empty, fetchTokenBalance returns zero balance instead of null
+      // TODO: Remove this fallback after https://github.com/HathorNetwork/hathor-wallet-service/pull/324
       vi.mocked(readOnlyWalletWrapper.getBalance).mockResolvedValue(new Map());
 
       const result = await loadTokensWithBalances('mainnet', '');
 
       expect(result.tokens).toHaveLength(2);
-      expect(result.tokens[0].balance).toBeUndefined();
+      expect(result.tokens[0].balance).toEqual({ available: 0n, locked: 0n });
       expect(result.warning).toBeNull();
     });
 
@@ -207,21 +209,25 @@ describe('tokenLoading utilities', () => {
       expect(result).toBeNull();
     });
 
-    it('should return null when no balance data available', async () => {
+    it('should return zero balance when no balance data available', async () => {
+      // Returns zero balance instead of null to prevent false "Failed to load balance" errors
+      // TODO: Remove this fallback after https://github.com/HathorNetwork/hathor-wallet-service/pull/324
       vi.mocked(readOnlyWalletWrapper.getBalance).mockResolvedValue(new Map());
 
       const result = await fetchTokenBalance('token123');
 
-      expect(result).toBeNull();
+      expect(result).toEqual({ available: 0n, locked: 0n });
     });
 
-    it('should handle null balance response', async () => {
+    it('should return zero balance when token not in map', async () => {
+      // Returns zero balance instead of null to prevent false "Failed to load balance" errors
+      // TODO: Remove this fallback after https://github.com/HathorNetwork/hathor-wallet-service/pull/324
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(readOnlyWalletWrapper.getBalance).mockResolvedValue(null as any);
 
       const result = await fetchTokenBalance('token123');
 
-      expect(result).toBeNull();
+      expect(result).toEqual({ available: 0n, locked: 0n });
     });
   });
 
