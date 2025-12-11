@@ -7,7 +7,7 @@ import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/style.css';
 import { useWallet } from '../contexts/WalletContext';
 import { useTokens } from '../hooks/useTokens';
-import { formatHTRAmount, htrToCents, centsToHTR } from '../utils/hathor';
+import { formatAmount, htrToCents, centsToHTR } from '../utils/hathor';
 import { dateToUnixTimestamp, isFutureDate, getTimezoneOffset } from '../utils/timelock';
 import { Address, Network } from '@hathor/wallet-lib';
 import { TOKEN_IDS } from '../constants';
@@ -344,7 +344,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
             </div>
             <div className="flex items-center justify-between mt-2">
               <span className="text-xs text-muted-foreground uppercase">
-                Balance available: {formatHTRAmount(availableBalance, selectedToken?.isNFT || false)} {selectedToken?.symbol || 'HTR'}
+                Balance available: {formatAmount(availableBalance, selectedToken?.isNFT || false)} {selectedToken?.symbol || 'HTR'}
               </span>
               <button
                 type="button"

@@ -430,7 +430,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
   const [error, setError] = useState<string | null>(null);
 
   // Ref for transaction notification callback to avoid circular dependency
-  const onNewTransactionRef = useRef<(notification: { type: 'sent' | 'received'; amount: bigint; timestamp: number }) => void>(() => {});
+  const onNewTransactionRef = useRef<(notification: { type: 'sent' | 'received'; amount: bigint; timestamp: number; symbol: string; tokenUid: string }) => void>(() => {});
 
   // Initialize address mode hook
   const { addressMode, setAddressMode: setAddressModeImpl } = useAddressMode({

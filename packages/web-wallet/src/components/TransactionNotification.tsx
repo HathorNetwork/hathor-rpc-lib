@@ -1,12 +1,14 @@
 import React, { useEffect } from 'react';
 import { ArrowDownLeft, ArrowUpRight, Eye, X } from 'lucide-react';
-import { formatHTRAmount } from '../utils/hathor';
+import { formatAmount } from '../utils/hathor';
 
 interface TransactionNotificationProps {
   transaction: {
     type: 'sent' | 'received';
     amount: bigint;
     timestamp: number;
+    symbol: string;
+    tokenUid: string;
   } | null;
   onDismiss: () => void;
   onViewHistory: () => void;
@@ -35,6 +37,7 @@ const TransactionNotification: React.FC<TransactionNotificationProps> = ({
   if (!transaction) return null;
 
   const isReceived = transaction.type === 'received';
+  const { symbol } = transaction;
   const bgColor = isReceived ? 'bg-green-500/10' : 'bg-blue-500/10';
   const borderColor = isReceived ? 'border-green-500/50' : 'border-blue-500/50';
   const textColor = isReceived ? 'text-green-400' : 'text-blue-400';
@@ -53,11 +56,11 @@ const TransactionNotification: React.FC<TransactionNotificationProps> = ({
           </div>
           <div className="flex-1 min-w-0">
             <h3 className={`text-sm font-semibold ${textColor} mb-1`}>
-              {isReceived ? 'Received' : 'Sent'} HTR
+              {isReceived ? 'Received' : 'Sent'} {symbol}
             </h3>
             <p className={`text-sm ${textColor} font-medium`}>
               {isReceived ? '+' : '-'}
-              {formatHTRAmount(transaction.amount, false)} HTR
+              {formatAmount(transaction.amount, false)} {symbol}
             </p>
             <button
               onClick={onViewHistory}

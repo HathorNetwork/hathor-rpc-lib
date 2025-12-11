@@ -20,18 +20,18 @@ export const toBigInt = (value: number | bigint | string): bigint => {
 };
 
 /**
- * Format an amount in cents (satoshis) to a human-readable HTR string.
+ * Format an amount in cents (satoshis) to a human-readable string.
  * Uses wallet-lib's prettyValue which handles BigInt natively.
  *
  * @example
- * formatHTRAmount(12345n) // "123.45"
- * formatHTRAmount(1000000n) // "10,000.00"
+ * formatAmount(12345n) // "123.45"
+ * formatAmount(1000000n) // "10,000.00"
  *
  * @param amount Amount in cents (satoshis) - can be number or BigInt
  * @param isNft Whether this is an NFT (uses 0 decimals) or regular token (uses 2 decimals)
  * @returns Formatted string with decimal places and thousand separators
  */
-export const formatHTRAmount = (amount: number | bigint, isNft: boolean = false): string => {
+export const formatAmount = (amount: number | bigint, isNft: boolean = false): string => {
   // prettyValue handles bigint | number | string natively, no conversion needed
   const decimalPlaces = isNft ? 0 : DECIMAL_PLACES;
   return prettyValue(amount, decimalPlaces);

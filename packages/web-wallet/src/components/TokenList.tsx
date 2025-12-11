@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowUpRight, Music, Video, FileText, File } from 'lucide-react';
 import type { TokenInfo } from '../types/token';
-import { formatHTRAmount, truncateAddress } from '../utils/hathor';
+import { formatAmount, truncateAddress } from '../utils/hathor';
 
 type MediaType = 'IMAGE' | 'AUDIO' | 'VIDEO' | 'PDF' | 'UNKNOWN';
 
@@ -127,7 +127,7 @@ const TokenList: React.FC<TokenListProps> = ({
 
                 {/* Balance - aligned right on mobile, integrated in left side */}
                 <span className="text-base md:text-lg font-medium text-white flex-shrink-0 md:ml-4 text-right min-w-[120px] md:min-w-[150px]">
-                  {formatHTRAmount(token.balance ? token.balance.available : 0n, token.isNFT)} {token.symbol}
+                  {formatAmount(token.balance ? token.balance.available : 0n, token.isNFT)} {token.symbol}
                 </span>
               </div>
 

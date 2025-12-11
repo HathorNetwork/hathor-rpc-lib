@@ -3,7 +3,7 @@ import { ArrowUpRight, ArrowDownLeft, ExternalLink, Loader2, ArrowLeft, Clock, C
 import { useWallet } from '../contexts/WalletContext'
 import { useTokens } from '../hooks/useTokens'
 import type { TransactionHistoryItem } from '../types/wallet'
-import { formatHTRAmount, toBigInt, truncateAddress } from '../utils/hathor'
+import { formatAmount, toBigInt, truncateAddress } from '../utils/hathor'
 import { HATHOR_EXPLORER_URLS, NETWORKS, TOKEN_IDS } from '../constants'
 import Header from './Header'
 import UnregisterTokenDialog from './UnregisterTokenDialog'
@@ -251,12 +251,12 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Available balance</p>
                 <p className="text-base font-medium text-white">
-                  {selectedToken.balance ? formatHTRAmount(selectedToken.balance.available, selectedToken.isNFT) : '0'} {selectedToken.symbol}
+                  {selectedToken.balance ? formatAmount(selectedToken.balance.available, selectedToken.isNFT) : '0'} {selectedToken.symbol}
                 </p>
                 {/* Locked Balance (Only if > 0) - Small secondary line */}
                 {selectedToken.balance && selectedToken.balance.locked > 0n && (
                   <p className="text-xs text-[#6B7280] mt-1">
-                    {formatHTRAmount(selectedToken.balance.locked, selectedToken.isNFT)} locked
+                    {formatAmount(selectedToken.balance.locked, selectedToken.isNFT)} locked
                   </p>
                 )}
               </div>
@@ -327,7 +327,7 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
                     <p className={`text-lg md:text-xl font-medium ${
                       tx.type === 'received' ? 'text-green-500' : 'text-red-500'
                     }`}>
-                      {tx.type === 'received' ? '+' : '-'}{formatHTRAmount(tx.amount, selectedToken?.isNFT || false)}
+                      {tx.type === 'received' ? '+' : '-'}{formatAmount(tx.amount, selectedToken?.isNFT || false)}
                       <span className="text-xs md:text-sm ml-1 md:ml-2">{selectedToken?.symbol || 'HTR'}</span>
                     </p>
                     <button

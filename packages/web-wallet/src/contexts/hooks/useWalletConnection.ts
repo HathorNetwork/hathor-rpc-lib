@@ -74,7 +74,7 @@ interface UseWalletConnectionOptions {
   onRefreshBalance: () => Promise<void>;
   onError: (error: string | null) => void;
   onShowConnectionLostModal: (show: boolean) => void;
-  onNewTransaction: (notification: { type: 'sent' | 'received'; amount: bigint; timestamp: number }) => void;
+  onNewTransaction: (notification: { type: 'sent' | 'received'; amount: bigint; timestamp: number; symbol: string; tokenUid: string }) => void;
 }
 
 /**
@@ -608,13 +608,31 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     onError(null);
   };
 
-  const handleNewTransaction = useCallback(async (tx: unknown) => {
+  // TODO: Re-enable transaction notifications once isAddressMine is fixed
+  // Currently, wallet-lib's isAddressMine (checkAddressMine) returns 403 Forbidden when using
+  // read-only wallet tokens. This prevents us from determining which outputs belong to the user,
+  // which is needed to calculate the received amount and show the notification.
+  // Once the read-only token permissions are fixed, uncomment the notification code below.
+  const handleNewTransaction = useCallback(async (_tx: unknown) => {
     if (!isConnected || !readOnlyWalletWrapper.isReady()) return;
 
+    // Just refresh balances when a new transaction arrives
+    try {
+      await onRefreshBalance();
+    } catch (error) {
+      log.error('Error refreshing balance on new transaction:', error);
+    }
+
+    /*
+    // WebSocket message format: { type: "new-tx", data: { inputs, outputs, ... } }
+    // Extract the transaction data from the message
+    const message = tx as { type?: string; data?: unknown };
+    const txData = message.data ?? tx;
+
     // Validate transaction structure
-    const txValidation = TransactionSchema.safeParse(tx);
+    const txValidation = TransactionSchema.safeParse(txData);
     if (!txValidation.success) {
-      log.error('Invalid transaction structure:', txValidation.error, tx);
+      log.error('Invalid transaction structure:', txValidation.error, txData);
       return;
     }
 
@@ -623,8 +641,8 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     try {
       await onRefreshBalance();
 
-      let receivedAmount = 0n;
-      let sentAmount = 0n;
+      // Track received amounts per token: tokenUid -> amount
+      const receivedAmounts = new Map<string, bigint>();
 
       if (transaction.outputs) {
         for (const output of transaction.outputs) {
@@ -632,44 +650,42 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
           if (!outputAddress) continue;
 
           const isMyAddress = await readOnlyWalletWrapper.isAddressMine(outputAddress);
-
-          if (isMyAddress && output.token === TOKEN_IDS.HTR) {
+          if (isMyAddress) {
+            const tokenUid = output.token;
             const value = toBigInt(output.value);
-            receivedAmount += value;
+            const current = receivedAmounts.get(tokenUid) || 0n;
+            receivedAmounts.set(tokenUid, current + value);
           }
         }
       }
 
-      if (transaction.inputs) {
-        for (const input of transaction.inputs) {
-          const inputAddress = input.decoded.address;
-          if (!inputAddress) continue;
+      // Fire notification for each registered token with received amount
+      for (const [tokenUid, amount] of receivedAmounts) {
+        if (amount === 0n) continue;
 
-          const isMyAddress = await readOnlyWalletWrapper.isAddressMine(inputAddress);
-
-          if (isMyAddress && input.token === TOKEN_IDS.HTR) {
-            const value = toBigInt(input.value);
-            sentAmount += value;
-          }
+        // Only show notifications for registered tokens (HTR is always registered)
+        let symbol: string;
+        if (tokenUid === TOKEN_IDS.HTR) {
+          symbol = 'HTR';
+        } else {
+          const tokenInfo = registeredTokens.find(t => t.uid === tokenUid);
+          if (!tokenInfo) continue; // Skip unregistered tokens
+          symbol = tokenInfo.symbol;
         }
-      }
 
-      if (receivedAmount === 0n && sentAmount === 0n) {
-        return;
+        onNewTransaction({
+          type: 'received',
+          amount,
+          timestamp: Date.now(),
+          symbol,
+          tokenUid,
+        });
       }
-
-      // Trigger notification
-      const netAmount = receivedAmount > sentAmount ? receivedAmount - sentAmount : sentAmount - receivedAmount;
-      const notificationType = receivedAmount > sentAmount ? 'received' : 'sent';
-      onNewTransaction({
-        type: notificationType,
-        amount: netAmount,
-        timestamp: Date.now(),
-      });
     } catch (error) {
       log.error('Error processing new transaction:', error);
     }
-  }, [isConnected, onRefreshBalance, onNewTransaction]);
+    */
+  }, [isConnected, onRefreshBalance]);
 
   // Set the ref
   handleNewTransactionRef.current = handleNewTransaction;

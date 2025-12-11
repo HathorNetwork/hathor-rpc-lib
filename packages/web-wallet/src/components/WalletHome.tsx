@@ -12,7 +12,7 @@ import TokenList from './TokenList';
 import Header from './Header';
 import { useWallet } from '../contexts/WalletContext';
 import { useTokens } from '../hooks/useTokens';
-import { formatHTRAmount } from '../utils/hathor';
+import { formatAmount } from '../utils/hathor';
 import htrLogoBlack from '../assets/htr_logo_black.svg';
 import htrLogoWhite from '../assets/htr_logo_white.svg';
 import htrLogoWhiteOutline from '../assets/htr_logo_white_outline.svg';
@@ -68,13 +68,14 @@ const WalletHome: React.FC = () => {
       return; // This is for history dialog, not notification
     }
 
-    const notification = tx as { type: 'sent' | 'received'; amount: bigint; timestamp: number };
+    const notification = tx as { type: 'sent' | 'received'; amount: bigint; timestamp: number; symbol: string; tokenUid: string };
     const isReceived = notification.type === 'received';
+    const symbol = notification.symbol || 'HTR';
 
     toast({
       variant: isReceived ? 'success' : 'info',
-      title: `${isReceived ? 'Received' : 'Sent'} HTR`,
-      description: `${isReceived ? '+' : '-'}${formatHTRAmount(notification.amount, false)} HTR`,
+      title: `${isReceived ? 'Received' : 'Sent'} ${symbol}`,
+      description: `${isReceived ? '+' : '-'}${formatAmount(notification.amount, false)} ${symbol}`,
       icon: (
         <div className={`p-1.5 rounded-lg ${isReceived ? 'bg-green-500/20' : 'bg-blue-500/20'} flex-shrink-0`}>
           {isReceived ? (
@@ -88,7 +89,7 @@ const WalletHome: React.FC = () => {
         <button
           onClick={() => {
             clearNewTransaction();
-            navigate('?dialog=history');
+            navigate(`?dialog=history&token=${notification.tokenUid}`);
           }}
           className={`text-xs ${isReceived ? 'text-green-400' : 'text-blue-400'} hover:underline flex items-center gap-1 mt-2`}
         >
@@ -210,7 +211,7 @@ const WalletHome: React.FC = () => {
                   className='w-5 h-5 md:w-6 md:h-6'
                 />
                 <span className='text-xl md:text-2xl font-medium text-white'>
-                  {formatHTRAmount(balances.get('00')?.available ?? 0n, false)} HTR
+                  {formatAmount(balances.get('00')?.available ?? 0n, false)} HTR
                 </span>
               </div>
               {/* Show custom token and NFT counts */}
