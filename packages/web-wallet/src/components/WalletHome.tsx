@@ -13,6 +13,7 @@ import Header from './Header';
 import { useWallet } from '../contexts/WalletContext';
 import { useTokens } from '../hooks/useTokens';
 import { formatAmount } from '../utils/hathor';
+import { TOKEN_IDS } from '../constants';
 import htrLogoBlack from '../assets/htr_logo_black.svg';
 import htrLogoWhiteOutline from '../assets/htr_logo_white_outline.svg';
 import { useToast } from '@/hooks/use-toast';
@@ -210,7 +211,7 @@ const WalletHome: React.FC = () => {
                   className='w-5 h-5 md:w-6 md:h-6'
                 />
                 <span className='text-xl md:text-2xl font-medium text-white'>
-                  {formatAmount(balances.get('00')?.available ?? 0n, false)} HTR
+                  {formatAmount(balances.get(TOKEN_IDS.HTR)?.available ?? 0n, false)} HTR
                 </span>
               </div>
               {/* Show custom token and NFT counts */}
