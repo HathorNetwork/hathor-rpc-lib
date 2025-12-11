@@ -89,6 +89,7 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
       >
         Register Tokens
       </button>
+      {/* TODO: Re-enable when address mode switching logic is finalized
       <button
         onClick={() => {
           setIsMenuOpen(false);
@@ -98,6 +99,7 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
       >
         Address mode
       </button>
+      */}
       <div className="border-t border-[#24292F] my-1 md:my-2" />
       <button
         onClick={handleDisconnectClick}
