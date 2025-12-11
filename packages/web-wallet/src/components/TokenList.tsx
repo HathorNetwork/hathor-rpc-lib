@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowUpRight, Music, Video, FileText, File } from 'lucide-react';
 import type { TokenInfo } from '../types/token';
-import { formatAmount, truncateAddress } from '../utils/hathor';
+import { formatAmount, truncateString } from '../utils/hathor';
 
 type MediaType = 'IMAGE' | 'AUDIO' | 'VIDEO' | 'PDF' | 'UNKNOWN';
 
@@ -120,7 +120,7 @@ const TokenList: React.FC<TokenListProps> = ({
                   <div className="space-y-1 text-left min-w-0 flex-1">
                     <div className="text-sm md:text-base font-medium text-white truncate">{token.symbol}</div>
                     <div className="text-xs md:text-sm text-muted-foreground truncate">
-                      {token.isNFT ? truncateAddress(token.uid) : token.name}
+                      {token.isNFT ? truncateString(token.uid) : token.name}
                     </div>
                   </div>
                 </div>

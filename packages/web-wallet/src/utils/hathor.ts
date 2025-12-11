@@ -104,15 +104,15 @@ export const centsToHTR = (cents: number | bigint): string => {
 };
 
 /**
- * Truncate address for display
- * @param address Full address
+ * Truncate a string for display (addresses, UIDs, etc.)
+ * @param str Full string to truncate
  * @param prefixLength Length of prefix to show
  * @param suffixLength Length of suffix to show
- * @returns Truncated address
+ * @returns Truncated string
  */
-export const truncateAddress = (address: string, prefixLength = 7, suffixLength = 7): string => {
-  if (address.length <= prefixLength + suffixLength) {
-    return address;
+export const truncateString = (str: string, prefixLength = 7, suffixLength = 7): string => {
+  if (str.length <= prefixLength + suffixLength) {
+    return str;
   }
-  return `${address.slice(0, prefixLength)}...${address.slice(-suffixLength)}`;
+  return `${str.slice(0, prefixLength)}...${str.slice(-suffixLength)}`;
 };

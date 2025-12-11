@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useWallet } from '../contexts/WalletContext';
 import { tokenRegistryService } from '../services/TokenRegistryService';
+import { truncateString } from '../utils/hathor';
 
 interface RegisterTokenDialogProps {
   isOpen: boolean;
@@ -156,7 +157,7 @@ const RegisterTokenDialog: React.FC<RegisterTokenDialogProps> = ({ isOpen, onClo
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">UID:</span>
                   <span className="text-sm text-white font-mono break-all">
-                    {previewInfo.uid.slice(0, 8)}...{previewInfo.uid.slice(-8)}
+                    {truncateString(previewInfo.uid, 8, 8)}
                   </span>
                 </div>
               </div>

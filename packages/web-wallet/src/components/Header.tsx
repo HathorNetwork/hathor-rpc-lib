@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Copy, Globe, Menu, X, LogOut } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
-import { truncateAddress } from '../utils/hathor';
+import { truncateString } from '../utils/hathor';
 import ChangeNetworkDialog from './ChangeNetworkDialog';
 import { DisconnectConfirmModal } from './DisconnectConfirmModal';
 import htrLogo from '../htr_logo.svg';
@@ -135,7 +135,7 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
                 className="px-3 md:px-4 py-2 bg-[#191C21] border border-[#24292F] rounded-full flex items-center gap-1 md:gap-2 hover:bg-[#24292F] transition-colors group"
               >
                 <span className="text-xs md:text-sm font-mono text-white">
-                  {address ? truncateAddress(address) : 'Not connected'}
+                  {address ? truncateString(address) : 'Not connected'}
                 </span>
                 {address && <Copy className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground group-hover:text-primary transition-colors" />}
               </button>

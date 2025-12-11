@@ -3,7 +3,7 @@ import { ArrowUpRight, ArrowDownLeft, ExternalLink, Loader2, ArrowLeft, Clock, C
 import { useWallet } from '../contexts/WalletContext'
 import { useTokens } from '../hooks/useTokens'
 import type { TransactionHistoryItem } from '../types/wallet'
-import { formatAmount, toBigInt, truncateAddress } from '../utils/hathor'
+import { formatAmount, toBigInt, truncateString } from '../utils/hathor'
 import { HATHOR_EXPLORER_URLS, NETWORKS, TOKEN_IDS } from '../constants'
 import Header from './Header'
 import UnregisterTokenDialog from './UnregisterTokenDialog'
@@ -268,7 +268,7 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">Token UID</p>
                   <div className="flex items-center gap-2">
-                    <p className="text-sm text-[#6B7280] font-mono">{truncateAddress(selectedToken.uid, 16, 16)}</p>
+                    <p className="text-sm text-[#6B7280] font-mono">{truncateString(selectedToken.uid, 16, 16)}</p>
                     <button
                       onClick={copyTokenUid}
                       className="p-1.5 rounded transition-colors group"
