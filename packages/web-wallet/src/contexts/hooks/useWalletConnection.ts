@@ -6,7 +6,8 @@ import { getAddressForMode, type AddressMode } from '../../utils/addressMode';
 import { loadTokensWithBalances } from '../../utils/tokenLoading';
 import { SNAP_TIMEOUTS } from '../../constants/timeouts';
 import { createLogger } from '../../utils/logger';
-import { toBigInt } from '../../utils/hathor';
+// TODO: Re-enable when transaction notifications are fixed
+// import { toBigInt } from '../../utils/hathor';
 import { raceWithTimeout } from '../../utils/promise';
 import type { WalletBalance } from '../../types/wallet';
 import type { TokenInfo } from '../../types/token';
@@ -39,26 +40,27 @@ const GetSnapsResponseSchema = z.record(
   })
 );
 
-const TransactionSchema = z.object({
-  outputs: z.array(
-    z.object({
-      decoded: z.object({
-        address: z.string().optional(),
-      }).passthrough(),
-      token: z.string(),
-      value: z.union([z.number(), z.bigint()]),
-    }).passthrough()
-  ).optional(),
-  inputs: z.array(
-    z.object({
-      decoded: z.object({
-        address: z.string().optional(),
-      }).passthrough(),
-      token: z.string(),
-      value: z.union([z.number(), z.bigint()]),
-    }).passthrough()
-  ).optional(),
-}).passthrough();
+// TODO: Re-enable when transaction notifications are fixed
+// const TransactionSchema = z.object({
+//   outputs: z.array(
+//     z.object({
+//       decoded: z.object({
+//         address: z.string().optional(),
+//       }).passthrough(),
+//       token: z.string(),
+//       value: z.union([z.number(), z.bigint()]),
+//     }).passthrough()
+//   ).optional(),
+//   inputs: z.array(
+//     z.object({
+//       decoded: z.object({
+//         address: z.string().optional(),
+//       }).passthrough(),
+//       token: z.string(),
+//       value: z.union([z.number(), z.bigint()]),
+//     }).passthrough()
+//   ).optional(),
+// }).passthrough();
 
 const STORAGE_KEYS = {
   XPUB: 'hathor_wallet_xpub',
@@ -137,7 +139,8 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     onRefreshBalance,
     onError,
     onShowConnectionLostModal,
-    onNewTransaction,
+    // TODO: Re-enable when transaction notifications are fixed
+    // onNewTransaction,
   } = options;
 
   // Check localStorage synchronously to determine initial state
@@ -613,6 +616,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
   // read-only wallet tokens. This prevents us from determining which outputs belong to the user,
   // which is needed to calculate the received amount and show the notification.
   // Once the read-only token permissions are fixed, uncomment the notification code below.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleNewTransaction = useCallback(async (_tx: unknown) => {
     if (!isConnected || !readOnlyWalletWrapper.isReady()) return;
 

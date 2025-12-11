@@ -11,10 +11,11 @@ import { useToast } from '@/hooks/use-toast';
 interface HeaderProps {
   onRegisterTokenClick?: () => void;
   onCreateTokenClick?: () => void;
-  onAddressModeClick?: () => void;
+  // TODO: Re-enable when address mode switching logic is finalized
+  // onAddressModeClick?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClick, onAddressModeClick }) => {
+const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClick }) => {
   const { address, network, disconnectWallet } = useWallet();
   const [isNetworkDialogOpen, setIsNetworkDialogOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
