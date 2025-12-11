@@ -42,7 +42,6 @@ export class RegisteredTokenStorageService {
 
   /**
    * Load token data for specific network and genesisHash
-   * Handles migration from old array format to new record format
    */
   loadTokenData(network: string, genesisHash: string): Record<string, TokenData> {
     try {
@@ -54,17 +53,6 @@ export class RegisteredTokenStorageService {
       }
 
       const data = JSON.parse(stored);
-
-      // Handle migration from old array format
-      if (Array.isArray(data.tokens)) {
-        const migrated: Record<string, TokenData> = {};
-        for (const token of data.tokens) {
-          migrated[token.uid] = token;
-        }
-        this.saveTokenData(network, genesisHash, migrated);
-        return migrated;
-      }
-
       return data.tokens || {};
     } catch (error) {
       log.error("Failed to load token data from localStorage:", error);

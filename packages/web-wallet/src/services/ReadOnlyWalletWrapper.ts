@@ -114,10 +114,6 @@ export class ReadOnlyWalletWrapper {
    * Returns a Map for O(1) token lookups
    */
   async getBalance(tokenId?: string): Promise<Map<string, WalletBalance>> {
-    if (!this.wallet?.isReady()) {
-      throw new Error('Wallet not initialized');
-    }
-
     try {
       const balance = await this.wallet.getBalance(tokenId);
 
@@ -281,10 +277,8 @@ export class ReadOnlyWalletWrapper {
     if (!this.wallet) return;
 
     try {
-      this.wallet.removeAllListeners();
       await this.wallet.stop();
     } finally {
-      // Always clear reference even if errors occur
       this.wallet = null;
     }
   }

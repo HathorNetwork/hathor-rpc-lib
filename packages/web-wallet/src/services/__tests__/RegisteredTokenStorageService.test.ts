@@ -94,30 +94,6 @@ describe('RegisteredTokenStorageService', () => {
 
         expect(tokens).toEqual({});
       });
-
-      it('should migrate from old array format to record format', () => {
-        // Simulate old array format in localStorage
-        const oldFormat = {
-          tokens: [
-            { uid: 'token1', name: 'Token 1', symbol: 'TK1' },
-            { uid: 'token2', name: 'Token 2', symbol: 'TK2' },
-          ],
-          version: 1,
-        };
-        localStorage.setItem(`hathor_wallet_token_data_${network}_${genesisHash}`, JSON.stringify(oldFormat));
-
-        const loaded = service.loadTokenData(network, genesisHash);
-
-        expect(Object.keys(loaded)).toHaveLength(2);
-        expect(loaded['token1'].name).toBe('Token 1');
-        expect(loaded['token2'].name).toBe('Token 2');
-
-        // Verify it was saved in new format
-        const stored = localStorage.getItem(`hathor_wallet_token_data_${network}_${genesisHash}`);
-        const parsed = JSON.parse(stored!);
-        expect(Array.isArray(parsed.tokens)).toBe(false);
-        expect(parsed.tokens['token1']).toBeDefined();
-      });
     });
 
     describe('addTokenData', () => {

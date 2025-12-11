@@ -244,12 +244,6 @@ describe('ReadOnlyWalletWrapper', () => {
 
       expect(mockGetBalance).toHaveBeenCalledWith('specific-token');
     });
-
-    it('should throw when wallet not initialized', async () => {
-      const uninitializedService = new ReadOnlyWalletWrapper();
-
-      await expect(uninitializedService.getBalance()).rejects.toThrow('Wallet not initialized');
-    });
   });
 
   describe('getTransactionHistory', () => {
@@ -378,10 +372,9 @@ describe('ReadOnlyWalletWrapper', () => {
       await service.initialize('xpub123', 'testnet');
     });
 
-    it('should remove listeners and stop wallet', async () => {
+    it('should stop wallet and clear reference', async () => {
       await service.stop();
 
-      expect(mockRemoveAllListeners).toHaveBeenCalled();
       expect(mockStop).toHaveBeenCalled();
       expect(service.isReady()).toBe(false);
     });
@@ -391,16 +384,6 @@ describe('ReadOnlyWalletWrapper', () => {
 
       await expect(service.stop()).rejects.toThrow('Stop failed');
 
-      expect(service.isReady()).toBe(false);
-    });
-
-    it('should throw first error when removeListeners fails', async () => {
-      mockRemoveAllListeners.mockImplementation(() => {
-        throw new Error('Listener error');
-      });
-      mockStop.mockRejectedValue(new Error('Stop error'));
-
-      await expect(service.stop()).rejects.toThrow('Listener error');
       expect(service.isReady()).toBe(false);
     });
 
