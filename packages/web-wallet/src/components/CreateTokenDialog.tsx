@@ -26,10 +26,8 @@ const createTokenSchema = z.object({
     .max(30, 'Token name must be 30 characters or less'),
   symbol: z
     .string()
-    .min(2, 'Symbol must be at least 2 characters')
-    .max(5, 'Symbol must be 5 characters or less')
-    .regex(/^[A-Z0-9]+$/, 'Symbol must contain only uppercase letters and numbers')
-    .transform((val) => val.toUpperCase()),
+    .min(1, 'Symbol is required')
+    .max(5, 'Symbol must be 5 characters or less'),
   amount: z
     .string()
     .min(1, 'Amount is required')
