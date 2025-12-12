@@ -147,10 +147,10 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
 
       let amountInBaseUnits: bigint;
       if (isNFT) {
-        // NFTs: whole numbers only, multiply by decimal multiplier
+        // NFTs: whole numbers only, 1 NFT = 0.01 HTR (1 base unit)
         const amountBigInt = BigInt(amount);
         if (amountBigInt <= 0n) return 0n;
-        amountInBaseUnits = amountBigInt * BigInt(HTR_DECIMAL_MULTIPLIER);
+        amountInBaseUnits = amountBigInt;
       } else {
         // Regular tokens: support decimals, use amountToCents for conversion
         amountInBaseUnits = amountToCents(amount);
@@ -188,8 +188,10 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
       const mintAddress = await getAddressForMode(addressMode, readOnlyWalletWrapper);
 
       // Convert amount to base units for the RPC
+      // For NFTs: 1 NFT = 0.01 HTR (1 base unit), so don't multiply
+      // For regular tokens: convert with decimals using amountToCents
       const amountInBaseUnits = data.isNFT
-        ? BigInt(data.amount) * BigInt(HTR_DECIMAL_MULTIPLIER)
+        ? BigInt(data.amount)
         : amountToCents(data.amount);
 
       // Prepare RPC params matching createTokenRpcSchema
