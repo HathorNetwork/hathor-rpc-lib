@@ -67,7 +67,7 @@ const ReceiveDialog: React.FC<ReceiveDialogProps> = ({ isOpen, onClose }) => {
         <div className="flex flex-col items-center space-y-6 p-6 pt-0">
           {/* Subtitle */}
           <p className="text-sm text-muted-foreground text-center">
-            Send HTR or custom tokens to this address.
+            Use this address to receive HTR or custom tokens
           </p>
 
           {/* QR Code */}
