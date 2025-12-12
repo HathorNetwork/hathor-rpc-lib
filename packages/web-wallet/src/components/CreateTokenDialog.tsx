@@ -12,7 +12,6 @@ import { getAddressForMode } from '../utils/addressMode';
 // TODO: Re-enable when fee token feature is ready
 // import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { HTR_DECIMAL_MULTIPLIER } from '../constants';
 
 interface CreateTokenDialogProps {
   isOpen: boolean;
