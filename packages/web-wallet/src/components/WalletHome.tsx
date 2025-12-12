@@ -1,12 +1,6 @@
 import React, { useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Outlet } from 'react-router-dom';
 import { ArrowUpRight, ArrowDownLeft, Loader2, Eye } from 'lucide-react';
-import SendDialog from './SendDialog';
-import ReceiveDialog from './ReceiveDialog';
-import HistoryDialog from './HistoryDialog';
-import RegisterTokenDialog from './RegisterTokenDialog';
-import CreateTokenDialog from './CreateTokenDialog';
-import AddressModeDialog from './AddressModeDialog';
 import TokenTabs from './TokenTabs';
 import TokenList from './TokenList';
 import Header from './Header';
@@ -35,9 +29,7 @@ const WalletHome: React.FC = () => {
     clearNewTransaction,
   } = useWallet();
 
-  // Derive dialog states and filter from URL search params
-  const dialog = searchParams.get('dialog');
-  const tokenUid = searchParams.get('token');
+  // Derive filter from URL search params
   const filterParam = searchParams.get('filter') as 'all' | 'tokens' | 'nfts' | null;
 
   // Use filter from URL or default to 'tokens'
@@ -89,7 +81,7 @@ const WalletHome: React.FC = () => {
         <button
           onClick={() => {
             clearNewTransaction();
-            navigate(`?dialog=history&token=${notification.tokenUid}`);
+            navigate(`/history/${notification.tokenUid}`);
           }}
           className={`text-xs ${isReceived ? 'text-green-400' : 'text-blue-400'} hover:underline flex items-center gap-1 mt-2`}
         >
@@ -101,13 +93,6 @@ const WalletHome: React.FC = () => {
 
     clearNewTransaction();
   }, [newTransaction, toast, clearNewTransaction, navigate]);
-
-  const sendDialogOpen = dialog === 'send';
-  const receiveDialogOpen = dialog === 'receive';
-  const historyDialogOpen = dialog === 'history';
-  const registerTokenOpen = dialog === 'register';
-  const createTokenOpen = dialog === 'create';
-  const addressModeOpen = dialog === 'addressMode';
 
   // Helper to update search params while preserving existing ones
   const updateSearchParams = (updates: Record<string, string | null>) => {
@@ -121,12 +106,6 @@ const WalletHome: React.FC = () => {
     });
     const queryString = newParams.toString();
     navigate(queryString ? `?${queryString}` : '/', { replace: false });
-  };
-
-
-  // Helper function to close dialogs
-  const closeDialog = () => {
-    navigate('/');
   };
 
   // Show loading screen while checking connection
@@ -190,9 +169,10 @@ const WalletHome: React.FC = () => {
   return (
     <div className='min-h-screen bg-[#0d1117] text-white'>
       <Header
-        onRegisterTokenClick={() => navigate('?dialog=register')}
-        onCreateTokenClick={() => navigate('?dialog=create')}
-        onAddressModeClick={() => navigate('?dialog=addressMode')}
+        onRegisterTokenClick={() => navigate('/register-token')}
+        onCreateTokenClick={() => navigate('/create-token')}
+        // TODO: Re-enable when address mode switching logic is finalized
+        // onAddressModeClick={() => navigate('/address-mode')}
       />
 
       {/* Main Container - responsive layout */}
@@ -227,14 +207,14 @@ const WalletHome: React.FC = () => {
             {/* Right: Action Buttons */}
             <div className='flex gap-3 w-full md:w-auto'>
               <button
-                onClick={() => navigate('?dialog=send')}
+                onClick={() => navigate('/send')}
                 className='flex-1 md:flex-none px-6 py-2.5 bg-primary hover:bg-primary/90 active:bg-primary/80 rounded-xl flex items-center justify-center gap-2 transition-colors'
               >
                 <ArrowUpRight className='w-4 h-4 text-white' />
                 <span className='text-sm font-medium text-white'>Send</span>
               </button>
               <button
-                onClick={() => navigate('?dialog=receive')}
+                onClick={() => navigate('/receive')}
                 className='flex-1 md:flex-none px-6 py-2.5 bg-primary hover:bg-primary/90 active:bg-primary/80 rounded-xl flex items-center justify-center gap-2 transition-colors'
               >
                 <ArrowDownLeft className='w-4 h-4 text-white' />
@@ -261,43 +241,17 @@ const WalletHome: React.FC = () => {
           <TokenList
             tokens={tokens}
             onTokenClick={(tokenUid) => {
-              navigate(`?dialog=history&token=${tokenUid}`);
+              navigate(`/history/${tokenUid}`);
             }}
             onSendClick={(tokenUid) => {
-              navigate(`?dialog=send&token=${tokenUid}`);
+              navigate(`/send/${tokenUid}`);
             }}
           />
         </div>
       </div>
 
-      {/* Dialogs */}
-      <SendDialog
-        isOpen={sendDialogOpen}
-        onClose={closeDialog}
-        initialTokenUid={tokenUid || undefined}
-      />
-      <ReceiveDialog
-        isOpen={receiveDialogOpen}
-        onClose={closeDialog}
-      />
-      <HistoryDialog
-        isOpen={historyDialogOpen}
-        onClose={closeDialog}
-        tokenUid={tokenUid || undefined}
-        onRegisterTokenClick={() => navigate('?dialog=register')}
-      />
-      <RegisterTokenDialog
-        isOpen={registerTokenOpen}
-        onClose={closeDialog}
-      />
-      <CreateTokenDialog
-        isOpen={createTokenOpen}
-        onClose={closeDialog}
-      />
-      <AddressModeDialog
-        isOpen={addressModeOpen}
-        onClose={closeDialog}
-      />
+      {/* Nested routes (dialogs) rendered here */}
+      <Outlet />
     </div>
   );
 };
