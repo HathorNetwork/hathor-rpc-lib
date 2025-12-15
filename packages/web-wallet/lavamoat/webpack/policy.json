@@ -1,0 +1,1380 @@
+{
+  "resources": {
+    "@radix-ui/react-select>@radix-ui/react-popper>@floating-ui/react-dom>@floating-ui/dom>@floating-ui/core": {
+      "packages": {
+        "@radix-ui/react-select>@radix-ui/react-popper>@floating-ui/react-dom>@floating-ui/dom>@floating-ui/utils": true
+      }
+    },
+    "@radix-ui/react-select>@radix-ui/react-popper>@floating-ui/react-dom>@floating-ui/dom": {
+      "globals": {
+        "IntersectionObserver": true,
+        "ResizeObserver": true,
+        "cancelAnimationFrame": true,
+        "clearTimeout": true,
+        "getComputedStyle": true,
+        "requestAnimationFrame": true,
+        "setTimeout": true
+      },
+      "meta": {
+        "webpack-optimization": [
+          "Dependency '@radix-ui/react-select>@radix-ui/react-popper>@floating-ui/react-dom>@floating-ui/dom>@floating-ui/core' reexports from '@radix-ui/react-select>@radix-ui/react-popper>@floating-ui/react-dom>@floating-ui/dom>@floating-ui/utils' and webpack collapsed that to a direct import."
+        ]
+      },
+      "packages": {
+        "@radix-ui/react-select>@radix-ui/react-popper>@floating-ui/react-dom>@floating-ui/dom>@floating-ui/core": true,
+        "@radix-ui/react-select>@radix-ui/react-popper>@floating-ui/react-dom>@floating-ui/dom>@floating-ui/utils": true
+      }
+    },
+    "@radix-ui/react-select>@radix-ui/react-popper>@floating-ui/react-dom": {
+      "globals": {
+        "document": true
+      },
+      "meta": {
+        "webpack-optimization": [
+          "Dependency '@radix-ui/react-select>@radix-ui/react-popper>@floating-ui/react-dom>@floating-ui/dom' reexports from '@radix-ui/react-select>@radix-ui/react-popper>@floating-ui/react-dom>@floating-ui/dom>@floating-ui/utils' and webpack collapsed that to a direct import."
+        ]
+      },
+      "packages": {
+        "@radix-ui/react-select>@radix-ui/react-popper>@floating-ui/react-dom>@floating-ui/dom": true,
+        "@radix-ui/react-select>@radix-ui/react-popper>@floating-ui/react-dom>@floating-ui/dom>@floating-ui/utils": true,
+        "react": true,
+        "react-dom": true
+      }
+    },
+    "@radix-ui/react-select>@radix-ui/react-popper>@floating-ui/react-dom>@floating-ui/dom>@floating-ui/utils": {
+      "globals": {
+        "CSS": true,
+        "Element": true,
+        "HTMLElement": true,
+        "Node": true,
+        "ShadowRoot": true,
+        "document": true
+      }
+    },
+    "@hathor/snap-utils": {
+      "globals": {
+        "Event": true,
+        "addEventListener": true,
+        "clearTimeout": true,
+        "dispatchEvent": true,
+        "ethereum": true,
+        "process.env.SNAP_ORIGIN": true,
+        "removeEventListener": true,
+        "setTimeout": true
+      },
+      "packages": {
+        "react": true
+      }
+    },
+    "@hathor/wallet-lib": {
+      "globals": {
+        "AbortController": true,
+        "Buffer.alloc": true,
+        "Buffer.concat": true,
+        "Buffer.from": true,
+        "Intl.NumberFormat": true,
+        "clearInterval": true,
+        "clearTimeout": true,
+        "console": true,
+        "setInterval": true,
+        "setTimeout": true
+      },
+      "packages": {
+        "assert": true,
+        "@hathor/wallet-lib>axios": true,
+        "@hathor/wallet-lib>bitcore-lib": true,
+        "@hathor/wallet-lib>bitcore-mnemonic": true,
+        "node-stdlib-browser>browserify-zlib": true,
+        "buffer": true,
+        "node-stdlib-browser>crypto-browserify": true,
+        "@hathor/wallet-lib>crypto-js": true,
+        "events": true,
+        "@hathor/wallet-lib>isomorphic-ws": true,
+        "@hathor/wallet-lib>lodash": true,
+        "node-stdlib-browser>path-browserify": true,
+        "@hathor/wallet-lib>queue-microtask": true,
+        "zod": true
+      }
+    },
+    "@hookform/resolvers": {
+      "packages": {
+        "react-hook-form": true,
+        "zod": true
+      }
+    },
+    "@radix-ui/react-toast>@radix-ui/primitive": {
+      "globals": {
+        "document": true
+      }
+    },
+    "@radix-ui/react-select>@radix-ui/react-popper>@radix-ui/react-arrow": {
+      "packages": {
+        "@radix-ui/react-toast>@radix-ui/react-primitive": true,
+        "react": true
+      }
+    },
+    "@radix-ui/react-toast>@radix-ui/react-collection": {
+      "globals": {
+        "MutationObserver": true,
+        "Node.DOCUMENT_POSITION_PRECEDING": true
+      },
+      "packages": {
+        "@radix-ui/react-slot>@radix-ui/react-compose-refs": true,
+        "@radix-ui/react-toast>@radix-ui/react-context": true,
+        "@radix-ui/react-slot": true,
+        "react": true
+      }
+    },
+    "@radix-ui/react-slot>@radix-ui/react-compose-refs": {
+      "packages": {
+        "react": true
+      }
+    },
+    "@radix-ui/react-toast>@radix-ui/react-context": {
+      "packages": {
+        "react": true
+      }
+    },
+    "@radix-ui/react-dialog": {
+      "globals": {
+        "console.error": true,
+        "console.warn": true,
+        "document.getElementById": true
+      },
+      "packages": {
+        "@radix-ui/react-toast>@radix-ui/primitive": true,
+        "@radix-ui/react-slot>@radix-ui/react-compose-refs": true,
+        "@radix-ui/react-toast>@radix-ui/react-context": true,
+        "@radix-ui/react-toast>@radix-ui/react-dismissable-layer": true,
+        "@radix-ui/react-dialog>@radix-ui/react-focus-guards": true,
+        "@radix-ui/react-dialog>@radix-ui/react-focus-scope": true,
+        "@radix-ui/react-dialog>@radix-ui/react-id": true,
+        "@radix-ui/react-toast>@radix-ui/react-portal": true,
+        "@radix-ui/react-toast>@radix-ui/react-presence": true,
+        "@radix-ui/react-toast>@radix-ui/react-primitive": true,
+        "@radix-ui/react-slot": true,
+        "@radix-ui/react-toast>@radix-ui/react-use-controllable-state": true,
+        "@radix-ui/react-dialog>aria-hidden": true,
+        "react": true,
+        "@radix-ui/react-dialog>react-remove-scroll": true
+      }
+    },
+    "@radix-ui/react-select>@radix-ui/react-direction": {
+      "packages": {
+        "react": true
+      }
+    },
+    "@radix-ui/react-toast>@radix-ui/react-dismissable-layer": {
+      "globals": {
+        "CustomEvent": true,
+        "clearTimeout": true,
+        "document": true,
+        "setTimeout": true
+      },
+      "packages": {
+        "@radix-ui/react-toast>@radix-ui/primitive": true,
+        "@radix-ui/react-slot>@radix-ui/react-compose-refs": true,
+        "@radix-ui/react-toast>@radix-ui/react-primitive": true,
+        "@radix-ui/react-toast>@radix-ui/react-use-callback-ref": true,
+        "@radix-ui/react-toast>@radix-ui/react-dismissable-layer>@radix-ui/react-use-escape-keydown": true,
+        "react": true
+      }
+    },
+    "@radix-ui/react-dialog>@radix-ui/react-focus-guards": {
+      "globals": {
+        "document.body.insertAdjacentElement": true,
+        "document.createElement": true,
+        "document.querySelectorAll": true
+      },
+      "packages": {
+        "react": true
+      }
+    },
+    "@radix-ui/react-dialog>@radix-ui/react-focus-scope": {
+      "globals": {
+        "CustomEvent": true,
+        "HTMLInputElement": true,
+        "MutationObserver": true,
+        "NodeFilter.FILTER_ACCEPT": true,
+        "NodeFilter.FILTER_SKIP": true,
+        "NodeFilter.SHOW_ELEMENT": true,
+        "document.activeElement": true,
+        "document.addEventListener": true,
+        "document.body": true,
+        "document.createTreeWalker": true,
+        "document.removeEventListener": true,
+        "getComputedStyle": true,
+        "setTimeout": true
+      },
+      "packages": {
+        "@radix-ui/react-slot>@radix-ui/react-compose-refs": true,
+        "@radix-ui/react-toast>@radix-ui/react-primitive": true,
+        "@radix-ui/react-toast>@radix-ui/react-use-callback-ref": true,
+        "react": true
+      }
+    },
+    "@radix-ui/react-dialog>@radix-ui/react-id": {
+      "packages": {
+        "@radix-ui/react-toast>@radix-ui/react-use-layout-effect": true,
+        "react": true
+      }
+    },
+    "@radix-ui/react-select>@radix-ui/react-popper": {
+      "globals": {
+        "getComputedStyle": true
+      },
+      "meta": {
+        "webpack-optimization": [
+          "Dependency '@radix-ui/react-select>@radix-ui/react-popper>@floating-ui/react-dom' reexports from '@radix-ui/react-select>@radix-ui/react-popper>@floating-ui/react-dom>@floating-ui/dom' and webpack collapsed that to a direct import."
+        ]
+      },
+      "packages": {
+        "@radix-ui/react-select>@radix-ui/react-popper>@floating-ui/react-dom>@floating-ui/dom": true,
+        "@radix-ui/react-select>@radix-ui/react-popper>@floating-ui/react-dom": true,
+        "@radix-ui/react-select>@radix-ui/react-popper>@radix-ui/react-arrow": true,
+        "@radix-ui/react-slot>@radix-ui/react-compose-refs": true,
+        "@radix-ui/react-toast>@radix-ui/react-context": true,
+        "@radix-ui/react-toast>@radix-ui/react-primitive": true,
+        "@radix-ui/react-toast>@radix-ui/react-use-callback-ref": true,
+        "@radix-ui/react-toast>@radix-ui/react-use-layout-effect": true,
+        "@radix-ui/react-select>@radix-ui/react-popper>@radix-ui/react-use-size": true,
+        "react": true
+      }
+    },
+    "@radix-ui/react-toast>@radix-ui/react-portal": {
+      "globals": {
+        "document.body": true
+      },
+      "packages": {
+        "@radix-ui/react-toast>@radix-ui/react-primitive": true,
+        "@radix-ui/react-toast>@radix-ui/react-use-layout-effect": true,
+        "react": true,
+        "react-dom": true
+      }
+    },
+    "@radix-ui/react-toast>@radix-ui/react-presence": {
+      "globals": {
+        "CSS.escape": true,
+        "getComputedStyle": true
+      },
+      "packages": {
+        "@radix-ui/react-slot>@radix-ui/react-compose-refs": true,
+        "@radix-ui/react-toast>@radix-ui/react-use-layout-effect": true,
+        "react": true
+      }
+    },
+    "@radix-ui/react-toast>@radix-ui/react-primitive": {
+      "packages": {
+        "@radix-ui/react-slot": true,
+        "react": true,
+        "react-dom": true
+      }
+    },
+    "@radix-ui/react-select": {
+      "globals": {
+        "DocumentFragment": true,
+        "Event": true,
+        "HTMLSelectElement.prototype": true,
+        "addEventListener": true,
+        "clearInterval": true,
+        "clearTimeout": true,
+        "document.activeElement": true,
+        "document.addEventListener": true,
+        "document.removeEventListener": true,
+        "getComputedStyle": true,
+        "innerHeight": true,
+        "innerWidth": true,
+        "removeEventListener": true,
+        "requestAnimationFrame": true,
+        "setInterval": true,
+        "setTimeout": true
+      },
+      "packages": {
+        "@radix-ui/react-select>@radix-ui/number": true,
+        "@radix-ui/react-toast>@radix-ui/primitive": true,
+        "@radix-ui/react-toast>@radix-ui/react-collection": true,
+        "@radix-ui/react-slot>@radix-ui/react-compose-refs": true,
+        "@radix-ui/react-toast>@radix-ui/react-context": true,
+        "@radix-ui/react-select>@radix-ui/react-direction": true,
+        "@radix-ui/react-toast>@radix-ui/react-dismissable-layer": true,
+        "@radix-ui/react-dialog>@radix-ui/react-focus-guards": true,
+        "@radix-ui/react-dialog>@radix-ui/react-focus-scope": true,
+        "@radix-ui/react-dialog>@radix-ui/react-id": true,
+        "@radix-ui/react-select>@radix-ui/react-popper": true,
+        "@radix-ui/react-toast>@radix-ui/react-portal": true,
+        "@radix-ui/react-toast>@radix-ui/react-primitive": true,
+        "@radix-ui/react-slot": true,
+        "@radix-ui/react-toast>@radix-ui/react-use-callback-ref": true,
+        "@radix-ui/react-toast>@radix-ui/react-use-controllable-state": true,
+        "@radix-ui/react-toast>@radix-ui/react-use-layout-effect": true,
+        "@radix-ui/react-select>@radix-ui/react-use-previous": true,
+        "@radix-ui/react-toast>@radix-ui/react-visually-hidden": true,
+        "@radix-ui/react-dialog>aria-hidden": true,
+        "react": true,
+        "react-dom": true,
+        "@radix-ui/react-dialog>react-remove-scroll": true
+      }
+    },
+    "@radix-ui/react-slot": {
+      "packages": {
+        "@radix-ui/react-slot>@radix-ui/react-compose-refs": true,
+        "react": true
+      }
+    },
+    "@radix-ui/react-toast": {
+      "globals": {
+        "CustomEvent": true,
+        "NodeFilter.FILTER_ACCEPT": true,
+        "NodeFilter.FILTER_SKIP": true,
+        "NodeFilter.SHOW_ELEMENT": true,
+        "addEventListener": true,
+        "cancelAnimationFrame": true,
+        "clearTimeout": true,
+        "console.error": true,
+        "document.activeElement": true,
+        "document.addEventListener": true,
+        "document.createTreeWalker": true,
+        "document.removeEventListener": true,
+        "removeEventListener": true,
+        "requestAnimationFrame": true,
+        "setTimeout": true
+      },
+      "packages": {
+        "@radix-ui/react-toast>@radix-ui/primitive": true,
+        "@radix-ui/react-toast>@radix-ui/react-collection": true,
+        "@radix-ui/react-slot>@radix-ui/react-compose-refs": true,
+        "@radix-ui/react-toast>@radix-ui/react-context": true,
+        "@radix-ui/react-toast>@radix-ui/react-dismissable-layer": true,
+        "@radix-ui/react-toast>@radix-ui/react-portal": true,
+        "@radix-ui/react-toast>@radix-ui/react-presence": true,
+        "@radix-ui/react-toast>@radix-ui/react-primitive": true,
+        "@radix-ui/react-toast>@radix-ui/react-use-callback-ref": true,
+        "@radix-ui/react-toast>@radix-ui/react-use-controllable-state": true,
+        "@radix-ui/react-toast>@radix-ui/react-use-layout-effect": true,
+        "@radix-ui/react-toast>@radix-ui/react-visually-hidden": true,
+        "react": true,
+        "react-dom": true
+      }
+    },
+    "@radix-ui/react-toast>@radix-ui/react-use-callback-ref": {
+      "packages": {
+        "react": true
+      }
+    },
+    "@radix-ui/react-toast>@radix-ui/react-use-controllable-state": {
+      "globals": {
+        "console.warn": true
+      },
+      "packages": {
+        "@radix-ui/react-toast>@radix-ui/react-use-controllable-state>@radix-ui/react-use-effect-event": true,
+        "@radix-ui/react-toast>@radix-ui/react-use-layout-effect": true,
+        "react": true
+      }
+    },
+    "@radix-ui/react-toast>@radix-ui/react-dismissable-layer>@radix-ui/react-use-escape-keydown": {
+      "globals": {
+        "document": true
+      },
+      "packages": {
+        "@radix-ui/react-toast>@radix-ui/react-use-callback-ref": true,
+        "react": true
+      }
+    },
+    "@radix-ui/react-toast>@radix-ui/react-use-layout-effect": {
+      "globals": {
+        "document": true
+      },
+      "packages": {
+        "react": true
+      }
+    },
+    "@radix-ui/react-select>@radix-ui/react-use-previous": {
+      "packages": {
+        "react": true
+      }
+    },
+    "@radix-ui/react-select>@radix-ui/react-popper>@radix-ui/react-use-size": {
+      "globals": {
+        "ResizeObserver": true
+      },
+      "packages": {
+        "@radix-ui/react-toast>@radix-ui/react-use-layout-effect": true,
+        "react": true
+      }
+    },
+    "@radix-ui/react-toast>@radix-ui/react-visually-hidden": {
+      "packages": {
+        "@radix-ui/react-toast>@radix-ui/react-primitive": true,
+        "react": true
+      }
+    },
+    "@radix-ui/react-dialog>aria-hidden": {
+      "globals": {
+        "HTMLElement": true,
+        "console.error": true,
+        "document": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>public-encrypt>parse-asn1>asn1.js": {
+      "packages": {
+        "@hathor/wallet-lib>bitcore-lib>bn.js": true,
+        "buffer": true,
+        "assert>util>inherits": true,
+        "@hathor/wallet-lib>bitcore-lib>elliptic>minimalistic-assert": true
+      }
+    },
+    "assert": {
+      "globals": {
+        "console": true,
+        "process.emitWarning": true,
+        "process.stderr": true
+      },
+      "packages": {
+        "assert>call-bind": true,
+        "assert>is-nan": true,
+        "assert>object-is": true,
+        "assert>object.assign": true,
+        "assert>util": true
+      }
+    },
+    "assert>util>which-typed-array>available-typed-arrays": {
+      "packages": {
+        "assert>util>which-typed-array>available-typed-arrays>possible-typed-array-names": true
+      }
+    },
+    "@hathor/wallet-lib>axios": {
+      "globals": {
+        "AbortController": true,
+        "Blob": true,
+        "Buffer.from": true,
+        "FormData": true,
+        "ReadableStream": true,
+        "Request": true,
+        "Response": true,
+        "TextEncoder": true,
+        "URLSearchParams": true,
+        "WorkerGlobalScope": true,
+        "XMLHttpRequest": true,
+        "btoa": true,
+        "clearTimeout": true,
+        "console.warn": true,
+        "document": true,
+        "fetch": true,
+        "importScripts": true,
+        "location.href": true,
+        "navigator": true,
+        "process": true,
+        "queueMicrotask": true,
+        "setImmediate": true,
+        "setTimeout": true
+      },
+      "packages": {
+        "buffer": true
+      }
+    },
+    "@hathor/wallet-lib>bitcore-lib>bs58>base-x": {
+      "packages": {
+        "webpack-dev-server>express>safe-buffer": true
+      }
+    },
+    "@hathor/wallet-lib>bitcore-lib>bip-schnorr>bigi": {
+      "globals": {
+        "Buffer": true
+      },
+      "packages": {
+        "assert": true,
+        "buffer": true
+      }
+    },
+    "@hathor/wallet-lib>bitcore-lib>bip-schnorr": {
+      "packages": {
+        "@hathor/wallet-lib>bitcore-lib>bip-schnorr>bigi": true,
+        "@hathor/wallet-lib>bitcore-lib>bip-schnorr>ecurve": true,
+        "@hathor/wallet-lib>bitcore-lib>bip-schnorr>js-sha256": true,
+        "copy-webpack-plugin>serialize-javascript>randombytes": true,
+        "webpack-dev-server>express>safe-buffer": true
+      }
+    },
+    "@hathor/wallet-lib>bitcore-lib": {
+      "globals": {
+        "Buffer": true,
+        "SEQUENCE_LOCKTIME_DISABLE_FLAG": true,
+        "_bitcore": "write",
+        "console.error": true,
+        "crypto": true,
+        "msCrypto": true,
+        "process.browser": true
+      },
+      "packages": {
+        "assert": true,
+        "@hathor/wallet-lib>bitcore-lib>bech32": true,
+        "@hathor/wallet-lib>bitcore-lib>bip-schnorr": true,
+        "@hathor/wallet-lib>bitcore-lib>bn.js": true,
+        "@hathor/wallet-lib>bitcore-lib>bs58": true,
+        "buffer": true,
+        "@hathor/wallet-lib>bitcore-lib>buffer-compare": true,
+        "node-stdlib-browser>crypto-browserify": true,
+        "@hathor/wallet-lib>bitcore-lib>elliptic": true,
+        "assert>util>inherits": true,
+        "@hathor/wallet-lib>lodash": true,
+        "node-stdlib-browser>url": true
+      }
+    },
+    "@hathor/wallet-lib>bitcore-mnemonic": {
+      "globals": {
+        "Buffer.alloc": true,
+        "Buffer.from": true,
+        "Buffer.isBuffer": true
+      },
+      "packages": {
+        "@hathor/wallet-lib>bitcore-lib": true,
+        "buffer": true,
+        "node-stdlib-browser>crypto-browserify": true,
+        "@hathor/wallet-lib>bitcore-mnemonic>unorm": true
+      }
+    },
+    "@hathor/wallet-lib>bitcore-lib>bn.js": {
+      "packages": {
+        "buffer": true
+      }
+    },
+    "@hathor/wallet-lib>bitcore-lib>elliptic>brorand": {
+      "globals": {
+        "crypto": true,
+        "msCrypto": true
+      },
+      "packages": {
+        "node-stdlib-browser>crypto-browserify": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>browserify-cipher>browserify-aes": {
+      "globals": {
+        "Buffer.concat": true
+      },
+      "packages": {
+        "buffer": true,
+        "node-stdlib-browser>crypto-browserify>browserify-cipher>browserify-aes>buffer-xor": true,
+        "node-stdlib-browser>crypto-browserify>create-hash>cipher-base": true,
+        "node-stdlib-browser>crypto-browserify>browserify-cipher>evp_bytestokey": true,
+        "assert>util>inherits": true,
+        "webpack-dev-server>express>safe-buffer": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>browserify-cipher": {
+      "packages": {
+        "node-stdlib-browser>crypto-browserify>browserify-cipher>browserify-aes": true,
+        "node-stdlib-browser>crypto-browserify>browserify-cipher>browserify-des": true,
+        "node-stdlib-browser>crypto-browserify>browserify-cipher>evp_bytestokey": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>browserify-cipher>browserify-des": {
+      "packages": {
+        "node-stdlib-browser>crypto-browserify>create-hash>cipher-base": true,
+        "node-stdlib-browser>crypto-browserify>browserify-cipher>browserify-des>des.js": true,
+        "assert>util>inherits": true,
+        "webpack-dev-server>express>safe-buffer": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>public-encrypt>browserify-rsa": {
+      "packages": {
+        "@hathor/wallet-lib>bitcore-lib>bn.js": true,
+        "copy-webpack-plugin>serialize-javascript>randombytes": true,
+        "webpack-dev-server>express>safe-buffer": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>browserify-sign": {
+      "packages": {
+        "@hathor/wallet-lib>bitcore-lib>bn.js": true,
+        "node-stdlib-browser>crypto-browserify>public-encrypt>browserify-rsa": true,
+        "node-stdlib-browser>crypto-browserify>create-hash": true,
+        "node-stdlib-browser>crypto-browserify>create-hmac": true,
+        "@hathor/wallet-lib>bitcore-lib>elliptic": true,
+        "assert>util>inherits": true,
+        "node-stdlib-browser>crypto-browserify>public-encrypt>parse-asn1": true,
+        "node-stdlib-browser>readable-stream": true,
+        "webpack-dev-server>express>safe-buffer": true
+      }
+    },
+    "node-stdlib-browser>browserify-zlib": {
+      "globals": {
+        "Buffer.alloc": true,
+        "process.nextTick": true
+      },
+      "packages": {
+        "assert": true,
+        "buffer": true,
+        "node-stdlib-browser>browserify-zlib>pako": true,
+        "node-stdlib-browser>stream-browserify": true,
+        "assert>util": true
+      }
+    },
+    "@hathor/wallet-lib>bitcore-lib>bs58": {
+      "packages": {
+        "@hathor/wallet-lib>bitcore-lib>bs58>base-x": true
+      }
+    },
+    "buffer": {
+      "globals": {
+        "console": true
+      },
+      "packages": {
+        "buffer>base64-js": true,
+        "buffer>ieee754": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>browserify-cipher>browserify-aes>buffer-xor": {
+      "globals": {
+        "Buffer": true
+      },
+      "packages": {
+        "buffer": true
+      }
+    },
+    "assert>call-bind>call-bind-apply-helpers": {
+      "packages": {
+        "assert>call-bind>get-intrinsic>es-errors": true,
+        "assert>call-bind>get-intrinsic>function-bind": true
+      }
+    },
+    "assert>call-bind": {
+      "packages": {
+        "assert>call-bind>call-bind-apply-helpers": true,
+        "assert>call-bind>es-define-property": true,
+        "assert>call-bind>get-intrinsic": true,
+        "assert>call-bind>set-function-length": true
+      }
+    },
+    "assert>object.assign>call-bound": {
+      "packages": {
+        "assert>call-bind>call-bind-apply-helpers": true,
+        "assert>call-bind>get-intrinsic": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>create-hash>cipher-base": {
+      "packages": {
+        "assert>util>inherits": true,
+        "webpack-dev-server>express>safe-buffer": true,
+        "node-stdlib-browser>stream-browserify": true,
+        "node-stdlib-browser>string_decoder": true
+      }
+    },
+    "class-variance-authority": {
+      "packages": {
+        "clsx": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>create-ecdh": {
+      "globals": {
+        "Buffer": true
+      },
+      "packages": {
+        "@hathor/wallet-lib>bitcore-lib>bn.js": true,
+        "buffer": true,
+        "@hathor/wallet-lib>bitcore-lib>elliptic": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>create-hash": {
+      "packages": {
+        "node-stdlib-browser>crypto-browserify>create-hash>cipher-base": true,
+        "assert>util>inherits": true,
+        "node-stdlib-browser>crypto-browserify>create-hash>md5.js": true,
+        "node-stdlib-browser>crypto-browserify>create-hash>ripemd160": true,
+        "node-stdlib-browser>crypto-browserify>pbkdf2>sha.js": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>create-hmac": {
+      "packages": {
+        "node-stdlib-browser>crypto-browserify>create-hash>cipher-base": true,
+        "node-stdlib-browser>crypto-browserify>create-hash": true,
+        "assert>util>inherits": true,
+        "node-stdlib-browser>crypto-browserify>create-hash>ripemd160": true,
+        "webpack-dev-server>express>safe-buffer": true,
+        "node-stdlib-browser>crypto-browserify>pbkdf2>sha.js": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify": {
+      "packages": {
+        "node-stdlib-browser>crypto-browserify>browserify-cipher": true,
+        "node-stdlib-browser>crypto-browserify>browserify-sign": true,
+        "node-stdlib-browser>crypto-browserify>create-ecdh": true,
+        "node-stdlib-browser>crypto-browserify>create-hash": true,
+        "node-stdlib-browser>crypto-browserify>create-hmac": true,
+        "node-stdlib-browser>crypto-browserify>diffie-hellman": true,
+        "node-stdlib-browser>crypto-browserify>pbkdf2": true,
+        "node-stdlib-browser>crypto-browserify>public-encrypt": true,
+        "copy-webpack-plugin>serialize-javascript>randombytes": true,
+        "node-stdlib-browser>crypto-browserify>randomfill": true
+      }
+    },
+    "@hathor/wallet-lib>crypto-js": {
+      "globals": {
+        "crypto": true,
+        "define": true,
+        "msCrypto": true
+      },
+      "packages": {
+        "node-stdlib-browser>crypto-browserify": true
+      }
+    },
+    "assert>is-nan>define-properties>define-data-property": {
+      "packages": {
+        "assert>call-bind>es-define-property": true,
+        "assert>call-bind>get-intrinsic>es-errors": true,
+        "assert>util>which-typed-array>gopd": true
+      }
+    },
+    "assert>is-nan>define-properties": {
+      "packages": {
+        "assert>is-nan>define-properties>define-data-property": true,
+        "assert>is-nan>define-properties>has-property-descriptors": true,
+        "assert>object.assign>object-keys": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>browserify-cipher>browserify-des>des.js": {
+      "packages": {
+        "assert>util>inherits": true,
+        "@hathor/wallet-lib>bitcore-lib>elliptic>minimalistic-assert": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>diffie-hellman": {
+      "globals": {
+        "Buffer": true
+      },
+      "packages": {
+        "@hathor/wallet-lib>bitcore-lib>bn.js": true,
+        "buffer": true,
+        "node-stdlib-browser>crypto-browserify>diffie-hellman>miller-rabin": true,
+        "copy-webpack-plugin>serialize-javascript>randombytes": true
+      }
+    },
+    "assert>util>which-typed-array>get-proto>dunder-proto": {
+      "packages": {
+        "assert>call-bind>call-bind-apply-helpers": true,
+        "assert>util>which-typed-array>gopd": true
+      }
+    },
+    "@hathor/wallet-lib>bitcore-lib>bip-schnorr>ecurve": {
+      "packages": {
+        "assert": true,
+        "@hathor/wallet-lib>bitcore-lib>bip-schnorr>bigi": true,
+        "webpack-dev-server>express>safe-buffer": true
+      }
+    },
+    "@hathor/wallet-lib>bitcore-lib>elliptic": {
+      "packages": {
+        "@hathor/wallet-lib>bitcore-lib>bn.js": true,
+        "@hathor/wallet-lib>bitcore-lib>elliptic>brorand": true,
+        "@hathor/wallet-lib>bitcore-lib>elliptic>hash.js": true,
+        "@hathor/wallet-lib>bitcore-lib>elliptic>hmac-drbg": true,
+        "assert>util>inherits": true,
+        "@hathor/wallet-lib>bitcore-lib>elliptic>minimalistic-assert": true,
+        "@hathor/wallet-lib>bitcore-lib>elliptic>minimalistic-crypto-utils": true
+      }
+    },
+    "events": {
+      "globals": {
+        "console": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>browserify-cipher>evp_bytestokey": {
+      "packages": {
+        "node-stdlib-browser>crypto-browserify>create-hash>md5.js": true,
+        "webpack-dev-server>express>safe-buffer": true
+      }
+    },
+    "assert>util>which-typed-array>for-each": {
+      "packages": {
+        "assert>util>which-typed-array>for-each>is-callable": true
+      }
+    },
+    "assert>call-bind>get-intrinsic": {
+      "globals": {
+        "AggregateError": true,
+        "FinalizationRegistry": true,
+        "Float16Array": true,
+        "WeakRef": true
+      },
+      "packages": {
+        "assert>call-bind>call-bind-apply-helpers": true,
+        "assert>call-bind>es-define-property": true,
+        "assert>call-bind>get-intrinsic>es-errors": true,
+        "assert>object.assign>es-object-atoms": true,
+        "assert>call-bind>get-intrinsic>function-bind": true,
+        "assert>util>which-typed-array>get-proto": true,
+        "assert>util>which-typed-array>gopd": true,
+        "assert>object.assign>has-symbols": true,
+        "assert>call-bind>get-intrinsic>hasown": true,
+        "assert>call-bind>get-intrinsic>math-intrinsics": true
+      }
+    },
+    "@radix-ui/react-dialog>react-remove-scroll>react-style-singleton>get-nonce": {
+      "globals": {
+        "__webpack_nonce__": true
+      }
+    },
+    "assert>util>which-typed-array>get-proto": {
+      "packages": {
+        "assert>util>which-typed-array>get-proto>dunder-proto": true,
+        "assert>object.assign>es-object-atoms": true
+      }
+    },
+    "assert>is-nan>define-properties>has-property-descriptors": {
+      "packages": {
+        "assert>call-bind>es-define-property": true
+      }
+    },
+    "assert>util>is-arguments>has-tostringtag": {
+      "packages": {
+        "assert>object.assign>has-symbols": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>hash-base": {
+      "packages": {
+        "assert>util>inherits": true,
+        "webpack-dev-server>express>safe-buffer": true,
+        "node-stdlib-browser>stream-browserify": true
+      }
+    },
+    "@hathor/wallet-lib>bitcore-lib>elliptic>hash.js": {
+      "packages": {
+        "assert>util>inherits": true,
+        "@hathor/wallet-lib>bitcore-lib>elliptic>minimalistic-assert": true
+      }
+    },
+    "assert>call-bind>get-intrinsic>hasown": {
+      "packages": {
+        "assert>call-bind>get-intrinsic>function-bind": true
+      }
+    },
+    "@hathor/wallet-lib>bitcore-lib>elliptic>hmac-drbg": {
+      "packages": {
+        "@hathor/wallet-lib>bitcore-lib>elliptic>hash.js": true,
+        "@hathor/wallet-lib>bitcore-lib>elliptic>minimalistic-assert": true,
+        "@hathor/wallet-lib>bitcore-lib>elliptic>minimalistic-crypto-utils": true
+      }
+    },
+    "assert>util>is-arguments": {
+      "packages": {
+        "assert>object.assign>call-bound": true,
+        "assert>util>is-arguments>has-tostringtag": true
+      }
+    },
+    "assert>util>which-typed-array>for-each>is-callable": {
+      "globals": {
+        "document": true
+      }
+    },
+    "assert>util>is-generator-function": {
+      "packages": {
+        "assert>object.assign>call-bound": true,
+        "assert>util>which-typed-array>get-proto": true,
+        "assert>util>is-arguments>has-tostringtag": true,
+        "assert>util>is-generator-function>safe-regex-test": true
+      }
+    },
+    "assert>is-nan": {
+      "packages": {
+        "assert>call-bind": true,
+        "assert>is-nan>define-properties": true
+      }
+    },
+    "assert>util>is-generator-function>safe-regex-test>is-regex": {
+      "packages": {
+        "assert>object.assign>call-bound": true,
+        "assert>util>which-typed-array>gopd": true,
+        "assert>util>is-arguments>has-tostringtag": true,
+        "assert>call-bind>get-intrinsic>hasown": true
+      }
+    },
+    "assert>util>is-typed-array": {
+      "packages": {
+        "assert>util>which-typed-array": true
+      }
+    },
+    "@hathor/wallet-lib>isomorphic-ws": {
+      "globals": {
+        "MozWebSocket": true,
+        "WebSocket": true
+      }
+    },
+    "@hathor/wallet-lib>bitcore-lib>bip-schnorr>js-sha256": {
+      "globals": {
+        "define": true,
+        "process": true
+      }
+    },
+    "@hathor/wallet-lib>lodash": {
+      "globals": {
+        "define": true
+      }
+    },
+    "lucide-react": {
+      "packages": {
+        "react": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>create-hash>md5.js": {
+      "packages": {
+        "node-stdlib-browser>crypto-browserify>hash-base": true,
+        "assert>util>inherits": true,
+        "webpack-dev-server>express>safe-buffer": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>diffie-hellman>miller-rabin": {
+      "packages": {
+        "@hathor/wallet-lib>bitcore-lib>bn.js": true,
+        "@hathor/wallet-lib>bitcore-lib>elliptic>brorand": true
+      }
+    },
+    "node-stdlib-browser": {
+      "globals": {
+        "clearTimeout": true,
+        "setTimeout": true
+      }
+    },
+    "webpack-dev-server>express>qs>side-channel>object-inspect": {
+      "globals": {
+        "HTMLElement": true,
+        "WeakRef": true
+      }
+    },
+    "assert>object-is": {
+      "packages": {
+        "assert>call-bind": true,
+        "assert>is-nan>define-properties": true
+      }
+    },
+    "assert>object.assign": {
+      "packages": {
+        "assert>object.assign>call-bound": true,
+        "assert>object.assign>es-object-atoms": true,
+        "assert>object.assign>has-symbols": true,
+        "assert>object.assign>object-keys": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>public-encrypt>parse-asn1": {
+      "packages": {
+        "node-stdlib-browser>crypto-browserify>public-encrypt>parse-asn1>asn1.js": true,
+        "node-stdlib-browser>crypto-browserify>browserify-cipher>browserify-aes": true,
+        "node-stdlib-browser>crypto-browserify>browserify-cipher>evp_bytestokey": true,
+        "node-stdlib-browser>crypto-browserify>pbkdf2": true,
+        "webpack-dev-server>express>safe-buffer": true
+      }
+    },
+    "node-stdlib-browser>path-browserify": {
+      "globals": {
+        "process.cwd": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>pbkdf2": {
+      "globals": {
+        "crypto": true,
+        "process": true,
+        "queueMicrotask": true,
+        "setImmediate": true,
+        "setTimeout": true
+      },
+      "packages": {
+        "node-stdlib-browser>crypto-browserify>create-hash": true,
+        "node-stdlib-browser>crypto-browserify>create-hash>ripemd160": true,
+        "webpack-dev-server>express>safe-buffer": true,
+        "node-stdlib-browser>crypto-browserify>pbkdf2>sha.js": true,
+        "node-stdlib-browser>crypto-browserify>pbkdf2>to-buffer": true
+      }
+    },
+    "react-qr-code>prop-types": {
+      "globals": {
+        "process.env.NODE_ENV": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>public-encrypt": {
+      "packages": {
+        "@hathor/wallet-lib>bitcore-lib>bn.js": true,
+        "node-stdlib-browser>crypto-browserify>public-encrypt>browserify-rsa": true,
+        "node-stdlib-browser>crypto-browserify>create-hash": true,
+        "node-stdlib-browser>crypto-browserify>public-encrypt>parse-asn1": true,
+        "copy-webpack-plugin>serialize-javascript>randombytes": true,
+        "webpack-dev-server>express>safe-buffer": true
+      }
+    },
+    "webpack-dev-server>express>qs": {
+      "packages": {
+        "webpack-dev-server>express>qs>side-channel": true
+      }
+    },
+    "@hathor/wallet-lib>queue-microtask": {
+      "globals": {
+        "queueMicrotask": true,
+        "setTimeout": true
+      }
+    },
+    "copy-webpack-plugin>serialize-javascript>randombytes": {
+      "globals": {
+        "crypto": true,
+        "msCrypto": true,
+        "process.nextTick": true
+      },
+      "packages": {
+        "webpack-dev-server>express>safe-buffer": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>randomfill": {
+      "globals": {
+        "crypto": true,
+        "msCrypto": true,
+        "process.browser": true,
+        "process.nextTick": true
+      },
+      "packages": {
+        "copy-webpack-plugin>serialize-javascript>randombytes": true,
+        "webpack-dev-server>express>safe-buffer": true
+      }
+    },
+    "react": {
+      "globals": {
+        "ErrorEvent": true,
+        "console.error": true,
+        "dispatchEvent": true,
+        "process": true,
+        "reportError": true
+      }
+    },
+    "react-dom": {
+      "globals": {
+        "AbortController": true,
+        "ErrorEvent": true,
+        "FormData": true,
+        "__REACT_DEVTOOLS_GLOBAL_HOOK__": true,
+        "addEventListener": true,
+        "clearTimeout": true,
+        "clipboardData": true,
+        "console.error": true,
+        "dispatchEvent": true,
+        "document": true,
+        "event": true,
+        "matchMedia": true,
+        "process": true,
+        "queueMicrotask": true,
+        "removeEventListener": true,
+        "reportError": true,
+        "setTimeout": true
+      },
+      "packages": {
+        "react": true,
+        "react-dom>scheduler": true
+      }
+    },
+    "react-hook-form": {
+      "globals": {
+        "Blob": true,
+        "FileList": true,
+        "FormData": true,
+        "HTMLElement": true,
+        "clearTimeout": true,
+        "crypto": true,
+        "document": true,
+        "fetch": true,
+        "performance": true,
+        "setTimeout": true
+      },
+      "packages": {
+        "react": true
+      }
+    },
+    "react-qr-code": {
+      "packages": {
+        "react-qr-code>prop-types": true,
+        "react-qr-code>qr.js": true,
+        "react": true
+      }
+    },
+    "@radix-ui/react-dialog>react-remove-scroll>react-remove-scroll-bar": {
+      "globals": {
+        "document.body": true,
+        "document.documentElement.clientWidth": true,
+        "getComputedStyle": true,
+        "innerWidth": true
+      },
+      "packages": {
+        "react": true,
+        "@radix-ui/react-dialog>react-remove-scroll>react-style-singleton": true
+      }
+    },
+    "@radix-ui/react-dialog>react-remove-scroll": {
+      "globals": {
+        "Element": true,
+        "Node.DOCUMENT_FRAGMENT_NODE": true,
+        "ShadowRoot": true,
+        "addEventListener": true,
+        "document.addEventListener": true,
+        "document.body": true,
+        "document.removeEventListener": true,
+        "getComputedStyle": true,
+        "removeEventListener": true,
+        "setTimeout": true
+      },
+      "packages": {
+        "react": true,
+        "@radix-ui/react-dialog>react-remove-scroll>react-remove-scroll-bar": true,
+        "@radix-ui/react-dialog>react-remove-scroll>react-style-singleton": true,
+        "@radix-ui/react-dialog>aria-hidden>tslib": true,
+        "@radix-ui/react-dialog>react-remove-scroll>use-callback-ref": true,
+        "@radix-ui/react-dialog>react-remove-scroll>use-sidecar": true
+      }
+    },
+    "react-router-dom>react-router": {
+      "globals": {
+        "AbortController": true,
+        "DOMException": true,
+        "FormData": true,
+        "Headers": true,
+        "IntersectionObserver": true,
+        "MutationObserver": true,
+        "ReadableStream": true,
+        "Request": true,
+        "Response": true,
+        "TextDecoder": true,
+        "TextEncoder": true,
+        "TransformStream": true,
+        "URL": true,
+        "URLSearchParams": true,
+        "__reactRouterContext": true,
+        "__reactRouterHdrActive": true,
+        "__reactRouterVersion": "write",
+        "__staticRouterHydrationData": true,
+        "addEventListener": true,
+        "clearTimeout": true,
+        "confirm": true,
+        "console": true,
+        "document": true,
+        "fetch": true,
+        "history.replaceState": true,
+        "history.scrollRestoration": true,
+        "history.state": true,
+        "location.href": true,
+        "location.origin": true,
+        "location.reload": true,
+        "matchMedia": true,
+        "navigator.connection.saveData": true,
+        "origin": true,
+        "removeEventListener": true,
+        "scrollTo": true,
+        "scrollY": true,
+        "sessionStorage.getItem": true,
+        "sessionStorage.removeItem": true,
+        "sessionStorage.setItem": true,
+        "setTimeout": true
+      },
+      "packages": {
+        "react": true
+      }
+    },
+    "@radix-ui/react-dialog>react-remove-scroll>react-style-singleton": {
+      "globals": {
+        "document": true
+      },
+      "packages": {
+        "@radix-ui/react-dialog>react-remove-scroll>react-style-singleton>get-nonce": true,
+        "react": true
+      }
+    },
+    "node-stdlib-browser>readable-stream": {
+      "globals": {
+        "process.nextTick": true,
+        "process.stderr": true,
+        "process.stdout": true
+      },
+      "packages": {
+        "buffer": true,
+        "events": true,
+        "assert>util>inherits": true,
+        "node-stdlib-browser>string_decoder": true,
+        "tailwindcss>postcss-selector-parser>util-deprecate": true,
+        "assert>util": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>create-hash>ripemd160": {
+      "packages": {
+        "buffer": true,
+        "node-stdlib-browser>crypto-browserify>hash-base": true,
+        "assert>util>inherits": true
+      }
+    },
+    "webpack-dev-server>express>safe-buffer": {
+      "packages": {
+        "buffer": true
+      }
+    },
+    "assert>util>is-generator-function>safe-regex-test": {
+      "packages": {
+        "assert>object.assign>call-bound": true,
+        "assert>call-bind>get-intrinsic>es-errors": true,
+        "assert>util>is-generator-function>safe-regex-test>is-regex": true
+      }
+    },
+    "react-dom>scheduler": {
+      "globals": {
+        "MessageChannel": true,
+        "clearTimeout": true,
+        "console.error": true,
+        "performance": true,
+        "process.env.NODE_ENV": true,
+        "setImmediate": true,
+        "setTimeout": true
+      }
+    },
+    "assert>call-bind>set-function-length": {
+      "packages": {
+        "assert>is-nan>define-properties>define-data-property": true,
+        "assert>call-bind>get-intrinsic>es-errors": true,
+        "assert>call-bind>get-intrinsic": true,
+        "assert>util>which-typed-array>gopd": true,
+        "assert>is-nan>define-properties>has-property-descriptors": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>pbkdf2>sha.js": {
+      "packages": {
+        "assert>util>inherits": true,
+        "webpack-dev-server>express>safe-buffer": true,
+        "node-stdlib-browser>crypto-browserify>pbkdf2>to-buffer": true
+      }
+    },
+    "webpack-dev-server>express>qs>side-channel>side-channel-list": {
+      "packages": {
+        "assert>call-bind>get-intrinsic>es-errors": true,
+        "webpack-dev-server>express>qs>side-channel>object-inspect": true
+      }
+    },
+    "webpack-dev-server>express>qs>side-channel>side-channel-map": {
+      "packages": {
+        "assert>object.assign>call-bound": true,
+        "assert>call-bind>get-intrinsic>es-errors": true,
+        "assert>call-bind>get-intrinsic": true,
+        "webpack-dev-server>express>qs>side-channel>object-inspect": true
+      }
+    },
+    "webpack-dev-server>express>qs>side-channel>side-channel-weakmap": {
+      "packages": {
+        "assert>object.assign>call-bound": true,
+        "assert>call-bind>get-intrinsic>es-errors": true,
+        "assert>call-bind>get-intrinsic": true,
+        "webpack-dev-server>express>qs>side-channel>object-inspect": true,
+        "webpack-dev-server>express>qs>side-channel>side-channel-map": true
+      }
+    },
+    "webpack-dev-server>express>qs>side-channel": {
+      "packages": {
+        "assert>call-bind>get-intrinsic>es-errors": true,
+        "webpack-dev-server>express>qs>side-channel>object-inspect": true,
+        "webpack-dev-server>express>qs>side-channel>side-channel-list": true,
+        "webpack-dev-server>express>qs>side-channel>side-channel-map": true,
+        "webpack-dev-server>express>qs>side-channel>side-channel-weakmap": true
+      }
+    },
+    "node-stdlib-browser>stream-browserify": {
+      "packages": {
+        "events": true,
+        "assert>util>inherits": true,
+        "node-stdlib-browser>readable-stream": true
+      }
+    },
+    "node-stdlib-browser>string_decoder": {
+      "packages": {
+        "webpack-dev-server>express>safe-buffer": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>pbkdf2>to-buffer": {
+      "packages": {
+        "@lavamoat/webpack>json-stable-stringify>isarray": true,
+        "webpack-dev-server>express>safe-buffer": true,
+        "node-stdlib-browser>crypto-browserify>pbkdf2>to-buffer>typed-array-buffer": true
+      }
+    },
+    "@radix-ui/react-dialog>aria-hidden>tslib": {
+      "globals": {
+        "AsyncIterator": true,
+        "Iterator": true,
+        "SuppressedError": true
+      }
+    },
+    "node-stdlib-browser>crypto-browserify>pbkdf2>to-buffer>typed-array-buffer": {
+      "packages": {
+        "assert>object.assign>call-bound": true,
+        "assert>call-bind>get-intrinsic>es-errors": true,
+        "assert>util>is-typed-array": true
+      }
+    },
+    "@hathor/wallet-lib>bitcore-mnemonic>unorm": {
+      "globals": {
+        "define": true
+      }
+    },
+    "node-stdlib-browser>url": {
+      "packages": {
+        "node-polyfill-webpack-plugin>punycode": true,
+        "webpack-dev-server>express>qs": true
+      }
+    },
+    "@radix-ui/react-dialog>react-remove-scroll>use-callback-ref": {
+      "packages": {
+        "react": true
+      }
+    },
+    "@radix-ui/react-dialog>react-remove-scroll>use-sidecar": {
+      "packages": {
+        "react": true,
+        "@radix-ui/react-dialog>aria-hidden>tslib": true
+      }
+    },
+    "tailwindcss>postcss-selector-parser>util-deprecate": {
+      "globals": {
+        "console.trace": true,
+        "console.warn": true,
+        "localStorage": true
+      }
+    },
+    "assert>util": {
+      "globals": {
+        "console.error": true,
+        "console.log": true,
+        "console.trace": true,
+        "process": true
+      },
+      "packages": {
+        "assert>util>inherits": true,
+        "assert>util>is-arguments": true,
+        "assert>util>is-generator-function": true,
+        "assert>util>is-typed-array": true,
+        "assert>util>which-typed-array": true
+      }
+    },
+    "assert>util>which-typed-array": {
+      "packages": {
+        "assert>util>which-typed-array>available-typed-arrays": true,
+        "assert>call-bind": true,
+        "assert>object.assign>call-bound": true,
+        "assert>util>which-typed-array>for-each": true,
+        "assert>util>which-typed-array>get-proto": true,
+        "assert>util>which-typed-array>gopd": true,
+        "assert>util>is-arguments>has-tostringtag": true
+      }
+    },
+    "zod": {
+      "globals": {
+        "File": true,
+        "JSONSchema": true,
+        "URL": true,
+        "atob": true,
+        "btoa": true,
+        "coerce": true,
+        "console.warn": true,
+        "core": true,
+        "iso": true,
+        "locales": true,
+        "navigator": true,
+        "regexes": true,
+        "util": true
+      }
+    }
+  }
+}

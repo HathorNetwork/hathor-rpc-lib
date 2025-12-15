@@ -3,7 +3,6 @@ import { renderHook, act } from '@testing-library/react';
 import { useNetworkManagement } from '../useNetworkManagement';
 import { SnapUnauthorizedError } from '../../../services/SnapService';
 import type { AddressMode } from '../../../utils/addressMode';
-import type { WalletBalance } from '../../../types/wallet';
 
 // Hoisted mocks
 const {
@@ -72,7 +71,7 @@ describe('useNetworkManagement', () => {
     xpub: 'xpub123',
     network: 'mainnet',
     address: 'HAddr123',
-    balances: [{ token: '00', available: 1000n, locked: 0n }] as WalletBalance[],
+    balances: new Map([['00', { token: '00', available: 1000n, locked: 0n }]]),
     addressMode: 'first' as AddressMode,
     invokeSnap: mockInvokeSnap,
     onSetupEventListeners: mockOnSetupEventListeners,

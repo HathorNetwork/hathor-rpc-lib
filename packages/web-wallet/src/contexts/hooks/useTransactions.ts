@@ -1,24 +1,11 @@
 import { useState } from 'react';
 import { readOnlyWalletWrapper } from '../../services/ReadOnlyWalletWrapper';
-import { WalletServiceMethods } from '../../services/SnapService';
+import { WalletServiceMethods, type SendTransactionParams } from '../../services/SnapService';
 import { TOKEN_IDS } from '@/constants';
 import { createLogger } from '../../utils/logger';
 import type { TransactionHistoryItem } from '../../types/wallet';
 
 const log = createLogger('useTransactions');
-
-interface SendTransactionParams {
-  network: string;
-  outputs: Array<{
-    address?: string;
-    value?: string;
-    token?: string;
-    type?: string;
-    data?: string;
-  }>;
-  inputs?: Array<{ txId: string; index: number }>;
-  changeAddress?: string;
-}
 
 interface UseTransactionsOptions {
   isConnected: boolean;
@@ -81,5 +68,3 @@ export function useTransactions(options: UseTransactionsOptions) {
     clearNewTransaction,
   };
 }
-
-export type { SendTransactionParams };

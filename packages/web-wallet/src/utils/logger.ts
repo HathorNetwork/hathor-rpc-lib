@@ -14,7 +14,8 @@ const LOG_LEVELS: Record<LogLevel, number> = {
 };
 
 // Set to 'warn' or 'error' in production to reduce console noise
-const CURRENT_LOG_LEVEL: LogLevel = (import.meta.env.VITE_LOG_LEVEL as LogLevel) || 'debug';
+// Use optional chaining to handle LavaMoat's lockdown where process may be undefined
+const CURRENT_LOG_LEVEL: LogLevel = (typeof process !== 'undefined' ? process.env?.LOG_LEVEL as LogLevel : undefined) || 'debug';
 
 function shouldLog(level: LogLevel): boolean {
   return LOG_LEVELS[level] >= LOG_LEVELS[CURRENT_LOG_LEVEL];

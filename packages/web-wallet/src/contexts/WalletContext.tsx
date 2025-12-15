@@ -10,9 +10,10 @@ import type { AddressMode } from '../utils/addressMode';
 import { useAddressMode } from './hooks/useAddressMode';
 import { useWalletBalance } from './hooks/useWalletBalance';
 import { useTokenManagement } from './hooks/useTokenManagement';
-import { useTransactions, type SendTransactionParams } from './hooks/useTransactions';
+import { useTransactions } from './hooks/useTransactions';
 import { useWalletConnection } from './hooks/useWalletConnection';
 import { useNetworkManagement } from './hooks/useNetworkManagement';
+import type { SendTransactionParams } from '../services/SnapService';
 
 // Re-export types for external use
 export type { TransactionHistoryItem, SendTransactionParams };
@@ -444,7 +445,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
   // Initialize connection hook
   const connection = useWalletConnection({
     addressMode,
-    request,
+    request: request as (params: { method: string; params?: unknown }) => Promise<unknown>,
     invokeSnap,
     requestSnap,
     metamaskError,
