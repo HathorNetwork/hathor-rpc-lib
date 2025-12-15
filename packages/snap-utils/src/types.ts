@@ -26,7 +26,7 @@ interface EIP6963AnnounceProviderEvent extends CustomEvent<{
     rdns: string;
   };
   provider: MetaMaskInpageProvider;
-}> {}
+}> { }
 
 declare global {
   interface WindowEventMap {

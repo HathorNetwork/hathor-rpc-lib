@@ -6,7 +6,7 @@
  */
 
 import { REQUEST_METHODS, DIALOG_TYPES } from '../constants';
-import { Bold, Box, Card, Container, Copyable, Divider, Heading, Icon, Section, Text, Tooltip } from '@metamask/snaps-sdk/jsx';
+import { Bold, Box, Card, Container, Copyable, Heading, Icon, Section, Text, Tooltip } from '@metamask/snaps-sdk/jsx';
 import { constants as libConstants, bigIntUtils, dateUtils, NanoContractActionType, numberUtils } from '@hathor/wallet-lib';
 
 const renderOptionalContractDetail = (param, title) => {

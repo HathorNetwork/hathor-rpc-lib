@@ -1,0 +1,129 @@
+import { TOKEN_IDS, DEFAULT_NETWORK } from '../constants';
+import type { WalletBalance } from '../types/wallet';
+import type { SendTransactionRpcRequest } from '@hathor/hathor-rpc-handler';
+import { createLogger } from '../utils/logger';
+import { PROVIDER_ERROR_CODES, hasErrorCode } from '../errors/WalletConnectionErrors';
+
+const log = createLogger('SnapService');
+
+// Type for the invokeSnap function from snap-utils
+type InvokeSnapFunction = (params: { method: string; params?: Record<string, unknown> }) => Promise<unknown>;
+
+// Re-export for use in other files
+export type SendTransactionParams = SendTransactionRpcRequest['params'];
+
+/**
+ * Custom error class for unauthorized snap errors
+ */
+export class SnapUnauthorizedError extends Error {
+  code: number;
+
+  constructor(message: string, code: number = 4100) {
+    super(message);
+    this.name = 'SnapUnauthorizedError';
+    this.code = code;
+  }
+}
+
+/**
+ * Wraps snap calls with error handling for unauthorized errors
+ */
+async function wrapSnapCall<T>(
+  methodName: string,
+  snapCall: () => Promise<T>
+): Promise<T> {
+  try {
+    return await snapCall();
+  } catch (error) {
+    log.error(`${methodName} failed:`, error);
+
+    // Check for unauthorized error (code 4100)
+    if (hasErrorCode(error, PROVIDER_ERROR_CODES.UNAUTHORIZED)) {
+      throw new SnapUnauthorizedError(
+        'Snap permissions have been revoked or changed. Please reconnect your wallet.',
+        4100
+      );
+    }
+
+    // Re-throw the original error
+    throw error;
+  }
+}
+
+// These will be used by the wallet context with the hooks
+export const WalletServiceMethods = {
+  async getAddress(invokeSnap: InvokeSnapFunction, type: 'index' | 'first_empty' = 'index', index?: number): Promise<string> {
+    return wrapSnapCall('getAddress', async () => {
+      const params: { type: string; index?: number } = { type };
+      if (type === 'index') {
+        params.index = index ?? 0;
+      }
+      const response = await invokeSnap({
+        method: 'htr_getAddress',
+        params
+      }) as { response?: string } | null;
+      if (!response) {
+        return '';
+      }
+      return response.response || '';
+    });
+  },
+
+  async getBalance(invokeSnap: InvokeSnapFunction, tokens: string[] = [TOKEN_IDS.HTR]): Promise<WalletBalance[]> {
+    return wrapSnapCall('getBalance', async () => {
+      const response = await invokeSnap({
+        method: 'htr_getBalance',
+        params: { tokens }
+      }) as { response?: Array<{ token_id?: string; token?: string; available?: number | bigint; locked?: number | bigint }> } | null;
+
+      if (!response) {
+        log.error('Received null response from snap - snap may not be responding');
+        throw new Error('Failed to get balance: snap not responding');
+      }
+
+      const balances = response.response?.map((balance) => ({
+        token: balance.token_id || balance.token || '',
+        available: balance.available ? (typeof balance.available === 'bigint' ? balance.available : BigInt(balance.available)) : 0n,
+        locked: balance.locked ? (typeof balance.locked === 'bigint' ? balance.locked : BigInt(balance.locked)) : 0n
+      })) || [];
+
+      return balances;
+    });
+  },
+
+  async getConnectedNetwork(invokeSnap: InvokeSnapFunction): Promise<string> {
+    return wrapSnapCall('getConnectedNetwork', async () => {
+      const response = await invokeSnap({
+        method: 'htr_getConnectedNetwork'
+      }) as { response?: string } | null;
+      if (!response) {
+        return DEFAULT_NETWORK;
+      }
+      return response.response || DEFAULT_NETWORK;
+    });
+  },
+
+  async sendTransaction(invokeSnap: InvokeSnapFunction, params: SendTransactionParams): Promise<unknown> {
+    log.debug('sendTransaction called');
+
+    return wrapSnapCall('sendTransaction', async () => {
+      log.debug('Invoking snap with htr_sendTransaction...');
+      const response = await invokeSnap({
+        method: 'htr_sendTransaction',
+        params: params as unknown as Record<string, unknown>
+      }) as { response?: unknown } | null;
+
+      log.debug('Snap response received');
+
+      if (!response) {
+        log.error('No response from snap (user cancelled or rejected)');
+        throw new Error('Transaction was cancelled or rejected');
+      }
+
+      log.info('Transaction sent successfully');
+      return response.response || response;
+    });
+  },
+};
+
+export default WalletServiceMethods;

@@ -19,6 +19,7 @@ export const useRequest = () => {
    * @param params.method - The method to call.
    * @param params.params - The method params.
    * @returns The result of the request.
+   * @throws Will throw an error if the request fails.
    */
   const request: Request = async ({ method, params }) => {
     try {
@@ -31,9 +32,13 @@ export const useRequest = () => {
 
       return data;
     } catch (requestError: any) {
+      // Set error in context for UI notifications
       setError(requestError);
 
-      return null;
+      // Re-throw the error so callers can distinguish between
+      // null response vs error. This allows proper error handling
+      // instead of treating all errors as null responses.
+      throw requestError;
     }
   };
 

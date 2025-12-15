@@ -8,6 +8,7 @@ dist/
 build/
 coverage/
 .cache/
-public/
 *.swp
 *.swo
+.claude
+playwright-report/

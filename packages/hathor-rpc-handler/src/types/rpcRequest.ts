@@ -118,6 +118,7 @@ export interface SendTransactionRpcRequest {
       address: string;
       value: string;
       token?: string;
+      timelock?: number;
     } | {
       type?: string;
       data: string;
