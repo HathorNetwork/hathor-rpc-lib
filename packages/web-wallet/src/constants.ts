@@ -59,3 +59,6 @@ export const DEFAULT_ADDRESS_TYPE = 'index' as const;
 export const QR_CODE_SIZE = 200;
 export const TRANSACTION_HISTORY_LIMIT = 50;
 export const CHECK_CONNECTION_TIMEOUT = 10000;
+
+// Snap Version Requirements
+export const MIN_SNAP_VERSION = import.meta.env.VITE_MIN_SNAP_VERSION || '0.0.0';

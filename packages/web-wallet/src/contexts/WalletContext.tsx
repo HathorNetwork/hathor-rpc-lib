@@ -2,9 +2,12 @@
 import { createContext, useContext, useCallback, useState, useRef, useEffect, type ReactNode } from 'react';
 import { useInvokeSnap, useRequestSnap, useMetaMaskContext, useRequest } from '@hathor/snap-utils';
 import { ConnectionLostModal } from '../components/ConnectionLostModal';
+import { UpdateSnapModal } from '../components/UpdateSnapModal';
 import type { TransactionHistoryItem } from '../types/wallet';
 import type { TokenFilter, DagMetadata } from '../types/token';
 import type { AddressMode } from '../utils/addressMode';
+import { isVersionSupported } from '../utils/version';
+import { MIN_SNAP_VERSION } from '../constants';
 
 // Import all our custom hooks
 import { useAddressMode } from './hooks/useAddressMode';
@@ -33,6 +36,7 @@ export interface WalletState {
   address: string;
   balances: Map<string, { token: string; available: bigint; locked: bigint }>;
   network: string;
+  snapVersion: string | null;
   /**
    * User-facing error message for recoverable errors.
    *
@@ -430,6 +434,12 @@ export function WalletProvider({ children }: WalletProviderProps) {
   const [showConnectionLostModal, setShowConnectionLostModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Check if snap version meets minimum requirement
+  const needsSnapUpdate = useMemo(() => {
+    if (!connection.snapVersion) return false;
+    return !isVersionSupported(connection.snapVersion, MIN_SNAP_VERSION);
+  }, [connection.snapVersion]);
+
   // Ref for transaction notification callback to avoid circular dependency
   const onNewTransactionRef = useRef<(notification: { type: 'sent' | 'received'; amount: bigint; timestamp: number; symbol: string; tokenUid: string }) => void>(() => {});
 
@@ -576,6 +586,9 @@ export function WalletProvider({ children }: WalletProviderProps) {
     address: balance.address || connection.address,
     balances: balance.balances.size > 0 ? balance.balances : connection.balances,
 
+    // Snap version
+    snapVersion: connection.snapVersion,
+
     // Token state
     registeredTokens: tokens.registeredTokens,
     selectedTokenFilter: tokens.selectedTokenFilter,
@@ -626,6 +639,11 @@ export function WalletProvider({ children }: WalletProviderProps) {
       <ConnectionLostModal
         isOpen={showConnectionLostModal}
         onReconnect={connection.handleReconnect}
+      />
+      <UpdateSnapModal
+        isOpen={needsSnapUpdate}
+        installedVersion={connection.snapVersion || 'unknown'}
+        minVersion={MIN_SNAP_VERSION}
       />
     </WalletContext.Provider>
   );
