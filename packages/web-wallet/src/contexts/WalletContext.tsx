@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useState, useRef, useEffect, type ReactNode } from 'react';
 import { useInvokeSnap, useRequestSnap, useMetaMaskContext, useRequest } from '@hathor/snap-utils';
 import { ConnectionLostModal } from '../components/ConnectionLostModal';
 import type { TransactionHistoryItem } from '../types/wallet';
@@ -482,6 +482,20 @@ export function WalletProvider({ children }: WalletProviderProps) {
   // Update ref after transactions is initialized
   onNewTransactionRef.current = transactions.setNewTransaction;
 
+  // Sync registered tokens from connection to token management hook
+  // This ensures both hooks stay in sync when:
+  // 1. Wallet connects and loads tokens from localStorage
+  // 2. Network changes and new tokens are loaded
+  // 3. Any other operation that updates connection.registeredTokens
+  useEffect(() => {
+    if (connection.registeredTokens.length > 0) {
+      tokens.setRegisteredTokens(connection.registeredTokens);
+    } else if (connection.registeredTokens.length === 0 && !connection.isConnected) {
+      // Clear tokens when disconnected
+      tokens.setRegisteredTokens([]);
+    }
+  }, [connection.registeredTokens, connection.isConnected, tokens]);
+
   // Initialize network management hook
   const networkManagement = useNetworkManagement({
     isConnected: connection.isConnected,
@@ -498,6 +512,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
       connection.setAddress(address);
       connection.setBalances(balances);
       connection.setRegisteredTokens(newTokens);
+      tokens.setRegisteredTokens(newTokens);
       setError(warning);
     },
     onLoadingChange: connection.setLoadingState,
@@ -525,7 +540,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     balances: balance.balances.size > 0 ? balance.balances : connection.balances,
 
     // Token state
-    registeredTokens: tokens.registeredTokens.length > 0 ? tokens.registeredTokens : connection.registeredTokens,
+    registeredTokens: tokens.registeredTokens,
     selectedTokenFilter: tokens.selectedTokenFilter,
     selectedTokenForSend: null, // This was removed in refactor
 
