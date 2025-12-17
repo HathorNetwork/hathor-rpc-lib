@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useCallback, useState, useRef, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useCallback, useState, useRef, useEffect, useMemo, type ReactNode } from 'react';
 import { useInvokeSnap, useRequestSnap, useMetaMaskContext, useRequest } from '@hathor/snap-utils';
 import { ConnectionLostModal } from '../components/ConnectionLostModal';
 import { UpdateSnapModal } from '../components/UpdateSnapModal';
@@ -434,23 +434,21 @@ export function WalletProvider({ children }: WalletProviderProps) {
   const [showConnectionLostModal, setShowConnectionLostModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Check if snap version meets minimum requirement
-  const needsSnapUpdate = useMemo(() => {
-    if (!connection.snapVersion) return false;
-    return !isVersionSupported(connection.snapVersion, MIN_SNAP_VERSION);
-  }, [connection.snapVersion]);
-
   // Ref for transaction notification callback to avoid circular dependency
   const onNewTransactionRef = useRef<(notification: { type: 'sent' | 'received'; amount: bigint; timestamp: number; symbol: string; tokenUid: string }) => void>(() => {});
 
   // Ref for balance refresh callback to avoid circular dependency and ensure latest tokens are used
   const refreshBalanceRef = useRef<() => Promise<void>>(async () => {});
 
-  // Initialize address mode hook
+  // Ref for targeted balance refresh (specific tokens only)
+  const refreshBalanceForTokensRef = useRef<(tokenIds: string[]) => Promise<void>>(async () => {});
+
+  // Initialize address mode hook first (without connection dependency)
   const { addressMode, setAddressMode: setAddressModeImpl } = useAddressMode({
     onError: setError,
     onAddressUpdate: async (mode) => {
       // Let connection hook handle wallet state check and address refresh
+      // This will be available after connection is initialized
       await connection.refreshAddressForMode(mode);
     },
   });
@@ -464,6 +462,9 @@ export function WalletProvider({ children }: WalletProviderProps) {
     metamaskError,
     onRefreshBalance: async () => {
       await refreshBalanceRef.current();
+    },
+    onRefreshBalanceForTokens: async (tokenIds: string[]) => {
+      await refreshBalanceForTokensRef.current(tokenIds);
     },
     onError: setError,
     onShowConnectionLostModal: setShowConnectionLostModal,
@@ -484,8 +485,9 @@ export function WalletProvider({ children }: WalletProviderProps) {
     onError: setError,
   });
 
-  // Update ref to always use latest balance refresh (includes latest registeredTokens)
+  // Update refs to always use latest balance refresh functions
   refreshBalanceRef.current = balance.refreshBalance;
+  refreshBalanceForTokensRef.current = balance.refreshBalanceForTokens;
 
   // Initialize transactions hook
   const transactions = useTransactions({
@@ -497,6 +499,12 @@ export function WalletProvider({ children }: WalletProviderProps) {
 
   // Update ref after transactions is initialized
   onNewTransactionRef.current = transactions.setNewTransaction;
+
+  // Check if snap version meets minimum requirement (after connection is initialized)
+  const needsSnapUpdate = useMemo(() => {
+    if (!connection.snapVersion) return false;
+    return !isVersionSupported(connection.snapVersion, MIN_SNAP_VERSION);
+  }, [connection.snapVersion]);
 
   // Sync registered tokens from connection to token management hook
   // Only sync when connection loads tokens (initial connect or network change)

@@ -61,4 +61,4 @@ export const TRANSACTION_HISTORY_LIMIT = 50;
 export const CHECK_CONNECTION_TIMEOUT = 10000;
 
 // Snap Version Requirements
-export const MIN_SNAP_VERSION = import.meta.env.VITE_MIN_SNAP_VERSION || '0.0.0';
+export const MIN_SNAP_VERSION = process.env.MIN_SNAP_VERSION || '0.0.0';
