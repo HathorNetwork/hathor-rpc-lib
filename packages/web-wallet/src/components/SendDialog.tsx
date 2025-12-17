@@ -6,7 +6,8 @@ import { z } from 'zod';
 import { useWallet } from '../contexts/WalletContext';
 import { useTokens } from '../hooks/useTokens';
 import { formatAmount, amountToCents, centsToAmount } from '../utils/hathor';
-import { dateToUnixTimestamp, isFutureDate, getTimezoneOffset } from '../utils/timelock';
+// TODO: Re-enable when snap supports timelock
+// import { dateToUnixTimestamp, isFutureDate, getTimezoneOffset } from '../utils/timelock';
 import { Address, Network } from '@hathor/wallet-lib';
 import { TOKEN_IDS } from '../constants';
 import { readOnlyWalletWrapper } from '../services/ReadOnlyWalletWrapper';
@@ -63,10 +64,11 @@ const createSendFormSchema = (network: string) =>
           });
         }
       }),
-    timelock: z.date().optional().refine(
-      (date) => !date || isFutureDate(date),
-      'Timelock date must be in the future'
-    ),
+    // TODO: Re-enable when snap supports timelock
+    // timelock: z.date().optional().refine(
+    //   (date) => !date || isFutureDate(date),
+    //   'Timelock date must be in the future'
+    // ),
     dataOutput: z.string().optional(),
   });
 
@@ -97,7 +99,8 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
       selectedToken: initialTokenUid || TOKEN_IDS.HTR,
       amount: '',
       address: '',
-      timelock: undefined,
+      // TODO: Re-enable when snap supports timelock
+      // timelock: undefined,
       dataOutput: '',
     },
     mode: 'onChange',
@@ -110,7 +113,8 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
         selectedToken: initialTokenUid || TOKEN_IDS.HTR,
         amount: '',
         address: '',
-        timelock: undefined,
+        // TODO: Re-enable when snap supports timelock
+        // timelock: undefined,
         dataOutput: '',
       });
     }
@@ -218,29 +222,31 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
       const changeAddress = await getAddressForMode(addressMode, readOnlyWalletWrapper);
       console.log('[SendDialog] Change address:', changeAddress);
 
-      // Prepare output with optional timelock
+      // Prepare output
+      // TODO: Re-enable timelock when snap supports it
       const output: {
         address: string;
         value: string;
         token: string;
-        timelock?: number;
+        // timelock?: number;
       } = {
         address: data.address.trim(),
         value: amountInBaseUnits.toString(),
         token: data.selectedToken
       };
 
+      // TODO: Re-enable when snap supports timelock
       // Add timelock if provided (convert Date to Unix timestamp)
-      if (data.timelock) {
-        output.timelock = dateToUnixTimestamp(data.timelock);
-        console.log('[SendDialog] Timelock added:', {
-          date: data.timelock,
-          timestamp: output.timelock,
-          formatted: new Date(output.timelock * 1000).toLocaleString()
-        });
-      } else {
-        console.log('[SendDialog] No timelock specified');
-      }
+      // if (data.timelock) {
+      //   output.timelock = dateToUnixTimestamp(data.timelock);
+      //   console.log('[SendDialog] Timelock added:', {
+      //     date: data.timelock,
+      //     timestamp: output.timelock,
+      //     formatted: new Date(output.timelock * 1000).toLocaleString()
+      //   });
+      // } else {
+      //   console.log('[SendDialog] No timelock specified');
+      // }
 
       console.log('[SendDialog] Final output object:', output);
       console.log('[SendDialog] Calling sendTransaction...');
@@ -405,8 +411,9 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
 
             {showAdvanced && (
               <div className="mt-4 space-y-4">
+                {/* TODO: Re-enable when snap supports timelock */}
                 {/* Timelock */}
-                <div>
+                {/* <div>
                   <label className="block text-sm font-medium text-white mb-2">
                     Timelock (optional)
                     <span className="ml-2 text-xs text-muted-foreground">
@@ -424,13 +431,18 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
                         setValue('timelock', undefined, { shouldValidate: true });
                       }
                     }}
-                    min={new Date().toISOString().slice(0, 16)}
+                    min={(() => {
+                      // Convert current time to local timezone for datetime-local input
+                      const now = new Date();
+                      const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+                      return localDateTime.toISOString().slice(0, 16);
+                    })()}
                     className="w-full px-3 py-2 bg-[#0D1117] border border-border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                   {errors.timelock && (
                     <p className="mt-1 text-sm text-red-400">{errors.timelock.message}</p>
                   )}
-                </div>
+                </div> */}
 
                 {/* Data Output */}
                 <div>
