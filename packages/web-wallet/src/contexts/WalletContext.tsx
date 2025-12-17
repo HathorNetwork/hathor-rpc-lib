@@ -433,6 +433,9 @@ export function WalletProvider({ children }: WalletProviderProps) {
   // Ref for transaction notification callback to avoid circular dependency
   const onNewTransactionRef = useRef<(notification: { type: 'sent' | 'received'; amount: bigint; timestamp: number; symbol: string; tokenUid: string }) => void>(() => {});
 
+  // Ref for balance refresh callback to avoid circular dependency and ensure latest tokens are used
+  const refreshBalanceRef = useRef<() => Promise<void>>(async () => {});
+
   // Initialize address mode hook
   const { addressMode, setAddressMode: setAddressModeImpl } = useAddressMode({
     onError: setError,
@@ -450,7 +453,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     requestSnap,
     metamaskError,
     onRefreshBalance: async () => {
-      await balance.refreshBalance();
+      await refreshBalanceRef.current();
     },
     onError: setError,
     onShowConnectionLostModal: setShowConnectionLostModal,
@@ -467,9 +470,12 @@ export function WalletProvider({ children }: WalletProviderProps) {
   const balance = useWalletBalance({
     isConnected: connection.isConnected,
     addressMode,
-    registeredTokens: tokens.registeredTokens,
+    registeredTokens: connection.registeredTokens,
     onError: setError,
   });
+
+  // Update ref to always use latest balance refresh (includes latest registeredTokens)
+  refreshBalanceRef.current = balance.refreshBalance;
 
   // Initialize transactions hook
   const transactions = useTransactions({
@@ -500,7 +506,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
       lastSyncedTokensRef.current = '';
       tokens.setRegisteredTokens([]);
     }
-  }, [connection.registeredTokens, connection.isConnected, tokens]);
+  }, [connection.registeredTokens, connection.isConnected]);
 
   // Wrapped register function that updates both states
   const registerToken = async (configString: string) => {

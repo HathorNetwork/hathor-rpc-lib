@@ -240,6 +240,7 @@ const WalletHome: React.FC = () => {
           {/* Token List */}
           <TokenList
             tokens={tokens}
+            balances={balances}
             onTokenClick={(tokenUid) => {
               navigate(`/history/${tokenUid}`);
             }}

@@ -621,7 +621,9 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
   // Once the read-only token permissions are fixed, uncomment the notification code below.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleNewTransaction = useCallback(async (_tx: unknown) => {
-    if (!isConnected || !readOnlyWalletWrapper.isReady()) return;
+    if (!isConnected || !readOnlyWalletWrapper.isReady()) {
+      return;
+    }
 
     // Just refresh balances when a new transaction arrives
     try {
