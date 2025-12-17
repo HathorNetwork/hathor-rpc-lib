@@ -51,7 +51,7 @@ export const HTR_DECIMAL_MULTIPLIER = 10 ** HTR_DECIMAL_PLACES; // 100
 export const HTR_DECIMAL_MULTIPLIER_BIGINT = BigInt(10 ** HTR_DECIMAL_PLACES); // 100n
 
 // Default configuration
-export const DEFAULT_NETWORK = NETWORKS.TESTNET;
+export const DEFAULT_NETWORK = NETWORKS.MAINNET;
 export const DEFAULT_ADDRESS_INDEX = 0;
 export const DEFAULT_ADDRESS_TYPE = 'index' as const;
 
