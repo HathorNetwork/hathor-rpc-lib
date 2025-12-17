@@ -127,13 +127,10 @@ export class ReadOnlyWalletWrapper {
       // wallet-lib returns an array of balance objects
       if (Array.isArray(balance)) {
         for (const item of balance) {
-          const tokenId = typeof item.token === 'string' ? item.token : item.token?.id || '';
-          const balanceData = item.balance || {};
-
-          balances.set(tokenId, {
-            token: tokenId,
-            available: balanceData.unlocked ? toBigInt(balanceData.unlocked) : 0n,
-            locked: balanceData.locked ? toBigInt(balanceData.locked) : 0n,
+          balances.set(item.token.id, {
+            token: item.token.id,
+            available: item.balance.unlocked ? toBigInt(item.balance.unlocked) : 0n,
+            locked: item.balance.locked ? toBigInt(item.balance.locked) : 0n,
           });
         }
       }
