@@ -483,18 +483,45 @@ export function WalletProvider({ children }: WalletProviderProps) {
   onNewTransactionRef.current = transactions.setNewTransaction;
 
   // Sync registered tokens from connection to token management hook
-  // This ensures both hooks stay in sync when:
-  // 1. Wallet connects and loads tokens from localStorage
-  // 2. Network changes and new tokens are loaded
-  // 3. Any other operation that updates connection.registeredTokens
+  // Only sync when connection loads tokens (initial connect or network change)
+  // Use a ref to track if we should sync to avoid infinite loops
+  const lastSyncedTokensRef = useRef<string>('');
+
   useEffect(() => {
-    if (connection.registeredTokens.length > 0) {
+    const connectionTokensKey = connection.registeredTokens.map(t => t.uid).sort().join(',');
+
+    // Only sync if:
+    // 1. Connection has tokens loaded, OR
+    // 2. Disconnected and need to clear
+    if (connection.registeredTokens.length > 0 && connectionTokensKey !== lastSyncedTokensRef.current) {
+      lastSyncedTokensRef.current = connectionTokensKey;
       tokens.setRegisteredTokens(connection.registeredTokens);
     } else if (connection.registeredTokens.length === 0 && !connection.isConnected) {
-      // Clear tokens when disconnected
+      lastSyncedTokensRef.current = '';
       tokens.setRegisteredTokens([]);
     }
   }, [connection.registeredTokens, connection.isConnected, tokens]);
+
+  // Wrapped register function that updates both states
+  const registerToken = async (configString: string) => {
+    await tokens.registerToken(configString);
+    // Update connection state immediately after successful registration
+    // Get the updated list from tokens (the new token was added)
+    setTimeout(() => {
+      connection.setRegisteredTokens(tokens.registeredTokens);
+      lastSyncedTokensRef.current = tokens.registeredTokens.map(t => t.uid).sort().join(',');
+    }, 0);
+  };
+
+  // Wrapped unregister function that updates both states
+  const unregisterToken = async (tokenUid: string) => {
+    await tokens.unregisterToken(tokenUid);
+    // Update connection state immediately after successful unregistration
+    setTimeout(() => {
+      connection.setRegisteredTokens(tokens.registeredTokens);
+      lastSyncedTokensRef.current = tokens.registeredTokens.map(t => t.uid).sort().join(',');
+    }, 0);
+  };
 
   // Initialize network management hook
   const networkManagement = useNetworkManagement({
@@ -566,9 +593,9 @@ export function WalletProvider({ children }: WalletProviderProps) {
     sendTransaction: transactions.sendTransaction,
     clearNewTransaction: transactions.clearNewTransaction,
 
-    // Token methods
-    registerToken: tokens.registerToken,
-    unregisterToken: tokens.unregisterToken,
+    // Token methods (wrapped to keep both states in sync)
+    registerToken,
+    unregisterToken,
     refreshTokenBalances: balance.refreshBalance, // Now managed by balance hook
     setSelectedTokenFilter: tokens.setSelectedTokenFilter,
     getTokenInfo: tokens.getTokenInfo,
