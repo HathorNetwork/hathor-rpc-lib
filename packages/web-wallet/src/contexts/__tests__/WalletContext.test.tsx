@@ -170,6 +170,7 @@ describe('WalletContext', () => {
     // Mock window.ethereum for wallet_getSnaps calls
     global.window.ethereum = {
       request: vi.fn(),
+      isMetaMask: true,
     } as unknown as typeof window.ethereum;
     localStorage.clear();
 
