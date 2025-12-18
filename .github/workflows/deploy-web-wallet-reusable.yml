@@ -60,10 +60,10 @@ jobs:
           role-to-assume: ${{ inputs.aws-role }}
 
       - name: Build
-        run: nix develop . -c make -C packages/web-wallet build site=${{ inputs.site }}
+        run: nix develop . -c web-wallet-build ${{ inputs.site }}
 
       - name: Sync to S3
-        run: nix develop . -c make -C packages/web-wallet sync site=${{ inputs.site }}
+        run: nix develop . -c web-wallet-sync ${{ inputs.site }}
 
       - name: Invalidate CloudFront Cache
-        run: nix develop . -c make -C packages/web-wallet clear_cloudfront_cache site=${{ inputs.site }}
+        run: nix develop . -c web-wallet-clear-cache ${{ inputs.site }}
