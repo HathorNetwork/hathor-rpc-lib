@@ -1,14 +1,12 @@
 import { readOnlyWalletWrapper } from '../../services/ReadOnlyWalletWrapper';
 import { SnapUnauthorizedError } from '../../services/SnapService';
 import { getAddressForMode, type AddressMode } from '../../utils/addressMode';
-import { loadTokensWithBalances } from '../../utils/tokenLoading';
 import { TOKEN_IDS } from '@/constants';
 import { SNAP_TIMEOUTS } from '../../constants/timeouts';
 import { createLogger } from '../../utils/logger';
 import { raceWithTimeout } from '../../utils/promise';
 import { isSnapCrashedError } from '../../utils/snapErrors';
 import type { WalletBalance } from '../../types/wallet';
-import type { TokenInfo } from '../../types/token';
 
 const log = createLogger('useNetworkManagement');
 
@@ -27,13 +25,14 @@ interface UseNetworkManagementOptions {
   invokeSnap: (params: { method: string; params?: Record<string, unknown> }) => Promise<unknown>;
   onSetupEventListeners: () => void;
   onSnapError: (error: unknown) => void;
+  /** Called when network change succeeds - tokens are loaded separately by useTokenState */
   onNetworkChange: (params: {
     network: string;
     address: string;
     balances: Map<string, WalletBalance>;
-    tokens: TokenInfo[];
-    warning: string | null;
   }) => void;
+  /** Called after network change to load tokens for the new network */
+  onLoadTokens: (network: string) => Promise<void>;
   onLoadingChange: (loading: boolean, step: string) => void;
   onError: (error: string | null) => void;
   onForceDisconnect: () => void;
@@ -54,6 +53,7 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
     onSetupEventListeners,
     onSnapError,
     onNetworkChange,
+    onLoadTokens,
     onLoadingChange,
     onError,
     onForceDisconnect,
@@ -108,24 +108,18 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
 
       const newBalances = await readOnlyWalletWrapper.getBalance(TOKEN_IDS.HTR);
 
-      // Load registered tokens for new network
-      const genesisHash = '';
-      const tokenLoadResult = await loadTokensWithBalances(newNetwork, genesisHash, {
-        clearNftCache: true,
-        detailedErrors: false,
-      });
-
       // Update app state first (can throw)
       onNetworkChange({
         network: newNetwork,
         address: newAddress,
         balances: newBalances,
-        tokens: tokenLoadResult.tokens,
-        warning: tokenLoadResult.warning,
       });
 
       // Only persist to localStorage after state update succeeds
       localStorage.setItem(STORAGE_KEYS.NETWORK, newNetwork);
+
+      // Load tokens for the new network (managed by useTokenState)
+      await onLoadTokens(newNetwork);
 
       onLoadingChange(false, '');
 
@@ -195,9 +189,11 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
           network: previousNetwork,
           address: previousAddress,
           balances: previousBalances,
-          tokens: [], // Will be restored by caller
-          warning: null,
         });
+
+        // Reload tokens for the previous network
+        await onLoadTokens(previousNetwork);
+
         onLoadingChange(false, '');
         onError(`Failed to change network: ${originalError}. Reverted to ${previousNetwork}.`);
       } catch (rollbackError) {

@@ -79,7 +79,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
   const [isLoading, setIsLoading] = useState(false);
   const [transactionError, setTransactionError] = useState<string | null>(null);
 
-  const { sendTransaction, network, refreshBalance, addressMode } = useWallet();
+  const { sendTransaction, network, addressMode } = useWallet();
   const { allTokens } = useTokens();
 
   // Initialize form
@@ -261,8 +261,8 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
 
       console.log('Transaction sent successfully:', result);
 
-      // Refresh balance after successful transaction
-      await refreshBalance();
+      // Note: Balance refresh is handled by WebSocket 'new-tx' event handler,
+      // which refreshes only the affected tokens. No manual refresh needed here.
 
       // Reset form and close
       reset();

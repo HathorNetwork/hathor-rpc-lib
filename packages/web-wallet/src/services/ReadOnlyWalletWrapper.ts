@@ -119,7 +119,9 @@ export class ReadOnlyWalletWrapper {
     }
 
     try {
-      const balance = await this.wallet.getBalance(tokenId);
+      const balance = await this.wallet.getBalance(tokenId ?? null);
+
+      log.debug('[getBalance] Raw response for tokenId:', tokenId, 'response:', JSON.stringify(balance, (_, v) => typeof v === 'bigint' ? v.toString() + 'n' : v));
 
       // Transform the wallet-lib balance format (array) to Map
       const balances = new Map<string, WalletBalance>();
@@ -127,14 +129,18 @@ export class ReadOnlyWalletWrapper {
       // wallet-lib returns an array of balance objects
       if (Array.isArray(balance)) {
         for (const item of balance) {
+          log.debug('[getBalance] Processing item:', JSON.stringify(item, (_, v) => typeof v === 'bigint' ? v.toString() + 'n' : v));
           balances.set(item.token.id, {
             token: item.token.id,
-            available: item.balance.unlocked ? toBigInt(item.balance.unlocked) : 0n,
-            locked: item.balance.locked ? toBigInt(item.balance.locked) : 0n,
+            available: item.balance.unlocked != null ? toBigInt(item.balance.unlocked) : 0n,
+            locked: item.balance.locked != null ? toBigInt(item.balance.locked) : 0n,
           });
         }
+      } else {
+        log.warn('[getBalance] Response is not an array:', typeof balance, balance);
       }
 
+      log.debug('[getBalance] Returning balances map size:', balances.size);
       return balances;
     } catch (error) {
       log.error('Failed to get balance:', error);

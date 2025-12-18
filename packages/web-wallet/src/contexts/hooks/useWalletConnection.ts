@@ -3,14 +3,12 @@ import { readOnlyWalletWrapper } from '../../services/ReadOnlyWalletWrapper';
 import { SnapUnauthorizedError } from '../../services/SnapService';
 import { CHECK_CONNECTION_TIMEOUT, DEFAULT_NETWORK, TOKEN_IDS } from '@/constants';
 import { getAddressForMode, type AddressMode } from '../../utils/addressMode';
-import { loadTokensWithBalances } from '../../utils/tokenLoading';
 import { SNAP_TIMEOUTS } from '../../constants/timeouts';
 import { createLogger } from '../../utils/logger';
 // TODO: Re-enable when transaction notifications are fixed
 // import { toBigInt } from '../../utils/hathor';
 import { raceWithTimeout } from '../../utils/promise';
 import type { WalletBalance } from '../../types/wallet';
-import type { TokenInfo } from '../../types/token';
 import { z } from 'zod';
 import { defaultSnapOrigin } from '@hathor/snap-utils';
 import { ERROR_PATTERNS, WalletLibErrors, PROVIDER_ERROR_CODES, hasErrorCode } from '../../errors/WalletConnectionErrors';
@@ -74,14 +72,21 @@ interface UseWalletConnectionOptions {
   requestSnap: () => Promise<void>;
   metamaskError: Error | null;
   onRefreshBalance: () => Promise<void>;
+  /** Refresh balances for specific tokens only (used for WebSocket updates) */
+  onRefreshBalanceForTokens: (tokenIds: string[]) => Promise<void>;
   onError: (error: string | null) => void;
   onShowConnectionLostModal: (show: boolean) => void;
   onNewTransaction: (notification: { type: 'sent' | 'received'; amount: bigint; timestamp: number; symbol: string; tokenUid: string }) => void;
+  /** Called when wallet is connected and ready - use to load tokens */
+  onConnectionReady?: (network: string) => Promise<void>;
 }
 
 /**
  * Return type for useWalletConnection hook.
  * Core wallet connection state and operations.
+ *
+ * NOTE: Token state is NOT managed here - use useTokenState for tokens.
+ * This hook only handles connection lifecycle and basic wallet state.
  */
 export interface WalletConnectionResult {
   /** Whether wallet is connected and ready */
@@ -100,16 +105,12 @@ export interface WalletConnectionResult {
   balances: Map<string, WalletBalance>;
   /** Current network (mainnet/testnet) */
   network: string;
-  /** List of registered custom tokens with metadata */
-  registeredTokens: TokenInfo[];
   /** Updates displayed address (internal use by other hooks) */
   setAddress: (address: string) => void;
   /** Updates balance state (internal use by other hooks) */
   setBalances: (balances: Map<string, WalletBalance>) => void;
   /** Updates network state (internal use by other hooks) */
   setNetwork: (network: string) => void;
-  /** Updates registered tokens (internal use by other hooks) */
-  setRegisteredTokens: (tokens: TokenInfo[]) => void;
   /** Initiates wallet connection via MetaMask Snap */
   connectWallet: () => Promise<void>;
   /** Disconnects wallet and clears all state */
@@ -136,9 +137,10 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     invokeSnap,
     requestSnap,
     metamaskError,
-    onRefreshBalance,
+    onRefreshBalanceForTokens,
     onError,
     onShowConnectionLostModal,
+    onConnectionReady,
     // TODO: Re-enable when transaction notifications are fixed
     // onNewTransaction,
   } = options;
@@ -160,7 +162,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
   const [address, setAddress] = useState('');
   const [balances, setBalances] = useState<Map<string, WalletBalance>>(new Map());
   const [network, setNetwork] = useState('mainnet');
-  const [registeredTokens, setRegisteredTokens] = useState<TokenInfo[]>([]);
+  // NOTE: Token state moved to useTokenState - this hook no longer manages tokens
 
   // Use a ref to prevent concurrent connection checks
   const isCheckingRef = useRef(false);
@@ -259,17 +261,14 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
   };
 
   /**
-   * Loads wallet state including address, balances, and registered tokens.
-   * Returns all loaded data for state updates.
+   * Loads wallet state including address and HTR balance.
+   * NOTE: Token loading is handled separately by useTokenState.
    */
   const loadWalletState = async (
-    network: string,
     addressMode: AddressMode
   ): Promise<{
     address: string;
     balances: Map<string, WalletBalance>;
-    tokens: TokenInfo[];
-    warning: string | null;
   }> => {
     // Get wallet address
     let walletAddress: string;
@@ -281,21 +280,12 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
       throw new Error(`Failed to retrieve wallet address: ${originalMessage}`);
     }
 
-    // Get balances
+    // Get HTR balance
     const walletBalances = await readOnlyWalletWrapper.getBalance(TOKEN_IDS.HTR);
-
-    // Load registered tokens with NFT detection and balance fetching
-    const genesisHash = '';
-    const tokenLoadResult = await loadTokensWithBalances(network, genesisHash, {
-      clearNftCache: true,
-      detailedErrors: true,
-    });
 
     return {
       address: walletAddress,
       balances: walletBalances,
-      tokens: tokenLoadResult.tokens,
-      warning: tokenLoadResult.warning,
     };
   };
 
@@ -345,9 +335,9 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
       setLoadingStep('Initializing read-only wallet...');
       await initializeWalletFromStorage(storedXpub, storedNetwork);
 
-      // Step 4: Load wallet state
+      // Step 4: Load wallet state (address and HTR balance)
       setLoadingStep('Loading wallet data...');
-      const walletState = await loadWalletState(storedNetwork, addressMode);
+      const walletState = await loadWalletState(addressMode);
 
       // Check if we should still update state (component might have unmounted)
       if (!isMountedRef.current) {
@@ -362,8 +352,11 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
       setNetwork(storedNetwork);
       setXpub(storedXpub);
       setLoadingStep('');
-      setRegisteredTokens(walletState.tokens);
-      onError(walletState.warning);
+
+      // Notify that connection is ready - useTokenState will load tokens
+      if (onConnectionReady) {
+        await onConnectionReady(storedNetwork);
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
 
@@ -542,11 +535,6 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
 
       const walletBalances = await readOnlyWalletWrapper.getBalance(TOKEN_IDS.HTR);
 
-      const genesisHash = '';
-      const tokenLoadResult = await loadTokensWithBalances(newNetwork, genesisHash, {
-        detailedErrors: false,
-      });
-
       localStorage.setItem(STORAGE_KEYS.XPUB, newXpub);
       localStorage.setItem(STORAGE_KEYS.NETWORK, newNetwork);
 
@@ -557,8 +545,11 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
       setXpub(newXpub);
       setIsConnecting(false);
       setLoadingStep('');
-      setRegisteredTokens(tokenLoadResult.tokens);
-      onError(tokenLoadResult.warning);
+
+      // Notify that connection is ready - useTokenState will load tokens
+      if (onConnectionReady) {
+        await onConnectionReady(newNetwork);
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
 
@@ -610,91 +601,68 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     setBalances(new Map());
     setNetwork('mainnet');
     setXpub(null);
-    setRegisteredTokens([]);
+    // NOTE: Token clearing is handled by useTokenState via isConnected change
     onError(null);
   };
 
-  // TODO: Re-enable transaction notifications once isAddressMine is fixed
-  // Currently, wallet-lib's isAddressMine (checkAddressMine) returns 403 Forbidden when using
-  // read-only wallet tokens. This prevents us from determining which outputs belong to the user,
-  // which is needed to calculate the received amount and show the notification.
-  // Once the read-only token permissions are fixed, uncomment the notification code below.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleNewTransaction = useCallback(async (_tx: unknown) => {
+  /**
+   * Extract unique token IDs from a transaction's inputs and outputs.
+   */
+  const extractTokenIdsFromTransaction = (tx: unknown): string[] => {
+    const tokenIds = new Set<string>();
+
+    // WebSocket message format: { type: "new-tx", data: { inputs, outputs, ... } }
+    // or direct transaction object
+    const message = tx as { type?: string; data?: unknown };
+    const txData = (message.data ?? tx) as {
+      inputs?: Array<{ token?: string }>;
+      outputs?: Array<{ token?: string }>;
+    };
+
+    // Extract from inputs
+    if (Array.isArray(txData.inputs)) {
+      for (const input of txData.inputs) {
+        if (input.token) {
+          tokenIds.add(input.token);
+        }
+      }
+    }
+
+    // Extract from outputs
+    if (Array.isArray(txData.outputs)) {
+      for (const output of txData.outputs) {
+        if (output.token) {
+          tokenIds.add(output.token);
+        }
+      }
+    }
+
+    return Array.from(tokenIds);
+  };
+
+  // Handle new transaction from WebSocket - only refresh affected tokens
+  const handleNewTransaction = useCallback(async (tx: unknown) => {
     if (!isConnected || !readOnlyWalletWrapper.isReady()) {
       return;
     }
 
-    // Just refresh balances when a new transaction arrives
     try {
-      await onRefreshBalance();
+      // Extract only the tokens involved in this transaction
+      const affectedTokenIds = extractTokenIdsFromTransaction(tx);
+
+      if (affectedTokenIds.length === 0) {
+        // Fallback: at minimum refresh HTR since we know a transaction happened
+        log.debug('[handleNewTransaction] No token IDs found, falling back to HTR');
+        await onRefreshBalanceForTokens(['00']);
+        return;
+      }
+
+      log.debug('[handleNewTransaction] Refreshing balances for:', affectedTokenIds);
+      await onRefreshBalanceForTokens(affectedTokenIds);
     } catch (error) {
       log.error('Error refreshing balance on new transaction:', error);
     }
-
-    /*
-    // WebSocket message format: { type: "new-tx", data: { inputs, outputs, ... } }
-    // Extract the transaction data from the message
-    const message = tx as { type?: string; data?: unknown };
-    const txData = message.data ?? tx;
-
-    // Validate transaction structure
-    const txValidation = TransactionSchema.safeParse(txData);
-    if (!txValidation.success) {
-      log.error('Invalid transaction structure:', txValidation.error, txData);
-      return;
-    }
-
-    const transaction = txValidation.data;
-
-    try {
-      await onRefreshBalance();
-
-      // Track received amounts per token: tokenUid -> amount
-      const receivedAmounts = new Map<string, bigint>();
-
-      if (transaction.outputs) {
-        for (const output of transaction.outputs) {
-          const outputAddress = output.decoded.address;
-          if (!outputAddress) continue;
-
-          const isMyAddress = await readOnlyWalletWrapper.isAddressMine(outputAddress);
-          if (isMyAddress) {
-            const tokenUid = output.token;
-            const value = toBigInt(output.value);
-            const current = receivedAmounts.get(tokenUid) || 0n;
-            receivedAmounts.set(tokenUid, current + value);
-          }
-        }
-      }
-
-      // Fire notification for each registered token with received amount
-      for (const [tokenUid, amount] of receivedAmounts) {
-        if (amount === 0n) continue;
-
-        // Only show notifications for registered tokens (HTR is always registered)
-        let symbol: string;
-        if (tokenUid === TOKEN_IDS.HTR) {
-          symbol = 'HTR';
-        } else {
-          const tokenInfo = registeredTokens.find(t => t.uid === tokenUid);
-          if (!tokenInfo) continue; // Skip unregistered tokens
-          symbol = tokenInfo.symbol;
-        }
-
-        onNewTransaction({
-          type: 'received',
-          amount,
-          timestamp: Date.now(),
-          symbol,
-          tokenUid,
-        });
-      }
-    } catch (error) {
-      log.error('Error processing new transaction:', error);
-    }
-    */
-  }, [isConnected, onRefreshBalance]);
+  }, [isConnected, onRefreshBalanceForTokens]);
 
   // Set the ref
   handleNewTransactionRef.current = handleNewTransaction;
@@ -805,11 +773,9 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     address,
     balances,
     network,
-    registeredTokens,
     setAddress,
     setBalances,
     setNetwork,
-    setRegisteredTokens,
     connectWallet,
     disconnectWallet,
     handleReconnect,
