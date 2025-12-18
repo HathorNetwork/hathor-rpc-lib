@@ -45,6 +45,7 @@ describe('sendTransaction', () => {
           index: 0,
         }],
         changeAddress: 'changeAddress',
+        push_tx: true,
       },
     };
 
@@ -232,6 +233,7 @@ describe('sendTransaction', () => {
       params: {
         network: '',  // Invalid: empty string
         outputs: [],  // Invalid: empty array
+        push_tx: true,
       },
     } as SendTransactionRpcRequest;
 
@@ -388,5 +390,72 @@ describe('sendTransaction', () => {
       ]),
       expect.any(Object),
     );
+  });
+
+  it('should return transaction hex when push_tx is false', async () => {
+    const requestWithPushTxFalse = {
+      ...rpcRequest,
+      params: {
+        ...rpcRequest.params,
+        push_tx: false,
+      },
+    } as SendTransactionRpcRequest;
+
+    const mockHex = '00010203';
+    const mockTransaction = {
+      toHex: jest.fn().mockReturnValue(mockHex),
+    };
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.SendTransactionConfirmationResponse,
+        data: { accepted: true },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: { accepted: true, pinCode: '1234' },
+      });
+
+    sendTransactionMock.mockResolvedValue(mockTransaction);
+
+    const response = await sendTransaction(requestWithPushTxFalse, wallet, {}, promptHandler);
+
+    expect(sendTransactionMock).toHaveBeenCalledWith('prepare-tx', '1234');
+    expect(response).toEqual({
+      type: RpcResponseTypes.SendTransactionResponse,
+      response: mockHex,
+    });
+  });
+
+  it('should execute transaction when push_tx is true', async () => {
+    const requestWithPushTxTrue = {
+      ...rpcRequest,
+      params: {
+        ...rpcRequest.params,
+        push_tx: true,
+      },
+    } as SendTransactionRpcRequest;
+
+    const txResponse = { hash: 'txHash123' };
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.SendTransactionConfirmationResponse,
+        data: { accepted: true },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: { accepted: true, pinCode: '1234' },
+      });
+
+    sendTransactionMock.mockResolvedValue(txResponse);
+
+    const response = await sendTransaction(requestWithPushTxTrue, wallet, {}, promptHandler);
+
+    expect(sendTransactionMock).toHaveBeenCalledWith(null, '1234');
+    expect(response).toEqual({
+      type: RpcResponseTypes.SendTransactionResponse,
+      response: txResponse,
+    });
   });
 });

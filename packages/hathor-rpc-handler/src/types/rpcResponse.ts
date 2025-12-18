@@ -83,7 +83,7 @@ export interface GetUtxosResponse extends BaseRpcResponse {
 
 export interface SendTransactionResponse extends BaseRpcResponse {
   type: RpcResponseTypes.SendTransactionResponse;
-  response: Transaction;
+  response: Transaction | string;
 }
 
 export interface CreateNanoContractCreateTokenTxResponse extends BaseRpcResponse {
