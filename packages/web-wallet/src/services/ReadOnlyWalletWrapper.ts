@@ -119,7 +119,7 @@ export class ReadOnlyWalletWrapper {
     }
 
     try {
-      const balance = await this.wallet.getBalance(tokenId);
+      const balance = await this.wallet.getBalance(tokenId ?? null);
 
       // Transform the wallet-lib balance format (array) to Map
       const balances = new Map<string, WalletBalance>();
@@ -129,8 +129,8 @@ export class ReadOnlyWalletWrapper {
         for (const item of balance) {
           balances.set(item.token.id, {
             token: item.token.id,
-            available: item.balance.unlocked ? toBigInt(item.balance.unlocked) : 0n,
-            locked: item.balance.locked ? toBigInt(item.balance.locked) : 0n,
+            available: item.balance.unlocked != null ? toBigInt(item.balance.unlocked) : 0n,
+            locked: item.balance.locked != null ? toBigInt(item.balance.locked) : 0n,
           });
         }
       }
