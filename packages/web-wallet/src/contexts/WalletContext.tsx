@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useRef, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useCallback, useState, useRef, useEffect, type ReactNode } from 'react';
 import { useInvokeSnap, useRequestSnap, useMetaMaskContext, useRequest } from '@hathor/snap-utils';
 import { ConnectionLostModal } from '../components/ConnectionLostModal';
 import type { TransactionHistoryItem } from '../types/wallet';
@@ -493,6 +493,12 @@ export function WalletProvider({ children }: WalletProviderProps) {
   // Use a ref to track if we should sync to avoid infinite loops
   const lastSyncedTokensRef = useRef<string>('');
 
+  // Utility function to sync tokens from token management to connection
+  const syncTokensToConnection = useCallback(() => {
+    connection.setRegisteredTokens(tokens.registeredTokens);
+    lastSyncedTokensRef.current = tokens.registeredTokens.map(t => t.uid).sort().join(',');
+  }, [connection, tokens.registeredTokens]);
+
   useEffect(() => {
     const connectionTokensKey = connection.registeredTokens.map(t => t.uid).sort().join(',');
 
@@ -514,8 +520,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     // Update connection state immediately after successful registration
     // Get the updated list from tokens (the new token was added)
     setTimeout(() => {
-      connection.setRegisteredTokens(tokens.registeredTokens);
-      lastSyncedTokensRef.current = tokens.registeredTokens.map(t => t.uid).sort().join(',');
+      syncTokensToConnection();
     }, 0);
   };
 
@@ -524,8 +529,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     await tokens.unregisterToken(tokenUid);
     // Update connection state immediately after successful unregistration
     setTimeout(() => {
-      connection.setRegisteredTokens(tokens.registeredTokens);
-      lastSyncedTokensRef.current = tokens.registeredTokens.map(t => t.uid).sort().join(',');
+      syncTokensToConnection();
     }, 0);
   };
 
