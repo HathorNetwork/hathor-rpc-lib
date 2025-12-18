@@ -2,7 +2,7 @@ import type { RequestArguments } from '@metamask/providers';
 
 import { useMetaMaskContext } from './MetamaskContext';
 
-export type Request = (params: RequestArguments) => Promise<unknown | null>;
+export type Request = (params: { method: string; params?: unknown }) => Promise<unknown | null>;
 
 /**
  * Utility hook to consume the provider `request` method with the available provider.
@@ -27,8 +27,8 @@ export const useRequest = () => {
       const data =
         (await provider?.request({
           method,
-          params,
-        } as RequestArguments)) ?? null;
+          params: params as RequestArguments['params'],
+        })) ?? null;
 
       return data;
     } catch (requestError: any) {

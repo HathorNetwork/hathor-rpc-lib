@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useCallback, useState, useRef, useEffect, type ReactNode } from 'react';
 import { useInvokeSnap, useRequestSnap, useMetaMaskContext, useRequest } from '@hathor/snap-utils';
 import { ConnectionLostModal } from '../components/ConnectionLostModal';
 import type { TransactionHistoryItem } from '../types/wallet';
@@ -10,9 +10,10 @@ import type { AddressMode } from '../utils/addressMode';
 import { useAddressMode } from './hooks/useAddressMode';
 import { useWalletBalance } from './hooks/useWalletBalance';
 import { useTokenManagement } from './hooks/useTokenManagement';
-import { useTransactions, type SendTransactionParams } from './hooks/useTransactions';
+import { useTransactions } from './hooks/useTransactions';
 import { useWalletConnection } from './hooks/useWalletConnection';
 import { useNetworkManagement } from './hooks/useNetworkManagement';
+import type { SendTransactionParams } from '../services/SnapService';
 
 // Re-export types for external use
 export type { TransactionHistoryItem, SendTransactionParams };
@@ -432,6 +433,9 @@ export function WalletProvider({ children }: WalletProviderProps) {
   // Ref for transaction notification callback to avoid circular dependency
   const onNewTransactionRef = useRef<(notification: { type: 'sent' | 'received'; amount: bigint; timestamp: number; symbol: string; tokenUid: string }) => void>(() => {});
 
+  // Ref for balance refresh callback to avoid circular dependency and ensure latest tokens are used
+  const refreshBalanceRef = useRef<() => Promise<void>>(async () => {});
+
   // Initialize address mode hook
   const { addressMode, setAddressMode: setAddressModeImpl } = useAddressMode({
     onError: setError,
@@ -444,12 +448,12 @@ export function WalletProvider({ children }: WalletProviderProps) {
   // Initialize connection hook
   const connection = useWalletConnection({
     addressMode,
-    request,
+    request: request as (params: { method: string; params?: unknown }) => Promise<unknown>,
     invokeSnap,
     requestSnap,
     metamaskError,
     onRefreshBalance: async () => {
-      await balance.refreshBalance();
+      await refreshBalanceRef.current();
     },
     onError: setError,
     onShowConnectionLostModal: setShowConnectionLostModal,
@@ -466,9 +470,12 @@ export function WalletProvider({ children }: WalletProviderProps) {
   const balance = useWalletBalance({
     isConnected: connection.isConnected,
     addressMode,
-    registeredTokens: tokens.registeredTokens,
+    registeredTokens: connection.registeredTokens,
     onError: setError,
   });
+
+  // Update ref to always use latest balance refresh (includes latest registeredTokens)
+  refreshBalanceRef.current = balance.refreshBalance;
 
   // Initialize transactions hook
   const transactions = useTransactions({
@@ -480,6 +487,51 @@ export function WalletProvider({ children }: WalletProviderProps) {
 
   // Update ref after transactions is initialized
   onNewTransactionRef.current = transactions.setNewTransaction;
+
+  // Sync registered tokens from connection to token management hook
+  // Only sync when connection loads tokens (initial connect or network change)
+  // Use a ref to track if we should sync to avoid infinite loops
+  const lastSyncedTokensRef = useRef<string>('');
+
+  // Utility function to sync tokens from token management to connection
+  const syncTokensToConnection = useCallback(() => {
+    connection.setRegisteredTokens(tokens.registeredTokens);
+    lastSyncedTokensRef.current = tokens.registeredTokens.map(t => t.uid).sort().join(',');
+  }, [connection, tokens.registeredTokens]);
+
+  useEffect(() => {
+    const connectionTokensKey = connection.registeredTokens.map(t => t.uid).sort().join(',');
+
+    // Only sync if:
+    // 1. Connection has tokens loaded, OR
+    // 2. Disconnected and need to clear
+    if (connection.registeredTokens.length > 0 && connectionTokensKey !== lastSyncedTokensRef.current) {
+      lastSyncedTokensRef.current = connectionTokensKey;
+      tokens.setRegisteredTokens(connection.registeredTokens);
+    } else if (connection.registeredTokens.length === 0 && !connection.isConnected) {
+      lastSyncedTokensRef.current = '';
+      tokens.setRegisteredTokens([]);
+    }
+  }, [connection.registeredTokens, connection.isConnected]);
+
+  // Wrapped register function that updates both states
+  const registerToken = async (configString: string) => {
+    await tokens.registerToken(configString);
+    // Update connection state immediately after successful registration
+    // Get the updated list from tokens (the new token was added)
+    setTimeout(() => {
+      syncTokensToConnection();
+    }, 0);
+  };
+
+  // Wrapped unregister function that updates both states
+  const unregisterToken = async (tokenUid: string) => {
+    await tokens.unregisterToken(tokenUid);
+    // Update connection state immediately after successful unregistration
+    setTimeout(() => {
+      syncTokensToConnection();
+    }, 0);
+  };
 
   // Initialize network management hook
   const networkManagement = useNetworkManagement({
@@ -497,6 +549,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
       connection.setAddress(address);
       connection.setBalances(balances);
       connection.setRegisteredTokens(newTokens);
+      tokens.setRegisteredTokens(newTokens);
       setError(warning);
     },
     onLoadingChange: connection.setLoadingState,
@@ -524,7 +577,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     balances: balance.balances.size > 0 ? balance.balances : connection.balances,
 
     // Token state
-    registeredTokens: tokens.registeredTokens.length > 0 ? tokens.registeredTokens : connection.registeredTokens,
+    registeredTokens: tokens.registeredTokens,
     selectedTokenFilter: tokens.selectedTokenFilter,
     selectedTokenForSend: null, // This was removed in refactor
 
@@ -550,9 +603,9 @@ export function WalletProvider({ children }: WalletProviderProps) {
     sendTransaction: transactions.sendTransaction,
     clearNewTransaction: transactions.clearNewTransaction,
 
-    // Token methods
-    registerToken: tokens.registerToken,
-    unregisterToken: tokens.unregisterToken,
+    // Token methods (wrapped to keep both states in sync)
+    registerToken,
+    unregisterToken,
     refreshTokenBalances: balance.refreshBalance, // Now managed by balance hook
     setSelectedTokenFilter: tokens.setSelectedTokenFilter,
     getTokenInfo: tokens.getTokenInfo,

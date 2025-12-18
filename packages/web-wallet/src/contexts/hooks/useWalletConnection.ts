@@ -201,6 +201,9 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
   const verifySnapInstallation = async (): Promise<void> => {
     // wallet_getSnaps is a MetaMask wallet method, not a snap method
     // So we need to call it via window.ethereum directly
+    if (!window.ethereum || !window.ethereum.isMetaMask) {
+      throw new Error('MetaMask not found');
+    }
     const snapsResponse = await window.ethereum.request({
       method: 'wallet_getSnaps',
     });
@@ -618,7 +621,9 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
   // Once the read-only token permissions are fixed, uncomment the notification code below.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleNewTransaction = useCallback(async (_tx: unknown) => {
-    if (!isConnected || !readOnlyWalletWrapper.isReady()) return;
+    if (!isConnected || !readOnlyWalletWrapper.isReady()) {
+      return;
+    }
 
     // Just refresh balances when a new transaction arrives
     try {

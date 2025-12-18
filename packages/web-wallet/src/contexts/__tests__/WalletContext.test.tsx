@@ -21,7 +21,7 @@ const {
   mockInvokeSnap: vi.fn(),
   mockRequestSnap: vi.fn(),
   mockRequest: vi.fn(),
-  mockUseMetaMaskContext: vi.fn(() => ({ error: null })),
+  mockUseMetaMaskContext: vi.fn(() => ({ error: null as Error | null })),
   mockReadOnlyWalletWrapper: {
     initialize: vi.fn(),
     stop: vi.fn(),
@@ -170,6 +170,7 @@ describe('WalletContext', () => {
     // Mock window.ethereum for wallet_getSnaps calls
     global.window.ethereum = {
       request: vi.fn(),
+      isMetaMask: true,
     } as unknown as typeof window.ethereum;
     localStorage.clear();
 

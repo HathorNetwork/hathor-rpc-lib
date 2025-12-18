@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowUpRight, Music, Video, FileText, File } from 'lucide-react';
 import type { TokenInfo } from '../types/token';
+import type { WalletBalance } from '../types/wallet';
 import { formatAmount, truncateString } from '../utils/hathor';
 
 type MediaType = 'IMAGE' | 'AUDIO' | 'VIDEO' | 'PDF' | 'UNKNOWN';
@@ -77,12 +78,14 @@ const NFTMediaThumbnail: React.FC<NFTMediaThumbnailProps> = ({ token }) => {
 
 interface TokenListProps {
   tokens: TokenInfo[];
+  balances: Map<string, WalletBalance>;
   onTokenClick: (tokenUid: string) => void;
   onSendClick: (tokenUid: string) => void;
 }
 
 const TokenList: React.FC<TokenListProps> = ({
   tokens,
+  balances,
   onTokenClick,
   onSendClick,
 }) => {
@@ -127,7 +130,7 @@ const TokenList: React.FC<TokenListProps> = ({
 
                 {/* Balance - aligned right on mobile, integrated in left side */}
                 <span className="text-base md:text-lg font-medium text-white flex-shrink-0 md:ml-4 text-right min-w-[120px] md:min-w-[150px]">
-                  {formatAmount(token.balance ? token.balance.available : 0n, token.isNFT)} {token.symbol}
+                  {formatAmount(balances.get(token.uid)?.available ?? 0n, token.isNFT)} {token.symbol}
                 </span>
               </div>
 

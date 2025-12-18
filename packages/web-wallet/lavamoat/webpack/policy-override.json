@@ -1,0 +1,42 @@
+{
+  "resources": {
+    "$root$": {
+      "globals": {
+        "console": true
+      }
+    },
+    "@hathor/snap-utils": {
+      "globals": {
+        "console": true
+      }
+    },
+    "@hathor/wallet-lib>lodash": {
+      "globals": {
+        "clearTimeout": true,
+        "setTimeout": true
+      }
+    },
+    "assert>call-bind>get-intrinsic": {
+      "globals": {
+        "Atomics": true
+      }
+    },
+    "@hathor/wallet-lib>axios": {
+      "globals": {
+        "postMessage": true,
+        "addEventListener": true
+      }
+    },
+    "object-keys": {
+      "globals": {
+        "Object.keys": "write"
+      }
+    },
+    "js-sha256": {
+      "globals": {
+        "Array.isArray": "write",
+        "ArrayBuffer.isView": "write"
+      }
+    }
+  }
+}
