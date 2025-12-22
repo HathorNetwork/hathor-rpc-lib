@@ -64,6 +64,7 @@ export const DEFAULT_PIN_CODE = '123';
  */
 export const RPC_RESTRICTIONS = {
   [RpcMethods.GetXpub]: [
-    'https://wallet.hathor.network'
+    'https://wallet.hathor.network',
+    'https://staging.wallet.hathor.network',
   ],
 };
