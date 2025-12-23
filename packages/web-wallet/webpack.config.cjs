@@ -7,6 +7,7 @@ const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
 const LavaMoatPlugin = require('@lavamoat/webpack');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const stdLibBrowser = require('node-stdlib-browser');
+const packageJson = require('./package.json');
 
 // Load .env file manually
 const envPath = path.resolve(__dirname, '.env');
@@ -107,6 +108,7 @@ module.exports = (env, argv) => {
         'process.env.SNAP_ORIGIN': JSON.stringify(process.env.SNAP_ORIGIN || 'local:http://localhost:8080'),
         'process.env.LOG_LEVEL': JSON.stringify(process.env.LOG_LEVEL || 'debug'),
         'process.env.MIN_SNAP_VERSION': JSON.stringify(process.env.MIN_SNAP_VERSION || '0.0.0'),
+        'process.env.WALLET_VERSION': JSON.stringify(packageJson.version),
       }),
       ...(isProduction ? [new LavaMoatPlugin({
         mode: 'production',

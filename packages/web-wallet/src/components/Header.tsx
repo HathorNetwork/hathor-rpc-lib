@@ -126,7 +126,7 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
                 className="h-4 md:h-5"
               />
               <div className="px-[6px] py-[6px] bg-transparent border border-white/20 rounded-full flex items-center">
-                <span className="text-[8px] md:text-[9px] font-medium text-white tracking-wider leading-none">WEB WALLET</span>
+                <span className="text-[8px] md:text-[9px] font-medium text-white tracking-wider leading-none">WEB WALLET v{process.env.WALLET_VERSION}</span>
               </div>
             </div>
 
