@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertCircle, ExternalLink } from 'lucide-react';
+import { METAMASK_SNAP_URL } from '../constants';
 
 interface UpdateSnapModalProps {
   isOpen: boolean;
@@ -19,8 +20,7 @@ export const UpdateSnapModal: React.FC<UpdateSnapModalProps> = ({
   if (!isOpen) return null;
 
   const handleUpdateClick = () => {
-    // Open MetaMask Snaps directory or update instructions
-    window.open('https://snaps.metamask.io/snap/npm/hathor/snap', '_blank');
+    window.open(METAMASK_SNAP_URL, '_blank');
   };
 
   return (
