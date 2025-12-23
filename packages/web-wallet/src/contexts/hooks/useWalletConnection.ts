@@ -653,7 +653,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
       if (affectedTokenIds.length === 0) {
         // Fallback: at minimum refresh HTR since we know a transaction happened
         log.debug('[handleNewTransaction] No token IDs found, falling back to HTR');
-        await onRefreshBalanceForTokens(['00']);
+        await onRefreshBalanceForTokens([TOKEN_IDS.HTR]);
         return;
       }
 
