@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
@@ -6,6 +7,21 @@ const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
 const LavaMoatPlugin = require('@lavamoat/webpack');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const stdLibBrowser = require('node-stdlib-browser');
+
+// Load .env file manually
+const envPath = path.resolve(__dirname, '.env');
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf-8');
+  envContent.split('\n').forEach(line => {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith('#')) {
+      const [key, ...valueParts] = trimmed.split('=');
+      if (key && valueParts.length > 0) {
+        process.env[key.trim()] = valueParts.join('=').trim();
+      }
+    }
+  });
+}
 
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
@@ -82,6 +98,16 @@ module.exports = (env, argv) => {
       ]
     },
     plugins: [
+      new webpack.ProvidePlugin({
+        process: 'process/browser',
+        Buffer: ['buffer', 'Buffer'],
+      }),
+      new webpack.DefinePlugin({
+        'process.env.NODE_ENV': JSON.stringify(isProduction ? 'production' : 'development'),
+        'process.env.SNAP_ORIGIN': JSON.stringify(process.env.SNAP_ORIGIN || 'local:http://localhost:8080'),
+        'process.env.LOG_LEVEL': JSON.stringify(process.env.LOG_LEVEL || 'debug'),
+        'process.env.MIN_SNAP_VERSION': JSON.stringify(process.env.MIN_SNAP_VERSION || '0.0.0'),
+      }),
       ...(isProduction ? [new LavaMoatPlugin({
         mode: 'production',
         generatePolicy: true,
@@ -93,15 +119,6 @@ module.exports = (env, argv) => {
       new HtmlWebpackPlugin({
         template: './index.html',
         inject: 'body',
-      }),
-      new webpack.DefinePlugin({
-        'process.env.SNAP_ORIGIN': JSON.stringify(process.env.SNAP_ORIGIN || 'local:http://localhost:8080'),
-        'process.env.LOG_LEVEL': JSON.stringify(process.env.LOG_LEVEL || 'debug'),
-        'process.env': JSON.stringify({
-          SNAP_ORIGIN: process.env.SNAP_ORIGIN || 'local:http://localhost:8080',
-          LOG_LEVEL: process.env.LOG_LEVEL || 'debug',
-          NODE_ENV: isProduction ? 'production' : 'development',
-        }),
       }),
       new webpack.NormalModuleReplacementPlugin(
         /^\/.*\/node_modules\/node-stdlib-browser\/node_modules\/buffer$/,

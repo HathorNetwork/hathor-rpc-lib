@@ -107,7 +107,7 @@ describe('Token Balance Race Condition', () => {
       const { result: balanceResult } = renderHook(() =>
         useWalletBalance({
           isConnected: true,
-          addressMode: 'first',
+          addressMode: 'single',
           registeredTokensRef: tokenStateResult.current.registeredTokensRef,
           onError: vi.fn(),
         })
@@ -164,7 +164,7 @@ describe('Token Balance Race Condition', () => {
       const { result: balanceResult } = renderHook(() =>
         useWalletBalance({
           isConnected: true,
-          addressMode: 'first',
+          addressMode: 'single',
           registeredTokensRef: tokenStateResult.current.registeredTokensRef,
           onError: vi.fn(),
         })
@@ -221,7 +221,7 @@ describe('Token Balance Race Condition', () => {
       const { result: balanceResult } = renderHook(() =>
         useWalletBalance({
           isConnected: true,
-          addressMode: 'first',
+          addressMode: 'single',
           registeredTokensRef: tokenStateResult.current.registeredTokensRef,
           onError: vi.fn(),
         })

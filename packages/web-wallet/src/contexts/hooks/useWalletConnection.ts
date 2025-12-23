@@ -105,6 +105,8 @@ export interface WalletConnectionResult {
   balances: Map<string, WalletBalance>;
   /** Current network (mainnet/testnet) */
   network: string;
+  /** Installed Snap version */
+  snapVersion: string | null;
   /** Updates displayed address (internal use by other hooks) */
   setAddress: (address: string) => void;
   /** Updates balance state (internal use by other hooks) */
@@ -162,6 +164,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
   const [address, setAddress] = useState('');
   const [balances, setBalances] = useState<Map<string, WalletBalance>>(new Map());
   const [network, setNetwork] = useState('mainnet');
+  const [snapVersion, setSnapVersion] = useState<string | null>(null);
   // NOTE: Token state moved to useTokenState - this hook no longer manages tokens
 
   // Use a ref to prevent concurrent connection checks
@@ -198,9 +201,10 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
 
   /**
    * Verifies snap installation and permissions.
+   * Returns the installed snap version.
    * Throws typed errors for different snap states.
    */
-  const verifySnapInstallation = async (): Promise<void> => {
+  const verifySnapInstallation = async (): Promise<string> => {
     // wallet_getSnaps is a MetaMask wallet method, not a snap method
     // So we need to call it via window.ethereum directly
     if (!window.ethereum || !window.ethereum.isMetaMask) {
@@ -240,6 +244,8 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
       log.error('Snap is not enabled');
       throw new Error(ERROR_PATTERNS.SNAP_DISABLED);
     }
+
+    return ourSnap.version;
   };
 
   /**
@@ -329,7 +335,8 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
 
       // Step 2: Verify snap installation and permissions
       setLoadingStep('Verifying snap installation...');
-      await verifySnapInstallation();
+      const installedVersion = await verifySnapInstallation();
+      setSnapVersion(installedVersion);
 
       // Step 3: Initialize wallet service
       setLoadingStep('Initializing read-only wallet...');
@@ -429,6 +436,12 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
 
     try {
       await requestSnap();
+
+      // Verify snap installation and get version
+      setLoadingStep('Verifying snap installation...');
+      const installedVersion = await verifySnapInstallation();
+      setSnapVersion(installedVersion);
+
       setLoadingStep('Checking snap network...');
 
       let currentSnapNetwork;
@@ -594,6 +607,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     }
 
     setIsConnected(false);
+    setIsConnected(false);
     setIsConnecting(false);
     setIsCheckingConnection(false);
     setLoadingStep('');
@@ -601,6 +615,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     setBalances(new Map());
     setNetwork('mainnet');
     setXpub(null);
+    setSnapVersion(null);
     // NOTE: Token clearing is handled by useTokenState via isConnected change
     onError(null);
   };
@@ -773,6 +788,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     address,
     balances,
     network,
+    snapVersion,
     setAddress,
     setBalances,
     setNetwork,
