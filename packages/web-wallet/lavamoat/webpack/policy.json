@@ -432,6 +432,7 @@
       "packages": {
         "assert>call-bind": true,
         "assert>is-nan": true,
+        "node-stdlib-browser": true,
         "assert>object-is": true,
         "assert>object.assign": true,
         "assert>util": true
@@ -469,7 +470,8 @@
         "setTimeout": true
       },
       "packages": {
-        "buffer": true
+        "buffer": true,
+        "node-stdlib-browser": true
       }
     },
     "@hathor/wallet-lib>bitcore-lib>bs58>base-x": {
@@ -517,6 +519,7 @@
         "@hathor/wallet-lib>bitcore-lib>elliptic": true,
         "assert>util>inherits": true,
         "@hathor/wallet-lib>lodash": true,
+        "node-stdlib-browser": true,
         "node-stdlib-browser>url": true
       }
     },
@@ -603,6 +606,7 @@
       "packages": {
         "assert": true,
         "buffer": true,
+        "node-stdlib-browser": true,
         "node-stdlib-browser>browserify-zlib>pako": true,
         "node-stdlib-browser>stream-browserify": true,
         "assert>util": true
@@ -901,6 +905,9 @@
       "globals": {
         "define": true,
         "process": true
+      },
+      "packages": {
+        "node-stdlib-browser": true
       }
     },
     "@hathor/wallet-lib>lodash": {
@@ -964,6 +971,9 @@
     "node-stdlib-browser>path-browserify": {
       "globals": {
         "process.cwd": true
+      },
+      "packages": {
+        "node-stdlib-browser": true
       }
     },
     "node-stdlib-browser>crypto-browserify>pbkdf2": {
@@ -976,6 +986,7 @@
       },
       "packages": {
         "node-stdlib-browser>crypto-browserify>create-hash": true,
+        "node-stdlib-browser": true,
         "node-stdlib-browser>crypto-browserify>create-hash>ripemd160": true,
         "webpack-dev-server>express>safe-buffer": true,
         "node-stdlib-browser>crypto-browserify>pbkdf2>sha.js": true,
@@ -1015,6 +1026,7 @@
         "process.nextTick": true
       },
       "packages": {
+        "node-stdlib-browser": true,
         "webpack-dev-server>express>safe-buffer": true
       }
     },
@@ -1026,6 +1038,7 @@
         "process.nextTick": true
       },
       "packages": {
+        "node-stdlib-browser": true,
         "copy-webpack-plugin>serialize-javascript>randombytes": true,
         "webpack-dev-server>express>safe-buffer": true
       }
@@ -1037,6 +1050,9 @@
         "dispatchEvent": true,
         "process": true,
         "reportError": true
+      },
+      "packages": {
+        "node-stdlib-browser": true
       }
     },
     "react-dom": {
@@ -1060,6 +1076,7 @@
         "setTimeout": true
       },
       "packages": {
+        "node-stdlib-browser": true,
         "react": true,
         "react-dom>scheduler": true
       }
@@ -1188,6 +1205,7 @@
         "buffer": true,
         "events": true,
         "assert>util>inherits": true,
+        "node-stdlib-browser": true,
         "node-stdlib-browser>string_decoder": true,
         "tailwindcss>postcss-selector-parser>util-deprecate": true,
         "assert>util": true
@@ -1345,6 +1363,7 @@
         "assert>util>is-arguments": true,
         "assert>util>is-generator-function": true,
         "assert>util>is-typed-array": true,
+        "node-stdlib-browser": true,
         "assert>util>which-typed-array": true
       }
     },

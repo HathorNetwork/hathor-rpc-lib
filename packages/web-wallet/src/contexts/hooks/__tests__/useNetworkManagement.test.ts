@@ -60,6 +60,7 @@ describe('useNetworkManagement', () => {
   const mockOnSetupEventListeners = vi.fn();
   const mockOnSnapError = vi.fn();
   const mockOnNetworkChange = vi.fn();
+  const mockOnLoadTokens = vi.fn();
   const mockOnLoadingChange = vi.fn();
   const mockOnError = vi.fn();
   const mockOnForceDisconnect = vi.fn();
@@ -77,6 +78,7 @@ describe('useNetworkManagement', () => {
     onSetupEventListeners: mockOnSetupEventListeners,
     onSnapError: mockOnSnapError,
     onNetworkChange: mockOnNetworkChange,
+    onLoadTokens: mockOnLoadTokens,
     onLoadingChange: mockOnLoadingChange,
     onError: mockOnError,
     onForceDisconnect: mockOnForceDisconnect,
@@ -95,6 +97,7 @@ describe('useNetworkManagement', () => {
     mockReadOnlyWalletWrapper.getBalance.mockResolvedValue(
       new Map([['00', { token: '00', available: 2000n, locked: 0n }]])
     );
+    mockOnLoadTokens.mockResolvedValue(undefined);
     mockLoadTokensWithBalances.mockResolvedValue({
       tokens: [],
       warning: null,
