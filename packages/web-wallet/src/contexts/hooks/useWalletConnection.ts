@@ -107,6 +107,8 @@ export interface WalletConnectionResult {
   network: string;
   /** Installed Snap version */
   snapVersion: string | null;
+  /** First address of the wallet (index 0) */
+  firstAddress: string | null;
   /** Updates displayed address (internal use by other hooks) */
   setAddress: (address: string) => void;
   /** Updates balance state (internal use by other hooks) */
@@ -165,6 +167,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
   const [balances, setBalances] = useState<Map<string, WalletBalance>>(new Map());
   const [network, setNetwork] = useState('mainnet');
   const [snapVersion, setSnapVersion] = useState<string | null>(null);
+  const [firstAddress, setFirstAddress] = useState<string | null>(null);
   // NOTE: Token state moved to useTokenState - this hook no longer manages tokens
 
   // Use a ref to prevent concurrent connection checks
@@ -267,16 +270,17 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
   };
 
   /**
-   * Loads wallet state including address and HTR balance.
+   * Loads wallet state including address, first address, and HTR balance.
    * NOTE: Token loading is handled separately by useTokenState.
    */
   const loadWalletState = async (
     addressMode: AddressMode
   ): Promise<{
     address: string;
+    firstAddress: string;
     balances: Map<string, WalletBalance>;
   }> => {
-    // Get wallet address
+    // Get wallet address based on mode
     let walletAddress: string;
     try {
       walletAddress = await getAddressForMode(addressMode, readOnlyWalletWrapper);
@@ -286,11 +290,26 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
       throw new Error(`Failed to retrieve wallet address: ${originalMessage}`);
     }
 
+    // Get first address (index 0) - always the same regardless of mode
+    let walletFirstAddress: string;
+    try {
+      const addressInfo = await readOnlyWalletWrapper.getAddressAtIndex(0);
+      if (!addressInfo) {
+        throw new Error('Failed to get address at index 0');
+      }
+      walletFirstAddress = addressInfo.address;
+    } catch (addressError) {
+      const originalMessage = addressError instanceof Error ? addressError.message : String(addressError);
+      log.error('Failed to get first address:', originalMessage);
+      throw new Error(`Failed to retrieve first address: ${originalMessage}`);
+    }
+
     // Get HTR balance
     const walletBalances = await readOnlyWalletWrapper.getBalance(TOKEN_IDS.HTR);
 
     return {
       address: walletAddress,
+      firstAddress: walletFirstAddress,
       balances: walletBalances,
     };
   };
@@ -355,6 +374,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
       setIsConnected(true);
       setIsCheckingConnection(false);
       setAddress(walletState.address);
+      setFirstAddress(walletState.firstAddress);
       setBalances(walletState.balances);
       setNetwork(storedNetwork);
       setXpub(storedXpub);
@@ -534,26 +554,15 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
 
       setLoadingStep('Loading wallet data...');
 
-      let walletAddress = '';
-      try {
-        walletAddress = await getAddressForMode(addressMode, readOnlyWalletWrapper);
-      } catch (addressError) {
-        // Preserve the original error for debugging
-        const originalMessage = addressError instanceof Error ? addressError.message : String(addressError);
-        log.error('Failed to get display address during connect:', originalMessage);
-        throw new Error(`Failed to retrieve wallet address: ${originalMessage}`);
-      }
-
-      setLoadingStep('Loading balance...');
-
-      const walletBalances = await readOnlyWalletWrapper.getBalance(TOKEN_IDS.HTR);
+      const walletState = await loadWalletState(addressMode);
 
       localStorage.setItem(STORAGE_KEYS.XPUB, newXpub);
       localStorage.setItem(STORAGE_KEYS.NETWORK, newNetwork);
 
       setIsConnected(true);
-      setAddress(walletAddress);
-      setBalances(walletBalances);
+      setAddress(walletState.address);
+      setFirstAddress(walletState.firstAddress);
+      setBalances(walletState.balances);
       setNetwork(newNetwork);
       setXpub(newXpub);
       setIsConnecting(false);
@@ -607,11 +616,11 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     }
 
     setIsConnected(false);
-    setIsConnected(false);
     setIsConnecting(false);
     setIsCheckingConnection(false);
     setLoadingStep('');
     setAddress('');
+    setFirstAddress(null);
     setBalances(new Map());
     setNetwork('mainnet');
     setXpub(null);
@@ -789,6 +798,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     balances,
     network,
     snapVersion,
+    firstAddress,
     setAddress,
     setBalances,
     setNetwork,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Copy, Globe, Menu, X, LogOut } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { truncateString } from '../utils/hathor';
@@ -7,7 +7,6 @@ import { DisconnectConfirmModal } from './DisconnectConfirmModal';
 import htrLogo from '../htr_logo.svg';
 import { NETWORKS } from '../constants';
 import { useToast } from '@/hooks/use-toast';
-import { readOnlyWalletWrapper } from '../services/ReadOnlyWalletWrapper';
 
 interface HeaderProps {
   onRegisterTokenClick?: () => void;
@@ -17,33 +16,11 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClick }) => {
-  const { isConnected, network, disconnectWallet } = useWallet();
+  const { firstAddress, network, disconnectWallet } = useWallet();
   const [isNetworkDialogOpen, setIsNetworkDialogOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDisconnectModalOpen, setIsDisconnectModalOpen] = useState(false);
-  const [firstAddress, setFirstAddress] = useState<string | null>(null);
   const { toast } = useToast();
-
-  // Fetch first address (index 0) when connected
-  useEffect(() => {
-    if (!isConnected || !readOnlyWalletWrapper.isReady()) {
-      setFirstAddress(null);
-      return;
-    }
-
-    const fetchFirstAddress = async () => {
-      try {
-        const addressInfo = await readOnlyWalletWrapper.getAddressAtIndex(0);
-        if (addressInfo) {
-          setFirstAddress(addressInfo.address);
-        }
-      } catch (error) {
-        console.error('Failed to fetch first address:', error);
-      }
-    };
-
-    fetchFirstAddress();
-  }, [isConnected]);
 
   // Prevent body scroll when mobile menu is open
   React.useEffect(() => {

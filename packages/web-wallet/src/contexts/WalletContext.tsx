@@ -34,6 +34,8 @@ export interface WalletState {
   isCheckingConnection: boolean;
   loadingStep: string;
   address: string;
+  /** First address of the wallet (index 0) - always the same regardless of address mode */
+  firstAddress: string | null;
   balances: Map<string, { token: string; available: bigint; locked: bigint }>;
   network: string;
   snapVersion: string | null;
@@ -582,6 +584,9 @@ export function WalletProvider({ children }: WalletProviderProps) {
 
     // Snap version
     snapVersion: connection.snapVersion,
+
+    // First address (always index 0)
+    firstAddress: connection.firstAddress,
 
     registeredTokens: tokenState.registeredTokens,
     selectedTokenFilter: tokenState.selectedTokenFilter,
