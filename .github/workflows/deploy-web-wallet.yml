@@ -1,0 +1,36 @@
+name: Deploy Web Wallet
+
+on:
+  push:
+    branches: [master]
+    tags: ['web-wallet@*']
+    paths:
+      - 'packages/web-wallet/**'
+      - 'packages/snap-utils/**'
+      - '.github/workflows/deploy-web-wallet*.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  deploy-staging:
+    if: github.ref == 'refs/heads/master' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging')
+    uses: ./.github/workflows/deploy-web-wallet-reusable.yml
+    with:
+      site: staging
+      aws-region: us-east-1
+      aws-role: arn:aws:iam::769498303037:role/WebWalletGitHubActionsRoleStaging
+
+  deploy-production:
+    if: startsWith(github.ref, 'refs/tags/web-wallet@') || (github.event_name == 'workflow_dispatch' && inputs.environment == 'production')
+    uses: ./.github/workflows/deploy-web-wallet-reusable.yml
+    with:
+      site: production
+      aws-region: us-east-1
+      aws-role: arn:aws:iam::769498303037:role/WebWalletGitHubActionsRoleProduction

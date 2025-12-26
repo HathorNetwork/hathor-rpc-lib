@@ -1,0 +1,69 @@
+name: Deploy Web Wallet (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      site:
+        description: The site name to build and deploy (staging or production)
+        required: true
+        type: string
+      aws-region:
+        description: The AWS region to deploy to
+        required: true
+        type: string
+        default: us-east-1
+      aws-role:
+        description: The AWS IAM role to assume for deployment
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        # https://github.com/actions/checkout/releases/tag/v6.0.1
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+
+      - name: Install Nix
+        # https://github.com/cachix/install-nix-action/releases/tag/v31.9.0
+        uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      # Cache node_modules to speed up yarn install. The install step always runs,
+      # but yarn skips already-installed packages when cache is restored.
+      # On cache miss, actions/cache automatically saves via a post-job hook.
+      - name: Restore node modules cache
+        # https://github.com/actions/cache/releases/tag/v5.0.1
+        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('yarn.lock') }}
+
+      - name: Install Dependencies
+        run: nix develop . -c yarn install
+
+      - name: Configure AWS Credentials
+        # https://github.com/aws-actions/configure-aws-credentials/releases/tag/v5.1.1
+        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708
+        with:
+          aws-region: ${{ inputs.aws-region }}
+          role-to-assume: ${{ inputs.aws-role }}
+
+      - name: Build
+        run: nix develop . -c web-wallet-build ${{ inputs.site }}
+
+      - name: Sync to S3
+        run: nix develop . -c web-wallet-sync ${{ inputs.site }}
+
+      - name: Invalidate CloudFront Cache
+        run: nix develop . -c web-wallet-clear-cache ${{ inputs.site }}

@@ -81,6 +81,46 @@ To contribute to the development of Hathor RPC library, we encourage you to fork
 
 Please do not open an issue to report a security breach nor submit a pull request to fix it. Instead, follow the guidelines described in [SECURITY](SECURITY.md) for safely reporting, fixing, and disclosing security issues.
 
+## Deploying the Web Wallet
+
+The web-wallet can be deployed to AWS S3/CloudFront using Nix commands. Make sure you have AWS credentials configured.
+
+### Available commands
+
+From the nix dev shell (`nix develop`), the following commands are available:
+
+```sh
+# Build for a specific environment
+web-wallet-build staging
+web-wallet-build production
+
+# Sync build to S3
+web-wallet-sync staging [aws_profile]
+web-wallet-sync production [aws_profile]
+
+# Invalidate CloudFront cache
+web-wallet-clear-cache staging [aws_profile]
+web-wallet-clear-cache production [aws_profile]
+
+# Full deploy (build + sync + cache invalidation)
+web-wallet-deploy staging [aws_profile]
+web-wallet-deploy production [aws_profile]
+```
+
+### Example: Deploy to staging
+
+```sh
+nix develop
+web-wallet-deploy staging
+```
+
+Or with a specific AWS profile:
+
+```sh
+nix develop
+web-wallet-deploy staging my-aws-profile
+```
+
 ## Miscellaneous
 
 A miscellany with additional documentation and resources:
