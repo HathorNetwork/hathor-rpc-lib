@@ -16,7 +16,7 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClick }) => {
-  const { address, network, disconnectWallet } = useWallet();
+  const { firstAddress, network, disconnectWallet } = useWallet();
   const [isNetworkDialogOpen, setIsNetworkDialogOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDisconnectModalOpen, setIsDisconnectModalOpen] = useState(false);
@@ -35,9 +35,9 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
   }, [isMenuOpen]);
 
   const handleCopyAddress = async () => {
-    if (address) {
+    if (firstAddress) {
       try {
-        await navigator.clipboard.writeText(address);
+        await navigator.clipboard.writeText(firstAddress);
         toast({
           variant: "success",
           title: "Copied to clipboard",
@@ -132,15 +132,16 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
 
             {/* Address + Network + Menu */}
             <div className="flex items-center justify-center gap-2 md:gap-3 md:relative">
-              {/* Wallet Address */}
+              {/* Wallet Address (always shows first address) */}
               <button
                 onClick={handleCopyAddress}
+                title={firstAddress ? 'First address of your wallet (click to copy)' : undefined}
                 className="px-3 md:px-4 py-2 bg-[#191C21] border border-[#24292F] rounded-full flex items-center gap-1 md:gap-2 hover:bg-[#24292F] transition-colors group"
               >
                 <span className="text-xs md:text-sm font-mono text-white">
-                  {address ? truncateString(address) : 'Not connected'}
+                  {firstAddress ? truncateString(firstAddress) : 'Not connected'}
                 </span>
-                {address && <Copy className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground group-hover:text-primary transition-colors" />}
+                {firstAddress && <Copy className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground group-hover:text-primary transition-colors" />}
               </button>
 
               {/* Network Button */}
