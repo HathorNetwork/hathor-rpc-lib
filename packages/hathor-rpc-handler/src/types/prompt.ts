@@ -299,6 +299,7 @@ export type SendTransactionConfirmationPrompt = BaseConfirmationPrompt & {
     outputs: IDataOutput[],
     inputs: IDataInput[],
     changeAddress?: string;
+    pushTx: boolean;
     tokenDetails?: Map<string, TokenDetailsObject>;
   }
 }
