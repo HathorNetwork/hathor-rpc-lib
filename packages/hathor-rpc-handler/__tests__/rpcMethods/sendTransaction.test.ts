@@ -128,6 +128,7 @@ describe('sendTransaction', () => {
           token: '00',
         }],
         changeAddress: 'changeAddress',
+        pushTx: true,
         tokenDetails: new Map(),
       },
     }, {});
