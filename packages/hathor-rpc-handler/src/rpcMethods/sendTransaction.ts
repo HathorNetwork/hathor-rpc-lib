@@ -141,6 +141,7 @@ export async function sendTransaction(
       outputs: preparedTx.outputs,
       inputs: preparedTx.inputs,
       changeAddress: params.changeAddress,
+      pushTx: params.pushTx,
       tokenDetails,
     }
   };
