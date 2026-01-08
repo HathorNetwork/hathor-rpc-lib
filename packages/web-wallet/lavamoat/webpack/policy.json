@@ -66,6 +66,12 @@
         "react": true
       }
     },
+    "@hathor/unleash-client": {
+      "globals": {
+        "URL": true,
+        "fetch": true
+      }
+    },
     "@hathor/wallet-lib": {
       "globals": {
         "AbortController": true,

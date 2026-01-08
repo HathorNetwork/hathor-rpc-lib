@@ -65,3 +65,18 @@ export const MIN_SNAP_VERSION = process.env.MIN_SNAP_VERSION || '0.0.0';
 
 // MetaMask Snaps URLs
 export const METAMASK_SNAP_URL = 'https://snaps.metamask.io/snap/npm/hathor/snap';
+
+// Unleash configuration (same as mobile wallet)
+export const UNLEASH_URL = 'https://unleash-proxy.b7e6a7f52ee9fefaf0c53e300cfcb014.hathor.network/proxy';
+export const UNLEASH_CLIENT_KEY = 'wKNhpEXKa39aTRgIjcNsO4Im618bRGTq';
+export const UNLEASH_POLLING_INTERVAL = 15 * 1000; // 15s
+
+// Feature toggle names
+export const WEB_WALLET_MAINTENANCE_TOGGLE = 'web-wallet.maintenance';
+
+// Feature toggle defaults
+// Note: Unleash Proxy only returns enabled toggles. If a toggle is disabled or
+// doesn't exist, it won't be in the response.
+export const FEATURE_TOGGLE_DEFAULTS: Record<string, boolean> = {
+  [WEB_WALLET_MAINTENANCE_TOGGLE]: false, // Default: not under maintenance
+};
