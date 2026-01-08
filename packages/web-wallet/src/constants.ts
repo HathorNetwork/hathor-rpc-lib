@@ -63,6 +63,9 @@ export const CHECK_CONNECTION_TIMEOUT = 10000;
 // Snap Version Requirements
 export const MIN_SNAP_VERSION = process.env.MIN_SNAP_VERSION || '0.0.0';
 
+// Stage configuration (production/staging)
+export const STAGE = process.env.STAGE || 'production';
+
 // MetaMask Snaps URLs
 export const METAMASK_SNAP_URL = 'https://snaps.metamask.io/snap/npm/hathor/snap';
 

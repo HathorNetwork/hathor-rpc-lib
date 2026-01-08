@@ -59,7 +59,7 @@ function CreateTokenDialogRoute() {
 
 // Component that gates the wallet based on feature toggle
 function FeatureGatedWallet() {
-  const { isUnderMaintenance, isLoading } = useFeatureToggle()
+  const { isUnderMaintenance, isLoading, browserId } = useFeatureToggle()
 
   // Show loading screen while checking feature toggle
   if (isLoading) {
@@ -84,7 +84,7 @@ function FeatureGatedWallet() {
 
   // Show maintenance page if maintenance toggle is enabled
   if (isUnderMaintenance) {
-    return <MaintenancePage />
+    return <MaintenancePage browserId={browserId} />
   }
 
   // Show normal wallet UI
