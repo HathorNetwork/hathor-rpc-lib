@@ -8,6 +8,7 @@ import {
   WEB_WALLET_MAINTENANCE_TOGGLE,
   FEATURE_TOGGLE_DEFAULTS,
   STAGE,
+  SKIP_FEATURE_TOGGLE,
 } from '../constants';
 
 const MAX_RETRIES = 5;
@@ -66,6 +67,12 @@ export function FeatureToggleProvider({ children }: FeatureToggleProviderProps) 
 
   useEffect(() => {
     let mounted = true;
+
+    // Skip feature toggle check if configured (e.g., for tests/CI)
+    if (SKIP_FEATURE_TOGGLE) {
+      setIsLoading(false);
+      return;
+    }
 
     async function initializeUnleash(retry = 0): Promise<void> {
       try {

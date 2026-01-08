@@ -109,6 +109,8 @@ module.exports = (env, argv) => {
         'process.env.LOG_LEVEL': JSON.stringify(process.env.LOG_LEVEL || 'debug'),
         'process.env.MIN_SNAP_VERSION': JSON.stringify(process.env.MIN_SNAP_VERSION || '0.0.0'),
         'process.env.WALLET_VERSION': JSON.stringify(packageJson.version),
+        'process.env.STAGE': JSON.stringify(process.env.STAGE || 'production'),
+        'process.env.SKIP_FEATURE_TOGGLE': JSON.stringify(process.env.SKIP_FEATURE_TOGGLE || 'false'),
       }),
       ...(isProduction ? [new LavaMoatPlugin({
         mode: 'production',

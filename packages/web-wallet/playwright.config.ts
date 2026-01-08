@@ -22,7 +22,7 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'yarn dev',
+    command: 'SKIP_FEATURE_TOGGLE=true yarn dev',
     url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
   },
