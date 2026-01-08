@@ -22,6 +22,7 @@ describe('SnapService - Critical Issues', () => {
             token: TOKEN_IDS.HTR,
           }
         ],
+        push_tx: true,
       };
 
       mockInvokeSnap.mockResolvedValueOnce({ txId: 'abc123' });
@@ -47,6 +48,7 @@ describe('SnapService - Critical Issues', () => {
             token: TOKEN_IDS.HTR,
           }
         ],
+        push_tx: true,
       };
 
       mockInvokeSnap.mockResolvedValueOnce({ txId: 'abc123' });
@@ -80,6 +82,7 @@ describe('SnapService - Critical Issues', () => {
               token: TOKEN_IDS.HTR,
             }
           ],
+          push_tx: true,
         })
       ).rejects.toThrow(/cancel|reject/i);
     });
@@ -97,6 +100,7 @@ describe('SnapService - Critical Issues', () => {
               token: TOKEN_IDS.HTR,
             }
           ],
+          push_tx: true,
         })
       ).rejects.toThrow('Insufficient funds');
     });
@@ -115,6 +119,7 @@ describe('SnapService - Critical Issues', () => {
               token: TOKEN_IDS.HTR,
             }
           ],
+          push_tx: true,
         })
       ).rejects.toThrow('User rejected');
     });
@@ -132,6 +137,7 @@ describe('SnapService - Critical Issues', () => {
             token: TOKEN_IDS.HTR,
           }
         ],
+        push_tx: true,
       });
 
       expect(result).toEqual(mockResponse);
