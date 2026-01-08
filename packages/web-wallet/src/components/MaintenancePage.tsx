@@ -8,6 +8,7 @@ interface MaintenancePageProps {
 
 const MaintenancePage: React.FC<MaintenancePageProps> = ({ browserId }) => {
   const [copied, setCopied] = useState(false);
+  const [showBrowserId, setShowBrowserId] = useState(false);
 
   const handleCopyBrowserId = async () => {
     try {
@@ -53,17 +54,31 @@ const MaintenancePage: React.FC<MaintenancePageProps> = ({ browserId }) => {
 
         {/* Browser ID */}
         <div className='pt-4 border-t border-[#24292F]'>
-          <button
-            onClick={handleCopyBrowserId}
-            className='inline-flex items-center gap-2 px-3 py-1.5 bg-[#191C21] border border-[#24292F] rounded-lg text-xs font-mono text-muted-foreground hover:border-primary/50 transition-colors'
-          >
-            <span className='truncate max-w-[200px]'>{browserId}</span>
-            {copied ? (
-              <Check className='w-3.5 h-3.5 text-green-500 flex-shrink-0' />
-            ) : (
-              <Copy className='w-3.5 h-3.5 flex-shrink-0' />
-            )}
-          </button>
+          {!showBrowserId ? (
+            <button
+              onClick={() => setShowBrowserId(true)}
+              className='text-xs text-muted-foreground hover:text-primary transition-colors'
+            >
+              Need help?
+            </button>
+          ) : (
+            <div className='space-y-2'>
+              <p className='text-xs text-muted-foreground'>
+                Share your Browser ID with the team:
+              </p>
+              <button
+                onClick={handleCopyBrowserId}
+                className='inline-flex items-center gap-2 px-3 py-1.5 bg-[#191C21] border border-[#24292F] rounded-lg text-xs font-mono text-muted-foreground hover:border-primary/50 transition-colors'
+              >
+                <span className='truncate max-w-[200px]'>{browserId}</span>
+                {copied ? (
+                  <Check className='w-3.5 h-3.5 text-green-500 flex-shrink-0' />
+                ) : (
+                  <Copy className='w-3.5 h-3.5 flex-shrink-0' />
+                )}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
