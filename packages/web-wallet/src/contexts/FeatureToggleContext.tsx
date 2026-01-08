@@ -15,17 +15,6 @@ const RETRY_DELAY = 500;
 const BROWSER_ID_KEY = 'hathor:browserId';
 
 /**
- * Generates a UUID v4
- */
-function generateUUID(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-}
-
-/**
  * Gets or creates a unique browser identifier stored in localStorage.
  * This ID is used to identify the browser for feature toggle targeting in Unleash.
  */
@@ -33,7 +22,7 @@ function getBrowserId(): string {
   let browserId = localStorage.getItem(BROWSER_ID_KEY);
 
   if (!browserId) {
-    browserId = generateUUID();
+    browserId = crypto.randomUUID();
     localStorage.setItem(BROWSER_ID_KEY, browserId);
   }
 
