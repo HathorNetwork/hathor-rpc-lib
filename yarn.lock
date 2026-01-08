@@ -2548,6 +2548,13 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@hathor/unleash-client@npm:0.1.0":
+  version: 0.1.0
+  resolution: "@hathor/unleash-client@npm:0.1.0"
+  checksum: 10/8930f37fbb973fc5a40795a14a6d45ba38797e26c9c53ce17edd5077b46d80bc1d5668f06b4f4fc1de6c024042316d724d2ad73b04fab18dbcb9699b01a3ce5f
+  languageName: node
+  linkType: hard
+
 "@hathor/wallet-lib@npm:2.9.0":
   version: 2.9.0
   resolution: "@hathor/wallet-lib@npm:2.9.0"
@@ -2595,6 +2602,7 @@ __metadata:
     "@eslint/js": "npm:9.33.0"
     "@hathor/hathor-rpc-handler": "workspace:"
     "@hathor/snap-utils": "workspace:"
+    "@hathor/unleash-client": "npm:0.1.0"
     "@hathor/wallet-lib": "npm:2.9.0"
     "@hookform/resolvers": "npm:5.2.2"
     "@lavamoat/webpack": "npm:1.5.6"

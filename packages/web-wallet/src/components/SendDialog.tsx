@@ -255,6 +255,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
         network,
         outputs: [output],
         changeAddress,
+        push_tx: true,
       });
 
       console.log('[SendDialog] Transaction result:', result);

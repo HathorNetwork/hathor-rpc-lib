@@ -16,6 +16,7 @@
   "dependencies": {
     "@hathor/hathor-rpc-handler": "workspace:",
     "@hathor/snap-utils": "workspace:",
+    "@hathor/unleash-client": "0.1.0",
     "@hathor/wallet-lib": "2.9.0",
     "@hookform/resolvers": "5.2.2",
     "@metamask/snaps-utils": "11.6.1",
