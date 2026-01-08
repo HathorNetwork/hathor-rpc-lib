@@ -18,12 +18,14 @@ case $site in
     CLOUDFRONT_ID=EDTXNP1KSR1BR
     # TODO: This will be changed to SNAP_ORIGIN=npm:@hathor/snap when the next version of the snap package is published
     SNAP_ORIGIN=local:http://localhost:8080
+    STAGE=staging
     ;;
   production)
     # Production environment configuration
     S3_BUCKET=hathor-web-wallet-production
     CLOUDFRONT_ID=EWUF3A8EL37EC
     SNAP_ORIGIN=npm:@hathor/snap
+    STAGE=production
     ;;
   *)
     echo "Unknown site: $site"

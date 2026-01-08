@@ -7,15 +7,35 @@ import {
   UNLEASH_POLLING_INTERVAL,
   WEB_WALLET_MAINTENANCE_TOGGLE,
   FEATURE_TOGGLE_DEFAULTS,
+  STAGE,
+  SKIP_FEATURE_TOGGLE,
 } from '../constants';
 
 const MAX_RETRIES = 5;
 const RETRY_DELAY = 500;
+const BROWSER_ID_KEY = 'hathor:browserId';
+
+/**
+ * Gets or creates a unique browser identifier stored in localStorage.
+ * This ID is used to identify the browser for feature toggle targeting in Unleash.
+ */
+function getBrowserId(): string {
+  let browserId = localStorage.getItem(BROWSER_ID_KEY);
+
+  if (!browserId) {
+    browserId = crypto.randomUUID();
+    localStorage.setItem(BROWSER_ID_KEY, browserId);
+  }
+
+  return browserId;
+}
 
 interface FeatureToggleContextType {
   isUnderMaintenance: boolean;
   isLoading: boolean;
   featureToggles: Record<string, boolean>;
+  /** Unique browser identifier used for feature toggle targeting */
+  browserId: string;
 }
 
 const FeatureToggleContext = createContext<FeatureToggleContextType | null>(null);
@@ -42,8 +62,17 @@ export function FeatureToggleProvider({ children }: FeatureToggleProviderProps) 
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const retryCountRef = useRef(0);
 
+  // Get or create a unique browser ID for feature toggle targeting
+  const browserId = getBrowserId();
+
   useEffect(() => {
     let mounted = true;
+
+    // Skip feature toggle check if configured (e.g., for tests/CI)
+    if (SKIP_FEATURE_TOGGLE) {
+      setIsLoading(false);
+      return;
+    }
 
     async function initializeUnleash(retry = 0): Promise<void> {
       try {
@@ -54,8 +83,10 @@ export function FeatureToggleProvider({ children }: FeatureToggleProviderProps) 
           disableRefresh: true, // We handle polling ourselves
           appName: 'web-wallet',
           context: {
+            userId: browserId,
             properties: {
               platform: 'web',
+              stage: STAGE,
             },
           },
         });
@@ -119,7 +150,7 @@ export function FeatureToggleProvider({ children }: FeatureToggleProviderProps) 
   const isUnderMaintenance = featureToggles[WEB_WALLET_MAINTENANCE_TOGGLE] ?? FEATURE_TOGGLE_DEFAULTS[WEB_WALLET_MAINTENANCE_TOGGLE];
 
   return (
-    <FeatureToggleContext.Provider value={{ isUnderMaintenance, isLoading, featureToggles }}>
+    <FeatureToggleContext.Provider value={{ isUnderMaintenance, isLoading, featureToggles, browserId }}>
       {children}
     </FeatureToggleContext.Provider>
   );
