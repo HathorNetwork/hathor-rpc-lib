@@ -39,7 +39,7 @@ build
 
 For starting the [RPC Handler](packages/snap/README.md), simply run the following command in the Nix environment
 ```sh
-start
+snap-start
 ```
 
 ## Support
@@ -60,7 +60,7 @@ To test the interaction with the Metamask wallet, run the snaps in development m
 ```sh
 yarn workspace @hathor/snap start
 ```
-Or simply `start` on the Nix environment.
+Or simply `snap-start` on the Nix environment.
 
 See more on the [`@hathor/snap` README](packages/snap/README.md).
 

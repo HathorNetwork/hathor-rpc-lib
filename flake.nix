@@ -61,7 +61,7 @@
               '';
             }
             {
-              name = "start";
+              name = "snap-start";
               help = "Start the snaps package";
               command = ''
                 echo "Starting snaps package"
