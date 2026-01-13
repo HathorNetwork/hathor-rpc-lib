@@ -182,7 +182,6 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
   };
 
   const onSubmit = async (data: SendFormData) => {
-    console.log('[SendDialog] onSubmit called with data:', data);
     setIsLoading(true);
     setTransactionError(null);
 
@@ -192,7 +191,6 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
       const amountInBaseUnits = selectedToken?.isNFT
         ? BigInt(data.amount)
         : amountToCents(data.amount);
-      console.log('[SendDialog] Amount in base units:', amountInBaseUnits.toString());
 
       // Final balance check to ensure we have sufficient funds
       // This prevents race conditions where balance changed after form validation
@@ -217,12 +215,8 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
         return;
       }
 
-      // Get change address based on address mode
-      console.log('[SendDialog] Getting change address for address mode:', addressMode);
       const changeAddress = await getAddressForMode(addressMode, readOnlyWalletWrapper);
-      console.log('[SendDialog] Change address:', changeAddress);
 
-      // Prepare output
       // TODO: Re-enable timelock when snap supports it
       const output: {
         address: string;
@@ -248,29 +242,28 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
       //   console.log('[SendDialog] No timelock specified');
       // }
 
-      console.log('[SendDialog] Final output object:', output);
-      console.log('[SendDialog] Calling sendTransaction...');
+      const outputs: Array<typeof output | { type: string; data: string }> = [output];
 
-      const result = await sendTransaction({
+      if (data.dataOutput?.trim()) {
+        outputs.push({
+          type: 'data',
+          data: data.dataOutput.trim()
+        });
+      }
+
+      await sendTransaction({
         network,
-        outputs: [output],
+        outputs,
         changeAddress,
         push_tx: true,
       });
 
-      console.log('[SendDialog] Transaction result:', result);
-
-      console.log('Transaction sent successfully:', result);
-
       // Note: Balance refresh is handled by WebSocket 'new-tx' event handler,
       // which refreshes only the affected tokens. No manual refresh needed here.
-
-      // Reset form and close
       reset();
       setTransactionError(null);
       onClose();
     } catch (err) {
-      console.error('Failed to send transaction:', err);
       setTransactionError(err instanceof Error ? err.message : 'Failed to send transaction');
     } finally {
       setIsLoading(false);
