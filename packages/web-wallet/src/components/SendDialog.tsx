@@ -48,6 +48,14 @@ const createSendFormSchema = (network: string) =>
           const networkObj = new Network(network);
           const addressObj = new Address(val.trim(), { network: networkObj });
           addressObj.validateAddress();
+
+          // Disallow P2SH addresses
+          if (addressObj.getType() === 'p2sh') {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: 'Sending to P2SH addresses is not supported',
+            });
+          }
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : 'Invalid address';
           let customMessage = 'Invalid Hathor address format';
