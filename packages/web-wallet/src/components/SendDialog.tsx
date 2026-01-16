@@ -13,6 +13,7 @@ import { TOKEN_IDS } from '../constants';
 import { readOnlyWalletWrapper } from '../services/ReadOnlyWalletWrapper';
 import { getAddressForMode } from '../utils/addressMode';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import TransactionErrorDisplay from './TransactionErrorDisplay';
 
 interface SendDialogProps {
   isOpen: boolean;
@@ -85,7 +86,7 @@ type SendFormData = z.infer<ReturnType<typeof createSendFormSchema>>;
 const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUid }) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [transactionError, setTransactionError] = useState<string | null>(null);
+  const [transactionError, setTransactionError] = useState<Error | null>(null);
 
   const { sendTransaction, network, addressMode } = useWallet();
   const { allTokens } = useTokens();
@@ -214,11 +215,13 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
           ? shortfall.toString()
           : centsToAmount(shortfall);
 
-        setTransactionError(
+        const insufficientBalanceError = new Error(
           `Insufficient balance. You need ${displayAmount} ${selectedToken?.symbol} ` +
           `but only have ${displayAvailable} ${selectedToken?.symbol} available. ` +
           `Short by ${displayShortfall} ${selectedToken?.symbol}.`
         );
+        insufficientBalanceError.name = 'InsufficientBalanceError';
+        setTransactionError(insufficientBalanceError);
         setIsLoading(false);
         return;
       }
@@ -271,8 +274,25 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
       reset();
       setTransactionError(null);
       onClose();
-    } catch (err) {
-      setTransactionError(err instanceof Error ? err.message : 'Failed to send transaction');
+    } catch (err: unknown) {
+      // Snap errors come as objects with message/data properties, not Error instances
+      // We need to preserve the snap error data (errorType, stack) for display
+      const snapErr = err as { message?: string; data?: { errorType?: string; stack?: string }; name?: string; stack?: string };
+
+      const error = new Error(snapErr?.message || 'Failed to send transaction');
+      error.name = snapErr?.data?.errorType || snapErr?.name || 'Error';
+
+      // Preserve stack trace from snap error data, or from the error itself
+      if (snapErr?.data?.stack) {
+        error.stack = snapErr.data.stack;
+      } else if (snapErr?.stack) {
+        error.stack = snapErr.stack;
+      }
+
+      // Attach the original data for TransactionErrorDisplay to extract
+      (error as any).data = snapErr?.data;
+
+      setTransactionError(error);
     } finally {
       setIsLoading(false);
     }
@@ -379,21 +399,13 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
           </div>
 
           {transactionError && (
-            <div className="flex flex-col gap-2 p-3 bg-red-500/10 border border-red-500/50 rounded-lg">
-              <span className="text-red-400 text-sm whitespace-pre-line">{transactionError}</span>
-              {transactionError.includes('permission') && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    window.location.reload();
-                  }}
-                  className="text-xs text-primary hover:text-primary/80 underline self-start"
-                >
-                  Click here to refresh and reconnect
-                </button>
-              )}
-            </div>
+            <TransactionErrorDisplay
+              error={transactionError}
+              onRefreshClick={() => {
+                onClose();
+                window.location.reload();
+              }}
+            />
           )}
 
           {/* Advanced Options */}

@@ -85,9 +85,16 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
     return bigIntUtils.JSONBigInt.stringify(response);
   } catch (e: any) {
     // Re-throw using SnapError to properly serialize the data property
+    // Include stack trace and error type for debugging in the web-wallet
+    const errorData = {
+      ...e.data,
+      errorType: e.name || e.data?.errorType || 'UnknownError',
+      stack: e.stack || undefined,
+    };
+
     const snapError = new SnapError(
       e.message || 'Unknown error',
-      e.data || { errorType: e.name || 'UnknownError' }
+      errorData
     );
     // Try to preserve the original error code
     if (e.code) {
