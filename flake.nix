@@ -39,6 +39,36 @@
 
           commands = [
             {
+              name = "clean";
+              help = "Remove node_modules and dist in root and packages/*";
+              command = ''
+                echo "Removing root node_modules and dist (if present)..."
+                rm -rf node_modules || true
+                rm -rf dist || true
+                echo "Removing node_modules and dist in packages/* (if present)..."
+                find packages -type d \( -name node_modules -o -name dist \) -print -exec rm -rf '{}' + || true
+                echo "Clean complete."
+              '';
+            }
+            {
+              name = "build";
+              help = "Build all packages";
+              command = ''
+                echo "Installing dependencies with Yarn..."
+                yarn
+                echo "Building all packages..."
+                yarn workspaces foreach -A run build
+              '';
+            }
+            {
+              name = "snap-start";
+              help = "Start the snaps package";
+              command = ''
+                echo "Starting snaps package"
+                yarn workspace @hathor/snap start
+              '';
+            }
+            {
               name = "web-wallet-build";
               help = "Build web-wallet for a site (staging or production)";
               command = ''
