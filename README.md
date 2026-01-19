@@ -30,19 +30,17 @@ To initialize nix dev environment:
 ```sh
 $ nix develop
 ```
-then, install the dependencies:
+then, inside the Nix environment, install the dependencies:
 ```sh
-yarn
-```
-
-For most development cases, build the packages right after:
-```sh
-yarn workspaces foreach -A run build
+build
 ```
 
 ## Usage
 
-TO DO
+For starting the [RPC Handler](packages/snap/README.md), simply run the following command in the Nix environment
+```sh
+snap-start
+```
 
 ## Support
 
@@ -62,6 +60,7 @@ To test the interaction with the Metamask wallet, run the snaps in development m
 ```sh
 yarn workspace @hathor/snap start
 ```
+Or simply `snap-start` on the Nix environment.
 
 See more on the [`@hathor/snap` README](packages/snap/README.md).
 
@@ -80,6 +79,8 @@ To contribute to the development of Hathor RPC library, we encourage you to fork
 ### Security
 
 Please do not open an issue to report a security breach nor submit a pull request to fix it. Instead, follow the guidelines described in [SECURITY](SECURITY.md) for safely reporting, fixing, and disclosing security issues.
+
+# Web Wallet
 
 ## Deploying the Web Wallet
 
