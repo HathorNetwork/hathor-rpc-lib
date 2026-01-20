@@ -171,8 +171,7 @@ const WalletHome: React.FC = () => {
       <Header
         onRegisterTokenClick={() => navigate('/register-token')}
         onCreateTokenClick={() => navigate('/create-token')}
-        // TODO: Re-enable when address mode switching logic is finalized
-        // onAddressModeClick={() => navigate('/address-mode')}
+        onAddressModeClick={() => navigate('/address-mode')}
       />
 
       {/* Main Container - responsive layout */}

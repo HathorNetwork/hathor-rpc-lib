@@ -272,6 +272,26 @@ export class ReadOnlyWalletWrapper {
   }
 
   /**
+   * Check if the wallet has transactions outside the first address (index 0).
+   * This is used to determine if the user can safely switch to single address mode.
+   *
+   * @returns Promise<boolean> - true if there are transactions on addresses with index > 0
+   */
+  async hasTxOutsideFirstAddress(): Promise<boolean> {
+    if (!this.wallet) {
+      throw new Error('Wallet not initialized');
+    }
+
+    try {
+      const data = await this.wallet.hasTxOutsideFirstAddress();
+      return data.hasTransactions;
+    } catch (error) {
+      log.error('Failed to check transactions outside first address:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Stop the wallet and cleanup resources
    */
   async stop(): Promise<void> {
