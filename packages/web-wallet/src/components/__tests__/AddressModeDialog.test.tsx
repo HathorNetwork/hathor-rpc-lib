@@ -119,13 +119,16 @@ describe('AddressModeDialog', () => {
       });
     });
 
-    it('should show error message when check fails', async () => {
+    it('should show error message and disable Single Address when check fails', async () => {
       mockHasTxOutsideFirstAddress.mockRejectedValue(new Error('Network error'));
 
       render(<AddressModeDialog isOpen={true} onClose={mockOnClose} />);
 
       await waitFor(() => {
         expect(screen.getByText('Failed to check address usage')).toBeInTheDocument();
+        // Should disable Single Address mode on error as a safety measure
+        const singleAddressRadio = screen.getByRole('radio', { name: /single address/i });
+        expect(singleAddressRadio).toBeDisabled();
       });
     });
 

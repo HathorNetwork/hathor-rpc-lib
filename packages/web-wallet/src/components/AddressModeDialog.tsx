@@ -38,6 +38,7 @@ const AddressModeDialog: React.FC<AddressModeDialogProps> = ({ isOpen, onClose }
       setHasTxOutside(hasTransactions);
     } catch (error) {
       setCheckError('Failed to check address usage');
+      setHasTxOutside(true); // Default to true on error to prevent enabling single address mode without proper check
       console.error('Failed to check hasTxOutsideFirstAddress:', error);
     } finally {
       setIsLoading(false);
