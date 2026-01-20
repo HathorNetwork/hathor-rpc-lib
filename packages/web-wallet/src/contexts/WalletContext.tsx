@@ -17,6 +17,10 @@ import { useTransactions } from './hooks/useTransactions';
 import { useWalletConnection } from './hooks/useWalletConnection';
 import { useNetworkManagement } from './hooks/useNetworkManagement';
 import type { SendTransactionParams } from '../services/SnapService';
+import { readOnlyWalletWrapper } from '../services/ReadOnlyWalletWrapper';
+import { createLogger } from '../utils/logger';
+
+const log = createLogger('WalletContext');
 
 // Re-export types for external use
 export type { TransactionHistoryItem, SendTransactionParams };
@@ -481,6 +485,22 @@ export function WalletProvider({ children }: WalletProviderProps) {
       // that the UI reads from (tokens have balance in token.balance, but UI
       // reads from useWalletBalance's balances Map)
       await refreshBalanceRef.current();
+
+      // Auto-detect if user needs to be switched to dynamic address mode
+      // This handles existing wallets that have transactions on multiple addresses
+      if (addressMode === 'single') {
+        try {
+          const hasTxOutside = await readOnlyWalletWrapper.hasTxOutsideFirstAddress();
+          if (hasTxOutside) {
+            log.info('Detected transactions outside first address, auto-switching to dynamic mode');
+            await setAddressModeImpl('dynamic');
+          }
+        } catch (error) {
+          // On error, switch to dynamic mode as a safety measure to avoid hiding funds
+          log.error('Failed to check transactions outside first address, defaulting to dynamic mode:', error);
+          await setAddressModeImpl('dynamic');
+        }
+      }
     },
   });
 
