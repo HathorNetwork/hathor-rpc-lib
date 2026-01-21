@@ -6,7 +6,7 @@ const log = createLogger('addressMode');
 export type AddressMode = 'single' | 'dynamic';
 
 export const ADDRESS_MODE_STORAGE_KEY = 'hathor_wallet_address_mode';
-export const DEFAULT_ADDRESS_MODE: AddressMode = 'dynamic';
+export const DEFAULT_ADDRESS_MODE: AddressMode = 'single';
 
 /**
  * Get address based on the selected address mode

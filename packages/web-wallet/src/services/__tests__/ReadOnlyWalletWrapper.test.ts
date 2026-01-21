@@ -15,6 +15,7 @@ const {
   mockGetAllAddresses,
   mockIsAddressMine,
   mockGetTokens,
+  mockHasTxOutsideFirstAddress,
   mockSetWalletServiceBaseUrl,
   mockSetWalletServiceBaseWsUrl,
   mockSetNetwork,
@@ -32,6 +33,7 @@ const {
   mockGetAllAddresses: vi.fn(),
   mockIsAddressMine: vi.fn(),
   mockGetTokens: vi.fn(),
+  mockHasTxOutsideFirstAddress: vi.fn(),
   mockSetWalletServiceBaseUrl: vi.fn(),
   mockSetWalletServiceBaseWsUrl: vi.fn(),
   mockSetNetwork: vi.fn(),
@@ -61,6 +63,7 @@ vi.mock('@hathor/wallet-lib', () => {
     getAllAddresses = mockGetAllAddresses;
     isAddressMine = mockIsAddressMine;
     getTokens = mockGetTokens;
+    hasTxOutsideFirstAddress = mockHasTxOutsideFirstAddress;
   }
 
   // Mock error classes
@@ -371,6 +374,41 @@ describe('ReadOnlyWalletWrapper', () => {
     });
   });
 
+  describe('hasTxOutsideFirstAddress', () => {
+    beforeEach(async () => {
+      mockIsReady.mockReturnValue(true);
+      await service.initialize('xpub123', 'testnet');
+    });
+
+    it('should return true when wallet has transactions outside first address', async () => {
+      mockHasTxOutsideFirstAddress.mockResolvedValue({ hasTransactions: true });
+
+      const result = await service.hasTxOutsideFirstAddress();
+
+      expect(result).toBe(true);
+      expect(mockHasTxOutsideFirstAddress).toHaveBeenCalled();
+    });
+
+    it('should return false when wallet has no transactions outside first address', async () => {
+      mockHasTxOutsideFirstAddress.mockResolvedValue({ hasTransactions: false });
+
+      const result = await service.hasTxOutsideFirstAddress();
+
+      expect(result).toBe(false);
+    });
+
+    it('should throw error when wallet is not initialized', async () => {
+      const uninitializedService = new ReadOnlyWalletWrapper();
+
+      await expect(uninitializedService.hasTxOutsideFirstAddress()).rejects.toThrow('Wallet not initialized');
+    });
+
+    it('should propagate errors from wallet-lib', async () => {
+      mockHasTxOutsideFirstAddress.mockRejectedValue(new Error('Network error'));
+
+      await expect(service.hasTxOutsideFirstAddress()).rejects.toThrow('Network error');
+    });
+  });
 
   describe('stop', () => {
     beforeEach(async () => {
