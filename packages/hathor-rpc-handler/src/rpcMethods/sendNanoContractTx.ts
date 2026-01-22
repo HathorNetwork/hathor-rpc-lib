@@ -22,7 +22,7 @@ import {
   SendNanoContractTxLoadingFinishedTrigger,
 } from '../types';
 import { PromptRejectedError, SendNanoContractTxError, InvalidParamsError } from '../errors';
-import { INanoContractActionSchema, NanoContractAction, ncApi, nanoUtils, Network, config } from '@hathor/wallet-lib';
+import { INanoContractActionSchema, NanoContractAction, ncApi, nanoUtils, Network, config, HathorWallet } from '@hathor/wallet-lib';
 import { fetchTokenDetails } from '../helpers';
 
 export type NanoContractActionWithStringAmount = Omit<NanoContractAction, 'amount'> & {
@@ -92,7 +92,7 @@ export async function sendNanoContractTx(
 
     if (!blueprintId) {
       try {
-        blueprintId = await nanoUtils.getBlueprintId(params.ncId!, wallet);
+        blueprintId = await nanoUtils.getBlueprintId(params.ncId!, wallet as unknown as HathorWallet);
       } catch {
         // Error getting blueprint ID
         throw new SendNanoContractTxError(

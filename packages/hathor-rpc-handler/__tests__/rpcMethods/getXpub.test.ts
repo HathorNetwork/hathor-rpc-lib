@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { HathorWallet } from '@hathor/wallet-lib';
+import type { IHathorWallet } from '@hathor/wallet-lib';
 import {
   RpcMethods,
   GetXpubRpcRequest,
@@ -21,7 +21,7 @@ describe('getXpub parameter validation', () => {
   const mockWallet = {
     getNetwork: jest.fn().mockReturnValue('testnet'),
     xpub: mockXpub,
-  } as unknown as HathorWallet;
+  } as unknown as IHathorWallet;
 
   const mockTriggerHandler = jest.fn().mockResolvedValue({ data: true });
 
@@ -72,7 +72,7 @@ describe('getXpub parameter validation', () => {
     const walletWithoutXpub = {
       getNetwork: jest.fn().mockReturnValue('testnet'),
       xpub: undefined,
-    } as unknown as HathorWallet;
+    } as unknown as IHathorWallet;
 
     const validRequest = {
       method: RpcMethods.GetXpub,

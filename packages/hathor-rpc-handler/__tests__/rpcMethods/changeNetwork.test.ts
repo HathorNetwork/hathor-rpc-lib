@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { HathorWallet } from '@hathor/wallet-lib';
+import type { IHathorWallet } from '@hathor/wallet-lib';
 import { 
   TriggerResponseTypes, 
   RpcMethods,
@@ -19,7 +19,7 @@ import { InvalidParamsError, PromptRejectedError } from '../../src/errors';
 describe('changeNetwork', () => {
   const mockWallet = {
     getNetwork: jest.fn().mockReturnValue('testnet'),
-  } as unknown as HathorWallet;
+  } as unknown as IHathorWallet;
 
   const mockTriggerHandler = jest.fn();
 

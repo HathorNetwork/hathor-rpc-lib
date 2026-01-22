@@ -1,4 +1,4 @@
-import { HathorWallet } from '@hathor/wallet-lib';
+import type { IHathorWallet } from '@hathor/wallet-lib';
 import { createToken } from '../../src/rpcMethods/createToken';
 import {
   TriggerTypes,
@@ -28,7 +28,7 @@ function toCamelCase(params: Pick<CreateTokenRpcRequest, 'params'>['params']) {
 
 describe('createToken', () => {
   let rpcRequest: CreateTokenRpcRequest;
-  let wallet: HathorWallet;
+  let wallet: IHathorWallet;
   let triggerHandler = jest.fn();
 
   beforeEach(() => {
@@ -55,7 +55,7 @@ describe('createToken', () => {
     wallet = {
       isAddressMine: jest.fn(),
       createNewToken: jest.fn(),
-    } as unknown as HathorWallet;
+    } as unknown as IHathorWallet;
 
     triggerHandler = jest.fn();
   });

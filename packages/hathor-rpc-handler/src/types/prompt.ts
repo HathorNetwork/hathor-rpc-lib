@@ -202,6 +202,7 @@ export interface CreateTokenParams {
   meltAuthorityAddress: string | null,
   allowExternalMeltAuthorityAddress: boolean,
   data: string[] | null,
+  contractPaysTokenDeposit?: boolean,
 }
 
 export type CreateTokenConfirmationPrompt = BaseConfirmationPrompt & {

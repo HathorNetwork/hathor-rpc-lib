@@ -80,7 +80,7 @@ export async function getAddress(
 
     switch (params.type) {
       case 'first_empty':
-        addressInfo = await wallet.getCurrentAddress();
+        addressInfo = await wallet.getCurrentAddress() as AddressInfoObject;
         break;
       case 'full_path':
         throw new NotImplementedError();

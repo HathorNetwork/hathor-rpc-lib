@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { HathorWallet } from '@hathor/wallet-lib';
+import type { IHathorWallet } from '@hathor/wallet-lib';
 import { 
   RpcMethods,
   GetAddressRpcRequest,
@@ -22,7 +22,7 @@ describe('getAddress parameter validation', () => {
     getAddressAtIndex: jest.fn().mockResolvedValue('test-address'),
     getAddressPathForIndex: jest.fn().mockResolvedValue('m\'/44\'/0\'/0/1'),
     getAddressIndex: jest.fn().mockResolvedValue(1),
-  } as unknown as HathorWallet;
+  } as unknown as IHathorWallet;
 
   const mockTriggerHandler = jest.fn().mockResolvedValue({ data: true });
 

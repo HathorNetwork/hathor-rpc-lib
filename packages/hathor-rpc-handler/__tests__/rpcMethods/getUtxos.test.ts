@@ -7,7 +7,7 @@
 
 import { PromptRejectedError, InvalidParamsError } from '../../src/errors';
 import { mockPromptHandler, mockGetUtxosRequest } from '../mocks';
-import { HathorWallet } from '@hathor/wallet-lib';
+import type { IHathorWallet } from '@hathor/wallet-lib';
 import { getUtxos } from '../../src/rpcMethods/getUtxos';
 import { TriggerTypes, TriggerResponseTypes, UtxoDetails, RpcMethods, GetUtxosRpcRequest } from '../../src/types';
 
@@ -26,13 +26,13 @@ const mockResponse: UtxoDetails = {
 };
 
 describe('getUtxos', () => {
-  let wallet: jest.Mocked<HathorWallet>;
+  let wallet: jest.Mocked<IHathorWallet>;
 
   beforeEach(() => {
     wallet = {
       getUtxos: jest.fn().mockResolvedValue(mockResponse),
       getNetwork: jest.fn().mockReturnValue('mainnet')
-    } as unknown as HathorWallet;
+    } as unknown as jest.Mocked<IHathorWallet>;
   });
 
   describe('parameter validation', () => {

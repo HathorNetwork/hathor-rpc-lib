@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { HathorWallet } from '@hathor/wallet-lib';
+import type { IHathorWallet } from '@hathor/wallet-lib';
 import { 
   TriggerResponseTypes, 
   RpcMethods,
@@ -22,7 +22,7 @@ describe('signWithAddress', () => {
     getAddressAtIndex: jest.fn().mockResolvedValue('test-address'),
     getAddressPathForIndex: jest.fn().mockResolvedValue('test-path'),
     signMessageWithAddress: jest.fn().mockResolvedValue('test-signature'),
-  } as unknown as HathorWallet;
+  } as unknown as IHathorWallet;
 
   const mockTriggerHandler = jest.fn();
 

@@ -6,7 +6,8 @@
  */
 
 import { z } from 'zod';
-import type { HathorWallet } from '@hathor/wallet-lib';
+import type { IHathorWallet, Transaction } from '@hathor/wallet-lib';
+import type { CreateTokenOptionsInput } from '@hathor/wallet-lib/lib/wallet/types';
 import {
   TriggerTypes,
   PinConfirmationPrompt,
@@ -64,7 +65,7 @@ const createNanoContractCreateTokenTxSchema = z.object({
  */
 export async function createNanoContractCreateTokenTx(
   rpcRequest: CreateNanoContractCreateTokenTxRpcRequest,
-  wallet: HathorWallet,
+  wallet: IHathorWallet,
   requestMetadata: RequestMetadata,
   promptHandler: TriggerHandler,
 ): Promise<CreateNanoContractCreateTokenTxResponse> {
@@ -118,6 +119,23 @@ export async function createNanoContractCreateTokenTx(
 
   const { nano, token } = confirmationResponse.data;
 
+  // Ensure required fields have values and cast to CreateTokenOptionsInput
+  const tokenOptions: CreateTokenOptionsInput = {
+    name: token.name,
+    symbol: token.symbol,
+    amount: token.amount,
+    mintAddress: token.mintAddress ?? address, // Use the address param as default mintAddress
+    contractPaysTokenDeposit: token.contractPaysTokenDeposit ?? false,
+    changeAddress: token.changeAddress,
+    createMint: token.createMint,
+    mintAuthorityAddress: token.mintAuthorityAddress,
+    allowExternalMintAuthorityAddress: token.allowExternalMintAuthorityAddress,
+    createMelt: token.createMelt,
+    meltAuthorityAddress: token.meltAuthorityAddress,
+    allowExternalMeltAuthorityAddress: token.allowExternalMeltAuthorityAddress,
+    data: token.data,
+  };
+
   // Prompt for PIN
   const pinPrompt: PinConfirmationPrompt = {
     ...rpcRequest,
@@ -135,23 +153,28 @@ export async function createNanoContractCreateTokenTx(
   promptHandler(loadingTrigger, requestMetadata);
 
   // Call the wallet method
-  let response;
+  let response: Transaction | string;
   if (push_tx) {
     response = await wallet.createAndSendNanoContractCreateTokenTransaction(
       nano.method,
       address,
       nano,
-      token,
+      tokenOptions,
       { pinCode: pinResponse.data.pinCode }
     );
   } else {
-    response = await wallet.createNanoContractCreateTokenTransaction(
+    const sendTransactionObj = await wallet.createNanoContractCreateTokenTransaction(
       nano.method,
       address,
       nano,
-      token,
+      tokenOptions,
       { pinCode: pinResponse.data.pinCode }
     );
+    // Convert to hex format for the response when not pushing to network
+    if (!sendTransactionObj.transaction) {
+      throw new Error('Failed to create transaction');
+    }
+    response = sendTransactionObj.transaction.toHex();
   }
 
   // Emit loading finished trigger

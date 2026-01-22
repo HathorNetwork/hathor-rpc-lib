@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { HathorWallet } from '@hathor/wallet-lib';
+import type { IHathorWallet } from '@hathor/wallet-lib';
 import {
   RpcMethods,
   GetBalanceRpcRequest,
@@ -16,30 +16,32 @@ import { getBalance } from '../../src/rpcMethods/getBalance';
 import { InvalidParamsError, NotImplementedError } from '../../src/errors';
 
 describe('getBalance parameter validation', () => {
+  const mockGetBalance = jest.fn().mockResolvedValue([{
+    token: {
+      id: '000003521effbc8efd7b746a118cdc7d41d7cc1bf9c5d1fa5de4f8453f14ba4f'
+    },
+    balance: {
+      unlocked: '0',
+      locked: '0'
+    },
+    transactions: 0,
+    lockExpires: null,
+    tokenAuthorities: {
+      unlocked: {
+        mint: '0',
+        melt: '0'
+      },
+      locked: {
+        mint: '0',
+        melt: '0'
+      }
+    }
+  }]);
+
   const mockWallet = {
     getNetwork: jest.fn().mockReturnValue('testnet'),
-    getBalance: jest.fn().mockResolvedValue([{
-      token: {
-        id: '000003521effbc8efd7b746a118cdc7d41d7cc1bf9c5d1fa5de4f8453f14ba4f'
-      },
-      balance: {
-        unlocked: '0',
-        locked: '0'
-      },
-      transactions: 0,
-      lockExpires: null,
-      tokenAuthorities: {
-        unlocked: {
-          mint: '0',
-          melt: '0'
-        },
-        locked: {
-          mint: '0',
-          melt: '0'
-        }
-      }
-    }]),
-  } as unknown as HathorWallet;
+    getBalance: mockGetBalance,
+  } as unknown as IHathorWallet;
 
   const mockTriggerHandler = jest.fn().mockResolvedValue({
     type: TriggerResponseTypes.GetBalanceConfirmationResponse,
@@ -183,7 +185,7 @@ describe('getBalance parameter validation', () => {
       }
     }];
 
-    mockWallet.getBalance
+    mockGetBalance
       .mockResolvedValueOnce(token1Balance)
       .mockResolvedValueOnce(token2Balance);
 

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { HathorWallet, Network, bufferUtils, nanoUtils } from '@hathor/wallet-lib';
+import { Network, bufferUtils, nanoUtils, type IHathorWallet } from '@hathor/wallet-lib';
 import {
   TriggerTypes,
   TriggerResponseTypes,
@@ -19,7 +19,7 @@ import { PromptRejectedError } from '../../src/errors';
 import { InvalidParamsError } from '../../src/errors';
 
 describe('signOracleData', () => {
-  let wallet: jest.Mocked<HathorWallet>;
+  let wallet: IHathorWallet;
 
   afterEach(() => {
     jest.clearAllMocks();
@@ -37,7 +37,7 @@ describe('signOracleData', () => {
     wallet = {
       getNetwork: jest.fn().mockReturnValue('mainnet'),
       getNetworkObject: jest.fn().mockReturnValue(new Network('mainnet')),
-    } as unknown as HathorWallet;
+    } as unknown as IHathorWallet;
   });
 
   it('should throw PromptRejectedError if user rejects the sign oracle data trigger request', async () => {
@@ -149,7 +149,7 @@ describe('signOracleData parameter validation', () => {
     getNetworkObject: jest.fn(),
     getNetwork: jest.fn().mockReturnValue('testnet'),
     pinCode: null,
-  } as unknown as HathorWallet;
+  } as unknown as IHathorWallet;
 
   const mockTriggerHandler = jest.fn().mockResolvedValue({
     type: TriggerResponseTypes.SignOracleDataConfirmationResponse,
