@@ -19,7 +19,7 @@ jest.spyOn(ncApi, 'getBlueprintInformation').mockResolvedValue({
   name: 'mock-blueprint',
   attributes: new Map(),
   public_methods: new Map(),
-  private_methods: new Map(),
+  view_methods: new Map(),
 });
 
 describe('sendNanoContractTx', () => {
