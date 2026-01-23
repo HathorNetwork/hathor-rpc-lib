@@ -162,7 +162,6 @@ describe('createNanoContractCreateTokenTx', () => {
   it('should create but not send the transaction (push_tx false)', async () => {
     rpcRequest.params.push_tx = false;
     const pinCode = '1234';
-    const response = { tx_id: 'mock-tx-id' };
     promptHandler
       .mockResolvedValueOnce({
         type: TriggerResponseTypes.CreateNanoContractCreateTokenTxConfirmationResponse,
