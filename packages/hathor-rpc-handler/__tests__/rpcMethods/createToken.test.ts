@@ -55,7 +55,7 @@ describe('createToken', () => {
     wallet = {
       isAddressMine: jest.fn(),
       createNewToken: jest.fn(),
-    } as unknown as IHathorWallet;
+    } as Partial<IHathorWallet> as IHathorWallet;
 
     triggerHandler = jest.fn();
   });

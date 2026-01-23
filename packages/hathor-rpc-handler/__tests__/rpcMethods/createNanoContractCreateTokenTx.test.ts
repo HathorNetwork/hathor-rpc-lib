@@ -75,7 +75,7 @@ describe('createNanoContractCreateTokenTx', () => {
     wallet = {
       createAndSendNanoContractCreateTokenTransaction: jest.fn(),
       createNanoContractCreateTokenTransaction: jest.fn(),
-    } as unknown as IHathorWallet;
+    } as Partial<IHathorWallet> as IHathorWallet;
 
     promptHandler = jest.fn();
   });

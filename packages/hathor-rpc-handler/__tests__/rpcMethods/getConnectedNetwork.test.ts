@@ -17,7 +17,7 @@ import { InvalidParamsError } from '../../src/errors';
 describe('getConnectedNetwork parameter validation', () => {
   const mockWallet = {
     getNetwork: jest.fn().mockReturnValue('testnet'),
-  } as unknown as IHathorWallet;
+  } as Partial<IHathorWallet> as IHathorWallet;
 
   const mockTriggerHandler = jest.fn();
 

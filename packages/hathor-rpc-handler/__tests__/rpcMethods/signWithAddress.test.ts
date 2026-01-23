@@ -22,7 +22,7 @@ describe('signWithAddress', () => {
     getAddressAtIndex: jest.fn().mockResolvedValue('test-address'),
     getAddressPathForIndex: jest.fn().mockResolvedValue('test-path'),
     signMessageWithAddress: jest.fn().mockResolvedValue('test-signature'),
-  } as unknown as IHathorWallet;
+  } as Partial<IHathorWallet> as IHathorWallet;
 
   const mockTriggerHandler = jest.fn();
 

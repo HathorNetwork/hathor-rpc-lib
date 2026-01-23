@@ -41,7 +41,7 @@ describe('getBalance parameter validation', () => {
   const mockWallet = {
     getNetwork: jest.fn().mockReturnValue('testnet'),
     getBalance: mockGetBalance,
-  } as unknown as IHathorWallet;
+  } as Partial<IHathorWallet> as IHathorWallet;
 
   const mockTriggerHandler = jest.fn().mockResolvedValue({
     type: TriggerResponseTypes.GetBalanceConfirmationResponse,

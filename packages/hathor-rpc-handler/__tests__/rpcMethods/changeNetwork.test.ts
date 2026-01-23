@@ -19,7 +19,7 @@ import { InvalidParamsError, PromptRejectedError } from '../../src/errors';
 describe('changeNetwork', () => {
   const mockWallet = {
     getNetwork: jest.fn().mockReturnValue('testnet'),
-  } as unknown as IHathorWallet;
+  } as Partial<IHathorWallet> as IHathorWallet;
 
   const mockTriggerHandler = jest.fn();
 

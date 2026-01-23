@@ -22,7 +22,7 @@ describe('getAddress parameter validation', () => {
     getAddressAtIndex: jest.fn().mockResolvedValue('test-address'),
     getAddressPathForIndex: jest.fn().mockResolvedValue('m\'/44\'/0\'/0/1'),
     getAddressIndex: jest.fn().mockResolvedValue(1),
-  } as unknown as IHathorWallet;
+  } as Partial<IHathorWallet> as IHathorWallet;
 
   const mockTriggerHandler = jest.fn().mockResolvedValue({ data: true });
 

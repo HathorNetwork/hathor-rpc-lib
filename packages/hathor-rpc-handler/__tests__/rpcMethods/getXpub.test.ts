@@ -21,7 +21,7 @@ describe('getXpub parameter validation', () => {
   const mockWallet = {
     getNetwork: jest.fn().mockReturnValue('testnet'),
     xpub: mockXpub,
-  } as unknown as IHathorWallet;
+  } as Partial<IHathorWallet> & { xpub?: string } as IHathorWallet;
 
   const mockTriggerHandler = jest.fn().mockResolvedValue({ data: true });
 
@@ -72,7 +72,7 @@ describe('getXpub parameter validation', () => {
     const walletWithoutXpub = {
       getNetwork: jest.fn().mockReturnValue('testnet'),
       xpub: undefined,
-    } as unknown as IHathorWallet;
+    } as Partial<IHathorWallet> & { xpub?: string } as IHathorWallet;
 
     const validRequest = {
       method: RpcMethods.GetXpub,

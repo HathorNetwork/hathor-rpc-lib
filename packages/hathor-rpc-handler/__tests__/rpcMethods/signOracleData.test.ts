@@ -37,7 +37,7 @@ describe('signOracleData', () => {
     wallet = {
       getNetwork: jest.fn().mockReturnValue('mainnet'),
       getNetworkObject: jest.fn().mockReturnValue(new Network('mainnet')),
-    } as unknown as IHathorWallet;
+    } as Partial<IHathorWallet> as IHathorWallet;
   });
 
   it('should throw PromptRejectedError if user rejects the sign oracle data trigger request', async () => {
@@ -148,8 +148,7 @@ describe('signOracleData parameter validation', () => {
   const mockWallet = {
     getNetworkObject: jest.fn(),
     getNetwork: jest.fn().mockReturnValue('testnet'),
-    pinCode: null,
-  } as unknown as IHathorWallet;
+  } as Partial<IHathorWallet> as IHathorWallet;
 
   const mockTriggerHandler = jest.fn().mockResolvedValue({
     type: TriggerResponseTypes.SignOracleDataConfirmationResponse,

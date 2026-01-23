@@ -18,7 +18,7 @@ describe('getWalletInformation parameter validation', () => {
   const mockWallet = {
     getNetwork: jest.fn().mockReturnValue('testnet'),
     getAddressAtIndex: jest.fn().mockResolvedValue('test-address'),
-  } as unknown as IHathorWallet;
+  } as Partial<IHathorWallet> as IHathorWallet;
 
   const mockTriggerHandler = jest.fn();
 
@@ -70,7 +70,7 @@ describe('getWalletInformation parameter validation', () => {
         if (addressIndex === 0) return 'HTestAddress123';
         throw new Error('Forbidden');
       }),
-    } as unknown as IHathorWallet;
+    } as Partial<IHathorWallet> as IHathorWallet;
     const validRequest = {
       method: RpcMethods.GetWalletInformation,
     } as GetWalletInformationRpcRequest;

@@ -64,7 +64,7 @@ describe('sendNanoContractTx', () => {
           uid: 'test-token-uid',
         },
       }),
-    } as unknown as IHathorWallet;
+    } as Partial<IHathorWallet> as IHathorWallet;
 
     promptHandler = jest.fn();
   });
@@ -353,7 +353,7 @@ describe('sendNanoContractTx parameter validation', () => {
         nc_id: 'nc-id'
       },
     })),
-  } as unknown as IHathorWallet;
+  } as Partial<IHathorWallet> as IHathorWallet;
 
   let mockTriggerHandler: jest.Mock;
 
