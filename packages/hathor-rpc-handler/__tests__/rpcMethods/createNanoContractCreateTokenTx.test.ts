@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { HathorWallet } from '@hathor/wallet-lib';
+import type { IHathorWallet } from '@hathor/wallet-lib';
 import type { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
 import { createNanoContractCreateTokenTx } from '../../src/rpcMethods/createNanoContractCreateTokenTx';
 import {
@@ -19,7 +19,7 @@ import { PromptRejectedError, InvalidParamsError } from '../../src/errors';
 
 describe('createNanoContractCreateTokenTx', () => {
   let rpcRequest: CreateNanoContractCreateTokenTxRpcRequest;
-  let wallet: HathorWallet;
+  let wallet: IHathorWallet;
   let promptHandler = jest.fn();
 
   const nanoActions = [
@@ -75,7 +75,7 @@ describe('createNanoContractCreateTokenTx', () => {
     wallet = {
       createAndSendNanoContractCreateTokenTransaction: jest.fn(),
       createNanoContractCreateTokenTransaction: jest.fn(),
-    } as unknown as HathorWallet;
+    } as unknown as IHathorWallet;
 
     promptHandler = jest.fn();
   });
@@ -162,7 +162,6 @@ describe('createNanoContractCreateTokenTx', () => {
   it('should create but not send the transaction (push_tx false)', async () => {
     rpcRequest.params.push_tx = false;
     const pinCode = '1234';
-    const response = { tx_id: 'mock-tx-id' };
     promptHandler
       .mockResolvedValueOnce({
         type: TriggerResponseTypes.CreateNanoContractCreateTokenTxConfirmationResponse,
@@ -187,9 +186,13 @@ describe('createNanoContractCreateTokenTx', () => {
           pinCode,
         },
       });
-    (wallet.createNanoContractCreateTokenTransaction as jest.Mock).mockResolvedValue(response);
+    (wallet.createNanoContractCreateTokenTransaction as jest.Mock).mockResolvedValue({
+      transaction: {
+        toHex: jest.fn().mockReturnValue('mock-tx-hex'),
+      },
+    });
     const result = await createNanoContractCreateTokenTx(rpcRequest, wallet, {}, promptHandler);
-    
+
     expect(promptHandler).toHaveBeenCalledTimes(4); // Confirmation, PIN, Loading, LoadingFinished
     expect(promptHandler).toHaveBeenNthCalledWith(3,
       expect.objectContaining({
@@ -215,10 +218,16 @@ describe('createNanoContractCreateTokenTx', () => {
         args: [],
         pushTx: false,
       }),
-      createTokenOptions,
+      expect.objectContaining({
+        name: createTokenOptions.name,
+        symbol: createTokenOptions.symbol,
+        mintAddress: createTokenOptions.mintAddress,
+        contractPaysTokenDeposit: createTokenOptions.contractPaysTokenDeposit,
+      }),
       expect.objectContaining({ pinCode })
     );
     expect(result).toHaveProperty('type', RpcResponseTypes.CreateNanoContractCreateTokenTxResponse);
+    expect(result).toHaveProperty('response', 'mock-tx-hex');
   });
 
   it('should throw PromptRejectedError if the user rejects the confirmation prompt', async () => {

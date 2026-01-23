@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { HathorWallet, nanoUtils, ncApi } from '@hathor/wallet-lib';
+import { nanoUtils, ncApi, type IHathorWallet } from '@hathor/wallet-lib';
 import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
 import { sendNanoContractTx, NanoContractActionWithStringAmount } from '../../src/rpcMethods/sendNanoContractTx';
 import { TriggerTypes, RpcMethods, SendNanoContractRpcRequest, TriggerResponseTypes, RpcResponseTypes } from '../../src/types';
@@ -19,12 +19,12 @@ jest.spyOn(ncApi, 'getBlueprintInformation').mockResolvedValue({
   name: 'mock-blueprint',
   attributes: new Map(),
   public_methods: new Map(),
-  private_methods: new Map(),
+  view_methods: new Map(),
 });
 
 describe('sendNanoContractTx', () => {
   let rpcRequest: SendNanoContractRpcRequest;
-  let wallet: HathorWallet;
+  let wallet: IHathorWallet;
   let promptHandler = jest.fn();
 
   beforeEach(() => {
@@ -64,7 +64,7 @@ describe('sendNanoContractTx', () => {
           uid: 'test-token-uid',
         },
       }),
-    } as unknown as HathorWallet;
+    } as unknown as IHathorWallet;
 
     promptHandler = jest.fn();
   });
@@ -353,7 +353,7 @@ describe('sendNanoContractTx parameter validation', () => {
         nc_id: 'nc-id'
       },
     })),
-  } as unknown as HathorWallet;
+  } as unknown as IHathorWallet;
 
   let mockTriggerHandler: jest.Mock;
 

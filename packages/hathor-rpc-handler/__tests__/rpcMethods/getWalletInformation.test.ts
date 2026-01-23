@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { HathorWallet } from '@hathor/wallet-lib';
+import type { IHathorWallet } from '@hathor/wallet-lib';
 import {
   RpcMethods,
   GetWalletInformationRpcRequest,
@@ -18,7 +18,7 @@ describe('getWalletInformation parameter validation', () => {
   const mockWallet = {
     getNetwork: jest.fn().mockReturnValue('testnet'),
     getAddressAtIndex: jest.fn().mockResolvedValue('test-address'),
-  } as unknown as HathorWallet;
+  } as unknown as IHathorWallet;
 
   const mockTriggerHandler = jest.fn();
 
@@ -70,7 +70,7 @@ describe('getWalletInformation parameter validation', () => {
         if (addressIndex === 0) return 'HTestAddress123';
         throw new Error('Forbidden');
       }),
-    } as unknown as HathorWallet;
+    } as unknown as IHathorWallet;
     const validRequest = {
       method: RpcMethods.GetWalletInformation,
     } as GetWalletInformationRpcRequest;

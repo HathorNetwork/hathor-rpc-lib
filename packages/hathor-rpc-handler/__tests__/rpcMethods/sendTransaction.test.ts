@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { constants, HathorWallet } from '@hathor/wallet-lib';
+import { constants, type IHathorWallet } from '@hathor/wallet-lib';
 import { sendTransaction } from '../../src/rpcMethods/sendTransaction';
 import {
   RpcMethods,
@@ -25,7 +25,7 @@ import {
 
 describe('sendTransaction', () => {
   let rpcRequest: SendTransactionRpcRequest;
-  let wallet: jest.Mocked<HathorWallet>;
+  let wallet: jest.Mocked<IHathorWallet>;
   let promptHandler: jest.Mock;
   let sendTransactionMock: jest.Mock;
 
@@ -77,7 +77,7 @@ describe('sendTransaction', () => {
         }),
         run: sendTransactionMock,
       }),
-    } as unknown as jest.Mocked<HathorWallet>;
+    } as unknown as jest.Mocked<IHathorWallet>;
 
     // Mock prompt handler
     promptHandler = jest.fn();
@@ -277,7 +277,7 @@ describe('sendTransaction', () => {
   });
 
   it('should throw InsufficientFundsError when not enough funds available', async () => {
-    wallet.sendManyOutputsSendTransaction.mockResolvedValue({
+    (wallet.sendManyOutputsSendTransaction as jest.Mock).mockResolvedValue({
       prepareTxData: jest.fn().mockRejectedValue(
         new Error('Insufficient amount of tokens')
       ),
