@@ -16,13 +16,13 @@ import { getAddress } from '../../src/rpcMethods/getAddress';
 import { InvalidParamsError, NotImplementedError, PromptRejectedError } from '../../src/errors';
 
 describe('getAddress parameter validation', () => {
-  const mockWallet = {
+  const mockWallet: Partial<IHathorWallet> = {
     getNetwork: jest.fn().mockReturnValue('testnet'),
     getCurrentAddress: jest.fn().mockResolvedValue('test-address'),
     getAddressAtIndex: jest.fn().mockResolvedValue('test-address'),
     getAddressPathForIndex: jest.fn().mockResolvedValue('m\'/44\'/0\'/0/1'),
     getAddressIndex: jest.fn().mockResolvedValue(1),
-  } as unknown as IHathorWallet;
+  };
 
   const mockTriggerHandler = jest.fn().mockResolvedValue({ data: true });
 
@@ -40,7 +40,7 @@ describe('getAddress parameter validation', () => {
     } as GetAddressRpcRequest;
 
     await expect(
-      getAddress(invalidRequest, mockWallet, {}, mockTriggerHandler)
+      getAddress(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -54,7 +54,7 @@ describe('getAddress parameter validation', () => {
     } as unknown as GetAddressRpcRequest;
 
     await expect(
-      getAddress(invalidRequest, mockWallet, {}, mockTriggerHandler)
+      getAddress(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -69,7 +69,7 @@ describe('getAddress parameter validation', () => {
     } as GetAddressRpcRequest;
 
     await expect(
-      getAddress(invalidRequest, mockWallet, {}, mockTriggerHandler)
+      getAddress(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -84,7 +84,7 @@ describe('getAddress parameter validation', () => {
     } as GetAddressRpcRequest;
 
     await expect(
-      getAddress(invalidRequest, mockWallet, {}, mockTriggerHandler)
+      getAddress(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -99,7 +99,7 @@ describe('getAddress parameter validation', () => {
     } as GetAddressRpcRequest;
 
     await expect(
-      getAddress(invalidRequest, mockWallet, {}, mockTriggerHandler)
+      getAddress(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -114,7 +114,7 @@ describe('getAddress parameter validation', () => {
     } as GetAddressRpcRequest;
 
     await expect(
-      getAddress(invalidRequest, mockWallet, {}, mockTriggerHandler)
+      getAddress(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -129,7 +129,7 @@ describe('getAddress parameter validation', () => {
     } as GetAddressRpcRequest;
 
     await expect(
-      getAddress(request, mockWallet, {}, mockTriggerHandler)
+      getAddress(request, mockWallet as IHathorWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(NotImplementedError);
   });
 
@@ -143,7 +143,7 @@ describe('getAddress parameter validation', () => {
     } as GetAddressRpcRequest;
 
     await expect(
-      getAddress(validRequest, mockWallet, {}, mockTriggerHandler)
+      getAddress(validRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
     ).resolves.toBeDefined();
 
     expect(mockWallet.getCurrentAddress).toHaveBeenCalled();
@@ -160,7 +160,7 @@ describe('getAddress parameter validation', () => {
     } as GetAddressRpcRequest;
 
     await expect(
-      getAddress(validRequest, mockWallet, {}, mockTriggerHandler)
+      getAddress(validRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
     ).resolves.toBeDefined();
 
     expect(mockWallet.getAddressAtIndex).toHaveBeenCalledWith(0);
@@ -183,7 +183,7 @@ describe('getAddress parameter validation', () => {
     } as AddressRequestClientResponse);
 
     await expect(
-      getAddress(validRequest, mockWallet, {}, mockTriggerHandler)
+      getAddress(validRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
     ).resolves.toBeDefined();
   });
 
@@ -199,7 +199,7 @@ describe('getAddress parameter validation', () => {
     mockTriggerHandler.mockResolvedValueOnce(false);
 
     await expect(
-      getAddress(validRequest, mockWallet, {}, mockTriggerHandler)
+      getAddress(validRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(PromptRejectedError);
   });
 });

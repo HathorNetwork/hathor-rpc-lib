@@ -19,7 +19,7 @@ import { PromptRejectedError } from '../../src/errors';
 import { InvalidParamsError } from '../../src/errors';
 
 describe('signOracleData', () => {
-  let wallet: IHathorWallet;
+  let wallet: Partial<IHathorWallet>;
 
   afterEach(() => {
     jest.clearAllMocks();
@@ -37,13 +37,13 @@ describe('signOracleData', () => {
     wallet = {
       getNetwork: jest.fn().mockReturnValue('mainnet'),
       getNetworkObject: jest.fn().mockReturnValue(new Network('mainnet')),
-    } as unknown as IHathorWallet;
+    };
   });
 
   it('should throw PromptRejectedError if user rejects the sign oracle data trigger request', async () => {
     mockPromptHandler.mockResolvedValueOnce(false);
 
-    await expect(signOracleData(mockSignOracleDataRequest, wallet, {}, mockPromptHandler)).rejects.toThrow(PromptRejectedError);
+    await expect(signOracleData(mockSignOracleDataRequest, wallet as IHathorWallet, {}, mockPromptHandler)).rejects.toThrow(PromptRejectedError);
 
     expect(mockPromptHandler).toHaveBeenNthCalledWith(1, {
       ...mockSignOracleDataRequest,
@@ -70,7 +70,7 @@ describe('signOracleData', () => {
         },
       });
 
-    await expect(signOracleData(mockSignOracleDataRequest, wallet, {}, mockPromptHandler)).rejects.toThrow(PromptRejectedError);
+    await expect(signOracleData(mockSignOracleDataRequest, wallet as IHathorWallet, {}, mockPromptHandler)).rejects.toThrow(PromptRejectedError);
 
     expect(mockPromptHandler).toHaveBeenNthCalledWith(1, {
       ...mockSignOracleDataRequest,
@@ -103,7 +103,7 @@ describe('signOracleData', () => {
         },
       });
 
-    const result = await signOracleData(mockSignOracleDataRequest, wallet, {}, mockPromptHandler);
+    const result = await signOracleData(mockSignOracleDataRequest, wallet as IHathorWallet, {}, mockPromptHandler);
 
     expect(mockPromptHandler).toHaveBeenNthCalledWith(1, {
       ...mockSignOracleDataRequest,
@@ -145,11 +145,10 @@ describe('signOracleData', () => {
 });
 
 describe('signOracleData parameter validation', () => {
-  const mockWallet = {
+  const mockWallet: Partial<IHathorWallet> = {
     getNetworkObject: jest.fn(),
     getNetwork: jest.fn().mockReturnValue('testnet'),
-    pinCode: null,
-  } as unknown as IHathorWallet;
+  };
 
   const mockTriggerHandler = jest.fn().mockResolvedValue({
     type: TriggerResponseTypes.SignOracleDataConfirmationResponse,
@@ -174,7 +173,7 @@ describe('signOracleData parameter validation', () => {
     } as SignOracleDataRpcRequest;
 
     await expect(
-      signOracleData(invalidRequest, mockWallet, {}, mockTriggerHandler)
+      signOracleData(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -189,7 +188,7 @@ describe('signOracleData parameter validation', () => {
     } as SignOracleDataRpcRequest;
 
     await expect(
-      signOracleData(invalidRequest, mockWallet, {}, mockTriggerHandler)
+      signOracleData(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -204,7 +203,7 @@ describe('signOracleData parameter validation', () => {
     } as SignOracleDataRpcRequest;
 
     await expect(
-      signOracleData(invalidRequest, mockWallet, {}, mockTriggerHandler)
+      signOracleData(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -224,7 +223,7 @@ describe('signOracleData parameter validation', () => {
     });
 
     await expect(
-      signOracleData(validRequest, mockWallet, {}, mockTriggerHandler)
+      signOracleData(validRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
     ).resolves.toBeDefined();
   });
 });

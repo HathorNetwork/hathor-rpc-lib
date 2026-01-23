@@ -18,10 +18,10 @@ import { InvalidParamsError, PromptRejectedError, DifferentNetworkError, WalletX
 describe('getXpub parameter validation', () => {
   const mockXpub = 'xpub6D4BDPcP2GT577Vvch3R8wDkScZWzQzMMUm3PWbmWvVJrZwQY4VUNgqFJPMM3No2dFDFGTsxxpG5uJh7n7epu4trkrX7x7DogT5Uv6fcLW5';
 
-  const mockWallet = {
+  const mockWallet: Partial<IHathorWallet> & { xpub?: string } = {
     getNetwork: jest.fn().mockReturnValue('testnet'),
     xpub: mockXpub,
-  } as unknown as IHathorWallet;
+  };
 
   const mockTriggerHandler = jest.fn().mockResolvedValue({ data: true });
 
@@ -38,7 +38,7 @@ describe('getXpub parameter validation', () => {
     } as GetXpubRpcRequest;
 
     await expect(
-      getXpub(invalidRequest, mockWallet, {}, mockTriggerHandler)
+      getXpub(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -51,7 +51,7 @@ describe('getXpub parameter validation', () => {
     } as GetXpubRpcRequest;
 
     await expect(
-      getXpub(invalidRequest, mockWallet, {}, mockTriggerHandler)
+      getXpub(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -64,15 +64,15 @@ describe('getXpub parameter validation', () => {
     } as GetXpubRpcRequest;
 
     await expect(
-      getXpub(invalidRequest, mockWallet, {}, mockTriggerHandler)
+      getXpub(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(DifferentNetworkError);
   });
 
   it('should throw error when wallet xpub is not available', async () => {
-    const walletWithoutXpub = {
+    const walletWithoutXpub: Partial<IHathorWallet> & { xpub?: string } = {
       getNetwork: jest.fn().mockReturnValue('testnet'),
       xpub: undefined,
-    } as unknown as IHathorWallet;
+    };
 
     const validRequest = {
       method: RpcMethods.GetXpub,
@@ -82,7 +82,7 @@ describe('getXpub parameter validation', () => {
     } as GetXpubRpcRequest;
 
     await expect(
-      getXpub(validRequest, walletWithoutXpub, {}, mockTriggerHandler)
+      getXpub(validRequest, walletWithoutXpub as IHathorWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(WalletXpubNotAvailableError);
   });
 
@@ -94,7 +94,7 @@ describe('getXpub parameter validation', () => {
       },
     } as GetXpubRpcRequest;
 
-    const result = await getXpub(validRequest, mockWallet, {}, mockTriggerHandler);
+    const result = await getXpub(validRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler);
 
     expect(result).toBeDefined();
     expect(result.type).toBe(RpcResponseTypes.GetXpubResponse);
@@ -111,7 +111,7 @@ describe('getXpub parameter validation', () => {
       },
     } as GetXpubRpcRequest;
 
-    await getXpub(validRequest, mockWallet, {}, mockTriggerHandler);
+    await getXpub(validRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler);
 
     expect(mockTriggerHandler).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -134,7 +134,7 @@ describe('getXpub parameter validation', () => {
     mockTriggerHandler.mockResolvedValueOnce({ data: false });
 
     await expect(
-      getXpub(validRequest, mockWallet, {}, mockTriggerHandler)
+      getXpub(validRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(PromptRejectedError);
   });
 
@@ -147,7 +147,7 @@ describe('getXpub parameter validation', () => {
     } as GetXpubRpcRequest;
 
     await expect(
-      getXpub(invalidRequest, mockWallet, {}, mockTriggerHandler)
+      getXpub(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
     ).rejects.toThrow();
 
     // Should not call trigger handler if network validation fails

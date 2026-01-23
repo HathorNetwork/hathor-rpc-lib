@@ -17,12 +17,12 @@ import { signWithAddress } from '../../src/rpcMethods/signWithAddress';
 import { InvalidParamsError, PromptRejectedError } from '../../src/errors';
 
 describe('signWithAddress', () => {
-  const mockWallet = {
+  const mockWallet: Partial<IHathorWallet> = {
     getNetwork: jest.fn().mockReturnValue('testnet'),
     getAddressAtIndex: jest.fn().mockResolvedValue('test-address'),
     getAddressPathForIndex: jest.fn().mockResolvedValue('test-path'),
     signMessageWithAddress: jest.fn().mockResolvedValue('test-signature'),
-  } as unknown as IHathorWallet;
+  };
 
   const mockTriggerHandler = jest.fn();
 
@@ -41,7 +41,7 @@ describe('signWithAddress', () => {
       } as SignWithAddressRpcRequest;
 
       await expect(
-        signWithAddress(invalidRequest, mockWallet, {}, mockTriggerHandler)
+        signWithAddress(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
       ).rejects.toThrow(InvalidParamsError);
     });
 
@@ -56,7 +56,7 @@ describe('signWithAddress', () => {
       } as unknown as SignWithAddressRpcRequest;
 
       await expect(
-        signWithAddress(invalidRequest, mockWallet, {}, mockTriggerHandler)
+        signWithAddress(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
       ).rejects.toThrow(InvalidParamsError);
     });
 
@@ -71,7 +71,7 @@ describe('signWithAddress', () => {
       } as SignWithAddressRpcRequest;
 
       await expect(
-        signWithAddress(invalidRequest, mockWallet, {}, mockTriggerHandler)
+        signWithAddress(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
       ).rejects.toThrow(InvalidParamsError);
     });
 
@@ -86,7 +86,7 @@ describe('signWithAddress', () => {
       } as SignWithAddressRpcRequest;
 
       await expect(
-        signWithAddress(invalidRequest, mockWallet, {}, mockTriggerHandler)
+        signWithAddress(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
       ).rejects.toThrow(InvalidParamsError);
     });
 
@@ -101,7 +101,7 @@ describe('signWithAddress', () => {
       } as SignWithAddressRpcRequest;
 
       await expect(
-        signWithAddress(invalidRequest, mockWallet, {}, mockTriggerHandler)
+        signWithAddress(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
       ).rejects.toThrow(InvalidParamsError);
     });
 
@@ -116,7 +116,7 @@ describe('signWithAddress', () => {
       } as SignWithAddressRpcRequest;
 
       await expect(
-        signWithAddress(invalidRequest, mockWallet, {}, mockTriggerHandler)
+        signWithAddress(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
       ).rejects.toThrow(InvalidParamsError);
     });
   });
@@ -145,7 +145,7 @@ describe('signWithAddress', () => {
           },
         });
 
-      const result = await signWithAddress(validRequest, mockWallet, {}, mockTriggerHandler);
+      const result = await signWithAddress(validRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler);
 
       expect(result).toBeDefined();
       expect(result.type).toBe(RpcResponseTypes.SendWithAddressResponse);
@@ -191,7 +191,7 @@ describe('signWithAddress', () => {
       });
 
       await expect(
-        signWithAddress(validRequest, mockWallet, {}, mockTriggerHandler)
+        signWithAddress(validRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
       ).rejects.toThrow(PromptRejectedError);
     });
 
@@ -218,7 +218,7 @@ describe('signWithAddress', () => {
         });
 
       await expect(
-        signWithAddress(validRequest, mockWallet, {}, mockTriggerHandler)
+        signWithAddress(validRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
       ).rejects.toThrow(PromptRejectedError);
     });
   });

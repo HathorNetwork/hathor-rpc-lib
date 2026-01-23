@@ -15,9 +15,9 @@ import { getConnectedNetwork } from '../../src/rpcMethods/getConnectedNetwork';
 import { InvalidParamsError } from '../../src/errors';
 
 describe('getConnectedNetwork parameter validation', () => {
-  const mockWallet = {
+  const mockWallet: Partial<IHathorWallet> = {
     getNetwork: jest.fn().mockReturnValue('testnet'),
-  } as unknown as IHathorWallet;
+  };
 
   const mockTriggerHandler = jest.fn();
 
@@ -31,7 +31,7 @@ describe('getConnectedNetwork parameter validation', () => {
     } as GetConnectedNetworkRpcRequest;
 
     await expect(
-      getConnectedNetwork(invalidRequest, mockWallet, {}, mockTriggerHandler)
+      getConnectedNetwork(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -41,7 +41,7 @@ describe('getConnectedNetwork parameter validation', () => {
     } as unknown as GetConnectedNetworkRpcRequest;
 
     await expect(
-      getConnectedNetwork(invalidRequest, mockWallet, {}, mockTriggerHandler)
+      getConnectedNetwork(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -50,7 +50,7 @@ describe('getConnectedNetwork parameter validation', () => {
       method: RpcMethods.GetConnectedNetwork,
     } as GetConnectedNetworkRpcRequest;
 
-    const result = await getConnectedNetwork(validRequest, mockWallet, {}, mockTriggerHandler);
+    const result = await getConnectedNetwork(validRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler);
 
     expect(result).toBeDefined();
     expect(result.type).toBe(RpcResponseTypes.GetConnectedNetworkResponse);
