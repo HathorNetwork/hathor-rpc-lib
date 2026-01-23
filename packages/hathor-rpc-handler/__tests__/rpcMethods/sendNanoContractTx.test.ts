@@ -24,7 +24,7 @@ jest.spyOn(ncApi, 'getBlueprintInformation').mockResolvedValue({
 
 describe('sendNanoContractTx', () => {
   let rpcRequest: SendNanoContractRpcRequest;
-  let wallet: Partial<IHathorWallet>;
+  let wallet: IHathorWallet;
   let promptHandler = jest.fn();
 
   beforeEach(() => {
@@ -64,7 +64,7 @@ describe('sendNanoContractTx', () => {
           uid: 'test-token-uid',
         },
       }),
-    };
+    } as Partial<IHathorWallet> as IHathorWallet;
 
     promptHandler = jest.fn();
   });
@@ -116,7 +116,7 @@ describe('sendNanoContractTx', () => {
 
     (wallet.createAndSendNanoContractTransaction as jest.Mock).mockResolvedValue(response);
 
-    const result = await sendNanoContractTx(rpcRequest, wallet as IHathorWallet, {}, promptHandler);
+    const result = await sendNanoContractTx(rpcRequest, wallet, {}, promptHandler);
 
     expect(promptHandler).toHaveBeenCalledTimes(4);
     expect(promptHandler).toHaveBeenCalledWith({
@@ -199,7 +199,7 @@ describe('sendNanoContractTx', () => {
 
     (wallet.createAndSendNanoContractTransaction as jest.Mock).mockResolvedValue({});
 
-    await sendNanoContractTx(requestWithStringAmount, wallet as IHathorWallet, {}, promptHandler);
+    await sendNanoContractTx(requestWithStringAmount, wallet, {}, promptHandler);
 
     // Verify the wallet was called with the right parameters (including transformed actions)
     expect(wallet.createAndSendNanoContractTransaction).toHaveBeenCalledWith(
@@ -264,7 +264,7 @@ describe('sendNanoContractTx', () => {
 
     (wallet.createAndSendNanoContractTransaction as jest.Mock).mockResolvedValue({});
 
-    await sendNanoContractTx(requestWithLargeAmount, wallet as IHathorWallet, {}, promptHandler);
+    await sendNanoContractTx(requestWithLargeAmount, wallet, {}, promptHandler);
 
     // Verify the wallet was called with the correct parameters
     expect(wallet.createAndSendNanoContractTransaction).toHaveBeenCalledWith(
@@ -312,7 +312,7 @@ describe('sendNanoContractTx', () => {
       });
     (wallet.createAndSendNanoContractTransaction as jest.Mock).mockRejectedValue(new Error('Transaction failed'));
 
-    await expect(sendNanoContractTx(rpcRequest, wallet as IHathorWallet, {}, promptHandler)).rejects.toThrow(SendNanoContractTxError);
+    await expect(sendNanoContractTx(rpcRequest, wallet, {}, promptHandler)).rejects.toThrow(SendNanoContractTxError);
 
     expect(promptHandler).toHaveBeenCalledTimes(3);
     expect(promptHandler).toHaveBeenNthCalledWith(1, {
@@ -340,7 +340,7 @@ describe('sendNanoContractTx', () => {
 });
 
 describe('sendNanoContractTx parameter validation', () => {
-  const mockWallet: Partial<IHathorWallet> = {
+  const mockWallet = {
     createAndSendNanoContractTransaction: jest.fn(),
     createNanoContractTransaction: jest.fn().mockImplementation(() => ({
       transaction: {
@@ -353,7 +353,7 @@ describe('sendNanoContractTx parameter validation', () => {
         nc_id: 'nc-id'
       },
     })),
-  };
+  } as Partial<IHathorWallet> as IHathorWallet;
 
   let mockTriggerHandler: jest.Mock;
 
@@ -399,7 +399,7 @@ describe('sendNanoContractTx parameter validation', () => {
     } as SendNanoContractRpcRequest;
 
     await expect(
-      sendNanoContractTx(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
+      sendNanoContractTx(invalidRequest, mockWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -418,7 +418,7 @@ describe('sendNanoContractTx parameter validation', () => {
     } as SendNanoContractRpcRequest;
 
     await expect(
-      sendNanoContractTx(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
+      sendNanoContractTx(invalidRequest, mockWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -437,7 +437,7 @@ describe('sendNanoContractTx parameter validation', () => {
     } as SendNanoContractRpcRequest;
 
     await expect(
-      sendNanoContractTx(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
+      sendNanoContractTx(invalidRequest, mockWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -456,7 +456,7 @@ describe('sendNanoContractTx parameter validation', () => {
     } as SendNanoContractRpcRequest;
 
     await expect(
-      sendNanoContractTx(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
+      sendNanoContractTx(invalidRequest, mockWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -484,7 +484,7 @@ describe('sendNanoContractTx parameter validation', () => {
     } as SendNanoContractRpcRequest;
 
     await expect(
-      sendNanoContractTx(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
+      sendNanoContractTx(invalidRequest, mockWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -512,7 +512,7 @@ describe('sendNanoContractTx parameter validation', () => {
     } as SendNanoContractRpcRequest;
 
     await expect(
-      sendNanoContractTx(validRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
+      sendNanoContractTx(validRequest, mockWallet, {}, mockTriggerHandler)
     ).resolves.toBeDefined();
   });
 
@@ -562,7 +562,7 @@ describe('sendNanoContractTx parameter validation', () => {
       },
     } as SendNanoContractRpcRequest;
 
-    await sendNanoContractTx(validRequest, mockWallet as IHathorWallet, {}, promptHandler);
+    await sendNanoContractTx(validRequest, mockWallet, {}, promptHandler);
     expect(promptHandler).toHaveBeenCalledWith({
       ...validRequest,
       type: TriggerTypes.SendNanoContractTxConfirmationPrompt,
@@ -604,7 +604,7 @@ describe('sendNanoContractTx parameter validation', () => {
       },
     } as SendNanoContractRpcRequest;
 
-    await sendNanoContractTx(validRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler);
+    await sendNanoContractTx(validRequest, mockWallet, {}, mockTriggerHandler);
     expect(mockWallet.createAndSendNanoContractTransaction).toHaveBeenCalled();
   });
 
@@ -631,7 +631,7 @@ describe('sendNanoContractTx parameter validation', () => {
       },
     } as SendNanoContractRpcRequest;
 
-    await sendNanoContractTx(validRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler);
+    await sendNanoContractTx(validRequest, mockWallet, {}, mockTriggerHandler);
     expect(mockWallet.createNanoContractTransaction).toHaveBeenCalled();
   });
 
@@ -658,7 +658,7 @@ describe('sendNanoContractTx parameter validation', () => {
       },
     } as SendNanoContractRpcRequest;
 
-    const response = await sendNanoContractTx(validRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler);
+    const response = await sendNanoContractTx(validRequest, mockWallet, {}, mockTriggerHandler);
     expect(mockWallet.createNanoContractTransaction).toHaveBeenCalled();
     expect(response).toStrictEqual({
       type: RpcResponseTypes.SendNanoContractTxResponse,

@@ -15,10 +15,10 @@ import { getWalletInformation } from '../../src/rpcMethods/getWalletInformation'
 import { InvalidParamsError } from '../../src/errors';
 
 describe('getWalletInformation parameter validation', () => {
-  const mockWallet: Partial<IHathorWallet> = {
+  const mockWallet = {
     getNetwork: jest.fn().mockReturnValue('testnet'),
     getAddressAtIndex: jest.fn().mockResolvedValue('test-address'),
-  };
+  } as Partial<IHathorWallet> as IHathorWallet;
 
   const mockTriggerHandler = jest.fn();
 
@@ -32,7 +32,7 @@ describe('getWalletInformation parameter validation', () => {
     } as GetWalletInformationRpcRequest;
 
     await expect(
-      getWalletInformation(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
+      getWalletInformation(invalidRequest, mockWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -42,7 +42,7 @@ describe('getWalletInformation parameter validation', () => {
     } as unknown as GetWalletInformationRpcRequest;
 
     await expect(
-      getWalletInformation(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
+      getWalletInformation(invalidRequest, mockWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -51,7 +51,7 @@ describe('getWalletInformation parameter validation', () => {
       method: RpcMethods.GetWalletInformation,
     } as GetWalletInformationRpcRequest;
 
-    const result = await getWalletInformation(validRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler);
+    const result = await getWalletInformation(validRequest, mockWallet, {}, mockTriggerHandler);
 
     expect(result).toBeDefined();
     expect(result.type).toBe(RpcResponseTypes.GetWalletInformationResponse);
@@ -64,18 +64,18 @@ describe('getWalletInformation parameter validation', () => {
   });
 
   it('should work with different network', async () => {
-    const mockMainnetWallet: Partial<IHathorWallet> = {
+    const mockMainnetWallet = {
       getNetwork: jest.fn().mockReturnValue('mainnet'),
       getAddressAtIndex: jest.fn().mockImplementation((addressIndex: number) => {
         if (addressIndex === 0) return 'HTestAddress123';
         throw new Error('Forbidden');
       }),
-    };
+    } as Partial<IHathorWallet> as IHathorWallet;
     const validRequest = {
       method: RpcMethods.GetWalletInformation,
     } as GetWalletInformationRpcRequest;
 
-    const result = await getWalletInformation(validRequest, mockMainnetWallet as IHathorWallet, {}, mockTriggerHandler);
+    const result = await getWalletInformation(validRequest, mockMainnetWallet, {}, mockTriggerHandler);
 
     expect(result.response).toEqual({
       network: 'mainnet',

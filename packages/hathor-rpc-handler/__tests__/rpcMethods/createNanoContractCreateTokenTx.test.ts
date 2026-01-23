@@ -19,7 +19,7 @@ import { PromptRejectedError, InvalidParamsError } from '../../src/errors';
 
 describe('createNanoContractCreateTokenTx', () => {
   let rpcRequest: CreateNanoContractCreateTokenTxRpcRequest;
-  let wallet: Partial<IHathorWallet>;
+  let wallet: IHathorWallet;
   let promptHandler = jest.fn();
 
   const nanoActions = [
@@ -75,7 +75,7 @@ describe('createNanoContractCreateTokenTx', () => {
     wallet = {
       createAndSendNanoContractCreateTokenTransaction: jest.fn(),
       createNanoContractCreateTokenTransaction: jest.fn(),
-    };
+    } as Partial<IHathorWallet> as IHathorWallet;
 
     promptHandler = jest.fn();
   });
@@ -115,7 +115,7 @@ describe('createNanoContractCreateTokenTx', () => {
 
     (wallet.createAndSendNanoContractCreateTokenTransaction as jest.Mock).mockResolvedValue(response);
 
-    const result = await createNanoContractCreateTokenTx(rpcRequest, wallet as IHathorWallet, {}, promptHandler);
+    const result = await createNanoContractCreateTokenTx(rpcRequest, wallet, {}, promptHandler);
 
     expect(promptHandler).toHaveBeenCalledTimes(4); // Confirmation, PIN, Loading, LoadingFinished
     expect(promptHandler).toHaveBeenNthCalledWith(1,
@@ -191,7 +191,7 @@ describe('createNanoContractCreateTokenTx', () => {
         toHex: jest.fn().mockReturnValue('mock-tx-hex'),
       },
     });
-    const result = await createNanoContractCreateTokenTx(rpcRequest, wallet as IHathorWallet, {}, promptHandler);
+    const result = await createNanoContractCreateTokenTx(rpcRequest, wallet, {}, promptHandler);
 
     expect(promptHandler).toHaveBeenCalledTimes(4); // Confirmation, PIN, Loading, LoadingFinished
     expect(promptHandler).toHaveBeenNthCalledWith(3,
@@ -235,7 +235,7 @@ describe('createNanoContractCreateTokenTx', () => {
       type: TriggerResponseTypes.CreateNanoContractCreateTokenTxConfirmationResponse,
       data: { accepted: false },
     });
-    await expect(createNanoContractCreateTokenTx(rpcRequest, wallet as IHathorWallet, {}, promptHandler)).rejects.toThrow(PromptRejectedError);
+    await expect(createNanoContractCreateTokenTx(rpcRequest, wallet, {}, promptHandler)).rejects.toThrow(PromptRejectedError);
   });
 
   it('should throw PromptRejectedError if the user rejects the PIN prompt', async () => {
@@ -260,7 +260,7 @@ describe('createNanoContractCreateTokenTx', () => {
         type: TriggerResponseTypes.PinRequestResponse,
         data: { accepted: false },
       });
-    await expect(createNanoContractCreateTokenTx(rpcRequest, wallet as IHathorWallet, {}, promptHandler)).rejects.toThrow(PromptRejectedError);
+    await expect(createNanoContractCreateTokenTx(rpcRequest, wallet, {}, promptHandler)).rejects.toThrow(PromptRejectedError);
   });
 
   it('should throw InvalidParamsError for invalid parameters', async () => {
@@ -274,7 +274,7 @@ describe('createNanoContractCreateTokenTx', () => {
         push_tx: true,
       },
     } as unknown as CreateNanoContractCreateTokenTxRpcRequest;
-    await expect(createNanoContractCreateTokenTx(invalidRequest, wallet as IHathorWallet, {}, promptHandler)).rejects.toThrow(InvalidParamsError);
+    await expect(createNanoContractCreateTokenTx(invalidRequest, wallet, {}, promptHandler)).rejects.toThrow(InvalidParamsError);
   });
 
   it('should validate nano contract actions using wallet-lib schema', async () => {
@@ -299,7 +299,7 @@ describe('createNanoContractCreateTokenTx', () => {
       },
     } as unknown as CreateNanoContractCreateTokenTxRpcRequest;
 
-    await expect(createNanoContractCreateTokenTx(invalidActionRequest, wallet as IHathorWallet, {}, promptHandler)).rejects.toThrow(InvalidParamsError);
+    await expect(createNanoContractCreateTokenTx(invalidActionRequest, wallet, {}, promptHandler)).rejects.toThrow(InvalidParamsError);
   });
 
   it('should validate token options using shared schema', async () => {
@@ -320,6 +320,6 @@ describe('createNanoContractCreateTokenTx', () => {
       },
     } as unknown as CreateNanoContractCreateTokenTxRpcRequest;
 
-    await expect(createNanoContractCreateTokenTx(invalidTokenRequest, wallet as IHathorWallet, {}, promptHandler)).rejects.toThrow(InvalidParamsError);
+    await expect(createNanoContractCreateTokenTx(invalidTokenRequest, wallet, {}, promptHandler)).rejects.toThrow(InvalidParamsError);
   });
 }); 

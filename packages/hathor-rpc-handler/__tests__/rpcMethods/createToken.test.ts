@@ -28,7 +28,7 @@ function toCamelCase(params: Pick<CreateTokenRpcRequest, 'params'>['params']) {
 
 describe('createToken', () => {
   let rpcRequest: CreateTokenRpcRequest;
-  let wallet: Partial<IHathorWallet>;
+  let wallet: IHathorWallet;
   let triggerHandler = jest.fn();
 
   beforeEach(() => {
@@ -55,7 +55,7 @@ describe('createToken', () => {
     wallet = {
       isAddressMine: jest.fn(),
       createNewToken: jest.fn(),
-    };
+    } as Partial<IHathorWallet> as IHathorWallet;
 
     triggerHandler = jest.fn();
   });
@@ -86,7 +86,7 @@ describe('createToken', () => {
 
     (wallet.createNewToken as jest.Mock).mockResolvedValue(transaction);
 
-    const result = await createToken(rpcRequest, wallet as IHathorWallet, {}, triggerHandler);
+    const result = await createToken(rpcRequest, wallet, {}, triggerHandler);
 
     expect(triggerHandler).toHaveBeenCalledTimes(4);
     expect(triggerHandler).toHaveBeenCalledWith(
@@ -132,7 +132,7 @@ describe('createToken', () => {
       },
     });
 
-    await expect(createToken(rpcRequest, wallet as IHathorWallet, {}, triggerHandler)).rejects.toThrow(PromptRejectedError);
+    await expect(createToken(rpcRequest, wallet, {}, triggerHandler)).rejects.toThrow(PromptRejectedError);
 
     expect(triggerHandler).toHaveBeenCalledTimes(1);
     expect(triggerHandler).toHaveBeenCalledWith(
@@ -170,7 +170,7 @@ describe('createToken', () => {
 
     (wallet.createNewToken as jest.Mock).mockRejectedValue(new Error('Transaction failed'));
 
-    await expect(createToken(rpcRequest, wallet as IHathorWallet, {}, triggerHandler)).rejects.toThrow(CreateTokenError);
+    await expect(createToken(rpcRequest, wallet, {}, triggerHandler)).rejects.toThrow(CreateTokenError);
 
     expect(triggerHandler).toHaveBeenCalledTimes(3);
   });
@@ -178,7 +178,7 @@ describe('createToken', () => {
   it('should throw an error if the change address is not owned by the wallet', async () => {
     (wallet.isAddressMine as jest.Mock).mockResolvedValue(false);
 
-    await expect(createToken(rpcRequest, wallet as IHathorWallet, {}, triggerHandler)).rejects.toThrow(Error);
+    await expect(createToken(rpcRequest, wallet, {}, triggerHandler)).rejects.toThrow(Error);
 
     expect(wallet.isAddressMine).toHaveBeenCalledWith('wallet1');
   });
@@ -202,7 +202,7 @@ describe('createToken', () => {
         },
       } as CreateTokenRpcRequest;
 
-      await expect(createToken(invalidRequest, wallet as IHathorWallet, {}, triggerHandler))
+      await expect(createToken(invalidRequest, wallet, {}, triggerHandler))
         .rejects.toThrow(InvalidParamsError);
     });
 
@@ -216,7 +216,7 @@ describe('createToken', () => {
         },
       } as CreateTokenRpcRequest;
 
-      await expect(createToken(invalidRequest, wallet as IHathorWallet, {}, triggerHandler))
+      await expect(createToken(invalidRequest, wallet, {}, triggerHandler))
         .rejects.toThrow(InvalidParamsError);
     });
 
@@ -230,7 +230,7 @@ describe('createToken', () => {
         },
       } as CreateTokenRpcRequest;
 
-      await expect(createToken(invalidRequest, wallet as IHathorWallet, {}, triggerHandler))
+      await expect(createToken(invalidRequest, wallet, {}, triggerHandler))
         .rejects.toThrow(InvalidParamsError);
     });
 
@@ -245,7 +245,7 @@ describe('createToken', () => {
         },
       } as CreateTokenRpcRequest;
 
-      await expect(createToken(invalidRequest, wallet as IHathorWallet, {}, triggerHandler))
+      await expect(createToken(invalidRequest, wallet, {}, triggerHandler))
         .rejects.toThrow(InvalidParamsError);
     });
 
@@ -259,7 +259,7 @@ describe('createToken', () => {
         },
       } as CreateTokenRpcRequest;
 
-      await expect(createToken(invalidRequest, wallet as IHathorWallet, {}, triggerHandler))
+      await expect(createToken(invalidRequest, wallet, {}, triggerHandler))
         .rejects.toThrow(InvalidParamsError);
     });
   });

@@ -38,10 +38,10 @@ describe('getBalance parameter validation', () => {
     }
   }]);
 
-  const mockWallet: Partial<IHathorWallet> = {
+  const mockWallet = {
     getNetwork: jest.fn().mockReturnValue('testnet'),
     getBalance: mockGetBalance,
-  };
+  } as Partial<IHathorWallet> as IHathorWallet;
 
   const mockTriggerHandler = jest.fn().mockResolvedValue({
     type: TriggerResponseTypes.GetBalanceConfirmationResponse,
@@ -62,7 +62,7 @@ describe('getBalance parameter validation', () => {
     } as GetBalanceRpcRequest;
 
     await expect(
-      getBalance(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
+      getBalance(invalidRequest, mockWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -76,7 +76,7 @@ describe('getBalance parameter validation', () => {
     } as GetBalanceRpcRequest;
 
     await expect(
-      getBalance(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
+      getBalance(invalidRequest, mockWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -90,7 +90,7 @@ describe('getBalance parameter validation', () => {
     } as GetBalanceRpcRequest;
 
     await expect(
-      getBalance(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
+      getBalance(invalidRequest, mockWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -105,7 +105,7 @@ describe('getBalance parameter validation', () => {
     } as GetBalanceRpcRequest;
 
     await expect(
-      getBalance(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
+      getBalance(invalidRequest, mockWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(InvalidParamsError);
   });
 
@@ -120,7 +120,7 @@ describe('getBalance parameter validation', () => {
     } as GetBalanceRpcRequest;
 
     await expect(
-      getBalance(request, mockWallet as IHathorWallet, {}, mockTriggerHandler)
+      getBalance(request, mockWallet, {}, mockTriggerHandler)
     ).rejects.toThrow(NotImplementedError);
   });
 
@@ -134,7 +134,7 @@ describe('getBalance parameter validation', () => {
     } as GetBalanceRpcRequest;
 
     await expect(
-      getBalance(validRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
+      getBalance(validRequest, mockWallet, {}, mockTriggerHandler)
     ).resolves.toBeDefined();
 
     expect(mockWallet.getBalance).toHaveBeenCalledWith('HTR');
@@ -197,7 +197,7 @@ describe('getBalance parameter validation', () => {
       },
     } as GetBalanceRpcRequest;
 
-    const result = await getBalance(validRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler);
+    const result = await getBalance(validRequest, mockWallet, {}, mockTriggerHandler);
 
     expect(result.response).toHaveLength(2);
     expect((result as GetBalanceResponse).response[0].token.id).toBe('00');

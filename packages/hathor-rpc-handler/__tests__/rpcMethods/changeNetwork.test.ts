@@ -17,9 +17,9 @@ import { changeNetwork } from '../../src/rpcMethods/changeNetwork';
 import { InvalidParamsError, PromptRejectedError } from '../../src/errors';
 
 describe('changeNetwork', () => {
-  const mockWallet: Partial<IHathorWallet> = {
+  const mockWallet = {
     getNetwork: jest.fn().mockReturnValue('testnet'),
-  };
+  } as Partial<IHathorWallet> as IHathorWallet;
 
   const mockTriggerHandler = jest.fn();
 
@@ -36,7 +36,7 @@ describe('changeNetwork', () => {
       } as ChangeNetworkRpcRequest;
 
       await expect(
-        changeNetwork(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
+        changeNetwork(invalidRequest, mockWallet, {}, mockTriggerHandler)
       ).rejects.toThrow(InvalidParamsError);
     });
 
@@ -48,7 +48,7 @@ describe('changeNetwork', () => {
       } as ChangeNetworkRpcRequest;
 
       await expect(
-        changeNetwork(invalidRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
+        changeNetwork(invalidRequest, mockWallet, {}, mockTriggerHandler)
       ).rejects.toThrow(InvalidParamsError);
     });
   });
@@ -69,7 +69,7 @@ describe('changeNetwork', () => {
           data: true,
         });
 
-      const result = await changeNetwork(validRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler);
+      const result = await changeNetwork(validRequest, mockWallet, {}, mockTriggerHandler);
 
       expect(result).toBeDefined();
       expect(result.type).toBe(RpcResponseTypes.ChangeNetworkResponse);
@@ -101,7 +101,7 @@ describe('changeNetwork', () => {
       });
 
       await expect(
-        changeNetwork(validRequest, mockWallet as IHathorWallet, {}, mockTriggerHandler)
+        changeNetwork(validRequest, mockWallet, {}, mockTriggerHandler)
       ).rejects.toThrow(PromptRejectedError);
     });
   });
