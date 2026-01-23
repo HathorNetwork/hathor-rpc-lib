@@ -22,16 +22,11 @@ import {
   CreateNanoContractCreateTokenTxLoadingTrigger,
   CreateNanoContractCreateTokenTxLoadingFinishedTrigger,
   NanoContractParams,
-  CreateTokenParams,
+  NanoContractCreateTokenParams,
 } from '../types';
 import { PromptRejectedError, InvalidParamsError } from '../errors';
 import { INanoContractActionSchema } from '@hathor/wallet-lib';
 import { createTokenBaseSchema } from '../schemas';
-
-// Extend CreateTokenParams to include nano contract specific fields
-type NanoContractCreateTokenParams = CreateTokenParams & {
-  contractPaysTokenDeposit: boolean;
-};
 
 const createNanoContractCreateTokenTxSchema = z.object({
   method: z.string().min(1),
@@ -119,21 +114,10 @@ export async function createNanoContractCreateTokenTx(
 
   const { nano, token } = confirmationResponse.data;
 
-  // Ensure required fields have values and cast to CreateTokenOptionsInput
+  // Ensure mintAddress has a value (required by wallet-lib's CreateTokenOptionsInput)
   const tokenOptions: CreateTokenOptionsInput = {
-    name: token.name,
-    symbol: token.symbol,
-    amount: token.amount,
-    mintAddress: token.mintAddress ?? address, // Use the address param as default mintAddress
-    contractPaysTokenDeposit: token.contractPaysTokenDeposit ?? false,
-    changeAddress: token.changeAddress,
-    createMint: token.createMint,
-    mintAuthorityAddress: token.mintAuthorityAddress,
-    allowExternalMintAuthorityAddress: token.allowExternalMintAuthorityAddress,
-    createMelt: token.createMelt,
-    meltAuthorityAddress: token.meltAuthorityAddress,
-    allowExternalMeltAuthorityAddress: token.allowExternalMeltAuthorityAddress,
-    data: token.data,
+    ...token,
+    mintAddress: token.mintAddress ?? address,
   };
 
   // Prompt for PIN

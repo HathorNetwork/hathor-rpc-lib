@@ -202,7 +202,11 @@ export interface CreateTokenParams {
   meltAuthorityAddress: string | null,
   allowExternalMeltAuthorityAddress: boolean,
   data: string[] | null,
-  contractPaysTokenDeposit?: boolean,
+}
+
+// Extended type for nano contract token creation
+export interface NanoContractCreateTokenParams extends CreateTokenParams {
+  contractPaysTokenDeposit: boolean;
 }
 
 export type CreateTokenConfirmationPrompt = BaseConfirmationPrompt & {
@@ -314,7 +318,7 @@ export interface SendTransactionConfirmationResponse {
 
 export interface CreateNanoContractCreateTokenTxParams {
   nano: NanoContractParams;
-  token: CreateTokenParams;
+  token: NanoContractCreateTokenParams;
 }
 
 export type CreateNanoContractCreateTokenTxConfirmationPrompt = BaseConfirmationPrompt & {
@@ -327,7 +331,7 @@ export interface CreateNanoContractCreateTokenTxConfirmationResponse {
   data: {
     accepted: true;
     nano: NanoContractParams & { caller: string };
-    token: CreateTokenParams;
+    token: NanoContractCreateTokenParams;
   } | {
     accepted: false;
   }
