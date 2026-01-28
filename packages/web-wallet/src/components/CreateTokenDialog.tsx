@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { useWallet } from '../contexts/WalletContext';
 import { useFeatureToggle } from '../contexts/FeatureToggleContext';
 import { useInvokeSnap } from '@hathor/snap-utils';
-import { helpersUtils, tokensUtils, constants } from '@hathor/wallet-lib';
+import { helpersUtils, tokensUtils, constants, TokenVersion } from '@hathor/wallet-lib';
 import { formatAmount, amountToCents } from '../utils/hathor';
 import { readOnlyWalletWrapper } from '../services/ReadOnlyWalletWrapper';
 import { getAddressForMode } from '../utils/addressMode';
@@ -137,12 +137,19 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
   const amount = watch('amount');
   const tokenType = watch('tokenType');
 
+  // Determine if this is a fee-based token (no deposit required)
+  const isFeeBasedToken = isFeeTokensEnabled && tokenType === 'fee' && !isNFT;
+
   // Calculate 1% HTR deposit (1 HTR per 100 tokens)
   // For every 100 tokens, 1 HTR (100 cents) deposit is required
   // Formula: (tokens / 100) * 100 cents = tokens * 1 cent
+  // Fee-based tokens don't require a deposit
   const depositInCents = useMemo(() => {
     try {
       if (!amount || amount === '0') return 0n;
+
+      // Fee-based tokens don't require a deposit
+      if (isFeeBasedToken) return 0n;
 
       let amountInBaseUnits: bigint;
       if (isNFT) {
@@ -160,7 +167,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
     } catch {
       return 0n;
     }
-  }, [amount, isNFT]);
+  }, [amount, isNFT, isFeeBasedToken]);
 
   // Check if user has insufficient balance
   const hasInsufficientBalance = useMemo(() => {
@@ -172,15 +179,14 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
     setError(null);
 
     try {
+      // Determine if this is a fee-based token creation
+      const isCreatingFeeToken = isFeeTokensEnabled && data.tokenType === 'fee' && !data.isNFT;
+
       // Derive mint/melt settings
       // For NFTs: use the checkbox values
-      // For regular tokens: based on token type (deposit = true, fee = false)
-      const createMint = data.isNFT
-        ? (data.createMintAuthority || false)
-        : data.tokenType === 'deposit';
-      const createMelt = data.isNFT
-        ? (data.createMeltAuthority || false)
-        : data.tokenType === 'deposit';
+      // For regular tokens: use the checkbox values
+      const createMint = data.createMintAuthority || false;
+      const createMelt = data.createMeltAuthority || false;
 
       // Get addresses based on address mode
       const changeAddress = await getAddressForMode(addressMode, readOnlyWalletWrapper);
@@ -193,7 +199,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
         ? BigInt(data.amount)
         : amountToCents(data.amount);
 
-      // Prepare RPC params matching createTokenRpcSchema
+      // Prepare RPC params
       const params = {
         name: data.name,
         symbol: data.symbol,
@@ -207,6 +213,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
         allow_external_melt_authority_address: false,
         data: data.isNFT && data.nftData ? [data.nftData] : null,
         address: mintAddress, // Mint address where tokens are sent
+        ...(isCreatingFeeToken && { token_version: TokenVersion.FEE }),
       };
 
       // Call RPC
@@ -578,19 +585,32 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
               )}
 
               {/* Deposit Display */}
-              {amount && depositInCents > 0n && (
+              {amount && parseFloat(amount) > 0 && (
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">
-                    <span className="uppercase tracking-wide font-medium">DEPOSIT:</span> {formatAmount(depositInCents, false)} HTR
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    <span className="uppercase tracking-wide font-medium">TOTAL:</span> {formatAmount(depositInCents, false)} HTR ({formatAmount(htrBalance, false)} HTR AVAILABLE)
-                  </p>
+                  {isFeeBasedToken ? (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        <span className="uppercase tracking-wide font-medium">DEPOSIT:</span> No deposit required
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Fee-based tokens charge 1 HTR per transaction output instead of requiring an upfront deposit.
+                      </p>
+                    </>
+                  ) : depositInCents > 0n && (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        <span className="uppercase tracking-wide font-medium">DEPOSIT:</span> {formatAmount(depositInCents, false)} HTR
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        <span className="uppercase tracking-wide font-medium">TOTAL:</span> {formatAmount(depositInCents, false)} HTR ({formatAmount(htrBalance, false)} HTR AVAILABLE)
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
 
-              {/* Insufficient Balance Warning */}
-              {hasInsufficientBalance && amount && parseFloat(amount) > 0 && (
+              {/* Insufficient Balance Warning - only for deposit-based tokens */}
+              {hasInsufficientBalance && !isFeeBasedToken && amount && parseFloat(amount) > 0 && (
                 <div className="flex items-start gap-2 p-3 bg-yellow-500/10 border border-yellow-500/50 rounded-lg">
                   <AlertCircle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
                   <span className="text-yellow-400 text-sm">
@@ -610,7 +630,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
               {/* Create Button */}
               <button
                 type="submit"
-                disabled={isLoading || !amount || hasInsufficientBalance}
+                disabled={isLoading || !amount || (hasInsufficientBalance && !isFeeBasedToken)}
                 className="w-full px-8 py-2.5 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
               >
                 {isLoading ? (
