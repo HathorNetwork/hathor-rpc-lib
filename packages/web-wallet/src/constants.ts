@@ -80,10 +80,12 @@ export const UNLEASH_POLLING_INTERVAL = 15 * 1000; // 15s
 
 // Feature toggle names
 export const WEB_WALLET_MAINTENANCE_TOGGLE = 'web-wallet.maintenance';
+export const FEE_TOKENS_RELEASE_TOGGLE = 'fee-tokens.release';
 
 // Feature toggle defaults
 // Note: Unleash Proxy only returns enabled toggles. If a toggle is disabled or
 // doesn't exist, it won't be in the response.
 export const FEATURE_TOGGLE_DEFAULTS: Record<string, boolean> = {
   [WEB_WALLET_MAINTENANCE_TOGGLE]: false, // Default: not under maintenance
+  [FEE_TOKENS_RELEASE_TOGGLE]: false, // Default: fee tokens feature disabled
 };

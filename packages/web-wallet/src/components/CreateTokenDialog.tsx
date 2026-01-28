@@ -4,14 +4,15 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useWallet } from '../contexts/WalletContext';
+import { useFeatureToggle } from '../contexts/FeatureToggleContext';
 import { useInvokeSnap } from '@hathor/snap-utils';
 import { helpersUtils, tokensUtils, constants } from '@hathor/wallet-lib';
 import { formatAmount, amountToCents } from '../utils/hathor';
 import { readOnlyWalletWrapper } from '../services/ReadOnlyWalletWrapper';
 import { getAddressForMode } from '../utils/addressMode';
-// TODO: Re-enable when fee token feature is ready
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { Info } from 'lucide-react';
 
 interface CreateTokenDialogProps {
   isOpen: boolean;
@@ -103,6 +104,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
   } | null>(null);
 
   const { registerToken, balances, addressMode } = useWallet();
+  const { isFeeTokensEnabled } = useFeatureToggle();
   const invokeSnap = useInvokeSnap();
   const { toast } = useToast();
 
@@ -114,8 +116,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
     handleSubmit,
     formState: { errors },
     watch,
-    // TODO: Re-enable when fee token feature is ready
-    // setValue,
+    setValue,
     reset,
   } = useForm<CreateTokenFormData>({
     resolver: zodResolver(createTokenSchema),
@@ -134,8 +135,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
 
   const isNFT = watch('isNFT');
   const amount = watch('amount');
-  // TODO: Re-enable when fee token feature is ready
-  // const tokenType = watch('tokenType');
+  const tokenType = watch('tokenType');
 
   // Calculate 1% HTR deposit (1 HTR per 100 tokens)
   // For every 100 tokens, 1 HTR (100 cents) deposit is required
@@ -533,8 +533,8 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
                 </div>
               </div>
 
-              {/* TODO: Re-enable Token Type dropdown when fee token feature is ready */}
-              {/* {!isNFT && (
+              {/* Token Type dropdown - only shown when fee tokens feature is enabled */}
+              {isFeeTokensEnabled && !isNFT && (
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
                 <div className="flex items-center gap-2 md:w-[120px]">
                   <label className="text-sm md:text-base font-bold text-white">Token Type</label>
@@ -575,7 +575,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
                   </ul>
                 </div>
               </div>
-              )} */}
+              )}
 
               {/* Deposit Display */}
               {amount && depositInCents > 0n && (
