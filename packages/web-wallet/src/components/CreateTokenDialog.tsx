@@ -12,6 +12,7 @@ import { getAddressForMode } from '../utils/addressMode';
 // TODO: Re-enable when fee token feature is ready
 // import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useToast } from '@/hooks/use-toast';
+import TransactionErrorDisplay from './TransactionErrorDisplay';
 
 interface CreateTokenDialogProps {
   isOpen: boolean;
@@ -95,7 +96,7 @@ type CreateTokenFormData = z.infer<typeof createTokenSchema>;
 
 const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   const [successData, setSuccessData] = useState<{
     configString: string;
     tokenName: string;
@@ -253,21 +254,40 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
         tokenName: data.name,
         tokenSymbol: data.symbol,
       });
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to create token:', err);
 
-      // User-friendly error messages
-      const errorMsg = err instanceof Error ? err.message : 'Failed to create token';
+      // Snap errors come as objects with message/data properties, not Error instances
+      const snapErr = err as { message?: string; data?: { errorType?: string; stack?: string }; name?: string; stack?: string };
+      const errorMsg = snapErr?.message || 'Failed to create token';
 
+      // Create user-friendly error with appropriate type
+      let userError: Error;
       if (errorMsg.includes('rejected') || errorMsg.includes('User rejected')) {
-        setError('Transaction was cancelled. Please try again.');
+        userError = new Error('Transaction was cancelled. Please try again.');
+        userError.name = 'UserRejectedError';
       } else if (errorMsg.includes('insufficient') || errorMsg.includes('Insufficient')) {
-        setError('Insufficient HTR balance for deposit and fees.');
+        userError = new Error('Insufficient HTR balance for deposit and fees.');
+        userError.name = 'InsufficientBalanceError';
       } else if (errorMsg.includes('timeout') || errorMsg.includes('timed out')) {
-        setError('Request timed out. Please check your connection and try again.');
+        userError = new Error('Request timed out. Please check your connection and try again.');
+        userError.name = 'TimeoutError';
       } else {
-        setError(errorMsg);
+        userError = new Error(errorMsg);
+        userError.name = snapErr?.data?.errorType || snapErr?.name || 'Error';
       }
+
+      // Preserve stack trace from snap error data
+      if (snapErr?.data?.stack) {
+        userError.stack = snapErr.data.stack;
+      } else if (snapErr?.stack) {
+        userError.stack = snapErr.stack;
+      }
+
+      // Attach the original data for TransactionErrorDisplay to extract
+      (userError as any).data = snapErr?.data;
+
+      setError(userError);
     } finally {
       setIsLoading(false);
     }
@@ -601,10 +621,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
 
               {/* Error Message */}
               {error && (
-                <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/50 rounded-lg">
-                  <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                  <span className="text-red-400 text-sm">{error}</span>
-                </div>
+                <TransactionErrorDisplay error={error} />
               )}
 
               {/* Create Button */}
