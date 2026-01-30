@@ -6,6 +6,7 @@ import {
   UNLEASH_CLIENT_KEY,
   UNLEASH_POLLING_INTERVAL,
   WEB_WALLET_MAINTENANCE_TOGGLE,
+  FEE_TOKENS_RELEASE_TOGGLE,
   FEATURE_TOGGLE_DEFAULTS,
   STAGE,
   SKIP_FEATURE_TOGGLE,
@@ -32,6 +33,7 @@ function getBrowserId(): string {
 
 interface FeatureToggleContextType {
   isUnderMaintenance: boolean;
+  isFeeTokensEnabled: boolean;
   isLoading: boolean;
   featureToggles: Record<string, boolean>;
   /** Unique browser identifier used for feature toggle targeting */
@@ -148,9 +150,10 @@ export function FeatureToggleProvider({ children }: FeatureToggleProviderProps) 
   }, []);
 
   const isUnderMaintenance = featureToggles[WEB_WALLET_MAINTENANCE_TOGGLE] ?? FEATURE_TOGGLE_DEFAULTS[WEB_WALLET_MAINTENANCE_TOGGLE];
+  const isFeeTokensEnabled = featureToggles[FEE_TOKENS_RELEASE_TOGGLE] ?? FEATURE_TOGGLE_DEFAULTS[FEE_TOKENS_RELEASE_TOGGLE];
 
   return (
-    <FeatureToggleContext.Provider value={{ isUnderMaintenance, isLoading, featureToggles, browserId }}>
+    <FeatureToggleContext.Provider value={{ isUnderMaintenance, isFeeTokensEnabled, isLoading, featureToggles, browserId }}>
       {children}
     </FeatureToggleContext.Provider>
   );
