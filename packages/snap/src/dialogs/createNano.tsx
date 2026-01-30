@@ -8,6 +8,7 @@
 import { REQUEST_METHODS, DIALOG_TYPES } from '../constants';
 import { Bold, Box, Card, Container, Copyable, Heading, Icon, Section, Text, Tooltip } from '@metamask/snaps-sdk/jsx';
 import { constants as libConstants, bigIntUtils, dateUtils, NanoContractActionType, numberUtils } from '@hathor/wallet-lib';
+import { PushTxWarning } from '../components';
 
 const renderOptionalContractDetail = (param, title) => {
   if (!param) return null;
@@ -186,6 +187,7 @@ export const createNanoPage = async (data, params, origin) => (
             </Section>
             {renderArguments(data.parsedArgs)}
             {renderActions(params.actions, data.tokenDetails)}
+            <PushTxWarning pushTx={data.pushTx} />
           </Box>
         </Container>
       ),
