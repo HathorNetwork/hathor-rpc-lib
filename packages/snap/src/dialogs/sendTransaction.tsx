@@ -6,8 +6,9 @@
  */
 
 import { REQUEST_METHODS, DIALOG_TYPES } from '../constants';
-import { Bold, Box, Card, Container, Divider, Heading, Icon, Section, Text, Tooltip } from '@metamask/snaps-sdk/jsx';
+import { Bold, Box, Container, Divider, Heading, Icon, Section, Text, Tooltip } from '@metamask/snaps-sdk/jsx';
 import { constants as libConstants, numberUtils, helpersUtils } from '@hathor/wallet-lib';
+import { PushTxWarning } from '../components';
 
 const renderInputs = (inputs) => {
   if (!inputs) {
@@ -122,6 +123,7 @@ export const sendTransactionPage = async (data, params, origin) => (
               {renderOutputs(params.outputs, data.tokenDetails)}
               {renderChangeAddress(params.changeAddress)}
             </Section>
+            <PushTxWarning pushTx={data.pushTx} />
           </Box>
         </Container>
       ),
