@@ -283,8 +283,7 @@ export class ReadOnlyWalletWrapper {
     }
 
     try {
-      const data = await this.wallet.hasTxOutsideFirstAddress();
-      return data.hasTransactions;
+      return await this.wallet.hasTxOutsideFirstAddress();
     } catch (error) {
       log.error('Failed to check transactions outside first address:', error);
       throw error;

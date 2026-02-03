@@ -381,7 +381,7 @@ describe('ReadOnlyWalletWrapper', () => {
     });
 
     it('should return true when wallet has transactions outside first address', async () => {
-      mockHasTxOutsideFirstAddress.mockResolvedValue({ hasTransactions: true });
+      mockHasTxOutsideFirstAddress.mockResolvedValue(true);
 
       const result = await service.hasTxOutsideFirstAddress();
 
@@ -390,7 +390,7 @@ describe('ReadOnlyWalletWrapper', () => {
     });
 
     it('should return false when wallet has no transactions outside first address', async () => {
-      mockHasTxOutsideFirstAddress.mockResolvedValue({ hasTransactions: false });
+      mockHasTxOutsideFirstAddress.mockResolvedValue(false);
 
       const result = await service.hasTxOutsideFirstAddress();
 
