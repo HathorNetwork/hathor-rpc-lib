@@ -109,7 +109,7 @@ export async function getAddress(
 
     // We already confirmed with the user and he selected the address he wanted
     // to share. No need to double check
-    if (params.type !== 'client') {
+    if (params.type !== 'client' && addressInfo.index !== 0) {
       const confirmed = await promptHandler({
         ...rpcRequest,
         type: TriggerTypes.AddressRequestPrompt,
