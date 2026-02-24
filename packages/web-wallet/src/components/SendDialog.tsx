@@ -334,6 +334,11 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
                 placeholder={selectedToken?.isNFT ? '0' : '0.0'}
                 inputMode={selectedToken?.isNFT ? 'numeric' : 'decimal'}
                 pattern={selectedToken?.isNFT ? '[0-9]*' : undefined}
+                onKeyDown={(e) => {
+                  if (selectedToken?.isNFT && (e.key === '.' || e.key === ',')) {
+                    e.preventDefault();
+                  }
+                }}
                 className={`w-full px-3 py-2 pr-12 bg-[#0D1117] border ${
                   errors.amount ? 'border-red-500' : 'border-border'
                 } rounded-lg text-white placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
