@@ -129,7 +129,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
       createMintAuthority: false,
       createMeltAuthority: false,
     },
-    mode: 'onChange',
+    mode: 'onTouched',
   });
 
   const isNFT = watch('isNFT');
