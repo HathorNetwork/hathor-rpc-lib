@@ -281,10 +281,13 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-start md:items-center justify-center z-50 overflow-y-auto p-4 md:p-0">
+    <div
+      className="fixed inset-0 bg-black/50 flex items-start md:items-center justify-center z-50 overflow-y-auto p-4 md:p-0"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
       <div className="bg-[#191C21] border border-[#24292F] rounded-2xl w-full max-w-md my-4 md:my-0 md:mx-4">
         {/* Header */}
-        <div className="relative flex items-center justify-center p-6">
+        <div className="sticky top-0 bg-[#191C21] z-10 rounded-t-2xl relative flex items-center justify-center p-6">
           <h2 className="text-base font-bold text-primary-400">Send Tokens</h2>
           <button
             onClick={onClose}
