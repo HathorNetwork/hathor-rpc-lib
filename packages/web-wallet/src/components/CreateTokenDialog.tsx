@@ -172,15 +172,9 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
     setError(null);
 
     try {
-      // Derive mint/melt settings
-      // For NFTs: use the checkbox values
-      // For regular tokens: based on token type (deposit = true, fee = false)
-      const createMint = data.isNFT
-        ? (data.createMintAuthority || false)
-        : data.tokenType === 'deposit';
-      const createMelt = data.isNFT
-        ? (data.createMeltAuthority || false)
-        : data.tokenType === 'deposit';
+      // Derive mint/melt settings from checkbox values for all token types
+      const createMint = data.createMintAuthority || false;
+      const createMelt = data.createMeltAuthority || false;
 
       // Get addresses based on address mode
       const changeAddress = await getAddressForMode(addressMode, readOnlyWalletWrapper);
