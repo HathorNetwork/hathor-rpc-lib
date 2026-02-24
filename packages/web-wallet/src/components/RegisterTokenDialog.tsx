@@ -181,6 +181,7 @@ const RegisterTokenDialog: React.FC<RegisterTokenDialogProps> = ({ isOpen, onClo
           )}
 
           {/* Register Button */}
+          {!registrationSuccess && (
           <button
             type="submit"
             disabled={isLoading || !configString || !!errors.configString}
@@ -195,6 +196,7 @@ const RegisterTokenDialog: React.FC<RegisterTokenDialogProps> = ({ isOpen, onClo
               'Register token'
             )}
           </button>
+          )}
         </form>
       </div>
     </div>
