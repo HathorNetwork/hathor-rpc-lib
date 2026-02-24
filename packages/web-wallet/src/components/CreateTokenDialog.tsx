@@ -430,6 +430,12 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
                       type="text"
                       {...register('amount')}
                       placeholder={isNFT ? "Enter quantity (e.g., 5)" : "1"}
+                      inputMode={isNFT ? 'numeric' : 'decimal'}
+                      onKeyDown={(e) => {
+                        if (isNFT && (e.key === '.' || e.key === ',')) {
+                          e.preventDefault();
+                        }
+                      }}
                       className={`w-full sm:flex-1 px-4 py-3 bg-[#0D1117] border ${
                         errors.amount ? 'border-red-500' : 'border-border'
                       } rounded-lg text-white placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary`}
