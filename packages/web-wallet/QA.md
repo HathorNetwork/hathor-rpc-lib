@@ -29,7 +29,7 @@
       - Create Tokens
       - Register Tokens
       - Disconnect (in red)
-   1. Click outside the menu or on X to close it
+   1. On mobile: click outside the menu to close it; on desktop: click outside the menu or the ☰ button again
    1. Verify menu closes properly
 
 ### 3. Network Switching Tests
@@ -38,6 +38,7 @@
 1. Wait for wallet to reconnect
 1. Verify:
    - Network name updates in header
+   - Wallet address in header updates to the new network's address
    - Wallet reconnects successfully
    - Balance updates for new network
    - Token list updates (network-specific tokens)
@@ -60,12 +61,13 @@
 1. **Successful Registration**
    1. Click "Register Token"
    1. Verify loading state shows on button
-   1. Wait for success message (auto-closes after 1.5 seconds)
+   1. Verify the submit button disappears and a success message appears
+   1. Dialog auto-closes after ~1.5 seconds
    1. Verify token appears in "My Assets" list
    1. Verify token shows correct name, symbol, and balance
 1. **Duplicate Token Registration**
    1. Try registering the same token configuration string again
-   1. Verify appropriate error message displays
+   1. Verify the token is re-registered successfully (registration is idempotent — no error is shown)
 
 ### 5. Token Creation Tests
 1. Open hamburger menu and click "Create Tokens"
@@ -112,6 +114,7 @@
    1. Check "Create a mint authority" checkbox
    1. Check "Create a melt authority" checkbox
    1. Verify both checkboxes can be selected independently
+   1. Verify that the Snap approval prompt reflects the selected authority options
    1. Uncheck both for standard token
 1. **Successful Token Creation** (requires sufficient HTR)
    1. Fill form with valid data:
@@ -165,8 +168,7 @@
    1. Verify "Invalid Hathor address format" error
    1. Enter valid address from wrong network (mainnet address while on testnet)
    1. Verify network-specific error message
-   1. Enter valid address with wrong checksum
-   1. Verify "Invalid address checksum" error
+   1. Change the last character of a valid address and verify "Invalid address checksum" error
 1. **Advanced Options**
    1. Click "Advanced" section to expand
    1. Verify timelock date picker appears
@@ -237,7 +239,7 @@
    1. Verify token details section displays:
       - Balance (available amount)
       - Token symbol badge
-      - Token UID (truncated) with copy icon
+      - Token UID (truncated) with copy icon if the token is not the native HTR
       - "View on explorer" link
    1. Click copy icon next to token UID
    1. Verify "Copied to clipboard" toast appears
@@ -265,7 +267,7 @@
    1. Verify amounts are displayed in that token's units (not HTR)
    1. Verify token details section shows custom token name/symbol/UID
 1. **Empty History**
-   1. Register a brand new token with no transactions (just created or never transacted)
+   1. Register a token with no transactions by this wallet
    1. Click on it to view history
    1. Verify empty state displays (no transactions in list)
    1. Verify token details still display correctly
@@ -279,24 +281,18 @@
    1. Click back arrow in header
    1. Verify returns to home screen with token list
 
-### 9. Token Filtering and NFT Tests
+### 9. Token Filtering Tests
 1. **Filter Tabs**
    1. On home screen, locate filter tabs above "My Assets" section
-   1. Verify three tabs are present: "All", "Tokens", "NFTs"
+   1. Verify two tabs are present: "Tokens", "NFTs"
    1. Click "Tokens" tab
    1. Verify only fungible tokens display (HTR + custom tokens, no NFTs)
    1. Verify tab label shows count in format: "Tokens (X)"
-1. **NFT Detection** (requires at least one NFT token)
-   1. Create or register an NFT token
-   1. Return to home screen
+1. **NFT Filter** (requires at least one registered NFT token)
    1. Click "NFTs" tab
    1. Verify only NFT tokens display
    1. Verify NFT visual indicators (badge/icon showing it's an NFT)
    1. Verify tab label shows count: "NFTs (X)"
-1. **All Filter**
-   1. Click "All" tab
-   1. Verify both fungible tokens and NFT tokens display together
-   1. Verify HTR always appears first in the list
 1. **Count Accuracy**
    1. Note the token counts displayed in each tab
    1. Verify counts match actual number of tokens in each category
@@ -349,7 +345,7 @@
 1. **Balance Updates**
    1. Send HTR to your wallet from another source
    1. Verify balance updates automatically (without refresh)
-   1. Verify notification appears
+   1. Verify a "Received HTR" notification toast appears
 1. **Transaction Notifications**
    1. Check that notification includes:
       - Transaction type (Sent/Received)
@@ -401,8 +397,8 @@
    1. Verify all dialogs are readable on small screens
    1. Test on tablet viewport
    1. Test on desktop viewport
-1. **Dark Theme**
-   1. Verify dark theme renders correctly throughout
+1. **Theme**
+   1. Verify the dark theme renders correctly throughout (the wallet is dark-only)
    1. Check contrast and readability
 1. **Loading States**
    1. Refresh the page
