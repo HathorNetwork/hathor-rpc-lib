@@ -452,6 +452,24 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
             )}
           </div>
 
+          {transactionError && (
+            <div className="flex flex-col gap-2 p-3 bg-red-500/10 border border-red-500/50 rounded-lg">
+              <span className="text-red-400 text-sm whitespace-pre-line">{transactionError}</span>
+              {transactionError.includes('permission') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    window.location.reload();
+                  }}
+                  className="text-xs text-primary hover:text-primary/80 underline self-start"
+                >
+                  Click here to refresh and reconnect
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Send Button */}
           <button
             type="submit"
