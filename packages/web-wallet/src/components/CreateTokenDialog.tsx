@@ -114,8 +114,9 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
     handleSubmit,
     formState: { errors },
     watch,
+    setValue,
+    getValues,
     // TODO: Re-enable when fee token feature is ready
-    // setValue,
     reset,
   } = useForm<CreateTokenFormData>({
     resolver: zodResolver(createTokenSchema),
@@ -136,6 +137,17 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
   const amount = watch('amount');
   // TODO: Re-enable when fee token feature is ready
   // const tokenType = watch('tokenType');
+
+  // When toggling to NFT mode, strip any decimal portion from the amount
+  React.useEffect(() => {
+    if (isNFT) {
+      const currentAmount = getValues('amount');
+      if (currentAmount.includes('.') || currentAmount.includes(',')) {
+        setValue('amount', currentAmount.split(/[.,]/)[0]);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNFT]);
 
   // Calculate 1% HTR deposit (1 HTR per 100 tokens)
   // For every 100 tokens, 1 HTR (100 cents) deposit is required
@@ -432,7 +444,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
                       placeholder={isNFT ? "Enter quantity (e.g., 5)" : "1"}
                       inputMode={isNFT ? 'numeric' : 'decimal'}
                       onKeyDown={(e) => {
-                        if (isNFT && (e.key === '.' || e.key === ',')) {
+                        if (e.key === ',' || (isNFT && e.key === '.')) {
                           e.preventDefault();
                         }
                       }}

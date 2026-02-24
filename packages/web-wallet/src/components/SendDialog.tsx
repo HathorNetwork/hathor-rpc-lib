@@ -97,6 +97,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
     formState: { errors },
     setValue,
     watch,
+    getValues,
     reset,
     trigger,
     setError,
@@ -138,6 +139,17 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
   }, [allTokens, selectedTokenUid]);
 
   const availableBalance = selectedToken?.balance?.available || 0n;
+
+  // When switching to an NFT token, strip any decimal portion from the amount
+  React.useEffect(() => {
+    if (selectedToken?.isNFT) {
+      const currentAmount = getValues('amount');
+      if (currentAmount.includes('.') || currentAmount.includes(',')) {
+        setValue('amount', currentAmount.split(/[.,]/)[0]);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTokenUid]);
 
   // Validate amount: NFT format and balance check
   // This runs separately from Zod schema to handle dynamic token changes
@@ -335,7 +347,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
                 inputMode={selectedToken?.isNFT ? 'numeric' : 'decimal'}
                 pattern={selectedToken?.isNFT ? '[0-9]*' : undefined}
                 onKeyDown={(e) => {
-                  if (selectedToken?.isNFT && (e.key === '.' || e.key === ',')) {
+                  if (e.key === ',' || (selectedToken?.isNFT && e.key === '.')) {
                     e.preventDefault();
                   }
                 }}
