@@ -128,7 +128,7 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
             </div>
 
             {/* Address + Network + Menu */}
-            <div className="flex items-center justify-center gap-2 md:gap-3 md:relative">
+            <div ref={menuContainerRef} className="flex items-center justify-center gap-2 md:gap-3 md:relative">
               {/* Wallet Address (always shows first address) */}
               <button
                 onClick={handleCopyAddress}
