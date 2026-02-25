@@ -79,6 +79,7 @@ interface UseWalletConnectionOptions {
   onNewTransaction: (notification: { type: 'sent' | 'received'; amount: bigint; timestamp: number; symbol: string; tokenUid: string }) => void;
   /** Called when wallet is connected and ready - use to load tokens */
   onConnectionReady?: (network: string) => Promise<void>;
+  onTransactionEvent: () => void;
 }
 
 /**
@@ -142,6 +143,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     requestSnap,
     metamaskError,
     onRefreshBalanceForTokens,
+    onTransactionEvent,
     onError,
     onShowConnectionLostModal,
     onConnectionReady,
@@ -683,10 +685,11 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
 
       log.debug('[handleNewTransaction] Refreshing balances for:', affectedTokenIds);
       await onRefreshBalanceForTokens(affectedTokenIds);
+      onTransactionEvent();
     } catch (error) {
       log.error('Error refreshing balance on new transaction:', error);
     }
-  }, [isConnected, onRefreshBalanceForTokens]);
+  }, [isConnected, onRefreshBalanceForTokens, onTransactionEvent]);
 
   // Set the ref
   handleNewTransactionRef.current = handleNewTransaction;

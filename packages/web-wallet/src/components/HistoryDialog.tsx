@@ -85,8 +85,8 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
     // Type guard to check if this is a history transaction
     const transaction = newTransaction as Record<string, unknown>;
 
-    // Only process if we have transaction data with tx_id (for history list)
     if (transaction.tx_id) {
+      // Full transaction data available: prepend to list directly
       const processedTx = processTransaction({
         tx_id: transaction.tx_id as string,
         balance: transaction.balance as number | bigint,
@@ -94,8 +94,6 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
         is_voided: transaction.is_voided as boolean
       });
 
-      // Use functional update to avoid race conditions with duplicate check
-      // Don't slice - preserve all already-loaded pages
       setTransactions(prev => {
         const isDuplicate = prev.some(tx => tx.id === transaction.tx_id);
         if (isDuplicate) return prev;
@@ -103,10 +101,12 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
       });
 
       setCurrentCount(prev => prev + 1);
-
-      // Clear the transaction from context
-      clearNewTransaction();
+    } else {
+      // Signal only (no tx data): reload history from scratch
+      loadTransactionHistory(0);
     }
+
+    clearNewTransaction();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newTransaction, isOpen]);
 
