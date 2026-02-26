@@ -171,9 +171,9 @@
    1. Change the last character of a valid address and verify "Invalid address checksum" error
 1. **Advanced Options**
    1. Click "Advanced" section to expand
-   1. Verify timelock date picker appears
+   1. Verify timelock date picker appears *(skipped — timelock not yet supported by snap)*
    1. Verify data output field appears
-   1. Test timelock with past date - verify "Timelock date must be in the future" error
+   1. Test timelock with past date - verify "Timelock date must be in the future" error *(skipped)*
    1. Collapse advanced section
 1. **Successful Transaction**
    1. Select HTR token
