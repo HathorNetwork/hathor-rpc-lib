@@ -186,7 +186,7 @@
    1. Wait for "Sending transaction" loading state
    1. Verify success message/state appears
    1. Verify balance updates automatically
-   1. Check notification toast displays with:
+   1. Check notification toast displays with: *(skipped — notifications not yet implemented)*
       - "Sent HTR" title
       - Amount with minus sign
       - "View History" link
@@ -220,12 +220,12 @@
    1. Copy the receive address
    1. From another wallet, send HTR or a custom token to this address
    1. Wait for transaction to be confirmed on blockchain
-   1. Verify notification toast appears showing:
+   1. Verify notification toast appears showing: *(skipped — notifications not yet implemented)*
       - "Received HTR" (or token symbol) title
       - Amount with plus sign
       - "View History" link
-   1. Click "View History" in notification
-   1. Verify history dialog opens showing the received transaction
+   1. Click "View History" in notification *(skipped)*
+   1. Verify history dialog opens showing the received transaction *(skipped)*
    1. Verify balance updates in header and assets summary
 1. Close receive dialog and verify it closes properly
 
@@ -345,8 +345,8 @@
 1. **Balance Updates**
    1. Send HTR to your wallet from another source
    1. Verify balance updates automatically (without refresh)
-   1. Verify a "Received HTR" notification toast appears
-1. **Transaction Notifications**
+   1. Verify a "Received HTR" notification toast appears *(skipped — notifications not yet implemented)*
+1. **Transaction Notifications** *(skipped — notifications not yet implemented)*
    1. Check that notification includes:
       - Transaction type (Sent/Received)
       - Amount
