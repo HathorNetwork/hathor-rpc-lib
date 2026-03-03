@@ -6,7 +6,7 @@
  */
 import { AddressInfoObject, GetBalanceObject, TokenDetailsObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
-import { IDataInput, IDataOutput } from '@hathor/wallet-lib/lib/types';
+import { OutputValueType } from '@hathor/wallet-lib/lib/types';
 import { RequestMetadata, RpcRequest } from './rpcRequest';
 
 export enum TriggerTypes {
@@ -298,14 +298,34 @@ export interface SignOracleDataConfirmationResponse {
   data: boolean;
 }
 
+/** Input data extracted from a prepared Transaction for display in prompts. */
+export interface TxPromptInput {
+  txId: string;
+  index: number;
+}
+
+/** Output data extracted from a prepared Transaction for display in prompts. */
+export interface TxPromptOutput {
+  address?: string;
+  value: OutputValueType;
+  token: string;
+  timelock?: number | null;
+  data?: string;
+}
+
 export type SendTransactionConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.SendTransactionConfirmationPrompt;
   data: {
-    outputs: IDataOutput[],
-    inputs: IDataInput[],
+    outputs: TxPromptOutput[],
+    inputs: TxPromptInput[],
     changeAddress?: string;
     pushTx: boolean;
     tokenDetails?: Map<string, TokenDetailsObject>;
+    /**
+     * Calculated network fee for the transaction.
+     * This is calculated based on the token outputs and their versions.
+     */
+    networkFee?: bigint;
   }
 }
 

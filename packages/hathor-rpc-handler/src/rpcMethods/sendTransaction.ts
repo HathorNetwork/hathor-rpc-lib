@@ -6,9 +6,8 @@
  */
 
 import { z } from 'zod';
-import { constants, Transaction } from '@hathor/wallet-lib';
+import { constants, Network, Transaction, tokensUtils } from '@hathor/wallet-lib';
 import type { DataScriptOutputRequestObj, IHathorWallet } from '@hathor/wallet-lib';
-import type { IDataOutput } from '@hathor/wallet-lib/lib/types';
 import {
   TriggerTypes,
   PinConfirmationPrompt,
@@ -32,6 +31,23 @@ import {
   PrepareSendTransactionError,
 } from '../errors';
 import { validateNetwork, fetchTokenDetails } from '../helpers';
+
+/**
+ * Unified send transaction interface for both HathorWallet and HathorWalletServiceWallet.
+ *
+ * Both wallet implementations provide sendTransaction services that support
+ * a prepare-then-sign flow through this interface. This allows building the
+ * transaction before requesting user confirmation, then signing with the PIN
+ * only after approval.
+ *
+ * TODO: Remove this once wallet-lib exports a unified ISendTransaction with
+ * prepareTx/signTx (see hathor-wallet-lib PR #1022).
+ */
+interface ISendTransactionService {
+  prepareTx(): Promise<Transaction>;
+  signTx(pin: string): Promise<Transaction>;
+  runFromMining(): Promise<Transaction>;
+}
 
 const OutputValueSchema = z.object({
   address: z.string(),
@@ -101,23 +117,20 @@ export async function sendTransaction(
   const { params } = validationResult.data;
   validateNetwork(wallet, params.network);
 
-  // sendManyOutputsSendTransaction throws if it doesn't receive a pin,
-  // but doesn't use it until prepareTxData is called, so we can just assign
-  // an arbitrary value to it and then mutate the instance after we get the
-  // actual pin from the pin prompt.
-  const stubPinCode = '111111';
-
-  // Create the transaction service but don't run it yet
-  const sendTransaction = await wallet.sendManyOutputsSendTransaction(params.outputs, {
+  // Create the transaction service and cast to the unified interface that works
+  // with both HathorWallet (SendTransaction) and HathorWalletServiceWallet
+  // (SendTransactionWalletService) implementations.
+  const sendTransactionService = await wallet.sendManyOutputsSendTransaction(params.outputs, {
     inputs: params.inputs || [],
     changeAddress: params.changeAddress,
-    pinCode: stubPinCode,
-  });
+  }) as unknown as ISendTransactionService;
 
-  // Prepare the transaction to get all inputs (including automatically selected ones)
-  let preparedTx;
+  // Prepare the full transaction without signing to get inputs, outputs, and fee.
+  // This builds the tx so we can show it to the user for confirmation before
+  // requesting their PIN.
+  let preparedTx: Transaction;
   try {
-    preparedTx = await sendTransaction.prepareTxData();
+    preparedTx = await sendTransactionService.prepareTx();
   } catch (err) {
     if (err instanceof Error) {
       if (err.message.includes('Insufficient amount of tokens')) {
@@ -127,22 +140,59 @@ export async function sendTransaction(
     throw new PrepareSendTransactionError(err instanceof Error ? err.message : 'An unknown error occurred while preparing the transaction');
   }
 
+  // Extract inputs and outputs from the Transaction object for the prompt.
+  const network = new Network(wallet.getNetwork());
+
+  const txInputs = preparedTx.inputs.map(input => ({
+    txId: input.hash,
+    index: input.index,
+  }));
+
+  const txOutputs = preparedTx.outputs.map(output => {
+    const tokenIndex = output.getTokenIndex();
+    const token = tokenIndex === -1 ? constants.NATIVE_TOKEN_UID : preparedTx.tokens[tokenIndex];
+    const decoded = output.parseScript(network);
+
+    if (decoded && 'data' in decoded && !('address' in decoded)) {
+      // ScriptData output
+      return { data: (decoded as { data: string }).data, value: output.value, token };
+    }
+
+    // P2PKH or P2SH output
+    const addressScript = decoded as { address: { base58: string }, timelock: number | null } | null;
+    return {
+      address: addressScript?.address?.base58,
+      value: output.value,
+      token,
+      timelock: addressScript?.timelock ?? undefined,
+    };
+  });
+
   // Extract token UIDs from outputs and fetch their details
-  const tokenUids = preparedTx.outputs
-    .filter((output): output is IDataOutput & { token: string } => 'token' in output && typeof output.token === 'string')
+  const tokenUids = txOutputs
+    .filter((output): output is typeof output & { token: string } => typeof output.token === 'string')
     .map(output => output.token);
   const tokenDetails = await fetchTokenDetails(wallet, tokenUids);
+
+  // Get the network fee from the transaction's fee header and data outputs
+  const feeHeader = preparedTx.getFeeHeader();
+  const feeHeaderAmount = feeHeader
+    ? feeHeader.entries.reduce((sum, entry) => sum + entry.amount, 0n)
+    : 0n;
+  const dataOutputCount = txOutputs.filter(output => 'data' in output && output.data !== undefined).length;
+  const networkFee = feeHeaderAmount + tokensUtils.getDataFee(dataOutputCount);
 
   // Show the complete transaction (with all inputs) to the user
   const prompt: SendTransactionConfirmationPrompt = {
     ...rpcRequest,
     type: TriggerTypes.SendTransactionConfirmationPrompt,
     data: {
-      outputs: preparedTx.outputs,
-      inputs: preparedTx.inputs,
+      outputs: txOutputs,
+      inputs: txInputs,
       changeAddress: params.changeAddress,
       pushTx: params.pushTx,
       tokenDetails,
+      networkFee,
     }
   };
 
@@ -170,13 +220,16 @@ export async function sendTransaction(
   promptHandler(loadingTrigger, requestMetadata);
 
   try {
-    // Now execute the prepared transaction
+    // Sign the prepared transaction with the user's PIN
+    const signedTx = await sendTransactionService.signTx(pinResponse.data.pinCode);
+
     let response: Transaction | string;
     if (params.pushTx === false) {
-      const transaction = await sendTransaction.run('prepare-tx', pinResponse.data.pinCode);
-      response = transaction.toHex();
+      // Return the signed transaction as hex without mining/pushing
+      response = signedTx.toHex();
     } else {
-      response = await sendTransaction.run(null, pinResponse.data.pinCode);
+      // Mine and push the signed transaction
+      response = await sendTransactionService.runFromMining();
     }
 
     const loadingFinishedTrigger: SendTransactionLoadingFinishedTrigger = {

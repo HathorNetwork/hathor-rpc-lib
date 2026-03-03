@@ -51,6 +51,30 @@ describe('sendTransaction', () => {
 
     // Mock wallet
     sendTransactionMock = jest.fn();
+
+    // Create a mock Transaction object returned by prepareTx()
+    // Inputs have hash/index, outputs have value/tokenData with getTokenIndex()/parseScript()
+    const mockTransaction = {
+      inputs: [{
+        hash: 'testTxId',
+        index: 0,
+      }],
+      outputs: [{
+        value: BigInt(100),
+        tokenData: 0,
+        getTokenIndex: jest.fn().mockReturnValue(-1), // -1 = HTR
+        parseScript: jest.fn().mockReturnValue({
+          address: { base58: 'testAddress' },
+          timelock: null,
+        }),
+      }],
+      tokens: [],
+      getFeeHeader: jest.fn().mockReturnValue({
+        entries: [{ tokenIndex: 0, amount: 0n }],
+      }),
+      toHex: jest.fn().mockReturnValue('mockedTxHex'),
+    };
+
     wallet = {
       getNetwork: jest.fn().mockReturnValue('testnet'),
       getTokenDetails: jest.fn().mockResolvedValue({
@@ -61,21 +85,9 @@ describe('sendTransaction', () => {
         },
       }),
       sendManyOutputsSendTransaction: jest.fn().mockResolvedValue({
-        prepareTxData: jest.fn().mockResolvedValue({
-          inputs: [{
-            txId: 'testTxId',
-            index: 0,
-            value: 100n,
-            address: 'testAddress',
-            token: '00',
-          }],
-          outputs: [{
-            address: 'testAddress',
-            value: BigInt(100),
-            token: '00',
-          }],
-        }),
-        run: sendTransactionMock,
+        prepareTx: jest.fn().mockResolvedValue(mockTransaction),
+        signTx: jest.fn().mockResolvedValue(mockTransaction),
+        runFromMining: sendTransactionMock,
       }),
     } as unknown as jest.Mocked<IHathorWallet>;
 
@@ -118,18 +130,17 @@ describe('sendTransaction', () => {
         outputs: [{
           address: 'testAddress',
           value: 100n,
-          token: '00',
+          token: constants.NATIVE_TOKEN_UID,
+          timelock: undefined,
         }],
         inputs: [{
           txId: 'testTxId',
           index: 0,
-          value: 100n,
-          address: 'testAddress',
-          token: '00',
         }],
         changeAddress: 'changeAddress',
         pushTx: true,
         tokenDetails: new Map(),
+        networkFee: 0n,
       },
     }, {});
     expect(promptHandler).toHaveBeenNthCalledWith(2, {
@@ -278,7 +289,7 @@ describe('sendTransaction', () => {
 
   it('should throw InsufficientFundsError when not enough funds available', async () => {
     (wallet.sendManyOutputsSendTransaction as jest.Mock).mockResolvedValue({
-      prepareTxData: jest.fn().mockRejectedValue(
+      prepareTx: jest.fn().mockRejectedValue(
         new Error('Insufficient amount of tokens')
       ),
     });
@@ -293,7 +304,7 @@ describe('sendTransaction', () => {
   it('should throw SendTransactionError when transaction preparation fails', async () => {
     (wallet.sendManyOutputsSendTransaction as jest.Mock).mockImplementation(() => {
       return {
-        prepareTxData: jest.fn().mockRejectedValue(new Error('Failed to prepare transaction')),
+        prepareTx: jest.fn().mockRejectedValue(new Error('Failed to prepare transaction')),
       };
     });
 
@@ -403,9 +414,36 @@ describe('sendTransaction', () => {
     } as SendTransactionRpcRequest;
 
     const mockHex = '00010203';
-    const mockTransaction = {
+
+    // Create a mock Transaction object returned by prepareTx()
+    const mockPreparedTransaction = {
+      inputs: [{ hash: 'testTxId', index: 0 }],
+      outputs: [{
+        value: BigInt(100),
+        tokenData: 0,
+        getTokenIndex: jest.fn().mockReturnValue(-1),
+        parseScript: jest.fn().mockReturnValue({
+          address: { base58: 'testAddress' },
+          timelock: null,
+        }),
+      }],
+      tokens: [],
+      getFeeHeader: jest.fn().mockReturnValue({
+        entries: [{ tokenIndex: 0, amount: 0n }],
+      }),
+    };
+
+    // signTx returns the signed Transaction with toHex
+    const mockSignedTransaction = {
       toHex: jest.fn().mockReturnValue(mockHex),
     };
+    const signTxMock = jest.fn().mockResolvedValue(mockSignedTransaction);
+
+    (wallet.sendManyOutputsSendTransaction as jest.Mock).mockResolvedValue({
+      prepareTx: jest.fn().mockResolvedValue(mockPreparedTransaction),
+      signTx: signTxMock,
+      runFromMining: sendTransactionMock,
+    });
 
     promptHandler
       .mockResolvedValueOnce({
@@ -417,11 +455,10 @@ describe('sendTransaction', () => {
         data: { accepted: true, pinCode: '1234' },
       });
 
-    sendTransactionMock.mockResolvedValue(mockTransaction);
-
     const response = await sendTransaction(requestWithPushTxFalse, wallet, {}, promptHandler);
 
-    expect(sendTransactionMock).toHaveBeenCalledWith('prepare-tx', '1234');
+    expect(signTxMock).toHaveBeenCalledWith('1234');
+    expect(sendTransactionMock).not.toHaveBeenCalled(); // runFromMining should not be called
     expect(response).toEqual({
       type: RpcResponseTypes.SendTransactionResponse,
       response: mockHex,
@@ -438,6 +475,31 @@ describe('sendTransaction', () => {
     } as SendTransactionRpcRequest;
 
     const txResponse = { hash: 'txHash123' };
+    const signTxMock = jest.fn().mockResolvedValue({ toHex: jest.fn() });
+
+    // Create a mock Transaction object returned by prepareTx()
+    const mockTransaction = {
+      inputs: [{ hash: 'testTxId', index: 0 }],
+      outputs: [{
+        value: BigInt(100),
+        tokenData: 0,
+        getTokenIndex: jest.fn().mockReturnValue(-1),
+        parseScript: jest.fn().mockReturnValue({
+          address: { base58: 'testAddress' },
+          timelock: null,
+        }),
+      }],
+      tokens: [],
+      getFeeHeader: jest.fn().mockReturnValue({
+        entries: [{ tokenIndex: 0, amount: 0n }],
+      }),
+    };
+
+    (wallet.sendManyOutputsSendTransaction as jest.Mock).mockResolvedValue({
+      prepareTx: jest.fn().mockResolvedValue(mockTransaction),
+      signTx: signTxMock,
+      runFromMining: sendTransactionMock.mockResolvedValue(txResponse),
+    });
 
     promptHandler
       .mockResolvedValueOnce({
@@ -449,11 +511,10 @@ describe('sendTransaction', () => {
         data: { accepted: true, pinCode: '1234' },
       });
 
-    sendTransactionMock.mockResolvedValue(txResponse);
-
     const response = await sendTransaction(requestWithPushTxTrue, wallet, {}, promptHandler);
 
-    expect(sendTransactionMock).toHaveBeenCalledWith(null, '1234');
+    expect(signTxMock).toHaveBeenCalledWith('1234');
+    expect(sendTransactionMock).toHaveBeenCalled(); // runFromMining should be called
     expect(response).toEqual({
       type: RpcResponseTypes.SendTransactionResponse,
       response: txResponse,
