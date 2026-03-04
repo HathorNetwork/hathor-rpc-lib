@@ -147,10 +147,14 @@ export async function sendTransaction(
     .filter(uid => uid !== constants.NATIVE_TOKEN_UID);
   const tokenDetails = await fetchTokenDetails(wallet, tokenUids);
 
-  // Calculate network fee: fee header (fee-based tokens) + data output fees
+  // Calculate network fee: fee header (fee-based tokens) + data output fees.
+  // We expect all fees to be paid in HTR (tokenIndex 0).
   const feeHeader = preparedTx.getFeeHeader();
+  if (feeHeader && feeHeader.entries.some(entry => entry.tokenIndex !== 0)) {
+    throw new PrepareSendTransactionError('Unexpected fee entry with non-HTR token index');
+  }
   const feeHeaderAmount = feeHeader
-    ? feeHeader.entries.reduce((sum, entry) => sum + entry.amount, 0n)
+    ? feeHeader.entries.filter(entry => entry.tokenIndex === 0).reduce((sum, entry) => sum + entry.amount, 0n)
     : 0n;
   const dataOutputCount = params.outputs.filter(output => 'data' in output).length;
   const networkFee = feeHeaderAmount + tokensUtils.getDataFee(dataOutputCount);

@@ -28,7 +28,7 @@ describe('sendTransaction', () => {
   let wallet: jest.Mocked<IHathorWallet>;
   let promptHandler: jest.Mock;
   let sendTransactionMock: jest.Mock;
-  let mockTransaction: any;
+  let mockTransaction: Record<string, unknown>;
 
   // A valid P2PKH script (25 bytes: OP_DUP OP_HASH160 pushdata(20) <20-byte-hash> OP_EQUALVERIFY OP_CHECKSIG)
   // so that P2PKH.identify() returns true during fee calculation
@@ -484,5 +484,46 @@ describe('sendTransaction', () => {
       type: RpcResponseTypes.SendTransactionResponse,
       response: txResponse,
     });
+  });
+
+  it('should calculate non-zero networkFee when FBT fee header is present', async () => {
+    const fbtMockTransaction = {
+      inputs: [{ hash: 'testTxId', index: 0 }],
+      outputs: [{ value: BigInt(100), tokenData: 0, script: p2pkhScript }],
+      tokens: ['token-uid-123'],
+      getFeeHeader: jest.fn().mockReturnValue({
+        entries: [{ tokenIndex: 0, amount: 500n }],
+      }),
+      toHex: jest.fn().mockReturnValue('mockedTxHex'),
+    };
+
+    (wallet.sendManyOutputsSendTransaction as jest.Mock).mockResolvedValue({
+      prepareTx: jest.fn().mockResolvedValue(fbtMockTransaction),
+      signTx: jest.fn().mockResolvedValue(fbtMockTransaction),
+      runFromMining: sendTransactionMock.mockResolvedValue({ hash: 'txHash123' }),
+    });
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.SendTransactionConfirmationResponse,
+        data: { accepted: true },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: { accepted: true, pinCode: '1234' },
+      });
+
+    await sendTransaction(rpcRequest, wallet, {}, promptHandler);
+
+    // Verify the confirmation prompt was called with non-zero networkFee
+    expect(promptHandler).toHaveBeenNthCalledWith(1,
+      expect.objectContaining({
+        type: TriggerTypes.SendTransactionConfirmationPrompt,
+        data: expect.objectContaining({
+          networkFee: 500n,
+        }),
+      }),
+      {},
+    );
   });
 });
