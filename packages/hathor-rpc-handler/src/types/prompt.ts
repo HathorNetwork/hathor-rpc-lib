@@ -307,7 +307,7 @@ export type SendTransactionConfirmationPrompt = BaseConfirmationPrompt & {
     /**
      * Calculated network fee for the transaction.
      */
-    networkFee?: bigint;
+    fee?: bigint;
     /**
      * The full prepared Transaction object before signing.
      * Available for clients that need access to the complete transaction details

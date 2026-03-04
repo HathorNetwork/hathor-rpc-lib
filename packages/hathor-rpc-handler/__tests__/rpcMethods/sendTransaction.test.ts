@@ -123,7 +123,7 @@ describe('sendTransaction', () => {
         changeAddress: 'changeAddress',
         pushTx: true,
         tokenDetails: new Map(),
-        networkFee: 0n,
+        fee: 0n,
         preparedTx: mockTransaction,
       },
     }, {});
@@ -486,7 +486,7 @@ describe('sendTransaction', () => {
     });
   });
 
-  it('should calculate non-zero networkFee when FBT fee header is present', async () => {
+  it('should calculate non-zero fee when FBT fee header is present', async () => {
     const fbtMockTransaction = {
       inputs: [{ hash: 'testTxId', index: 0 }],
       outputs: [{ value: BigInt(100), tokenData: 0, script: p2pkhScript }],
@@ -515,12 +515,12 @@ describe('sendTransaction', () => {
 
     await sendTransaction(rpcRequest, wallet, {}, promptHandler);
 
-    // Verify the confirmation prompt was called with non-zero networkFee
+    // Verify the confirmation prompt was called with non-zero fee
     expect(promptHandler).toHaveBeenNthCalledWith(1,
       expect.objectContaining({
         type: TriggerTypes.SendTransactionConfirmationPrompt,
         data: expect.objectContaining({
-          networkFee: 500n,
+          fee: 500n,
         }),
       }),
       {},

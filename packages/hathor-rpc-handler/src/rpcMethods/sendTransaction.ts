@@ -157,7 +157,7 @@ export async function sendTransaction(
     ? feeHeader.entries.filter(entry => entry.tokenIndex === 0).reduce((sum, entry) => sum + entry.amount, 0n)
     : 0n;
   const dataOutputCount = params.outputs.filter(output => 'data' in output).length;
-  const networkFee = feeHeaderAmount + tokensUtils.getDataFee(dataOutputCount);
+  const fee = feeHeaderAmount + tokensUtils.getDataFee(dataOutputCount);
 
   // Show the user's original parameters for confirmation
   const prompt: SendTransactionConfirmationPrompt = {
@@ -167,7 +167,7 @@ export async function sendTransaction(
       changeAddress: params.changeAddress,
       pushTx: params.pushTx,
       tokenDetails,
-      networkFee,
+      fee,
       preparedTx,
     }
   };
