@@ -487,10 +487,19 @@ describe('sendTransaction', () => {
   });
 
   it('should calculate non-zero fee when FBT fee header is present', async () => {
+    const fbtTokenUid = 'fbt-token-uid-abc123';
+
+    // Use a non-native token in the request outputs
+    rpcRequest.params.outputs = [{
+      address: 'testAddress',
+      value: '100',
+      token: fbtTokenUid,
+    }];
+
     const fbtMockTransaction = {
       inputs: [{ hash: 'testTxId', index: 0 }],
       outputs: [{ value: BigInt(100), tokenData: 0, script: p2pkhScript }],
-      tokens: ['token-uid-123'],
+      tokens: [fbtTokenUid],
       getFeeHeader: jest.fn().mockReturnValue({
         entries: [{ tokenIndex: 0, amount: 500n }],
       }),
@@ -515,12 +524,16 @@ describe('sendTransaction', () => {
 
     await sendTransaction(rpcRequest, wallet, {}, promptHandler);
 
-    // Verify the confirmation prompt was called with non-zero fee
+    // Verify token details were fetched for the non-native token
+    expect(wallet.getTokenDetails).toHaveBeenCalledWith(fbtTokenUid);
+
+    // Verify the confirmation prompt was called with non-zero fee and token details
     expect(promptHandler).toHaveBeenNthCalledWith(1,
       expect.objectContaining({
         type: TriggerTypes.SendTransactionConfirmationPrompt,
         data: expect.objectContaining({
           fee: 500n,
+          tokenDetails: expect.any(Map),
         }),
       }),
       {},
