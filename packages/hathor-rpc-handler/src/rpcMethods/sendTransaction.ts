@@ -166,6 +166,7 @@ export async function sendTransaction(
       pushTx: params.pushTx,
       tokenDetails,
       networkFee,
+      preparedTx,
     }
   };
 

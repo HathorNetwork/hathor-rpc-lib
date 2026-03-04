@@ -7,7 +7,7 @@
 import { AddressInfoObject, GetBalanceObject, TokenDetailsObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { TokenVersion } from '@hathor/wallet-lib';
 import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
-import type { DataScriptOutputRequestObj } from '@hathor/wallet-lib';
+import type { DataScriptOutputRequestObj, Transaction } from '@hathor/wallet-lib';
 import { RequestMetadata, RpcRequest } from './rpcRequest';
 
 export enum TriggerTypes {
@@ -344,6 +344,12 @@ export type SendTransactionConfirmationPrompt = BaseConfirmationPrompt & {
      * This is calculated based on the token outputs and their versions.
      */
     networkFee?: bigint;
+    /**
+     * The full prepared Transaction object before signing.
+     * Available for clients that need access to the complete transaction details
+     * (e.g. inputs with scripts, outputs with token indexes, etc.).
+     */
+    preparedTx: Transaction;
   }
 }
 

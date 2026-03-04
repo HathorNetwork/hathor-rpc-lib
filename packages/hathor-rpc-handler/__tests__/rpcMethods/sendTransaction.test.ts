@@ -28,6 +28,7 @@ describe('sendTransaction', () => {
   let wallet: jest.Mocked<IHathorWallet>;
   let promptHandler: jest.Mock;
   let sendTransactionMock: jest.Mock;
+  let mockTransaction: any;
 
   // A valid P2PKH script (25 bytes: OP_DUP OP_HASH160 pushdata(20) <20-byte-hash> OP_EQUALVERIFY OP_CHECKSIG)
   // so that P2PKH.identify() returns true during fee calculation
@@ -57,7 +58,7 @@ describe('sendTransaction', () => {
     sendTransactionMock = jest.fn();
 
     // Create a mock Transaction object returned by prepareTx()
-    const mockTransaction = {
+    mockTransaction = {
       inputs: [{ hash: 'testTxId', index: 0 }],
       outputs: [{ value: BigInt(100), tokenData: 0, script: p2pkhScript }],
       tokens: [],
@@ -125,6 +126,7 @@ describe('sendTransaction', () => {
         pushTx: true,
         tokenDetails: new Map(),
         networkFee: 0n,
+        preparedTx: mockTransaction,
       },
     }, {});
     expect(promptHandler).toHaveBeenNthCalledWith(2, {
