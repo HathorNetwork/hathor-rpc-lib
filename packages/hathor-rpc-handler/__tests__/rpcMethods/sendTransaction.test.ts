@@ -120,8 +120,6 @@ describe('sendTransaction', () => {
       ...rpcRequest,
       type: TriggerTypes.SendTransactionConfirmationPrompt,
       data: {
-        inputs: [{ txId: 'testTxId', index: 0 }],
-        outputs: [{ address: 'testAddress', value: BigInt(100), token: '00' }],
         changeAddress: 'changeAddress',
         pushTx: true,
         tokenDetails: new Map(),

@@ -5,9 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 import { AddressInfoObject, GetBalanceObject, TokenDetailsObject } from '@hathor/wallet-lib/lib/wallet/types';
-import { TokenVersion } from '@hathor/wallet-lib';
 import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
-import type { DataScriptOutputRequestObj, Transaction } from '@hathor/wallet-lib';
+import type { Transaction } from '@hathor/wallet-lib';
 import { RequestMetadata, RpcRequest } from './rpcRequest';
 
 export enum TriggerTypes {
@@ -187,11 +186,6 @@ export interface NanoContractParams {
   parsedArgs: unknown[];
   pushTx: boolean;
   tokenDetails?: Map<string, TokenDetailsObject>;
-  /**
-   * Calculated network fee for the transaction.
-   * This is calculated based on the token outputs and their versions.
-   */
-  networkFee?: bigint;
 }
 
 export interface CreateTokenParams {
@@ -208,21 +202,6 @@ export interface CreateTokenParams {
   meltAuthorityAddress: string | null,
   allowExternalMeltAuthorityAddress: boolean,
   data: string[] | null,
-  /**
-   * Token version for the new token.
-   * If not provided, the wallet-lib will use the default (NATIVE).
-   */
-  tokenVersion?: TokenVersion,
-  /**
-   * Calculated network fee for the token creation.
-   * This is only applicable for fee tokens (TokenVersion.FEE).
-   */
-  networkFee?: bigint,
-  /**
-   * Calculated deposit amount for the token creation.
-   * This is only applicable for deposit tokens (TokenVersion.DEPOSIT).
-   */
-  depositAmount?: bigint,
 }
 
 // Extended type for nano contract token creation
@@ -319,29 +298,14 @@ export interface SignOracleDataConfirmationResponse {
   data: boolean;
 }
 
-export interface SendTransactionOutputParam {
-  address: string;
-  value: bigint;
-  token: string;
-  timelock?: number;
-}
-
-export interface SendTransactionInputParam {
-  txId: string;
-  index: number;
-}
-
 export type SendTransactionConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.SendTransactionConfirmationPrompt;
   data: {
-    outputs: (SendTransactionOutputParam | DataScriptOutputRequestObj)[];
-    inputs?: SendTransactionInputParam[];
     changeAddress?: string;
     pushTx: boolean;
     tokenDetails?: Map<string, TokenDetailsObject>;
     /**
      * Calculated network fee for the transaction.
-     * This is calculated based on the token outputs and their versions.
      */
     networkFee?: bigint;
     /**

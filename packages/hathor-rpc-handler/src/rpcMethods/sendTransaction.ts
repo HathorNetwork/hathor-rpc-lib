@@ -43,7 +43,7 @@ import { validateNetwork, fetchTokenDetails } from '../helpers';
  * TODO: Remove this once wallet-lib exports a unified ISendTransaction with
  * prepareTx/signTx (see hathor-wallet-lib PR #1022).
  */
-interface ISendTransactionService {
+interface ISendTransactionObject {
   prepareTx(): Promise<Transaction>;
   signTx(pin: string): Promise<Transaction>;
   runFromMining(): Promise<Transaction>;
@@ -120,17 +120,17 @@ export async function sendTransaction(
   // Create the transaction service and cast to the unified interface that works
   // with both HathorWallet (SendTransaction) and HathorWalletServiceWallet
   // (SendTransactionWalletService) implementations.
-  const sendTransactionService = await wallet.sendManyOutputsSendTransaction(params.outputs, {
+  const sendTransactionObject = await wallet.sendManyOutputsSendTransaction(params.outputs, {
     inputs: params.inputs || [],
     changeAddress: params.changeAddress,
-  }) as unknown as ISendTransactionService;
+  }) as unknown as ISendTransactionObject;
 
   // Prepare the full transaction without signing to get inputs, outputs, and fee.
   // This builds the tx so we can show it to the user for confirmation before
   // requesting their PIN.
   let preparedTx: Transaction;
   try {
-    preparedTx = await sendTransactionService.prepareTx();
+    preparedTx = await sendTransactionObject.prepareTx();
   } catch (err) {
     if (err instanceof Error) {
       if (err.message.includes('Insufficient amount of tokens')) {
@@ -160,8 +160,6 @@ export async function sendTransaction(
     ...rpcRequest,
     type: TriggerTypes.SendTransactionConfirmationPrompt,
     data: {
-      outputs: params.outputs,
-      inputs: params.inputs,
       changeAddress: params.changeAddress,
       pushTx: params.pushTx,
       tokenDetails,
@@ -195,7 +193,7 @@ export async function sendTransaction(
 
   try {
     // Sign the prepared transaction with the user's PIN
-    const signedTx = await sendTransactionService.signTx(pinResponse.data.pinCode);
+    const signedTx = await sendTransactionObject.signTx(pinResponse.data.pinCode);
 
     let response: Transaction | string;
     if (params.pushTx === false) {
@@ -203,7 +201,7 @@ export async function sendTransaction(
       response = signedTx.toHex();
     } else {
       // Mine and push the signed transaction
-      response = await sendTransactionService.runFromMining();
+      response = await sendTransactionObject.runFromMining();
     }
 
     const loadingFinishedTrigger: SendTransactionLoadingFinishedTrigger = {
