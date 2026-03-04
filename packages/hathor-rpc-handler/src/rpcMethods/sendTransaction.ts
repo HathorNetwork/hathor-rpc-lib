@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { constants, Network, Transaction, tokensUtils } from '@hathor/wallet-lib';
+import { constants, Transaction, tokensUtils } from '@hathor/wallet-lib';
 import type { DataScriptOutputRequestObj, IHathorWallet } from '@hathor/wallet-lib';
 import {
   TriggerTypes,
@@ -140,55 +140,28 @@ export async function sendTransaction(
     throw new PrepareSendTransactionError(err instanceof Error ? err.message : 'An unknown error occurred while preparing the transaction');
   }
 
-  // Extract inputs and outputs from the Transaction object for the prompt.
-  const network = new Network(wallet.getNetwork());
-
-  const txInputs = preparedTx.inputs.map(input => ({
-    txId: input.hash,
-    index: input.index,
-  }));
-
-  const txOutputs = preparedTx.outputs.map(output => {
-    const tokenIndex = output.getTokenIndex();
-    const token = tokenIndex === -1 ? constants.NATIVE_TOKEN_UID : preparedTx.tokens[tokenIndex];
-    const decoded = output.parseScript(network);
-
-    if (decoded && 'data' in decoded && !('address' in decoded)) {
-      // ScriptData output
-      return { data: (decoded as { data: string }).data, value: output.value, token };
-    }
-
-    // P2PKH or P2SH output
-    const addressScript = decoded as { address: { base58: string }, timelock: number | null } | null;
-    return {
-      address: addressScript?.address?.base58,
-      value: output.value,
-      token,
-      timelock: addressScript?.timelock ?? undefined,
-    };
-  });
-
-  // Extract token UIDs from outputs and fetch their details
-  const tokenUids = txOutputs
-    .filter((output): output is typeof output & { token: string } => typeof output.token === 'string')
-    .map(output => output.token);
+  // Extract token UIDs from the user's requested outputs and fetch their details
+  const tokenUids = params.outputs
+    .filter((output): output is { token: string } & typeof output => 'token' in output && typeof output.token === 'string')
+    .map(output => output.token)
+    .filter(uid => uid !== constants.NATIVE_TOKEN_UID);
   const tokenDetails = await fetchTokenDetails(wallet, tokenUids);
 
-  // Get the network fee from the transaction's fee header and data outputs
+  // Calculate network fee: fee header (fee-based tokens) + data output fees
   const feeHeader = preparedTx.getFeeHeader();
   const feeHeaderAmount = feeHeader
     ? feeHeader.entries.reduce((sum, entry) => sum + entry.amount, 0n)
     : 0n;
-  const dataOutputCount = txOutputs.filter(output => 'data' in output && output.data !== undefined).length;
+  const dataOutputCount = params.outputs.filter(output => 'data' in output).length;
   const networkFee = feeHeaderAmount + tokensUtils.getDataFee(dataOutputCount);
 
-  // Show the complete transaction (with all inputs) to the user
+  // Show the user's original parameters for confirmation
   const prompt: SendTransactionConfirmationPrompt = {
     ...rpcRequest,
     type: TriggerTypes.SendTransactionConfirmationPrompt,
     data: {
-      outputs: txOutputs,
-      inputs: txInputs,
+      outputs: params.outputs,
+      inputs: params.inputs,
       changeAddress: params.changeAddress,
       pushTx: params.pushTx,
       tokenDetails,

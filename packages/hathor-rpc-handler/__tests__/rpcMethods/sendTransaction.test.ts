@@ -29,6 +29,10 @@ describe('sendTransaction', () => {
   let promptHandler: jest.Mock;
   let sendTransactionMock: jest.Mock;
 
+  // A valid P2PKH script (25 bytes: OP_DUP OP_HASH160 pushdata(20) <20-byte-hash> OP_EQUALVERIFY OP_CHECKSIG)
+  // so that P2PKH.identify() returns true during fee calculation
+  const p2pkhScript = Buffer.from([0x76, 0xa9, 0x14, ...new Array(20).fill(0), 0x88, 0xac]);
+
   beforeEach(() => {
     // Setup basic request
     rpcRequest = {
@@ -53,21 +57,9 @@ describe('sendTransaction', () => {
     sendTransactionMock = jest.fn();
 
     // Create a mock Transaction object returned by prepareTx()
-    // Inputs have hash/index, outputs have value/tokenData with getTokenIndex()/parseScript()
     const mockTransaction = {
-      inputs: [{
-        hash: 'testTxId',
-        index: 0,
-      }],
-      outputs: [{
-        value: BigInt(100),
-        tokenData: 0,
-        getTokenIndex: jest.fn().mockReturnValue(-1), // -1 = HTR
-        parseScript: jest.fn().mockReturnValue({
-          address: { base58: 'testAddress' },
-          timelock: null,
-        }),
-      }],
+      inputs: [{ hash: 'testTxId', index: 0 }],
+      outputs: [{ value: BigInt(100), tokenData: 0, script: p2pkhScript }],
       tokens: [],
       getFeeHeader: jest.fn().mockReturnValue({
         entries: [{ tokenIndex: 0, amount: 0n }],
@@ -127,16 +119,8 @@ describe('sendTransaction', () => {
       ...rpcRequest,
       type: TriggerTypes.SendTransactionConfirmationPrompt,
       data: {
-        outputs: [{
-          address: 'testAddress',
-          value: 100n,
-          token: constants.NATIVE_TOKEN_UID,
-          timelock: undefined,
-        }],
-        inputs: [{
-          txId: 'testTxId',
-          index: 0,
-        }],
+        inputs: [{ txId: 'testTxId', index: 0 }],
+        outputs: [{ address: 'testAddress', value: BigInt(100), token: '00' }],
         changeAddress: 'changeAddress',
         pushTx: true,
         tokenDetails: new Map(),
@@ -415,25 +399,15 @@ describe('sendTransaction', () => {
 
     const mockHex = '00010203';
 
-    // Create a mock Transaction object returned by prepareTx()
     const mockPreparedTransaction = {
       inputs: [{ hash: 'testTxId', index: 0 }],
-      outputs: [{
-        value: BigInt(100),
-        tokenData: 0,
-        getTokenIndex: jest.fn().mockReturnValue(-1),
-        parseScript: jest.fn().mockReturnValue({
-          address: { base58: 'testAddress' },
-          timelock: null,
-        }),
-      }],
+      outputs: [{ value: BigInt(100), tokenData: 0, script: p2pkhScript }],
       tokens: [],
       getFeeHeader: jest.fn().mockReturnValue({
         entries: [{ tokenIndex: 0, amount: 0n }],
       }),
     };
 
-    // signTx returns the signed Transaction with toHex
     const mockSignedTransaction = {
       toHex: jest.fn().mockReturnValue(mockHex),
     };
@@ -477,18 +451,9 @@ describe('sendTransaction', () => {
     const txResponse = { hash: 'txHash123' };
     const signTxMock = jest.fn().mockResolvedValue({ toHex: jest.fn() });
 
-    // Create a mock Transaction object returned by prepareTx()
     const mockTransaction = {
       inputs: [{ hash: 'testTxId', index: 0 }],
-      outputs: [{
-        value: BigInt(100),
-        tokenData: 0,
-        getTokenIndex: jest.fn().mockReturnValue(-1),
-        parseScript: jest.fn().mockReturnValue({
-          address: { base58: 'testAddress' },
-          timelock: null,
-        }),
-      }],
+      outputs: [{ value: BigInt(100), tokenData: 0, script: p2pkhScript }],
       tokens: [],
       getFeeHeader: jest.fn().mockReturnValue({
         entries: [{ tokenIndex: 0, amount: 0n }],
