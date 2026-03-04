@@ -142,9 +142,8 @@ export async function sendTransaction(
 
   // Extract token UIDs from the user's requested outputs and fetch their details
   const tokenUids = params.outputs
-    .filter((output): output is { token: string } & typeof output => 'token' in output && typeof output.token === 'string')
-    .map(output => output.token)
-    .filter(uid => uid !== constants.NATIVE_TOKEN_UID);
+    .filter((output): output is { token: string } & typeof output => 'token' in output && typeof output.token === 'string' && output.token !== constants.NATIVE_TOKEN_UID)
+    .map(output => output.token);
   const tokenDetails = await fetchTokenDetails(wallet, tokenUids);
 
   // Calculate network fee: fee header (fee-based tokens) + data output fees.
