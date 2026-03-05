@@ -56,8 +56,8 @@ const WalletHome: React.FC = () => {
 
     // Check if this is a notification (not for history dialog)
     const tx = newTransaction as Record<string, unknown>;
-    if (tx.tx_id) {
-      return; // This is for history dialog, not notification
+    if (tx.tx_id || !tx.type) {
+      return; // This is for history dialog, or just a reload signal
     }
 
     const notification = tx as { type: 'sent' | 'received'; amount: bigint; timestamp: number; symbol: string; tokenUid: string };

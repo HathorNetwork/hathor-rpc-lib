@@ -114,8 +114,9 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
     handleSubmit,
     formState: { errors },
     watch,
+    setValue,
+    getValues,
     // TODO: Re-enable when fee token feature is ready
-    // setValue,
     reset,
   } = useForm<CreateTokenFormData>({
     resolver: zodResolver(createTokenSchema),
@@ -129,13 +130,24 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
       createMintAuthority: false,
       createMeltAuthority: false,
     },
-    mode: 'onChange',
+    mode: 'onTouched',
   });
 
   const isNFT = watch('isNFT');
   const amount = watch('amount');
   // TODO: Re-enable when fee token feature is ready
   // const tokenType = watch('tokenType');
+
+  // When toggling to NFT mode, strip any decimal portion from the amount
+  React.useEffect(() => {
+    if (isNFT) {
+      const currentAmount = getValues('amount');
+      if (currentAmount.includes('.') || currentAmount.includes(',')) {
+        setValue('amount', currentAmount.split(/[.,]/)[0]);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNFT]);
 
   // Calculate 1% HTR deposit (1 HTR per 100 tokens)
   // For every 100 tokens, 1 HTR (100 cents) deposit is required
@@ -172,15 +184,9 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
     setError(null);
 
     try {
-      // Derive mint/melt settings
-      // For NFTs: use the checkbox values
-      // For regular tokens: based on token type (deposit = true, fee = false)
-      const createMint = data.isNFT
-        ? (data.createMintAuthority || false)
-        : data.tokenType === 'deposit';
-      const createMelt = data.isNFT
-        ? (data.createMeltAuthority || false)
-        : data.tokenType === 'deposit';
+      // Derive mint/melt settings from checkbox values for all token types
+      const createMint = data.createMintAuthority || false;
+      const createMelt = data.createMeltAuthority || false;
 
       // Get addresses based on address mode
       const changeAddress = await getAddressForMode(addressMode, readOnlyWalletWrapper);
@@ -305,7 +311,10 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-start md:items-center justify-center z-50 overflow-y-auto p-4 md:p-0">
+    <div
+      className="fixed inset-0 bg-black/50 flex items-start md:items-center justify-center z-50 overflow-y-auto p-4 md:p-0"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
       <div className="bg-[#191C21] border border-[#24292F] rounded-2xl w-full max-w-lg my-4 md:my-0 md:mx-4">
         {successData ? (
           // Success State
@@ -436,6 +445,12 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
                       type="text"
                       {...register('amount')}
                       placeholder={isNFT ? "Enter quantity (e.g., 5)" : "1"}
+                      inputMode={isNFT ? 'numeric' : 'decimal'}
+                      onKeyDown={(e) => {
+                        if (e.key === ',' || (isNFT && e.key === '.')) {
+                          e.preventDefault();
+                        }
+                      }}
                       className={`w-full sm:flex-1 px-4 py-3 bg-[#0D1117] border ${
                         errors.amount ? 'border-red-500' : 'border-border'
                       } rounded-lg text-white placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary`}

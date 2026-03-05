@@ -97,6 +97,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
     formState: { errors },
     setValue,
     watch,
+    getValues,
     reset,
     trigger,
     setError,
@@ -138,6 +139,17 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
   }, [allTokens, selectedTokenUid]);
 
   const availableBalance = selectedToken?.balance?.available || 0n;
+
+  // When switching to an NFT token, strip any decimal portion from the amount
+  React.useEffect(() => {
+    if (selectedToken?.isNFT) {
+      const currentAmount = getValues('amount');
+      if (currentAmount.includes('.') || currentAmount.includes(',')) {
+        setValue('amount', currentAmount.split(/[.,]/)[0]);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTokenUid]);
 
   // Validate amount: NFT format and balance check
   // This runs separately from Zod schema to handle dynamic token changes
@@ -281,10 +293,13 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-start md:items-center justify-center z-50 overflow-y-auto p-4 md:p-0">
+    <div
+      className="fixed inset-0 bg-black/50 flex items-start md:items-center justify-center z-50 overflow-y-auto p-4 md:p-0"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
       <div className="bg-[#191C21] border border-[#24292F] rounded-2xl w-full max-w-md my-4 md:my-0 md:mx-4">
         {/* Header */}
-        <div className="relative flex items-center justify-center p-6">
+        <div className="sticky top-0 bg-[#191C21] z-10 rounded-t-2xl relative flex items-center justify-center p-6">
           <h2 className="text-base font-bold text-primary-400">Send Tokens</h2>
           <button
             onClick={onClose}
@@ -331,6 +346,11 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
                 placeholder={selectedToken?.isNFT ? '0' : '0.0'}
                 inputMode={selectedToken?.isNFT ? 'numeric' : 'decimal'}
                 pattern={selectedToken?.isNFT ? '[0-9]*' : undefined}
+                onKeyDown={(e) => {
+                  if (e.key === ',' || (selectedToken?.isNFT && e.key === '.')) {
+                    e.preventDefault();
+                  }
+                }}
                 className={`w-full px-3 py-2 pr-12 bg-[#0D1117] border ${
                   errors.amount ? 'border-red-500' : 'border-border'
                 } rounded-lg text-white placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
@@ -377,24 +397,6 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
               </div>
             )}
           </div>
-
-          {transactionError && (
-            <div className="flex flex-col gap-2 p-3 bg-red-500/10 border border-red-500/50 rounded-lg">
-              <span className="text-red-400 text-sm whitespace-pre-line">{transactionError}</span>
-              {transactionError.includes('permission') && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    window.location.reload();
-                  }}
-                  className="text-xs text-primary hover:text-primary/80 underline self-start"
-                >
-                  Click here to refresh and reconnect
-                </button>
-              )}
-            </div>
-          )}
 
           {/* Advanced Options */}
           <div>
@@ -461,6 +463,24 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
               </div>
             )}
           </div>
+
+          {transactionError && (
+            <div className="flex flex-col gap-2 p-3 bg-red-500/10 border border-red-500/50 rounded-lg">
+              <span className="text-red-400 text-sm whitespace-pre-line">{transactionError}</span>
+              {transactionError.includes('permission') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    window.location.reload();
+                  }}
+                  className="text-xs text-primary hover:text-primary/80 underline self-start"
+                >
+                  Click here to refresh and reconnect
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Send Button */}
           <button

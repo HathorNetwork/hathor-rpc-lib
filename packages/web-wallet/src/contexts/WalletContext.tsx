@@ -442,6 +442,8 @@ export function WalletProvider({ children }: WalletProviderProps) {
 
   // Ref for transaction notification callback to avoid circular dependency
   const onNewTransactionRef = useRef<(notification: { type: 'sent' | 'received'; amount: bigint; timestamp: number; symbol: string; tokenUid: string }) => void>(() => {});
+  // Ref for transaction event (new tx arrived) to avoid circular dependency
+  const onTransactionEventRef = useRef<() => void>(() => {});
 
   // Ref for balance refresh callback to avoid circular dependency
   const refreshBalanceRef = useRef<() => Promise<void>>(async () => {});
@@ -502,6 +504,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
         }
       }
     },
+    onTransactionEvent: () => onTransactionEventRef.current(),
   });
 
   // Initialize token state hook - THE SINGLE SOURCE OF TRUTH for tokens
@@ -533,8 +536,9 @@ export function WalletProvider({ children }: WalletProviderProps) {
     onSnapError: connection.handleSnapError,
   });
 
-  // Update ref after transactions is initialized
+  // Update refs after transactions is initialized
   onNewTransactionRef.current = transactions.setNewTransaction;
+  onTransactionEventRef.current = () => transactions.setNewTransaction({});
 
   // Check if snap version meets minimum requirement
   const needsSnapUpdate = useMemo(() => {
