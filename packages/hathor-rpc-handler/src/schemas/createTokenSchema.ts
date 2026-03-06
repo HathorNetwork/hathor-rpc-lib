@@ -5,12 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { TokenVersion } from '@hathor/wallet-lib/lib/models/enum';
 import { z } from 'zod';
 
 export const createTokenBaseSchema = z.object({
   name: z.string().min(1).max(30),
   symbol: z.string().min(2).max(5),
   amount: z.union([z.string(), z.bigint()]),
+  version: z.nativeEnum(TokenVersion).optional(),
   changeAddress: z.string().nullable().optional(),
   createMint: z.boolean().optional(),
   mintAuthorityAddress: z.string().nullable().optional(),
@@ -28,6 +30,7 @@ export const createTokenRpcSchema = z.object({
   symbol: z.string().min(2).max(5),
   amount: z.string().regex(/^\d+$/)
     .pipe(z.coerce.bigint().positive()),
+  version: z.nativeEnum(TokenVersion).nullish().default(null),
   address: z.string().nullish().default(null),
   change_address: z.string().nullish().default(null),
   create_mint: z.boolean().default(true),
@@ -51,5 +54,6 @@ export const createTokenRpcSchema = z.object({
     allowExternalMeltAuthorityAddress: data.allow_external_melt_authority_address,
     data: data.data,
     address: data.address,
+    tokenVersion: data.version,
   }
 })); 

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { IHathorWallet, Transaction } from '@hathor/wallet-lib';
+import { IHathorWallet, tokensUtils, TokenVersion, Transaction } from '@hathor/wallet-lib';
 import {
   CreateTokenConfirmationPrompt,
   CreateTokenConfirmationResponse,
@@ -23,6 +23,7 @@ import {
 import { CreateTokenError, PromptRejectedError, InvalidParamsError } from '../errors';
 import { z } from 'zod';
 import { createTokenRpcSchema } from '../schemas';
+import { FEE_PER_OUTPUT } from '@hathor/wallet-lib/lib/constants';
 
 /**
  * Handles the creation of a new token on the Hathor blockchain.
@@ -61,6 +62,13 @@ export async function createToken(
       type: TriggerTypes.PinConfirmationPrompt,
     };
 
+    let fee = tokensUtils.getDataFee(params.options.data?.length ?? 0);
+    // This is a particular case where we know that wallet-lib is returning only one output
+    // so we don't need to prepare the tx to know the fee amount for this tx
+    if (params.options.tokenVersion === TokenVersion.FEE) {
+      fee += FEE_PER_OUTPUT;
+    }
+
     const createTokenPrompt: CreateTokenConfirmationPrompt = {
       ...rpcRequest,
       type: TriggerTypes.CreateTokenConfirmationPrompt,
@@ -68,6 +76,7 @@ export async function createToken(
         name: params.name,
         symbol: params.symbol,
         amount: params.amount,
+        version: params.options.tokenVersion,
         changeAddress: params.options.changeAddress,
         createMint: params.options.createMint,
         mintAuthorityAddress: params.options.mintAuthorityAddress,
@@ -77,6 +86,7 @@ export async function createToken(
         allowExternalMeltAuthorityAddress: params.options.allowExternalMeltAuthorityAddress,
         data: params.options.data,
         address: params.options.address,
+        fee
       },
     };
 

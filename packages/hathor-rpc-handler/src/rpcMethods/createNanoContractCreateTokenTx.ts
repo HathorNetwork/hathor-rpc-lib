@@ -7,7 +7,6 @@
 
 import { z } from 'zod';
 import type { IHathorWallet, Transaction } from '@hathor/wallet-lib';
-import type { CreateTokenOptionsInput } from '@hathor/wallet-lib/lib/wallet/types';
 import {
   TriggerTypes,
   PinConfirmationPrompt,
@@ -18,15 +17,14 @@ import {
   RpcResponseTypes,
   CreateNanoContractCreateTokenTxResponse,
   CreateNanoContractCreateTokenTxConfirmationPrompt,
-  CreateNanoContractCreateTokenTxConfirmationResponse,
   CreateNanoContractCreateTokenTxLoadingTrigger,
   CreateNanoContractCreateTokenTxLoadingFinishedTrigger,
   NanoContractParams,
-  NanoContractCreateTokenParams,
 } from '../types';
-import { PromptRejectedError, InvalidParamsError } from '../errors';
+import { PromptRejectedError, InvalidParamsError, SendNanoContractTxError } from '../errors';
 import { INanoContractActionSchema } from '@hathor/wallet-lib';
-import { createTokenBaseSchema } from '../schemas';
+import { bigIntCoercibleSchema } from '@hathor/wallet-lib/lib/utils/bigint';
+import { createTokenBaseSchema, createNanoContractCreateTokenTxConfirmationResponseSchema } from '../schemas';
 
 const createNanoContractCreateTokenTxSchema = z.object({
   method: z.string().min(1),
@@ -40,8 +38,14 @@ const createNanoContractCreateTokenTxSchema = z.object({
   createTokenOptions: createTokenBaseSchema.extend({
     contractPaysTokenDeposit: z.boolean(),
   }).optional(),
+  max_fee: bigIntCoercibleSchema.optional(),
+  contract_pays_fees: z.boolean().optional(),
   push_tx: z.boolean().default(true),
-});
+}).transform(data => ({
+  ...data,
+  ...(data.max_fee !== undefined && { maxFee: data.max_fee }),
+  ...(data.contract_pays_fees !== undefined && { contractPaysFees: data.contract_pays_fees }),
+}));
 
 /**
  * Creates and optionally sends a nano contract transaction that creates a new token.
@@ -68,24 +72,16 @@ export async function createNanoContractCreateTokenTx(
   if (!validationResult.success) {
     throw new InvalidParamsError(validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', '));
   }
-  const { method, address, data, createTokenOptions, push_tx } = validationResult.data;
+  const { method, address, data, createTokenOptions, maxFee, contractPaysFees, push_tx } = validationResult.data;
 
-  // Prepare nano and token params for the confirmation prompt
-  const nanoParams: NanoContractParams = {
-    blueprintId: data?.blueprint_id ?? null,
-    ncId: data?.nc_id ?? null,
-    actions: data?.actions ?? [],
-    method,
-    args: data?.args ?? [],
-    parsedArgs: [],
-    pushTx: push_tx,
-  };
   // Only pass CreateTokenParams fields, fallback to null/empty for missing
-  const tokenParams: NanoContractCreateTokenParams = {
+  // Prepare createTokenOptions for pre-building transaction
+  const preBuildTokenOptions = {
     name: createTokenOptions?.name ?? '',
     symbol: createTokenOptions?.symbol ?? '',
     amount: typeof createTokenOptions?.amount === 'string' ? BigInt(createTokenOptions.amount) : (createTokenOptions?.amount ?? 0n),
-    mintAddress: createTokenOptions?.mintAddress ?? null,
+    version: createTokenOptions?.version ?? null,
+    mintAddress: createTokenOptions?.mintAddress ?? address,
     changeAddress: createTokenOptions?.changeAddress ?? null,
     createMint: createTokenOptions?.createMint ?? true,
     mintAuthorityAddress: createTokenOptions?.mintAuthorityAddress ?? null,
@@ -97,28 +93,80 @@ export async function createNanoContractCreateTokenTx(
     contractPaysTokenDeposit: createTokenOptions?.contractPaysTokenDeposit ?? false,
   };
 
+  // Pre-build transaction without signing to calculate fees
+  const preBuildData = {
+    blueprintId: data?.blueprint_id ?? null,
+    ncId: data?.nc_id ?? null,
+    actions: data?.actions ?? [],
+    args: data?.args ?? [],
+  };
+
+  const preBuildResult = await wallet.createNanoContractCreateTokenTransaction(
+    method,
+    address,
+    preBuildData,
+    preBuildTokenOptions,
+    {
+      maxFee,
+      contractPaysFees,
+      signTx: false,
+    }
+  );
+
+  if (!preBuildResult.transaction) {
+    throw new SendNanoContractTxError('Unable to create transaction object');
+  }
+
+  // Extract fee from pre-built transaction
+  const feeHeader = preBuildResult.transaction.getFeeHeader?.();
+  if (feeHeader && feeHeader.entries.some(entry => entry.tokenIndex !== 0)) {
+    throw new InvalidParamsError('Unexpected fee entry with non-HTR token index');
+  }
+  // Sum all fee entries for HTR token (index 0)
+  const fee = feeHeader
+    ? feeHeader.entries.reduce((sum, entry) => sum + entry.amount, 0n)
+    : 0n;
+
+  // Prepare nano and token params for the confirmation prompt
+  const nanoParams: NanoContractParams = {
+    blueprintId: data?.blueprint_id ?? null,
+    ncId: data?.nc_id ?? null,
+    actions: data?.actions ?? [],
+    method,
+    args: data?.args ?? [],
+    parsedArgs: [],
+    pushTx: push_tx,
+    fee,
+    contractPaysFees: contractPaysFees ?? false,
+    preparedTx: preBuildResult.transaction,
+  };
+
   const confirmationPrompt: CreateNanoContractCreateTokenTxConfirmationPrompt = {
     ...rpcRequest,
     type: TriggerTypes.CreateNanoContractCreateTokenTxConfirmationPrompt,
     data: {
       nano: nanoParams,
-      token: tokenParams,
+      token: {
+        ...preBuildTokenOptions,
+        fee,
+      },
     },
   };
-  const confirmationResponse = await promptHandler(
-    confirmationPrompt, requestMetadata,
-  ) as CreateNanoContractCreateTokenTxConfirmationResponse;
+  const rawResponse = await promptHandler(confirmationPrompt, requestMetadata);
+
+  // Parse and validate the entire response with Zod
+  const responseValidation = createNanoContractCreateTokenTxConfirmationResponseSchema.safeParse(rawResponse);
+  if (!responseValidation.success) {
+    throw new SendNanoContractTxError(responseValidation.error.errors.map(e => e.message).join(', '));
+  }
+
+  const confirmationResponse = responseValidation.data;
+
   if (!confirmationResponse.data.accepted) {
     throw new PromptRejectedError('User rejected nano contract create token transaction prompt');
   }
 
-  const { nano, token } = confirmationResponse.data;
-
-  // Ensure mintAddress has a value (required by wallet-lib's CreateTokenOptionsInput)
-  const tokenOptions: CreateTokenOptionsInput = {
-    ...token,
-    mintAddress: token.mintAddress ?? address,
-  };
+  const confirmedCaller = confirmationResponse.data.nano.caller;
 
   // Prompt for PIN
   const pinPrompt: PinConfirmationPrompt = {
@@ -136,29 +184,25 @@ export async function createNanoContractCreateTokenTx(
   };
   promptHandler(loadingTrigger, requestMetadata);
 
-  // Call the wallet method
+  // If caller changed, update the pre-built transaction
+  if (confirmedCaller !== address) {
+    const nanoHeaders = preBuildResult.transaction.getNanoHeaders();
+    if (!nanoHeaders || nanoHeaders.length === 0) {
+      throw new SendNanoContractTxError('No nano headers found in the transaction');
+    }
+    await wallet.setNanoHeaderCaller(nanoHeaders[0], confirmedCaller);
+  }
+
+  await wallet.signTx(preBuildResult.transaction, { pinCode: pinResponse.data.pinCode });
+
+  // Send or return hex based on push_tx flag
   let response: Transaction | string;
   if (push_tx) {
-    response = await wallet.createAndSendNanoContractCreateTokenTransaction(
-      nano.method,
-      address,
-      nano,
-      tokenOptions,
-      { pinCode: pinResponse.data.pinCode }
-    );
+    // Send the transaction
+    response = await preBuildResult.runFromMining();
   } else {
-    const sendTransactionObj = await wallet.createNanoContractCreateTokenTransaction(
-      nano.method,
-      address,
-      nano,
-      tokenOptions,
-      { pinCode: pinResponse.data.pinCode }
-    );
     // Convert to hex format for the response when not pushing to network
-    if (!sendTransactionObj.transaction) {
-      throw new Error('Failed to create transaction');
-    }
-    response = sendTransactionObj.transaction.toHex();
+    response = preBuildResult.transaction.toHex();
   }
 
   // Emit loading finished trigger

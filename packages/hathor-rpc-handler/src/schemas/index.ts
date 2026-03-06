@@ -5,4 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-export { createTokenBaseSchema, createTokenRpcSchema } from './createTokenSchema'; 
+export { createTokenBaseSchema, createTokenRpcSchema } from './createTokenSchema';
+export {
+  nanoContractResponseWithCallerSchema,
+  sendNanoContractTxConfirmationDataSchema,
+  sendNanoContractTxConfirmationResponseSchema,
+  createNanoContractCreateTokenTxConfirmationDataSchema,
+  createNanoContractCreateTokenTxConfirmationResponseSchema,
+} from './nanoContractResponseSchema'; 

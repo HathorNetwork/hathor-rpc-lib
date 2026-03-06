@@ -15,7 +15,6 @@ import {
   RequestMetadata,
   SendNanoContractRpcRequest,
   SendNanoContractTxConfirmationPrompt,
-  SendNanoContractTxConfirmationResponse,
   SendNanoContractTxLoadingTrigger,
   RpcResponseTypes,
   RpcResponse,
@@ -23,7 +22,10 @@ import {
 } from '../types';
 import { PromptRejectedError, SendNanoContractTxError, InvalidParamsError } from '../errors';
 import { INanoContractActionSchema, NanoContractAction, ncApi, nanoUtils, Network, config, HathorWallet } from '@hathor/wallet-lib';
+import { bigIntCoercibleSchema } from '@hathor/wallet-lib/lib/utils/bigint';
 import { fetchTokenDetails } from '../helpers';
+import { sendNanoContractTxConfirmationResponseSchema } from '../schemas';
+
 
 export type NanoContractActionWithStringAmount = Omit<NanoContractAction, 'amount'> & {
   amount: string,
@@ -36,12 +38,16 @@ const sendNanoContractSchema = z.object({
   nc_id: z.string().nullish(),
   actions: z.array(INanoContractActionSchema),
   args: z.array(z.unknown()).default([]),
+  max_fee: bigIntCoercibleSchema.optional(),
+  contract_pays_fees: z.boolean().optional(),
   push_tx: z.boolean().default(true),
 }).transform(data => ({
   ...data,
   blueprintId: data.blueprint_id || null,
   ncId: data.nc_id || null,
   pushTx: data.push_tx,
+  ...(data.max_fee !== undefined && { maxFee: data.max_fee }),
+  ...(data.contract_pays_fees !== undefined && { contractPaysFees: data.contract_pays_fees }),
 })).refine(
   (data) => data.blueprintId || data.ncId,
   "Either blueprint_id or nc_id must be provided"
@@ -112,6 +118,43 @@ export async function sendNanoContractTx(
       .map(action => action.token);
     const tokenDetails = await fetchTokenDetails(wallet, tokenUids);
 
+    // Pre-build transaction to calculate fees
+    const tempCallerAddress = await wallet.getAddressAtIndex(0);
+    if (!tempCallerAddress || tempCallerAddress.trim() === '') {
+      throw new SendNanoContractTxError('Unable to get wallet address at index 0');
+    }
+    const preBuildTxData = {
+      ncId: params.ncId,
+      blueprintId,
+      actions: params.actions,
+      args: params.args,
+    };
+
+    const preBuildSendTx = await wallet.createNanoContractTransaction(
+      params.method,
+      tempCallerAddress,
+      preBuildTxData,
+      {
+        ...(params.maxFee !== undefined && { maxFee: params.maxFee }),
+        ...(params.contractPaysFees !== undefined && { contractPaysFees: params.contractPaysFees }),
+        signTx: false,
+      },
+    );
+
+    if (!preBuildSendTx.transaction) {
+      throw new SendNanoContractTxError('Unable to create transaction object');
+    }
+
+    // Extract fee from pre-built transaction
+    const feeHeader = preBuildSendTx.transaction?.getFeeHeader?.();
+    if (feeHeader && feeHeader.entries.some(entry => entry.tokenIndex !== 0)) {
+      throw new SendNanoContractTxError('Unexpected fee entry with non-HTR token index');
+    }
+    // Sum all fee entries for HTR token (index 0)
+    const fee = feeHeader
+      ? feeHeader.entries.reduce((sum, entry) => sum + entry.amount, 0n)
+      : 0n;
+
     const sendNanoContractTxPrompt: SendNanoContractTxConfirmationPrompt = {
       ...rpcRequest,
       type: TriggerTypes.SendNanoContractTxConfirmationPrompt,
@@ -124,21 +167,27 @@ export async function sendNanoContractTx(
         parsedArgs,
         pushTx: params.pushTx,
         tokenDetails,
+        fee,
+        contractPaysFees: params.contractPaysFees ?? false,
+        preparedTx: preBuildSendTx.transaction,
       },
     };
 
-    const sendNanoContractTxResponse = await triggerHandler(sendNanoContractTxPrompt, requestMetadata) as SendNanoContractTxConfirmationResponse;
+    const rawResponse = await triggerHandler(sendNanoContractTxPrompt, requestMetadata);
+
+    // Parse and validate the entire response with Zod
+    const responseValidation = sendNanoContractTxConfirmationResponseSchema.safeParse(rawResponse);
+    if (!responseValidation.success) {
+      throw new SendNanoContractTxError(responseValidation.error.errors.map(e => e.message).join(', '));
+    }
+
+    const sendNanoContractTxResponse = responseValidation.data;
 
     if (!sendNanoContractTxResponse.data.accepted) {
       throw new PromptRejectedError();
     }
 
-    const {
-      caller,
-      blueprintId: confirmedBluePrintId,
-      actions: confirmedActions,
-      args: confirmedArgs,
-    } = sendNanoContractTxResponse.data.nc;
+    const confirmedCaller = sendNanoContractTxResponse.data.nc.caller;
 
     const pinCodeResponse: PinRequestResponse = (await triggerHandler(pinPrompt, requestMetadata)) as PinRequestResponse;
 
@@ -152,42 +201,25 @@ export async function sendNanoContractTx(
       };
       triggerHandler(sendNanoContractLoadingTrigger, requestMetadata);
 
-      const txData = {
-        ncId: params.ncId,
-        blueprintId: confirmedBluePrintId,
-        actions: confirmedActions,
-        args: confirmedArgs,
-      };
 
       let response: Transaction | string;
+      
+      // If caller changed, update the pre-built transaction
+      if (confirmedCaller !== tempCallerAddress) {
+        const nanoHeaders = preBuildSendTx.transaction.getNanoHeaders();
+        if (!nanoHeaders || nanoHeaders.length === 0) {
+          throw new SendNanoContractTxError('No nano headers found in the transaction');
+        }
+        await wallet.setNanoHeaderCaller(nanoHeaders[0], confirmedCaller);
+      }
+
+      await wallet.signTx(preBuildSendTx.transaction, { pinCode: pinCodeResponse.data.pinCode });
 
       if (params.pushTx) {
-        // If pushTx is true, create and send the transaction directly
-        response = await wallet.createAndSendNanoContractTransaction(
-          params.method,
-          caller,
-          txData,
-          {
-            pinCode: pinCodeResponse.data.pinCode,
-          },
-        );
+        response = await preBuildSendTx.runFromMining();
       } else {
-        // Otherwise, just create the transaction object
-        const sendTransactionObj = await wallet.createNanoContractTransaction(
-          params.method,
-          caller,
-          txData,
-          {
-            pinCode: pinCodeResponse.data.pinCode,
-          },
-        );
-
-        if (!sendTransactionObj.transaction) {
-          // This should never happen, but we'll check anyway
-          throw new SendNanoContractTxError('Unable to create transaction object');
-        }
         // Convert the transaction object to hex format for the response
-        response = sendTransactionObj.transaction.toHex();
+        response = preBuildSendTx.transaction.toHex();
       }
 
       const sendNanoContractLoadingFinishedTrigger: SendNanoContractTxLoadingFinishedTrigger = {

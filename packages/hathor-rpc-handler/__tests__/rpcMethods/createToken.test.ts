@@ -1,4 +1,6 @@
-import type { IHathorWallet } from '@hathor/wallet-lib';
+import { type IHathorWallet, tokensUtils } from '@hathor/wallet-lib';
+import { TokenVersion } from '@hathor/wallet-lib/lib/models/enum';
+import { FEE_PER_OUTPUT } from '@hathor/wallet-lib/lib/constants';
 import { createToken } from '../../src/rpcMethods/createToken';
 import {
   TriggerTypes,
@@ -116,8 +118,71 @@ describe('createToken', () => {
         amount: undefined,
         name: undefined,
         symbol: undefined,
+        tokenVersion: null,
         pinCode,
       }
+    );
+    expect(result).toEqual(rpcResponse);
+  });
+
+  it('should create a token with FEE version and calculate fee correctly', async () => {
+    const pinCode = '1234';
+    const transaction = { tx_id: 'transaction-id' };
+    const rpcResponse = {
+      type: RpcResponseTypes.CreateTokenResponse,
+      response: transaction,
+    };
+
+    const feeVersionRequest = {
+      ...rpcRequest,
+      params: {
+        ...rpcRequest.params,
+        version: TokenVersion.FEE,
+      },
+    } as unknown as CreateTokenRpcRequest;
+
+    (wallet.isAddressMine as jest.Mock).mockResolvedValue(true);
+    triggerHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.CreateTokenConfirmationResponse,
+        data: {
+          accepted: true,
+        },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: {
+          accepted: true,
+          pinCode,
+        },
+      });
+
+    (wallet.createNewToken as jest.Mock).mockResolvedValue(transaction);
+
+    const result = await createToken(feeVersionRequest, wallet, {}, triggerHandler);
+
+    const expectedDataFee = tokensUtils.getDataFee(rpcRequest.params.data?.length ?? 0);
+    const expectedFee = FEE_PER_OUTPUT + expectedDataFee;
+
+    expect(triggerHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: TriggerTypes.CreateTokenConfirmationPrompt,
+        data: expect.objectContaining({
+          version: TokenVersion.FEE,
+          fee: expectedFee,
+        }),
+      }),
+      {}
+    );
+
+    expect(wallet.createNewToken).toHaveBeenCalledWith(
+      feeVersionRequest.params.name,
+      feeVersionRequest.params.symbol,
+      BigInt(feeVersionRequest.params.amount),
+      expect.objectContaining({
+        tokenVersion: TokenVersion.FEE,
+        pinCode,
+      })
     );
     expect(result).toEqual(rpcResponse);
   });

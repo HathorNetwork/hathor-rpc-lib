@@ -12,22 +12,28 @@ import {
 } from '../types';
 
 export function sendNanoContractTxRpcRequest(
+  network: string,
   method: string,
-  blueprintId: string,
+  blueprintId: string | null,
   actions: NanoContractAction[],
   args: unknown[],
   pushTx: boolean,
   ncId: string | null,
+  maxFee?: string,
+  contractPaysFees?: boolean,
 ): SendNanoContractRpcRequest {
   return {
     method: RpcMethods.SendNanoContractTx,
     params: {
+      network,
       method,
       blueprint_id: blueprintId,
       actions,
       args,
       push_tx: pushTx,
       nc_id: ncId,
+      ...(maxFee !== undefined && { max_fee: maxFee }),
+      ...(contractPaysFees !== undefined && { contract_pays_fees: contractPaysFees }),
     }
   };
 }

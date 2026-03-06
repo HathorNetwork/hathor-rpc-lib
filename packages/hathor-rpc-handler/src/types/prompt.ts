@@ -6,8 +6,8 @@
  */
 import { AddressInfoObject, GetBalanceObject, TokenDetailsObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
-import type { Transaction } from '@hathor/wallet-lib';
 import { RequestMetadata, RpcRequest } from './rpcRequest';
+import { TokenVersion, Transaction } from '@hathor/wallet-lib';
 
 export enum TriggerTypes {
   GetBalanceConfirmationPrompt,
@@ -186,13 +186,23 @@ export interface NanoContractParams {
   parsedArgs: unknown[];
   pushTx: boolean;
   tokenDetails?: Map<string, TokenDetailsObject>;
+  fee: bigint;
+  contractPaysFees?: boolean;
+  preparedTx: Transaction;
 }
+
+/**
+ * NanoContractParams without preparedTx for use in response payloads.
+ * Clients don't need to echo back the full Transaction object when confirming.
+ */
+export type NanoContractResponseParams = Omit<NanoContractParams, 'preparedTx'>;
 
 export interface CreateTokenParams {
   name: string,
   symbol: string,
   amount: bigint,
   address?: string | null,
+  version: TokenVersion | null,
   mintAddress?: string | null,
   changeAddress: string | null,
   createMint: boolean,
@@ -202,6 +212,7 @@ export interface CreateTokenParams {
   meltAuthorityAddress: string | null,
   allowExternalMeltAuthorityAddress: boolean,
   data: string[] | null,
+  fee?: bigint,
 }
 
 // Extended type for nano contract token creation
@@ -235,7 +246,7 @@ export interface SendNanoContractTxConfirmationResponse {
   type: TriggerResponseTypes.SendNanoContractTxConfirmationResponse;
   data: {
     accepted: true;
-    nc: NanoContractParams & {
+    nc: NanoContractResponseParams & {
       caller: string;
     }
   } | {
@@ -338,7 +349,7 @@ export interface CreateNanoContractCreateTokenTxConfirmationResponse {
   type: TriggerResponseTypes.CreateNanoContractCreateTokenTxConfirmationResponse;
   data: {
     accepted: true;
-    nano: NanoContractParams & { caller: string };
+    nano: NanoContractResponseParams & { caller: string };
     token: NanoContractCreateTokenParams;
   } | {
     accepted: false;
