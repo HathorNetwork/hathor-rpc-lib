@@ -28,6 +28,11 @@ describe('sendTransaction', () => {
   let wallet: jest.Mocked<IHathorWallet>;
   let promptHandler: jest.Mock;
   let sendTransactionMock: jest.Mock;
+  let mockTransaction: Record<string, unknown>;
+
+  // A valid P2PKH script (25 bytes: OP_DUP OP_HASH160 pushdata(20) <20-byte-hash> OP_EQUALVERIFY OP_CHECKSIG)
+  // so that P2PKH.identify() returns true during fee calculation
+  const p2pkhScript = Buffer.from([0x76, 0xa9, 0x14, ...new Array(20).fill(0), 0x88, 0xac]);
 
   beforeEach(() => {
     // Setup basic request
@@ -51,6 +56,18 @@ describe('sendTransaction', () => {
 
     // Mock wallet
     sendTransactionMock = jest.fn();
+
+    // Create a mock Transaction object returned by prepareTx()
+    mockTransaction = {
+      inputs: [{ hash: 'testTxId', index: 0 }],
+      outputs: [{ value: BigInt(100), tokenData: 0, script: p2pkhScript }],
+      tokens: [],
+      getFeeHeader: jest.fn().mockReturnValue({
+        entries: [{ tokenIndex: 0, amount: 0n }],
+      }),
+      toHex: jest.fn().mockReturnValue('mockedTxHex'),
+    };
+
     wallet = {
       getNetwork: jest.fn().mockReturnValue('testnet'),
       getTokenDetails: jest.fn().mockResolvedValue({
@@ -61,21 +78,9 @@ describe('sendTransaction', () => {
         },
       }),
       sendManyOutputsSendTransaction: jest.fn().mockResolvedValue({
-        prepareTxData: jest.fn().mockResolvedValue({
-          inputs: [{
-            txId: 'testTxId',
-            index: 0,
-            value: 100n,
-            address: 'testAddress',
-            token: '00',
-          }],
-          outputs: [{
-            address: 'testAddress',
-            value: BigInt(100),
-            token: '00',
-          }],
-        }),
-        run: sendTransactionMock,
+        prepareTx: jest.fn().mockResolvedValue(mockTransaction),
+        signTx: jest.fn().mockResolvedValue(mockTransaction),
+        runFromMining: sendTransactionMock,
       }),
     } as unknown as jest.Mocked<IHathorWallet>;
 
@@ -115,21 +120,11 @@ describe('sendTransaction', () => {
       ...rpcRequest,
       type: TriggerTypes.SendTransactionConfirmationPrompt,
       data: {
-        outputs: [{
-          address: 'testAddress',
-          value: 100n,
-          token: '00',
-        }],
-        inputs: [{
-          txId: 'testTxId',
-          index: 0,
-          value: 100n,
-          address: 'testAddress',
-          token: '00',
-        }],
         changeAddress: 'changeAddress',
         pushTx: true,
         tokenDetails: new Map(),
+        fee: 0n,
+        preparedTx: mockTransaction,
       },
     }, {});
     expect(promptHandler).toHaveBeenNthCalledWith(2, {
@@ -278,7 +273,7 @@ describe('sendTransaction', () => {
 
   it('should throw InsufficientFundsError when not enough funds available', async () => {
     (wallet.sendManyOutputsSendTransaction as jest.Mock).mockResolvedValue({
-      prepareTxData: jest.fn().mockRejectedValue(
+      prepareTx: jest.fn().mockRejectedValue(
         new Error('Insufficient amount of tokens')
       ),
     });
@@ -293,7 +288,7 @@ describe('sendTransaction', () => {
   it('should throw SendTransactionError when transaction preparation fails', async () => {
     (wallet.sendManyOutputsSendTransaction as jest.Mock).mockImplementation(() => {
       return {
-        prepareTxData: jest.fn().mockRejectedValue(new Error('Failed to prepare transaction')),
+        prepareTx: jest.fn().mockRejectedValue(new Error('Failed to prepare transaction')),
       };
     });
 
@@ -403,9 +398,26 @@ describe('sendTransaction', () => {
     } as SendTransactionRpcRequest;
 
     const mockHex = '00010203';
-    const mockTransaction = {
+
+    const mockPreparedTransaction = {
+      inputs: [{ hash: 'testTxId', index: 0 }],
+      outputs: [{ value: BigInt(100), tokenData: 0, script: p2pkhScript }],
+      tokens: [],
+      getFeeHeader: jest.fn().mockReturnValue({
+        entries: [{ tokenIndex: 0, amount: 0n }],
+      }),
+    };
+
+    const mockSignedTransaction = {
       toHex: jest.fn().mockReturnValue(mockHex),
     };
+    const signTxMock = jest.fn().mockResolvedValue(mockSignedTransaction);
+
+    (wallet.sendManyOutputsSendTransaction as jest.Mock).mockResolvedValue({
+      prepareTx: jest.fn().mockResolvedValue(mockPreparedTransaction),
+      signTx: signTxMock,
+      runFromMining: sendTransactionMock,
+    });
 
     promptHandler
       .mockResolvedValueOnce({
@@ -417,11 +429,10 @@ describe('sendTransaction', () => {
         data: { accepted: true, pinCode: '1234' },
       });
 
-    sendTransactionMock.mockResolvedValue(mockTransaction);
-
     const response = await sendTransaction(requestWithPushTxFalse, wallet, {}, promptHandler);
 
-    expect(sendTransactionMock).toHaveBeenCalledWith('prepare-tx', '1234');
+    expect(signTxMock).toHaveBeenCalledWith('1234');
+    expect(sendTransactionMock).not.toHaveBeenCalled(); // runFromMining should not be called
     expect(response).toEqual({
       type: RpcResponseTypes.SendTransactionResponse,
       response: mockHex,
@@ -438,6 +449,22 @@ describe('sendTransaction', () => {
     } as SendTransactionRpcRequest;
 
     const txResponse = { hash: 'txHash123' };
+    const signTxMock = jest.fn().mockResolvedValue({ toHex: jest.fn() });
+
+    const mockTransaction = {
+      inputs: [{ hash: 'testTxId', index: 0 }],
+      outputs: [{ value: BigInt(100), tokenData: 0, script: p2pkhScript }],
+      tokens: [],
+      getFeeHeader: jest.fn().mockReturnValue({
+        entries: [{ tokenIndex: 0, amount: 0n }],
+      }),
+    };
+
+    (wallet.sendManyOutputsSendTransaction as jest.Mock).mockResolvedValue({
+      prepareTx: jest.fn().mockResolvedValue(mockTransaction),
+      signTx: signTxMock,
+      runFromMining: sendTransactionMock.mockResolvedValue(txResponse),
+    });
 
     promptHandler
       .mockResolvedValueOnce({
@@ -449,14 +476,67 @@ describe('sendTransaction', () => {
         data: { accepted: true, pinCode: '1234' },
       });
 
-    sendTransactionMock.mockResolvedValue(txResponse);
-
     const response = await sendTransaction(requestWithPushTxTrue, wallet, {}, promptHandler);
 
-    expect(sendTransactionMock).toHaveBeenCalledWith(null, '1234');
+    expect(signTxMock).toHaveBeenCalledWith('1234');
+    expect(sendTransactionMock).toHaveBeenCalled(); // runFromMining should be called
     expect(response).toEqual({
       type: RpcResponseTypes.SendTransactionResponse,
       response: txResponse,
     });
+  });
+
+  it('should calculate non-zero fee when FBT fee header is present', async () => {
+    const fbtTokenUid = 'fbt-token-uid-abc123';
+
+    // Use a non-native token in the request outputs
+    rpcRequest.params.outputs = [{
+      address: 'testAddress',
+      value: '100',
+      token: fbtTokenUid,
+    }];
+
+    const fbtMockTransaction = {
+      inputs: [{ hash: 'testTxId', index: 0 }],
+      outputs: [{ value: BigInt(100), tokenData: 0, script: p2pkhScript }],
+      tokens: [fbtTokenUid],
+      getFeeHeader: jest.fn().mockReturnValue({
+        entries: [{ tokenIndex: 0, amount: 500n }],
+      }),
+      toHex: jest.fn().mockReturnValue('mockedTxHex'),
+    };
+
+    (wallet.sendManyOutputsSendTransaction as jest.Mock).mockResolvedValue({
+      prepareTx: jest.fn().mockResolvedValue(fbtMockTransaction),
+      signTx: jest.fn().mockResolvedValue(fbtMockTransaction),
+      runFromMining: sendTransactionMock.mockResolvedValue({ hash: 'txHash123' }),
+    });
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.SendTransactionConfirmationResponse,
+        data: { accepted: true },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: { accepted: true, pinCode: '1234' },
+      });
+
+    await sendTransaction(rpcRequest, wallet, {}, promptHandler);
+
+    // Verify token details were fetched for the non-native token
+    expect(wallet.getTokenDetails).toHaveBeenCalledWith(fbtTokenUid);
+
+    // Verify the confirmation prompt was called with non-zero fee and token details
+    expect(promptHandler).toHaveBeenNthCalledWith(1,
+      expect.objectContaining({
+        type: TriggerTypes.SendTransactionConfirmationPrompt,
+        data: expect.objectContaining({
+          fee: 500n,
+          tokenDetails: expect.any(Map),
+        }),
+      }),
+      {},
+    );
   });
 });

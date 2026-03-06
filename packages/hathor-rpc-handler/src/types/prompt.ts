@@ -6,7 +6,7 @@
  */
 import { AddressInfoObject, GetBalanceObject, TokenDetailsObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
-import { IDataInput, IDataOutput } from '@hathor/wallet-lib/lib/types';
+import type { Transaction } from '@hathor/wallet-lib';
 import { RequestMetadata, RpcRequest } from './rpcRequest';
 
 export enum TriggerTypes {
@@ -301,11 +301,19 @@ export interface SignOracleDataConfirmationResponse {
 export type SendTransactionConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.SendTransactionConfirmationPrompt;
   data: {
-    outputs: IDataOutput[],
-    inputs: IDataInput[],
     changeAddress?: string;
     pushTx: boolean;
     tokenDetails?: Map<string, TokenDetailsObject>;
+    /**
+     * Calculated network fee for the transaction.
+     */
+    fee?: bigint;
+    /**
+     * The full prepared Transaction object before signing.
+     * Available for clients that need access to the complete transaction details
+     * (e.g. inputs with scripts, outputs with token indexes, etc.).
+     */
+    preparedTx: Transaction;
   }
 }
 
