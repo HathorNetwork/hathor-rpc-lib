@@ -23,26 +23,25 @@ const boolToString = (bool) => {
 }
 
 /**
- * Get the fee model label based on token type
+ * Get the fee model label based on token version
  */
-const getFeeModelLabel = (tokenType?: 'deposit' | 'fee'): string => {
-  if (tokenType === 'deposit') {
-    return 'Deposit Token';
+const getFeeModelLabel = (version?: 'deposit' | 'fee'): string => {
+  switch (version) {
+    case 'fee':
+      return 'Fee Token';
+    case 'deposit':
+    default:
+      return 'Deposit Token';
   }
-  if (tokenType === 'fee') {
-    return 'Fee Token';
-  }
-  return 'Native Token';
 }
 
 export const createTokenPage = async (data, params, origin) => {
-  const tokenType = params.token_type as 'deposit' | 'fee' | undefined;
   const amount = BigInt(params.amount);
-  const feeModelLabel = getFeeModelLabel(tokenType);
+  const feeModelLabel = getFeeModelLabel(params.version);
 
   // Use pre-calculated values from the RPC handler (passed via data)
-  const networkFee = data.networkFee;
-  const depositAmount = data.depositAmount;
+  const networkFee = data.fee;
+  const depositAmount = data.deposit;
 
   return await snap.request({
     method: REQUEST_METHODS.DIALOG,

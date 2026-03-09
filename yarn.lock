@@ -2507,7 +2507,7 @@ __metadata:
   resolution: "@hathor/snap@workspace:packages/snap"
   dependencies:
     "@hathor/hathor-rpc-handler": "workspace:*"
-    "@hathor/wallet-lib": "npm:2.14.0"
+    "@hathor/wallet-lib": "npm:2.16.0"
     "@jest/globals": "npm:29.7.0"
     "@metamask/auto-changelog": "npm:3.4.4"
     "@metamask/eslint-config": "npm:12.2.0"

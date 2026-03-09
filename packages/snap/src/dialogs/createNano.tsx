@@ -187,7 +187,7 @@ export const createNanoPage = async (data, params, origin) => (
             </Section>
             {renderArguments(data.parsedArgs)}
             {renderActions(params.actions, data.tokenDetails)}
-            <NetworkFee networkFee={data.networkFee} />
+            <NetworkFee networkFee={data.fee} />
             <PushTxWarning pushTx={data.pushTx} />
           </Box>
         </Container>
