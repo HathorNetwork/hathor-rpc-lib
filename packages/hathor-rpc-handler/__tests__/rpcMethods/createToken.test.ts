@@ -216,6 +216,66 @@ describe('createToken', () => {
     expect(result).toEqual(rpcResponse);
   });
 
+  it('should create a token with DEPOSIT version and calculate deposit correctly', async () => {
+    const pinCode = '1234';
+    const transaction = { tx_id: 'transaction-id' };
+    const rpcResponse = {
+      type: RpcResponseTypes.CreateTokenResponse,
+      response: transaction,
+    };
+
+    const depositVersionRequest = {
+      ...rpcRequest,
+      params: {
+        ...rpcRequest.params,
+        amount: '1000',
+        version: TokenVersionString.DEPOSIT,
+      },
+    } as unknown as CreateTokenRpcRequest;
+
+    (wallet.isAddressMine as jest.Mock).mockResolvedValue(true);
+    triggerHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.CreateTokenConfirmationResponse,
+        data: {
+          accepted: true,
+        },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: {
+          accepted: true,
+          pinCode,
+        },
+      });
+
+    (wallet.createNewToken as jest.Mock).mockResolvedValue(transaction);
+
+    const result = await createToken(depositVersionRequest, wallet, {}, triggerHandler);
+
+    expect(triggerHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: TriggerTypes.CreateTokenConfirmationPrompt,
+        data: expect.objectContaining({
+          version: TokenVersion.DEPOSIT,
+          deposit: 10n,
+        }),
+      }),
+      {}
+    );
+
+    expect(wallet.createNewToken).toHaveBeenCalledWith(
+      depositVersionRequest.params.name,
+      depositVersionRequest.params.symbol,
+      1000n,
+      expect.objectContaining({
+        tokenVersion: TokenVersion.DEPOSIT,
+        pinCode,
+      })
+    );
+    expect(result).toEqual(rpcResponse);
+  });
+
   it('should throw PromptRejectedError if the user rejects the confirmation prompt', async () => {
     (wallet.isAddressMine as jest.Mock).mockResolvedValue(true);
 
