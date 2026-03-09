@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { TokenVersion } from '@hathor/wallet-lib';
 import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
+import { TokenVersionString } from '../schemas';
 
 export enum RpcMethods {
   CreateToken = 'htr_createToken',
@@ -32,7 +32,7 @@ export interface CreateTokenRpcRequest {
     name: string;
     symbol: string;
     amount: string;
-    version?: TokenVersion
+    version?: TokenVersionString;
     address?: string;
     change_address?: string;
     create_mint: boolean;

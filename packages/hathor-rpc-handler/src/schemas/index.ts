@@ -12,4 +12,5 @@ export {
   sendNanoContractTxConfirmationResponseSchema,
   createNanoContractCreateTokenTxConfirmationDataSchema,
   createNanoContractCreateTokenTxConfirmationResponseSchema,
-} from './nanoContractResponseSchema'; 
+} from './nanoContractResponseSchema';
+export { TokenVersionString, tokenVersionStringSchema } from './tokenVersionSchema'; 

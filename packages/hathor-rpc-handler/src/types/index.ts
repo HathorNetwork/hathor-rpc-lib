@@ -8,3 +8,4 @@
 export * from './rpcRequest';
 export * from './rpcResponse';
 export * from './prompt';
+export { TokenVersionString } from '../schemas';

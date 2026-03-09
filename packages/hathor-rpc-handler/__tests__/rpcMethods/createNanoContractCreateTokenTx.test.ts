@@ -15,6 +15,7 @@ import {
   CreateNanoContractCreateTokenTxConfirmationPrompt,
   TriggerResponseTypes,
   RpcResponseTypes,
+  TokenVersionString,
 } from '../../src/types';
 import { PromptRejectedError, InvalidParamsError, SendNanoContractTxError } from '../../src/errors';
 
@@ -37,7 +38,7 @@ describe('createNanoContractCreateTokenTx', () => {
     name: 'TestToken',
     symbol: 'TT',
     amount: '100',
-    version: 1, // TokenVersion.DEPOSIT - tests that version is forwarded
+    version: TokenVersionString.DEPOSIT,
     mintAddress: 'wallet1',
     changeAddress: 'wallet1',
     createMint: true,
@@ -629,5 +630,57 @@ describe('createNanoContractCreateTokenTx', () => {
 
     await expect(createNanoContractCreateTokenTx(rpcRequest, wallet, {}, promptHandler))
       .rejects.toThrow(SendNanoContractTxError);
+  });
+
+  it('should default to DEPOSIT version when createTokenOptions.version is not provided', async () => {
+    const pinCode = '1234';
+
+    const requestWithoutVersion = {
+      ...rpcRequest,
+      params: {
+        ...rpcRequest.params,
+        createTokenOptions: {
+          ...createTokenOptions,
+          version: undefined,
+        },
+      },
+    };
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.CreateNanoContractCreateTokenTxConfirmationResponse,
+        data: {
+          accepted: true,
+          nano: {
+            blueprintId: 'blueprint123',
+            ncId: 'nc123',
+            actions: nanoActions,
+            args: [],
+            method: 'initialize',
+            pushTx: true,
+            caller: 'wallet1',
+            fee: 100n,
+            parsedArgs: [],
+          },
+          token: { ...createTokenOptions, version: undefined },
+        },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: { accepted: true, pinCode },
+      });
+
+    await createNanoContractCreateTokenTx(requestWithoutVersion, wallet, {}, promptHandler);
+
+    // Verify the pre-build was called with DEPOSIT version (default)
+    expect(wallet.createNanoContractCreateTokenTransaction).toHaveBeenCalledWith(
+      requestWithoutVersion.params.method,
+      requestWithoutVersion.params.address,
+      expect.anything(),
+      expect.objectContaining({
+        version: 1, // TokenVersion.DEPOSIT
+      }),
+      expect.anything()
+    );
   });
 });

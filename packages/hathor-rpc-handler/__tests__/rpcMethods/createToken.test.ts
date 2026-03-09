@@ -1,6 +1,6 @@
-import { type IHathorWallet, tokensUtils } from '@hathor/wallet-lib';
-import { TokenVersion } from '@hathor/wallet-lib/lib/models/enum';
+import { type IHathorWallet, tokensUtils, TokenVersion } from '@hathor/wallet-lib';
 import { FEE_PER_OUTPUT } from '@hathor/wallet-lib/lib/constants';
+import { TokenVersionString } from '../../src/types';
 import { createToken } from '../../src/rpcMethods/createToken';
 import {
   TriggerTypes,
@@ -118,11 +118,40 @@ describe('createToken', () => {
         amount: undefined,
         name: undefined,
         symbol: undefined,
-        tokenVersion: null,
+        tokenVersion: TokenVersion.DEPOSIT,
         pinCode,
       }
     );
     expect(result).toEqual(rpcResponse);
+  });
+
+  it('should default to DEPOSIT version when version is not provided', async () => {
+    const pinCode = '1234';
+    const transaction = { tx_id: 'transaction-id' };
+
+    (wallet.isAddressMine as jest.Mock).mockResolvedValue(true);
+    triggerHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.CreateTokenConfirmationResponse,
+        data: { accepted: true },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: { accepted: true, pinCode },
+      });
+
+    (wallet.createNewToken as jest.Mock).mockResolvedValue(transaction);
+
+    await createToken(rpcRequest, wallet, {}, triggerHandler);
+
+    expect(wallet.createNewToken).toHaveBeenCalledWith(
+      rpcRequest.params.name,
+      rpcRequest.params.symbol,
+      BigInt(rpcRequest.params.amount),
+      expect.objectContaining({
+        tokenVersion: TokenVersion.DEPOSIT,
+      })
+    );
   });
 
   it('should create a token with FEE version and calculate fee correctly', async () => {
@@ -137,7 +166,7 @@ describe('createToken', () => {
       ...rpcRequest,
       params: {
         ...rpcRequest.params,
-        version: TokenVersion.FEE,
+        version: TokenVersionString.FEE,
       },
     } as unknown as CreateTokenRpcRequest;
 
@@ -321,6 +350,36 @@ describe('createToken', () => {
           name: '',
           symbol: 'TT',
           amount: '100',
+        },
+      } as CreateTokenRpcRequest;
+
+      await expect(createToken(invalidRequest, wallet, {}, triggerHandler))
+        .rejects.toThrow(InvalidParamsError);
+    });
+
+    it('should reject when version is an invalid string', async () => {
+      const invalidRequest = {
+        method: RpcMethods.CreateToken,
+        params: {
+          name: 'Test Token',
+          symbol: 'TT',
+          amount: '100',
+          version: 'invalid' as unknown,
+        },
+      } as CreateTokenRpcRequest;
+
+      await expect(createToken(invalidRequest, wallet, {}, triggerHandler))
+        .rejects.toThrow(InvalidParamsError);
+    });
+
+    it('should reject when version is an integer', async () => {
+      const invalidRequest = {
+        method: RpcMethods.CreateToken,
+        params: {
+          name: 'Test Token',
+          symbol: 'TT',
+          amount: '100',
+          version: 1 as unknown,
         },
       } as CreateTokenRpcRequest;
 
