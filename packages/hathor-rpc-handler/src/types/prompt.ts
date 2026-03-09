@@ -213,6 +213,7 @@ export interface CreateTokenParams {
   allowExternalMeltAuthorityAddress: boolean,
   data: string[] | null,
   fee?: bigint,
+  deposit?: bigint,
 }
 
 // Extended type for nano contract token creation

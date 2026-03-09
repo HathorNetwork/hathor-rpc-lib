@@ -63,10 +63,13 @@ export async function createToken(
     };
 
     let fee = tokensUtils.getDataFee(params.options.data?.length ?? 0);
+    let deposit = 0n;
     // This is a particular case where we know that wallet-lib is returning only one output
     // so we don't need to prepare the tx to know the fee amount for this tx
     if (params.options.tokenVersion === TokenVersion.FEE) {
       fee += FEE_PER_OUTPUT;
+    } else if (params.options.tokenVersion === TokenVersion.DEPOSIT) {
+      deposit += tokensUtils.getDepositAmount(params.amount);
     }
 
     const createTokenPrompt: CreateTokenConfirmationPrompt = {
@@ -86,7 +89,8 @@ export async function createToken(
         allowExternalMeltAuthorityAddress: params.options.allowExternalMeltAuthorityAddress,
         data: params.options.data,
         address: params.options.address,
-        fee
+        fee,
+        deposit
       },
     };
 
