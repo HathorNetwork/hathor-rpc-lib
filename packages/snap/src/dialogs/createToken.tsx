@@ -8,6 +8,7 @@
 import { REQUEST_METHODS, DIALOG_TYPES } from '../constants';
 import { Box, Card, Container, Divider, Heading, Section, Text } from '@metamask/snaps-sdk/jsx';
 import { numberUtils } from '@hathor/wallet-lib';
+import { formatHtrAmount } from '../components';
 
 const renderConditionalCard = (title, value, parsedValue = null) => {
   if (value == null) {
@@ -21,8 +22,28 @@ const boolToString = (bool) => {
   return bool ? 'true' : 'false';
 }
 
-export const createTokenPage = async (data, params, origin) => (
-  await snap.request({
+/**
+ * Get the fee model label based on token version
+ */
+const getFeeModelLabel = (version?: 'deposit' | 'fee'): string => {
+  switch (version) {
+    case 'fee':
+      return 'Fee Token';
+    case 'deposit':
+    default:
+      return 'Deposit Token';
+  }
+}
+
+export const createTokenPage = async (data, params, origin) => {
+  const amount = BigInt(params.amount);
+  const feeModelLabel = getFeeModelLabel(params.version);
+
+  // Use pre-calculated values from the RPC handler (passed via data)
+  const networkFee = data.fee;
+  const depositAmount = data.deposit;
+
+  return await snap.request({
     method: REQUEST_METHODS.DIALOG,
     params: {
       type: DIALOG_TYPES.CONFIRMATION,
@@ -36,7 +57,11 @@ export const createTokenPage = async (data, params, origin) => (
             <Section>
               <Card title="Name" value="" description={params.name} />
               <Card title="Symbol" value="" description={params.symbol} />
-              <Card title="Amount" value="" description={numberUtils.prettyValue(params.amount)} />
+              <Card title="Fee model" value="" description={feeModelLabel} />
+              <Card title="Network fee" value="" description={formatHtrAmount(networkFee)} />
+              <Card title="Deposit amount" value="" description={formatHtrAmount(depositAmount)} />
+              <Divider />
+              <Card title="Amount" value="" description={numberUtils.prettyValue(amount)} />
               {renderConditionalCard('Address', params.address)}
               {renderConditionalCard('Change address', params.change_address)}
               {renderConditionalCard('Create mint authority', params.create_mint, boolToString(params.create_mint))}
@@ -51,5 +76,5 @@ export const createTokenPage = async (data, params, origin) => (
         </Container>
       ),
     },
-  })
-)
+  });
+}

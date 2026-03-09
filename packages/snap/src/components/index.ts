@@ -6,3 +6,4 @@
  */
 
 export { PushTxWarning } from './PushTxWarning';
+export { NetworkFee, formatHtrAmount } from './NetworkFee';
