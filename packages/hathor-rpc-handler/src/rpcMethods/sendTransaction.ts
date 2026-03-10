@@ -117,12 +117,17 @@ export async function sendTransaction(
   const { params } = validationResult.data;
   validateNetwork(wallet, params.network);
 
+  // we need to provide a stub pin code to the HathorWalletService facade implementation because it calls the wallet requestPassword() 
+  // method which triggers showPinScreenForResult configured via callback causing the user to be prompted twice for the PIN code        
+  const stubPinCode = '111111';
+
   // Create the transaction service and cast to the unified interface that works
   // with both HathorWallet (SendTransaction) and HathorWalletServiceWallet
   // (SendTransactionWalletService) implementations.
   const sendTransactionObject = await wallet.sendManyOutputsSendTransaction(params.outputs, {
     inputs: params.inputs || [],
     changeAddress: params.changeAddress,
+    pinCode: stubPinCode,
   }) as unknown as ISendTransactionObject;
 
   // Prepare the full transaction without signing to get inputs, outputs, and fee.
