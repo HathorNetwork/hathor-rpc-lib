@@ -16,6 +16,7 @@ const {
     stop: vi.fn(),
     isReady: vi.fn(() => true),
     getBalance: vi.fn(),
+    getAddressAtIndex: vi.fn(),
   },
   mockLoadTokensWithBalances: vi.fn(),
   mockGetAddressForMode: vi.fn(),
@@ -72,6 +73,7 @@ describe('useNetworkManagement', () => {
     xpub: 'xpub123',
     network: 'mainnet',
     address: 'HAddr123',
+    firstAddress: 'HFirstAddr123',
     balances: new Map([['00', { token: '00', available: 1000n, locked: 0n }]]),
     addressMode: 'first' as AddressMode,
     invokeSnap: mockInvokeSnap,
@@ -97,6 +99,9 @@ describe('useNetworkManagement', () => {
     mockReadOnlyWalletWrapper.getBalance.mockResolvedValue(
       new Map([['00', { token: '00', available: 2000n, locked: 0n }]])
     );
+    mockReadOnlyWalletWrapper.getAddressAtIndex.mockResolvedValue({
+      address: 'HNewFirstAddr789',
+    });
     mockOnLoadTokens.mockResolvedValue(undefined);
     mockLoadTokensWithBalances.mockResolvedValue({
       tokens: [],
@@ -150,11 +155,12 @@ describe('useNetworkManagement', () => {
       // Verify event listeners were setup
       expect(mockOnSetupEventListeners).toHaveBeenCalled();
 
-      // Verify state was updated
+      // Verify state was updated including firstAddress
       expect(mockOnNetworkChange).toHaveBeenCalledWith(
         expect.objectContaining({
           network: 'testnet',
           address: 'HNewAddr456',
+          firstAddress: 'HNewFirstAddr789',
         })
       );
 
@@ -336,6 +342,75 @@ describe('useNetworkManagement', () => {
 
       // Should force disconnect without rollback
       expect(mockOnForceDisconnect).toHaveBeenCalled();
+    });
+
+    it('should fetch firstAddress from index 0 after network change', async () => {
+      mockReadOnlyWalletWrapper.getAddressAtIndex.mockResolvedValue({
+        address: 'HTestnetFirstAddr',
+      });
+
+      const { result } = renderHook(() => useNetworkManagement(defaultOptions));
+
+      await act(async () => {
+        await result.current.changeNetwork('testnet');
+      });
+
+      // Verify getAddressAtIndex was called with index 0
+      expect(mockReadOnlyWalletWrapper.getAddressAtIndex).toHaveBeenCalledWith(0);
+
+      // Verify firstAddress was included in the state update
+      expect(mockOnNetworkChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          firstAddress: 'HTestnetFirstAddr',
+        })
+      );
+    });
+
+    it('should fallback to address when getAddressAtIndex fails', async () => {
+      mockReadOnlyWalletWrapper.getAddressAtIndex.mockRejectedValue(
+        new Error('Address lookup failed')
+      );
+
+      const { result } = renderHook(() => useNetworkManagement(defaultOptions));
+
+      await act(async () => {
+        await result.current.changeNetwork('testnet');
+      });
+
+      // Should still succeed and use the regular address as fallback
+      expect(mockOnNetworkChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          network: 'testnet',
+          address: 'HNewAddr456',
+          firstAddress: 'HNewAddr456', // Fallback to address
+        })
+      );
+    });
+
+    it('should restore previous firstAddress on rollback', async () => {
+      // First call (network change) fails after wallet reinit
+      mockInvokeSnap
+        .mockResolvedValueOnce({ response: { success: true } }) // initial change succeeds
+        .mockResolvedValueOnce({ response: { success: true } }); // rollback succeeds
+
+      // Make address fetch fail to trigger rollback
+      mockGetAddressForMode.mockRejectedValueOnce(new Error('Failed'));
+      // Rollback address fetch succeeds
+      mockGetAddressForMode.mockResolvedValueOnce('HAddr123');
+
+      const { result } = renderHook(() => useNetworkManagement(defaultOptions));
+
+      await act(async () => {
+        await result.current.changeNetwork('testnet');
+      });
+
+      // Rollback should restore previous firstAddress
+      expect(mockOnNetworkChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          network: 'mainnet',
+          firstAddress: 'HFirstAddr123',
+        })
+      );
     });
   });
 });

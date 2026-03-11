@@ -99,9 +99,6 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
     watch,
     getValues,
     reset,
-    trigger,
-    setError,
-    clearErrors,
   } = useForm<SendFormData>({
     resolver: zodResolver(createSendFormSchema(network)),
     defaultValues: {
@@ -151,17 +148,20 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTokenUid]);
 
+  // Separate balance error state to avoid fighting with Zod's form errors
+  const [balanceError, setBalanceError] = React.useState<string | null>(null);
+
   // Validate amount: NFT format and balance check
   // This runs separately from Zod schema to handle dynamic token changes
   React.useEffect(() => {
-    if (!amount) return;
+    if (!amount) {
+      setBalanceError(null);
+      return;
+    }
 
     // First check NFT format
     if (selectedToken?.isNFT && amount.includes('.')) {
-      setError('amount', {
-        type: 'manual',
-        message: 'NFT amounts must be whole numbers only.',
-      });
+      setBalanceError('NFT amounts must be whole numbers only.');
       return;
     }
 
@@ -172,21 +172,17 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
         : amountToCents(amount);
 
       if (amountInBaseUnits > availableBalance) {
-        setError('amount', {
-          type: 'manual',
-          message: 'Insufficient balance',
-        });
+        setBalanceError('Insufficient balance');
         return;
       }
     } catch {
       // amountToCents will throw for invalid formats, let Zod handle that
+      setBalanceError(null);
       return;
     }
 
-    // Clear manual errors and re-trigger Zod validation
-    clearErrors('amount');
-    trigger('amount');
-  }, [amount, selectedToken?.isNFT, availableBalance, setError, clearErrors, trigger]);
+    setBalanceError(null);
+  }, [amount, selectedToken?.isNFT, availableBalance]);
 
   const handleMaxClick = () => {
     if (availableBalance > 0n) {
@@ -311,6 +307,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
 
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
+          <fieldset disabled={isLoading} className="space-y-6 disabled:opacity-60">
           {/* Select Token */}
           <div>
             <label className="block text-base font-bold text-white mb-2">
@@ -371,9 +368,9 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
                 Max
               </button>
             </div>
-            {errors.amount && (
+            {(errors.amount || balanceError) && (
               <div className="flex items-center gap-1 mt-1">
-                <span className="text-xs text-red-400">{errors.amount.message}</span>
+                <span className="text-xs text-red-400">{balanceError || errors.amount?.message}</span>
               </div>
             )}
           </div>
@@ -482,10 +479,12 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
             </div>
           )}
 
-          {/* Send Button */}
+          </fieldset>
+
+          {/* Send Button - outside fieldset so it's not affected by disabled opacity */}
           <button
             type="submit"
-            disabled={isLoading || !amount || !address}
+            disabled={isLoading || !amount || !address || !!balanceError}
             className="w-auto mx-auto px-8 py-2.5 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
           >
             {isLoading ? (

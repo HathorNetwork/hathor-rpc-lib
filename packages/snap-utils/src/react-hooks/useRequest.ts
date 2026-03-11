@@ -32,8 +32,13 @@ export const useRequest = () => {
 
       return data;
     } catch (requestError: any) {
-      // Set error in context for UI notifications
-      setError(requestError);
+      // Normalize error to an Error instance for UI notifications.
+      // MetaMask provider errors are often plain objects (e.g. {code: 4001, message: "..."})
+      // which would render as "[object Object]" if not normalized.
+      const normalizedError = requestError instanceof Error
+        ? requestError
+        : new Error(requestError?.message || String(requestError));
+      setError(normalizedError);
 
       // Re-throw the error so callers can distinguish between
       // null response vs error. This allows proper error handling

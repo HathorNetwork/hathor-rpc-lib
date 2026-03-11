@@ -29,6 +29,7 @@ const {
     getBalance: vi.fn(),
     getTransactionHistory: vi.fn(),
     getCurrentAddress: vi.fn(),
+    getAddressAtIndex: vi.fn(() => Promise.resolve({ address: 'HFirstAddr000' })),
     isAddressMine: vi.fn(),
     on: vi.fn(),
     removeAllListeners: vi.fn(),
@@ -311,6 +312,25 @@ describe('WalletContext', () => {
         expect(screen.getByTestId('error')).toHaveTextContent('MetaMask not found');
       });
     });
+
+    it('should display normalized error when MetaMask returns a non-Error object', async () => {
+      // MetaMask provider errors can be plain objects like {code: 4001, message: "User rejected the request"}
+      // The useRequest hook normalizes these to Error instances to avoid "[object Object]"
+      const plainObjectError = new Error('User rejected the request');
+      mockUseMetaMaskContext.mockReturnValue({ error: plainObjectError });
+
+      render(
+        <WalletProvider>
+          <TestConsumer />
+        </WalletProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('error')).toHaveTextContent('User rejected the request');
+        // Verify it does NOT show [object Object]
+        expect(screen.getByTestId('error').textContent).not.toContain('[object Object]');
+      });
+    });
   });
 
   describe('token filter', () => {
@@ -518,6 +538,54 @@ describe('WalletContext', () => {
       });
 
       expect(screen.getByTestId('error')).toHaveTextContent('User rejected');
+    });
+
+    it('should use stored network instead of always defaulting to mainnet', async () => {
+      // Store testnet as the previous network choice
+      localStorage.setItem('hathor_wallet_network', 'testnet');
+
+      // Mock requestSnap to succeed
+      mockRequestSnap.mockResolvedValue(undefined);
+
+      // Mock the full connection flow
+      vi.mocked(window.ethereum!.request).mockResolvedValue({
+        'local:http://localhost:8080': {
+          version: '1.0.0',
+          enabled: true,
+          blocked: false,
+        },
+      });
+
+      // Mock snap network check returning mainnet (snap's current state)
+      mockInvokeSnap
+        .mockResolvedValueOnce(JSON.stringify({ response: { network: 'mainnet' } })) // getConnectedNetwork
+        .mockResolvedValueOnce({ response: { success: true } }) // changeNetwork to testnet
+        .mockResolvedValueOnce(JSON.stringify({ response: { xpub: 'xpub123' } })); // getXpub
+
+      mockReadOnlyWalletWrapper.isReady.mockReturnValue(true);
+      mockReadOnlyWalletWrapper.getBalance.mockResolvedValue(
+        new Map([['00', { token: '00', available: 1000n, locked: 0n }]])
+      );
+
+      render(
+        <WalletProvider>
+          <TestConsumer />
+        </WalletProvider>
+      );
+
+      await act(async () => {
+        screen.getByTestId('connect').click();
+      });
+
+      // connectWallet should change the snap to testnet (stored network) instead of mainnet
+      await waitFor(() => {
+        expect(mockInvokeSnap).toHaveBeenCalledWith(
+          expect.objectContaining({
+            method: 'htr_changeNetwork',
+            params: { network: 'mainnet', newNetwork: 'testnet' },
+          })
+        );
+      });
     });
   });
 });

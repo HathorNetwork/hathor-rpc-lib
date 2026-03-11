@@ -224,7 +224,7 @@ const HistoryDialog: React.FC<HistoryDialogProps> = ({ isOpen, onClose, tokenUid
                 Unregister token
               </button>
             )}
-            {selectedToken && (
+            {selectedToken && selectedToken.uid !== TOKEN_IDS.HTR && (
               <button
                 onClick={openTokenDetails}
                 className="px-4 py-2 bg-[#191C21] border border-border hover:bg-[#24292F] text-white rounded-lg text-sm flex items-center gap-2 transition-colors"

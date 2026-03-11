@@ -564,14 +564,16 @@ export function WalletProvider({ children }: WalletProviderProps) {
     xpub: connection.xpub,
     network: connection.network,
     address: connection.address,
+    firstAddress: connection.firstAddress,
     balances: connection.balances,
     addressMode,
     invokeSnap,
     onSetupEventListeners: connection.setupEventListeners,
     onSnapError: connection.handleSnapError,
-    onNetworkChange: ({ network, address, balances }) => {
+    onNetworkChange: ({ network, address, firstAddress, balances }) => {
       connection.setNetwork(network);
       connection.setAddress(address);
+      connection.setFirstAddress(firstAddress);
       connection.setBalances(balances);
     },
     onLoadTokens: async (network) => {

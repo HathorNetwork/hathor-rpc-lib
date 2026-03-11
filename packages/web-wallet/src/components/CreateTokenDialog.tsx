@@ -135,6 +135,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
 
   const isNFT = watch('isNFT');
   const amount = watch('amount');
+  const nftData = watch('nftData');
   // TODO: Re-enable when fee token feature is ready
   // const tokenType = watch('tokenType');
 
@@ -152,6 +153,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
   // Calculate 1% HTR deposit (1 HTR per 100 tokens)
   // For every 100 tokens, 1 HTR (100 cents) deposit is required
   // Formula: (tokens / 100) * 100 cents = tokens * 1 cent
+  // Additionally, NFTs with data have an extra output cost (1 base unit = 0.01 HTR)
   const depositInCents = useMemo(() => {
     try {
       if (!amount || amount === '0') return 0n;
@@ -168,11 +170,18 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
         if (amountInBaseUnits <= 0n) return 0n;
       }
 
-      return tokensUtils.getDepositAmount(amountInBaseUnits);
+      let deposit = tokensUtils.getDepositAmount(amountInBaseUnits);
+
+      // NFTs with data have an additional output cost for the data field
+      if (isNFT && nftData?.trim()) {
+        deposit += 1n; // 1 base unit = 0.01 HTR per data output
+      }
+
+      return deposit;
     } catch {
       return 0n;
     }
-  }, [amount, isNFT]);
+  }, [amount, isNFT, nftData]);
 
   // Check if user has insufficient balance
   const hasInsufficientBalance = useMemo(() => {
@@ -294,12 +303,11 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
   };
 
   const handleClose = () => {
-    if (!isLoading) {
-      reset();
-      setError(null);
-      setSuccessData(null);
-      onClose();
-    }
+    reset();
+    setError(null);
+    setSuccessData(null);
+    setIsLoading(false);
+    onClose();
   };
 
   const handleSuccessClose = () => {
@@ -313,7 +321,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
   return (
     <div
       className="fixed inset-0 bg-black/50 flex items-start md:items-center justify-center z-50 overflow-y-auto p-4 md:p-0"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
     >
       <div className="bg-[#191C21] border border-[#24292F] rounded-2xl w-full max-w-lg my-4 md:my-0 md:mx-4">
         {successData ? (
@@ -385,8 +393,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
               <h2 className="text-base md:text-lg font-bold text-primary-400">Create Token</h2>
               <button
                 onClick={handleClose}
-                disabled={isLoading}
-                className="absolute right-6 p-1 hover:bg-secondary/20 rounded transition-colors disabled:opacity-50"
+                className="absolute right-6 p-1 hover:bg-secondary/20 rounded transition-colors"
               >
                 <X className="w-5 h-5 text-muted-foreground" />
               </button>

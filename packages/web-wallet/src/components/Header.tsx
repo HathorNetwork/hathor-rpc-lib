@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Copy, Globe, Menu, X, LogOut } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { truncateString } from '../utils/hathor';
@@ -20,6 +20,18 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDisconnectModalOpen, setIsDisconnectModalOpen] = useState(false);
   const { toast } = useToast();
+  const menuContainerRef = useRef<HTMLDivElement>(null);
+
+  // Close desktop menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (isMenuOpen && menuContainerRef.current && !menuContainerRef.current.contains(e.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isMenuOpen]);
 
   // Prevent body scroll when mobile menu is open
   React.useEffect(() => {
