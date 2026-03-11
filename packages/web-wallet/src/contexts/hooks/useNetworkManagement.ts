@@ -20,6 +20,7 @@ interface UseNetworkManagementOptions {
   xpub: string | null;
   network: string;
   address: string;
+  firstAddress: string | null;
   balances: Map<string, WalletBalance>;
   addressMode: AddressMode;
   invokeSnap: (params: { method: string; params?: Record<string, unknown> }) => Promise<unknown>;
@@ -29,6 +30,7 @@ interface UseNetworkManagementOptions {
   onNetworkChange: (params: {
     network: string;
     address: string;
+    firstAddress: string;
     balances: Map<string, WalletBalance>;
   }) => void;
   /** Called after network change to load tokens for the new network */
@@ -47,6 +49,7 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
     xpub,
     network,
     address,
+    firstAddress,
     balances,
     addressMode,
     invokeSnap,
@@ -68,6 +71,7 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
 
     const previousNetwork = network;
     const previousAddress = address;
+    const previousFirstAddress = firstAddress;
     const previousBalances = balances;
 
     try {
@@ -106,12 +110,24 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
         throw new Error('Failed to retrieve wallet address on new network. The wallet may not be properly initialized.');
       }
 
+      // Get first address (index 0) for the new network
+      let newFirstAddress = newAddress;
+      try {
+        const addressInfo = await readOnlyWalletWrapper.getAddressAtIndex(0);
+        if (addressInfo) {
+          newFirstAddress = addressInfo.address;
+        }
+      } catch (firstAddressError) {
+        log.error('Failed to get first address after network change:', firstAddressError);
+      }
+
       const newBalances = await readOnlyWalletWrapper.getBalance(TOKEN_IDS.HTR);
 
       // Update app state first (can throw)
       onNetworkChange({
         network: newNetwork,
         address: newAddress,
+        firstAddress: newFirstAddress,
         balances: newBalances,
       });
 
@@ -188,6 +204,7 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
         onNetworkChange({
           network: previousNetwork,
           address: previousAddress,
+          firstAddress: previousFirstAddress || previousAddress,
           balances: previousBalances,
         });
 

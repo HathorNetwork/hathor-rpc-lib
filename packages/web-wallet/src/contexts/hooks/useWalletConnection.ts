@@ -110,6 +110,8 @@ export interface WalletConnectionResult {
   snapVersion: string | null;
   /** First address of the wallet (index 0) */
   firstAddress: string | null;
+  /** Updates first address (internal use by other hooks, e.g. network change) */
+  setFirstAddress: (firstAddress: string) => void;
   /** Updates displayed address (internal use by other hooks) */
   setAddress: (address: string) => void;
   /** Updates balance state (internal use by other hooks) */
@@ -494,9 +496,13 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
         throw new Error('Snap is not responding. Please make sure it is installed correctly.');
       }
 
-      const targetNetwork = DEFAULT_NETWORK;
+      // Use the snap's current network. If it's a first-time connection (no stored network),
+      // default to DEFAULT_NETWORK. This avoids forcing users back to mainnet on every reconnect.
+      const storedNetwork = localStorage.getItem(STORAGE_KEYS.NETWORK);
+      const targetNetwork = storedNetwork || DEFAULT_NETWORK;
+
       if (currentSnapNetwork !== targetNetwork) {
-        setLoadingStep(`Changing snap network to ${DEFAULT_NETWORK}...`);
+        setLoadingStep(`Changing snap network to ${targetNetwork}...`);
 
         try {
           const changeNetworkPromise = invokeSnap({
@@ -514,7 +520,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
           );
         } catch (networkError) {
           log.error('Failed to change snap network:', networkError);
-          throw new Error(`Failed to change snap network to ${DEFAULT_NETWORK}`);
+          throw new Error(`Failed to change snap network to ${targetNetwork}`);
         }
       }
 
@@ -549,7 +555,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
 
       setLoadingStep('Initializing read-only wallet...');
 
-      const newNetwork = DEFAULT_NETWORK;
+      const newNetwork = targetNetwork;
       await readOnlyWalletWrapper.initialize(newXpub, newNetwork);
 
       setupEventListeners();
@@ -802,6 +808,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     network,
     snapVersion,
     firstAddress,
+    setFirstAddress,
     setAddress,
     setBalances,
     setNetwork,

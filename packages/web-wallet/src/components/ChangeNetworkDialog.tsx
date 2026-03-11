@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, AlertCircle } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { NETWORKS, WALLET_SERVICE_URLS } from '../constants';
@@ -25,6 +25,13 @@ const NETWORK_OPTIONS = [
 const ChangeNetworkDialog: React.FC<ChangeNetworkDialogProps> = ({ isOpen, onClose }) => {
   const { network, changeNetwork } = useWallet();
   const [selectedNetwork, setSelectedNetwork] = useState(network);
+
+  // Sync selected network with current network when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedNetwork(network);
+    }
+  }, [isOpen, network]);
 
   const handleChangeNetwork = async () => {
     if (selectedNetwork === network) {
