@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { X, Loader2, AlertCircle, CheckCircle, Copy } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -101,6 +101,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
     tokenName: string;
     tokenSymbol: string;
   } | null>(null);
+  const activeRequestRef = useRef(0);
 
   const { registerToken, balances, addressMode } = useWallet();
   const invokeSnap = useInvokeSnap();
@@ -189,6 +190,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
   }, [depositInCents, htrBalance]);
 
   const onSubmit = async (data: CreateTokenFormData) => {
+    const requestId = ++activeRequestRef.current;
     setIsLoading(true);
     setError(null);
 
@@ -220,7 +222,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
         melt_authority_address: null, // Leave as null for wallet-managed
         allow_external_mint_authority_address: false,
         allow_external_melt_authority_address: false,
-        data: data.isNFT && data.nftData ? [data.nftData] : null,
+        data: data.isNFT && data.nftData?.trim() ? [data.nftData] : null,
         address: mintAddress, // Mint address where tokens are sent
       };
 
@@ -262,6 +264,9 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
       // Auto-register token
       await registerToken(configString);
 
+      // Bail if dialog was closed during the request
+      if (requestId !== activeRequestRef.current) return;
+
       // Show success state
       setSuccessData({
         configString,
@@ -269,6 +274,9 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
         tokenSymbol: data.symbol,
       });
     } catch (err) {
+      // Bail if dialog was closed during the request
+      if (requestId !== activeRequestRef.current) return;
+
       console.error('Failed to create token:', err);
 
       // User-friendly error messages
@@ -303,6 +311,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
   };
 
   const handleClose = () => {
+    activeRequestRef.current++;
     reset();
     setError(null);
     setSuccessData(null);

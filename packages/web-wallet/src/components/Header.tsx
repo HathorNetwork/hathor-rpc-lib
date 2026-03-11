@@ -22,10 +22,11 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
   const { toast } = useToast();
   const menuContainerRef = useRef<HTMLDivElement>(null);
 
-  // Close desktop menu when clicking outside
+  // Close desktop menu when clicking outside (desktop only — mobile has its own backdrop)
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (isMenuOpen && menuContainerRef.current && !menuContainerRef.current.contains(e.target as Node)) {
+      const isDesktop = window.matchMedia('(min-width: 768px)').matches;
+      if (isDesktop && isMenuOpen && menuContainerRef.current && !menuContainerRef.current.contains(e.target as Node)) {
         setIsMenuOpen(false);
       }
     };

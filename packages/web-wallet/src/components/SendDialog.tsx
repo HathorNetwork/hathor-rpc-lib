@@ -349,7 +349,7 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
                   }
                 }}
                 className={`w-full px-3 py-2 pr-12 bg-[#0D1117] border ${
-                  errors.amount ? 'border-red-500' : 'border-border'
+                  errors.amount || balanceError ? 'border-red-500' : 'border-border'
                 } rounded-lg text-white placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary`}
               />
               <span className="absolute right-3 top-2.5 text-sm text-muted-foreground">
