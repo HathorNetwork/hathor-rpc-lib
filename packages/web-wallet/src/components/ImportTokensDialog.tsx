@@ -200,7 +200,7 @@ const ImportTokensDialog: React.FC<ImportTokensDialogProps> = ({ isOpen, onClose
                   <span className="text-sm text-muted-foreground">Load from file</span>
                   <input
                     type="file"
-                    accept=".txt,.csv"
+                    accept=".txt"
                     onChange={handleFileUpload}
                     className="hidden"
                   />
