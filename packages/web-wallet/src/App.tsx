@@ -10,6 +10,7 @@ import SendDialog from './components/SendDialog'
 import ReceiveDialog from './components/ReceiveDialog'
 import HistoryDialog from './components/HistoryDialog'
 import RegisterTokenDialog from './components/RegisterTokenDialog'
+import ImportTokensDialog from './components/ImportTokensDialog'
 import CreateTokenDialog from './components/CreateTokenDialog'
 import { Loader2 } from 'lucide-react'
 import htrLogoBlack from './assets/htr_logo_black.svg'
@@ -43,6 +44,11 @@ function HistoryDialogRoute() {
 function RegisterTokenDialogRoute() {
   const navigate = useNavigate()
   return <RegisterTokenDialog isOpen={true} onClose={() => navigate('/')} />
+}
+
+function ImportTokensDialogRoute() {
+  const navigate = useNavigate()
+  return <ImportTokensDialog isOpen={true} onClose={() => navigate('/')} />
 }
 
 function CreateTokenDialogRoute() {
@@ -96,6 +102,7 @@ function FeatureGatedWallet() {
             <Route path="receive" element={<ReceiveDialogRoute />} />
             <Route path="history/:tokenUid" element={<HistoryDialogRoute />} />
             <Route path="register-token" element={<RegisterTokenDialogRoute />} />
+            <Route path="import-tokens" element={<ImportTokensDialogRoute />} />
             <Route path="create-token" element={<CreateTokenDialogRoute />} />
             <Route path="address-mode" element={<AddressModeDialogRoute />} />
           </Route>

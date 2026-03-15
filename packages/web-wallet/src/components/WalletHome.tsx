@@ -170,6 +170,7 @@ const WalletHome: React.FC = () => {
     <div className='min-h-screen bg-[#0d1117] text-white'>
       <Header
         onRegisterTokenClick={() => navigate('/register-token')}
+        onImportTokensClick={() => navigate('/import-tokens')}
         onCreateTokenClick={() => navigate('/create-token')}
         onAddressModeClick={() => navigate('/address-mode')}
       />
