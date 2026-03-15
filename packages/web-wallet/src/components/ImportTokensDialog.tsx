@@ -57,7 +57,7 @@ const ImportTokensDialog: React.FC<ImportTokensDialogProps> = ({ isOpen, onClose
         line: index + 1,
         configString,
         valid: false,
-        error: 'Invalid configuration string format or checksum',
+        error: validation.error || 'Invalid configuration string format or checksum',
       };
     });
   }, []);
@@ -142,6 +142,9 @@ const ImportTokensDialog: React.FC<ImportTokensDialogProps> = ({ isOpen, onClose
       if (text) {
         setRawInput(text.trim());
       }
+    };
+    reader.onerror = () => {
+      console.error('Failed to read file:', reader.error);
     };
     reader.readAsText(file);
     // Reset the input so the same file can be re-selected
