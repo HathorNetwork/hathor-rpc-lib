@@ -95,7 +95,7 @@ export const getAndStartReadOnlyHathorWallet = async (): Promise<HathorWalletSer
   // Set lib config data and start the wallet in read-only mode
   await configNetwork();
   try {
-    await wallet.startReadOnly({ skipAddressFetch: true });
+    await wallet.startReadOnly();
   } catch (e) {
     // If the wallet is not started in the wallet service,
     // the method above will fail
