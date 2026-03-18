@@ -8,7 +8,7 @@
 import { addressPage, balancePage, changeNetworkPage, createNanoPage, createTokenPage, oracleDataPage, sendTransactionPage, signWithAddressPage, utxosPage, xpubPage } from '../dialogs';
 import { setNetwork } from '../utils/network';
 import { DEFAULT_PIN_CODE, NETWORK_MAP } from '../constants';
-import { RpcMethods, TriggerTypes } from '@hathor/hathor-rpc-handler';
+import { RpcMethods, TriggerTypes, TriggerResponseTypes } from '@hathor/hathor-rpc-handler';
 
 export const promptHandler = (origin, wallet) => async (promptRequest) => {
   const data = promptRequest.data;
@@ -61,25 +61,21 @@ export const promptHandler = (origin, wallet) => async (promptRequest) => {
       };
     case TriggerTypes.SendNanoContractTxConfirmationPrompt:
       approved = await createNanoPage(data, params, origin);
-      const response = {
+      const nanoResponse = {
+        type: TriggerResponseTypes.SendNanoContractTxConfirmationResponse,
         data: {
-          accepted: approved
-        }
-      }
+          accepted: approved,
+        },
+      };
 
       if (!approved) {
-        return response;
+        return nanoResponse;
       }
 
       // For the snap, the nano caller is always the address0
       const address0 = await wallet.getAddressAtIndex(0);
-      response['data']['nc'] = {
-        caller: address0,
-        blueprintId: params.blueprint_id,
-        actions: params.actions,
-        args: params.args,
-      };
-      return response;
+      nanoResponse['data']['nc'] = { ...data, caller: address0 };
+      return nanoResponse;
     case TriggerTypes.SignOracleDataConfirmationPrompt:
       approved = await oracleDataPage(data, params, origin);
       return { data: approved };
