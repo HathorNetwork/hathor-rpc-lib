@@ -59,7 +59,7 @@ export const promptHandler = (origin, wallet) => async (promptRequest) => {
           accepted: approved
         }
       };
-    case TriggerTypes.SendNanoContractTxConfirmationPrompt:
+    case TriggerTypes.SendNanoContractTxConfirmationPrompt: {
       approved = await createNanoPage(data, params, origin);
       const nanoResponse = {
         type: TriggerResponseTypes.SendNanoContractTxConfirmationResponse,
@@ -76,6 +76,7 @@ export const promptHandler = (origin, wallet) => async (promptRequest) => {
       const address0 = await wallet.getAddressAtIndex(0);
       nanoResponse['data']['nc'] = { ...data, caller: address0 };
       return nanoResponse;
+    }
     case TriggerTypes.SignOracleDataConfirmationPrompt:
       approved = await oracleDataPage(data, params, origin);
       return { data: approved };
