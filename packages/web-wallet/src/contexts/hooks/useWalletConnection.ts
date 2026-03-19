@@ -361,11 +361,62 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
       const installedVersion = await verifySnapInstallation();
       setSnapVersion(installedVersion);
 
-      // Step 3: Initialize wallet service
-      setLoadingStep('Initializing read-only wallet...');
-      await initializeWalletFromStorage(storedXpub, storedNetwork);
+      // Step 3: Verify snap's actual network matches stored network
+      setLoadingStep('Verifying network...');
+      let verifiedNetwork = storedNetwork;
+      try {
+        const networkCheckPromise = invokeSnap({
+          method: 'htr_getConnectedNetwork',
+          params: {}
+        });
 
-      // Step 4: Load wallet state (address and HTR balance)
+        const networkResult = await raceWithTimeout(
+          networkCheckPromise,
+          SNAP_TIMEOUTS.NETWORK_CHECK,
+          'Network check timeout'
+        );
+
+        const rawNetworkResponse = typeof networkResult === 'string' ? JSON.parse(networkResult) : networkResult;
+        const networkValidation = SnapNetworkResponseSchema.safeParse(rawNetworkResponse);
+
+        if (networkValidation.success) {
+          const currentSnapNetwork = networkValidation.data.response?.network;
+
+          if (currentSnapNetwork && currentSnapNetwork !== storedNetwork) {
+            log.info(`Snap network (${currentSnapNetwork}) differs from stored (${storedNetwork}), syncing snap to stored network`);
+
+            try {
+              const changeNetworkPromise = invokeSnap({
+                method: 'htr_changeNetwork',
+                params: {
+                  network: currentSnapNetwork,
+                  newNetwork: storedNetwork
+                }
+              });
+
+              await raceWithTimeout(
+                changeNetworkPromise,
+                SNAP_TIMEOUTS.NETWORK_CHANGE,
+                'Network change timeout'
+              );
+            } catch (networkChangeError) {
+              // If we can't change snap to stored network, use the snap's current network instead
+              log.error('Failed to change snap network, using snap network:', networkChangeError);
+              verifiedNetwork = currentSnapNetwork;
+              localStorage.setItem(STORAGE_KEYS.NETWORK, verifiedNetwork);
+            }
+          }
+        }
+      } catch (networkError) {
+        // Network check failed, proceed with stored network as best effort
+        log.error('Network verification failed, proceeding with stored network:', networkError);
+      }
+
+      // Step 4: Initialize wallet service
+      setLoadingStep('Initializing read-only wallet...');
+      await initializeWalletFromStorage(storedXpub, verifiedNetwork);
+
+      // Step 5: Load wallet state (address and HTR balance)
       setLoadingStep('Loading wallet data...');
       const walletState = await loadWalletState(addressMode);
 
@@ -380,13 +431,13 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
       setAddress(walletState.address);
       setFirstAddress(walletState.firstAddress);
       setBalances(walletState.balances);
-      setNetwork(storedNetwork);
+      setNetwork(verifiedNetwork);
       setXpub(storedXpub);
       setLoadingStep('');
 
       // Notify that connection is ready - useTokenState will load tokens
       if (onConnectionReady) {
-        await onConnectionReady(storedNetwork);
+        await onConnectionReady(verifiedNetwork);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
