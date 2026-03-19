@@ -21,6 +21,7 @@ export interface AddressInfo {
 export class ReadOnlyWalletWrapper {
   private wallet: HathorWalletServiceWallet | null = null;
   private isInitializing = false;
+  private currentNetwork: string | null = null;
 
   /**
    * Initialize the read-only wallet with the user's xpubkey.
@@ -33,8 +34,16 @@ export class ReadOnlyWalletWrapper {
       throw new Error(ERROR_PATTERNS.ALREADY_INITIALIZING);
     }
 
-    if (this.wallet?.isReady()) {
+    if (this.wallet?.isReady() && this.currentNetwork === network) {
       return;
+    }
+
+    // If wallet is ready but on a different network, stop it first
+    if (this.wallet?.isReady() && this.currentNetwork !== network) {
+      log.info(`Network mismatch: wallet on ${this.currentNetwork}, requested ${network}. Reinitializing.`);
+      await this.wallet.stop();
+      this.wallet = null;
+      this.currentNetwork = null;
     }
 
     this.isInitializing = true;
@@ -85,9 +94,12 @@ export class ReadOnlyWalletWrapper {
           throw error;
         }
       }
+
+      this.currentNetwork = network;
     } catch (error) {
       log.error('Failed to initialize read-only wallet:', error);
       this.wallet = null;
+      this.currentNetwork = null;
       throw error;
     } finally {
       // Ensure flag is always reset
@@ -300,6 +312,7 @@ export class ReadOnlyWalletWrapper {
       await this.wallet.stop();
     } finally {
       this.wallet = null;
+      this.currentNetwork = null;
     }
   }
 
