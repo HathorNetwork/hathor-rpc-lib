@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { readOnlyWalletWrapper } from '../../services/ReadOnlyWalletWrapper';
 import { getAddressForMode, type AddressMode } from '../../utils/addressMode';
 import { TOKEN_IDS } from '@/constants';
@@ -25,11 +25,6 @@ export function useWalletBalance(options: UseWalletBalanceOptions) {
   const [balances, setBalances] = useState<Map<string, WalletBalance>>(new Map());
   const [address, setAddress] = useState<string>('');
 
-  // Generation counter to prevent stale async results from overwriting newer ones.
-  // Incremented every time refreshBalance is called. If the generation changes
-  // while a refresh is in-flight, the result is discarded.
-  const balanceGenerationRef = useRef(0);
-
   /**
    * Refresh balances for HTR and all registered tokens.
    *
@@ -41,15 +36,12 @@ export function useWalletBalance(options: UseWalletBalanceOptions) {
       return;
     }
 
-    // Capture the current generation at the start of this refresh
-    const thisGeneration = ++balanceGenerationRef.current;
-
     try {
       // Read current tokens from ref - this is always up to date
       const currentTokens = registeredTokensRef.current;
       const tokenIds = [TOKEN_IDS.HTR, ...currentTokens.map(t => t.uid)];
 
-      log.debug('[refreshBalance] Fetching balances for tokens:', tokenIds, 'generation:', thisGeneration);
+      log.debug('[refreshBalance] Fetching balances for tokens:', tokenIds);
 
       // Fetch balances for all tokens and merge into single Map
       const allBalances = new Map<string, WalletBalance>();
@@ -75,20 +67,9 @@ export function useWalletBalance(options: UseWalletBalanceOptions) {
         })
       );
 
-      // Only update state if this is still the latest refresh
-      if (thisGeneration !== balanceGenerationRef.current) {
-        log.info(`[refreshBalance] Discarding stale result (generation ${thisGeneration}, current ${balanceGenerationRef.current})`);
-        return;
-      }
-
       log.debug('[refreshBalance] Final balances map size:', allBalances.size);
       setBalances(allBalances);
     } catch (error) {
-      // Only report error if this is still the latest refresh
-      if (thisGeneration !== balanceGenerationRef.current) {
-        log.debug('[refreshBalance] Discarding stale error');
-        return;
-      }
       log.error('[refreshBalance] Error:', error);
       onError(error instanceof Error ? error.message : 'Failed to refresh balance');
     }
