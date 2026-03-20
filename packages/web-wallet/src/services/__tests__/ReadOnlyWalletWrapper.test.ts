@@ -19,25 +19,32 @@ const {
   mockSetWalletServiceBaseUrl,
   mockSetWalletServiceBaseWsUrl,
   mockSetNetwork,
-} = vi.hoisted(() => ({
-  mockIsReady: vi.fn(),
-  mockStartReadOnly: vi.fn(),
-  mockStop: vi.fn(),
-  mockOn: vi.fn(),
-  mockOff: vi.fn(),
-  mockRemoveAllListeners: vi.fn(),
-  mockGetBalance: vi.fn(),
-  mockGetTxHistory: vi.fn(),
-  mockGetCurrentAddress: vi.fn(),
-  mockGetAddressAtIndex: vi.fn(),
-  mockGetAllAddresses: vi.fn(),
-  mockIsAddressMine: vi.fn(),
-  mockGetTokens: vi.fn(),
-  mockHasTxOutsideFirstAddress: vi.fn(),
-  mockSetWalletServiceBaseUrl: vi.fn(),
-  mockSetWalletServiceBaseWsUrl: vi.fn(),
-  mockSetNetwork: vi.fn(),
-}));
+  mockGetWalletServiceBaseUrl,
+} = vi.hoisted(() => {
+  // Stateful mock to mirror wallet-lib's global config singleton behavior
+  let walletServiceBaseUrl = 'https://wallet-service.hathor.network';
+
+  return {
+    mockIsReady: vi.fn(),
+    mockStartReadOnly: vi.fn(),
+    mockStop: vi.fn(),
+    mockOn: vi.fn(),
+    mockOff: vi.fn(),
+    mockRemoveAllListeners: vi.fn(),
+    mockGetBalance: vi.fn(),
+    mockGetTxHistory: vi.fn(),
+    mockGetCurrentAddress: vi.fn(),
+    mockGetAddressAtIndex: vi.fn(),
+    mockGetAllAddresses: vi.fn(),
+    mockIsAddressMine: vi.fn(),
+    mockGetTokens: vi.fn(),
+    mockHasTxOutsideFirstAddress: vi.fn(),
+    mockSetWalletServiceBaseUrl: vi.fn((url: string) => { walletServiceBaseUrl = url; }),
+    mockSetWalletServiceBaseWsUrl: vi.fn(),
+    mockSetNetwork: vi.fn(),
+    mockGetWalletServiceBaseUrl: vi.fn(() => walletServiceBaseUrl),
+  };
+});
 
 vi.mock('@hathor/wallet-lib', () => {
   // Mock Network class
@@ -95,7 +102,7 @@ vi.mock('@hathor/wallet-lib', () => {
       setWalletServiceBaseUrl: mockSetWalletServiceBaseUrl,
       setWalletServiceBaseWsUrl: mockSetWalletServiceBaseWsUrl,
       setNetwork: mockSetNetwork,
-      getWalletServiceBaseUrl: vi.fn(() => 'https://wallet-service.hathor.network'),
+      getWalletServiceBaseUrl: mockGetWalletServiceBaseUrl,
     },
     constants: {
       NATIVE_TOKEN_UID: '00',
