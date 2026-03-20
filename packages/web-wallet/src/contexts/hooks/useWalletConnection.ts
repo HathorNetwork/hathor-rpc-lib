@@ -263,6 +263,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     storedXpub: string,
     storedNetwork: string
   ): Promise<string> => {
+    log.info(`[initializeWalletFromStorage] called with network=${storedNetwork}, walletReady=${readOnlyWalletWrapper.isReady()}`, new Error().stack);
     if (readOnlyWalletWrapper.isReady()) {
       await readOnlyWalletWrapper.stop();
     }
