@@ -96,7 +96,6 @@ export class ReadOnlyWalletWrapper {
       }
 
       this.currentNetwork = network;
-      log.info(`[initialize] Wallet ready on network=${network}, walletServiceUrl=${config.getWalletServiceBaseUrl()}`);
     } catch (error) {
       log.error('Failed to initialize read-only wallet:', error);
       this.wallet = null;
@@ -161,7 +160,6 @@ export class ReadOnlyWalletWrapper {
     // resets the global config between initialize() and getBalance(), requests go
     // to the wrong wallet-service.
     this.ensureConfigUrls();
-    log.info(`[getBalance] network=${this.currentNetwork}, configUrl=${config.getWalletServiceBaseUrl()}, tokenId=${tokenId ?? 'all'}`);
 
     try {
       const balance = await this.wallet.getBalance(tokenId ?? null);
