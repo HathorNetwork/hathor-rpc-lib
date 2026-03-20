@@ -66,6 +66,5 @@ export const RPC_RESTRICTIONS = {
   [RpcMethods.GetXpub]: [
     'https://wallet.hathor.network',
     'https://staging.wallet.hathor.network',
-    'http://localhost:5173',
   ],
 };
