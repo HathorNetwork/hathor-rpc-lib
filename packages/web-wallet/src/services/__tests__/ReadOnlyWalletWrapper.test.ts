@@ -95,6 +95,7 @@ vi.mock('@hathor/wallet-lib', () => {
       setWalletServiceBaseUrl: mockSetWalletServiceBaseUrl,
       setWalletServiceBaseWsUrl: mockSetWalletServiceBaseWsUrl,
       setNetwork: mockSetNetwork,
+      getWalletServiceBaseUrl: vi.fn(() => 'https://wallet-service.hathor.network'),
     },
     constants: {
       NATIVE_TOKEN_UID: '00',

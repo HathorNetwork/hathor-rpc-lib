@@ -108,6 +108,31 @@ export class ReadOnlyWalletWrapper {
   }
 
   /**
+   * Ensures wallet-lib's global config singleton has the correct URLs for our current network.
+   * wallet-lib reads baseURL from config.getWalletServiceBaseUrl() at request time (not at
+   * wallet construction time), so if anything resets the global config between initialize()
+   * and an API call, requests silently go to the wrong wallet-service.
+   */
+  private ensureConfigUrls(): void {
+    if (!this.currentNetwork) return;
+
+    const expectedUrl = this.currentNetwork === NETWORKS.TESTNET
+      ? WALLET_SERVICE_URLS.TESTNET
+      : WALLET_SERVICE_URLS.MAINNET;
+
+    const expectedWsUrl = this.currentNetwork === NETWORKS.TESTNET
+      ? WALLET_SERVICE_WS_URLS.TESTNET
+      : WALLET_SERVICE_WS_URLS.MAINNET;
+
+    const actualUrl = config.getWalletServiceBaseUrl();
+    if (actualUrl !== expectedUrl) {
+      log.error(`Config URL mismatch! Expected ${expectedUrl} but got ${actualUrl}. Fixing.`);
+      config.setWalletServiceBaseUrl(expectedUrl);
+      config.setWalletServiceBaseWsUrl(expectedWsUrl);
+    }
+  }
+
+  /**
    * Check if the wallet is ready for operations
    */
   isReady(): boolean {
@@ -129,6 +154,12 @@ export class ReadOnlyWalletWrapper {
     if (!this.wallet) {
       throw new Error('Wallet not initialized');
     }
+
+    // Ensure wallet-lib global config points to the correct network URLs
+    // wallet-lib's axios reads baseURL from config at request time, so if anything
+    // resets the global config between initialize() and getBalance(), requests go
+    // to the wrong wallet-service.
+    this.ensureConfigUrls();
 
     try {
       const balance = await this.wallet.getBalance(tokenId ?? null);
@@ -161,6 +192,8 @@ export class ReadOnlyWalletWrapper {
     if (!this.wallet) {
       throw new Error('Wallet not initialized');
     }
+
+    this.ensureConfigUrls();
 
     try {
       const history: GetHistoryObject[] = await this.wallet.getTxHistory({
