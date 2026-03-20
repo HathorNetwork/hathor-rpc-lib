@@ -607,9 +607,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
       setLoadingStep('Initializing read-only wallet...');
 
       const newNetwork = targetNetwork;
-      await readOnlyWalletWrapper.initialize(newXpub, newNetwork);
-
-      setupEventListeners();
+      await initializeWalletFromStorage(newXpub, newNetwork);
 
       setLoadingStep('Loading wallet data...');
 
