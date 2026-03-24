@@ -454,6 +454,9 @@ export function WalletProvider({ children }: WalletProviderProps) {
   // Ref for token loading callback (needed before tokenState is initialized)
   const loadTokensRef = useRef<(network: string) => Promise<unknown>>(async () => {});
 
+  // Ref for clearing stale balance data (needed before balance hook is initialized)
+  const clearBalancesRef = useRef<() => void>(() => {});
+
   // Initialize address mode hook
   const { addressMode, setAddressMode: setAddressModeImpl } = useAddressMode({
     onError: setError,
@@ -482,6 +485,12 @@ export function WalletProvider({ children }: WalletProviderProps) {
     onNewTransaction: (notification) => onNewTransactionRef.current(notification),
     // When wallet connection is ready, load tokens and refresh balances
     onConnectionReady: async (network) => {
+      // Clear any stale balance data from a previous connection/network
+      // This prevents a race condition where checkExistingConnection (testnet)
+      // populates balance.balances, then connectWallet (mainnet) runs but the
+      // stale testnet data persists because balance.balances.size > 0
+      clearBalancesRef.current();
+
       await loadTokensRef.current(network);
       // After tokens are loaded, refresh balances to populate the balances Map
       // that the UI reads from (tokens have balance in token.balance, but UI
@@ -527,6 +536,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
   // Update refs to always use latest balance refresh functions
   refreshBalanceRef.current = balance.refreshBalance;
   refreshBalanceForTokensRef.current = balance.refreshBalanceForTokens;
+  clearBalancesRef.current = () => balance.setBalances(new Map());
 
   // Initialize transactions hook
   const transactions = useTransactions({
