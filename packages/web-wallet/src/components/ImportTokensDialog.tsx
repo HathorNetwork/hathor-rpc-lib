@@ -221,8 +221,13 @@ const ImportTokensDialog: React.FC<ImportTokensDialogProps> = ({
       }
     }
 
+    try {
+      await refreshDiscovery();
+    } catch {
+      // non-fatal
+    }
+
     setIsImporting(false);
-    refreshDiscovery();
 
     if (errors.length > 0) {
       setImportError(`Some tokens failed: ${errors.join(', ')}`);
