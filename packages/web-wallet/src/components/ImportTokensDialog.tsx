@@ -215,6 +215,16 @@ const ImportTokensDialog: React.FC<ImportTokensDialogProps> = ({
       try {
         const result = await registerTokensBatch(configStrings);
         errors.push(...result.errors.map(e => e.error));
+
+        // Remove successfully imported tokens from selection
+        if (result.registered.length > 0) {
+          const importedUids = new Set(result.registered.map(t => t.uid));
+          setSelectedTokens(prev => {
+            const next = new Set(prev);
+            importedUids.forEach(uid => next.delete(uid));
+            return next;
+          });
+        }
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Unknown error';
         errors.push(`Import failed: ${msg}`);
@@ -231,6 +241,7 @@ const ImportTokensDialog: React.FC<ImportTokensDialogProps> = ({
 
     if (errors.length > 0) {
       setImportError(`Some tokens failed: ${errors.join(', ')}`);
+      setStep('select');
     } else {
       setStep('success');
     }
@@ -301,7 +312,7 @@ const ImportTokensDialog: React.FC<ImportTokensDialogProps> = ({
       className="fixed inset-0 bg-black/50 flex items-start md:items-center justify-center z-50 overflow-y-auto p-4 md:p-0"
       onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
     >
-      <div role="dialog" aria-labelledby="import-tokens-title" className="bg-[#191C21] border border-[#24292F] rounded-2xl w-full max-w-md my-4 md:my-0 md:mx-4">
+      <div role="dialog" aria-modal="true" aria-labelledby="import-tokens-title" className="bg-[#191C21] border border-[#24292F] rounded-2xl w-full max-w-md my-4 md:my-0 md:mx-4">
         {/* Header */}
         <div className="relative flex items-center justify-center p-6 border-b border-[#24292F]">
           <h2 id="import-tokens-title" className="text-base font-bold text-primary-400">
