@@ -37,8 +37,8 @@ export class TokenDiscoveryService {
       const allTokenUids = await readOnlyWalletWrapper.getTokens();
       log.debug(`Wallet has ${allTokenUids.length} total tokens`);
 
-      // Read from storage directly — always up-to-date, no React state race condition
       const genesisHash = '';
+      // Read from storage directly — always up-to-date, no React state race condition
       const storedTokens = registeredTokenStorageService.loadTokenData(network, genesisHash);
       const registeredUids = new Set<string>(Object.keys(storedTokens));
       registeredUids.add(TOKEN_IDS.HTR);
