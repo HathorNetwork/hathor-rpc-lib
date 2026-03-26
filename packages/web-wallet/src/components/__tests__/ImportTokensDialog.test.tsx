@@ -20,7 +20,7 @@ vi.mock('../../services/TokenDiscoveryService', () => ({
 }));
 
 vi.mock('../../hooks/useTokenDiscovery', () => ({
-  useTokenDiscovery: ({ isConnected: _c, network: _n }: { isConnected: boolean; network: string }) => ({
+  useTokenDiscovery: () => ({
     discoveredTokenUids: ['token-b-uid', 'token-c-uid'],
     isDiscovering: false,
     isDismissed: false,
