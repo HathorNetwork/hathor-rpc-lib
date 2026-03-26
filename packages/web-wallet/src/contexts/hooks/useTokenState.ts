@@ -110,8 +110,8 @@ export function useTokenState(options: UseTokenStateOptions) {
 
   /**
    * Register multiple tokens in batch — saves to storage and adds to state immediately.
-   * Skips NFT detection and balance fetching. Caller should refresh balances after.
-   * This is synchronous per-token (no network calls), so it's fast.
+   * Skips NFT detection and balance fetching for new tokens.
+   * Caller should refresh balances and trigger NFT detection separately after.
    */
   const registerTokensBatch = useCallback((configStrings: string[]) => {
     if (!isConnected) {

@@ -2,17 +2,12 @@ import { readOnlyWalletWrapper } from './ReadOnlyWalletWrapper';
 import { registeredTokenStorageService } from './RegisteredTokenStorageService';
 import { TOKEN_IDS } from '../constants';
 import { createLogger } from '../utils/logger';
+import type { TokenBalanceInfo } from '../types/wallet';
 
 const log = createLogger('TokenDiscoveryService');
 
-export interface DiscoveredToken {
+export interface DiscoveredToken extends Partial<TokenBalanceInfo> {
   uid: string;
-  name?: string;
-  symbol?: string;
-  balance?: {
-    available: bigint;
-    locked: bigint;
-  };
   isLoadingBalance?: boolean;
 }
 

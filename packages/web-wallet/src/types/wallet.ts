@@ -21,6 +21,7 @@ export interface TokenBalanceInfo {
   uid: string;
   name: string;
   symbol: string;
+  version?: number;
   balance: {
     available: bigint;
     locked: bigint;

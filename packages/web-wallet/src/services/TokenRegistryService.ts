@@ -190,8 +190,9 @@ export class TokenRegistryService {
   }
 
   /**
-   * Register a token quickly — saves to storage only, skips NFT detection and balance fetch.
-   * Used for batch import where balances are loaded separately after.
+   * Register a token quickly — saves to storage only.
+   * For new tokens: skips NFT detection and balance fetch (loaded separately after).
+   * For already-registered tokens: returns existing data + metadata from storage.
    */
   registerTokenFast(
     configString: string,

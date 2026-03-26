@@ -210,6 +210,7 @@ export class ReadOnlyWalletWrapper {
             uid: item.token.id,
             name: item.token.name,
             symbol: item.token.symbol,
+            version: item.token.version,
             balance: {
               available: item.balance.unlocked != null ? toBigInt(item.balance.unlocked) : 0n,
               locked: item.balance.locked != null ? toBigInt(item.balance.locked) : 0n,
