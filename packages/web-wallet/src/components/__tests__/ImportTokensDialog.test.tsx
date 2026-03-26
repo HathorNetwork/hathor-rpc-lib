@@ -2,10 +2,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-const { mockUseWallet, mockFetchTokenDetails, mockDiscoverTokenUids } = vi.hoisted(() => ({
+const { mockUseWallet, mockFetchTokenDetails } = vi.hoisted(() => ({
   mockUseWallet: vi.fn(),
   mockFetchTokenDetails: vi.fn(),
-  mockDiscoverTokenUids: vi.fn(),
 }));
 
 vi.mock('../../contexts/WalletContext', () => ({
@@ -15,10 +14,10 @@ vi.mock('../../contexts/WalletContext', () => ({
 vi.mock('../../services/TokenDiscoveryService', () => ({
   tokenDiscoveryService: {
     fetchTokenDetails: mockFetchTokenDetails,
-    discoverTokenUids: mockDiscoverTokenUids,
   },
 }));
 
+const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
@@ -27,6 +26,7 @@ vi.mock('react-router-dom', async () => {
       discoveredTokenUids: ['token-b-uid', 'token-c-uid'],
       refreshDiscovery: vi.fn().mockResolvedValue(undefined),
     }),
+    useNavigate: () => mockNavigate,
   };
 });
 
@@ -53,6 +53,14 @@ vi.mock('../../constants', () => ({
   },
 }));
 
+// Mock IntersectionObserver (not available in jsdom)
+class MockIntersectionObserver {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+}
+vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
+
 import ImportTokensDialog from '../ImportTokensDialog';
 
 describe('ImportTokensDialog', () => {
@@ -69,16 +77,15 @@ describe('ImportTokensDialog', () => {
       isConnected: true,
     });
 
-    mockFetchTokenDetails
-      .mockImplementation(async (uid: string) => {
-        if (uid === 'token-b-uid') {
-          return { uid: 'token-b-uid', name: 'TokenB', symbol: 'TKB', balance: { available: 20000n, locked: 0n } };
-        }
-        if (uid === 'token-c-uid') {
-          return { uid: 'token-c-uid', name: 'TokenC', symbol: 'TKC', balance: { available: 50076n, locked: 10n } };
-        }
-        return null;
-      });
+    mockFetchTokenDetails.mockImplementation(async (uid: string) => {
+      if (uid === 'token-b-uid') {
+        return { uid: 'token-b-uid', name: 'TokenB', symbol: 'TKB', balance: { available: 20000n, locked: 0n } };
+      }
+      if (uid === 'token-c-uid') {
+        return { uid: 'token-c-uid', name: 'TokenC', symbol: 'TKC', balance: { available: 50076n, locked: 10n } };
+      }
+      return null;
+    });
 
     mockRegisterTokensBatch.mockResolvedValue({ registered: [], errors: [] });
   });
@@ -92,66 +99,41 @@ describe('ImportTokensDialog', () => {
     expect(screen.queryByText('Import Tokens')).not.toBeInTheDocument();
   });
 
-  it('should render dialog with token UIDs and lazy load details', async () => {
+  it('should render select step with token list', async () => {
     render(<ImportTokensDialog isOpen={true} onClose={mockOnClose} />);
 
     expect(screen.getByText('Import Tokens')).toBeInTheDocument();
-    expect(screen.getByText('Check before importing tokens')).toBeInTheDocument();
     expect(screen.getByText('Tokens found (2)')).toBeInTheDocument();
 
-    // Details load lazily
     await waitFor(() => {
       expect(screen.getByText('TKB (TokenB)')).toBeInTheDocument();
     });
   });
 
-  it('should enable Continue button only when tokens are selected', async () => {
+  it('should show confirm step after selecting tokens and clicking Continue', async () => {
     render(<ImportTokensDialog isOpen={true} onClose={mockOnClose} />);
 
     await waitFor(() => {
       expect(screen.getByText('TKB (TokenB)')).toBeInTheDocument();
     });
 
-    const continueButton = screen.getByRole('button', { name: 'Continue' });
-    expect(continueButton).toBeDisabled();
-
+    // Select a token
     const checkboxes = screen.getAllByRole('checkbox');
     await userEvent.click(checkboxes[0]);
 
-    expect(continueButton).not.toBeDisabled();
-  });
+    // Click Continue
+    await userEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
-  it('should toggle token selection on checkbox click', async () => {
-    render(<ImportTokensDialog isOpen={true} onClose={mockOnClose} />);
-
+    // Should show confirm step
     await waitFor(() => {
-      expect(screen.getByText('TKB (TokenB)')).toBeInTheDocument();
+      expect(screen.getByText('Confirm import')).toBeInTheDocument();
+      expect(screen.getByText('You are about to add these tokens to your wallet:')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Import tokens' })).toBeInTheDocument();
     });
-
-    const checkboxes = screen.getAllByRole('checkbox');
-
-    await userEvent.click(checkboxes[0]);
-    expect(checkboxes[0]).toBeChecked();
-
-    await userEvent.click(checkboxes[0]);
-    expect(checkboxes[0]).not.toBeChecked();
   });
 
-  it('should select all tokens when Select all is clicked', async () => {
-    render(<ImportTokensDialog isOpen={true} onClose={mockOnClose} />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Tokens found (2)')).toBeInTheDocument();
-    });
-
-    await userEvent.click(screen.getByText('Select all'));
-
-    const checkboxes = screen.getAllByRole('checkbox');
-    expect(checkboxes[0]).toBeChecked();
-    expect(checkboxes[1]).toBeChecked();
-  });
-
-  it('should import selected tokens on Continue click', async () => {
+  it('should go back to select step when Cancel is clicked on confirm', async () => {
     render(<ImportTokensDialog isOpen={true} onClose={mockOnClose} />);
 
     await waitFor(() => {
@@ -163,12 +145,42 @@ describe('ImportTokensDialog', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     await waitFor(() => {
-      expect(mockRegisterTokensBatch).toHaveBeenCalledOnce();
-      expect(screen.getByText('Tokens imported successfully!')).toBeInTheDocument();
+      expect(screen.getByText('Confirm import')).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Tokens found (2)')).toBeInTheDocument();
     });
   });
 
-  it('should show error when import fails', async () => {
+  it('should show success step after importing', async () => {
+    render(<ImportTokensDialog isOpen={true} onClose={mockOnClose} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('TKB (TokenB)')).toBeInTheDocument();
+    });
+
+    // Select + Continue + Import
+    const checkboxes = screen.getAllByRole('checkbox');
+    await userEvent.click(checkboxes[0]);
+    await userEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Import tokens' })).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Import tokens' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Tokens imported!')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'See all tokens' })).toBeInTheDocument();
+    });
+  });
+
+  it('should show error on confirm step when import fails', async () => {
     mockRegisterTokensBatch.mockResolvedValue({ registered: [], errors: [{ configString: 'x', error: 'Registration failed' }] });
 
     render(<ImportTokensDialog isOpen={true} onClose={mockOnClose} />);
@@ -182,20 +194,39 @@ describe('ImportTokensDialog', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Import tokens' })).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Import tokens' }));
+
+    await waitFor(() => {
       expect(screen.getByText(/failed/i)).toBeInTheDocument();
     });
   });
 
-  it('should have explorer links for each token', async () => {
+  it('should navigate to tokens filter when See all tokens is clicked', async () => {
     render(<ImportTokensDialog isOpen={true} onClose={mockOnClose} />);
 
     await waitFor(() => {
-      expect(screen.getByText('Tokens found (2)')).toBeInTheDocument();
+      expect(screen.getByText('TKB (TokenB)')).toBeInTheDocument();
     });
 
-    const links = screen.getAllByRole('link');
-    expect(links).toHaveLength(2);
-    expect(links[0]).toHaveAttribute('href', expect.stringContaining('token_detail/token-b-uid'));
-    expect(links[1]).toHaveAttribute('href', expect.stringContaining('token_detail/token-c-uid'));
+    const checkboxes = screen.getAllByRole('checkbox');
+    await userEvent.click(checkboxes[0]);
+    await userEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Import tokens' })).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Import tokens' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'See all tokens' })).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: 'See all tokens' }));
+
+    expect(mockNavigate).toHaveBeenCalledWith('/?filter=tokens');
   });
 });
