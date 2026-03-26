@@ -9,6 +9,8 @@ const DISMISS_KEY_PREFIX = 'hathor_wallet_token_discovery_dismissed_';
 interface UseTokenDiscoveryOptions {
   isConnected: boolean;
   network: string;
+  /** Pass newTransaction from WalletContext to re-run discovery on new tx */
+  newTransaction?: unknown;
 }
 
 interface UseTokenDiscoveryResult {
@@ -28,6 +30,7 @@ interface UseTokenDiscoveryResult {
 export function useTokenDiscovery({
   isConnected,
   network,
+  newTransaction,
 }: UseTokenDiscoveryOptions): UseTokenDiscoveryResult {
   const [discoveredTokenUids, setDiscoveredTokenUids] = useState<string[]>([]);
   const [isDiscovering, setIsDiscovering] = useState(false);
@@ -88,6 +91,13 @@ export function useTokenDiscovery({
       setDiscoveredTokenUids([]);
     }
   }, [isConnected, runDiscovery]);
+
+  // Re-run discovery when a new transaction arrives (might contain a new token)
+  useEffect(() => {
+    if (isConnected && newTransaction && hasDiscoveredRef.current) {
+      runDiscovery();
+    }
+  }, [newTransaction]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const dismissBanner = useCallback(() => {
     setIsDismissed(true);

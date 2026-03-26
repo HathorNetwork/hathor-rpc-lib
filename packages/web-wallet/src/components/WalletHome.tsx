@@ -37,7 +37,7 @@ const WalletHome: React.FC = () => {
     isDismissed,
     dismissBanner,
     refreshDiscovery,
-  } = useTokenDiscovery({ isConnected, network });
+  } = useTokenDiscovery({ isConnected, network, newTransaction });
 
   // Derive filter from URL search params
   const filterParam = searchParams.get('filter') as 'all' | 'tokens' | 'nfts' | null;
