@@ -311,13 +311,15 @@ const ImportTokensDialog: React.FC<ImportTokensDialogProps> = ({
           {/* ===== STEP 1: SELECT ===== */}
           {step === 'select' && (
             <>
-              {/* Warning */}
-              <div className="bg-green-600/20 border border-green-600/40 rounded-lg px-4 py-3">
-                <p className="text-sm font-bold text-green-400">Check before importing tokens</p>
-                <p className="text-xs text-green-400/80 mt-1">
-                  Adding tokens is your responsibility. Make sure you recognize the source.
-                </p>
-              </div>
+              {/* Warning - only show when there are tokens */}
+              {discoveredTokenUids.length > 0 && (
+                <div className="bg-green-600/20 border border-green-600/40 rounded-lg px-4 py-3">
+                  <p className="text-sm font-bold text-green-400">Check before importing tokens</p>
+                  <p className="text-xs text-green-400/80 mt-1">
+                    Adding tokens is your responsibility. Make sure you recognize the source.
+                  </p>
+                </div>
+              )}
 
               {/* Empty state */}
               {discoveredTokenUids.length === 0 && (
