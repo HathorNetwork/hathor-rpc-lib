@@ -3,12 +3,14 @@ import { X, Info } from 'lucide-react';
 
 interface NewTokensBannerProps {
   tokenCount: number;
+  isSingleAddress: boolean;
   onImportClick: () => void;
   onDismiss: () => void;
 }
 
 const NewTokensBanner: React.FC<NewTokensBannerProps> = ({
   tokenCount,
+  isSingleAddress,
   onImportClick,
   onDismiss,
 }) => {
@@ -21,7 +23,7 @@ const NewTokensBanner: React.FC<NewTokensBannerProps> = ({
         <p className="text-sm text-white">
           <span className="font-bold">New tokens</span>
           {' '}
-          We found tokens linked to your address that are not yet in your wallet.
+          We found tokens linked to your address{isSingleAddress ? '' : 'es'} that are not yet in your wallet.
           {' '}
           <button
             onClick={onImportClick}

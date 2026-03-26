@@ -7,56 +7,37 @@ describe('NewTokensBanner', () => {
   const mockOnImportClick = vi.fn();
   const mockOnDismiss = vi.fn();
 
-  it('should not render when tokenCount is 0', () => {
-    render(
-      <NewTokensBanner
-        tokenCount={0}
-        onImportClick={mockOnImportClick}
-        onDismiss={mockOnDismiss}
-      />
-    );
+  const defaultProps = {
+    tokenCount: 3,
+    isSingleAddress: true,
+    onImportClick: mockOnImportClick,
+    onDismiss: mockOnDismiss,
+  };
 
+  it('should not render when tokenCount is 0', () => {
+    render(<NewTokensBanner {...defaultProps} tokenCount={0} />);
     expect(screen.queryByText('New tokens')).not.toBeInTheDocument();
   });
 
-  it('should render when tokenCount is greater than 0', () => {
-    render(
-      <NewTokensBanner
-        tokenCount={3}
-        onImportClick={mockOnImportClick}
-        onDismiss={mockOnDismiss}
-      />
-    );
+  it('should render with singular "address" for single address mode', () => {
+    render(<NewTokensBanner {...defaultProps} isSingleAddress={true} />);
+    expect(screen.getByText(/linked to your address that/)).toBeInTheDocument();
+  });
 
-    expect(screen.getByText('New tokens')).toBeInTheDocument();
-    expect(screen.getByText(/We found tokens linked to your address/)).toBeInTheDocument();
-    expect(screen.getByText('Import tokens.')).toBeInTheDocument();
+  it('should render with plural "addresses" for multi-address mode', () => {
+    render(<NewTokensBanner {...defaultProps} isSingleAddress={false} />);
+    expect(screen.getByText(/linked to your addresses that/)).toBeInTheDocument();
   });
 
   it('should call onImportClick when Import tokens link is clicked', async () => {
-    render(
-      <NewTokensBanner
-        tokenCount={2}
-        onImportClick={mockOnImportClick}
-        onDismiss={mockOnDismiss}
-      />
-    );
-
+    render(<NewTokensBanner {...defaultProps} />);
     await userEvent.click(screen.getByText('Import tokens.'));
     expect(mockOnImportClick).toHaveBeenCalledOnce();
   });
 
   it('should call onDismiss when X button is clicked', async () => {
-    render(
-      <NewTokensBanner
-        tokenCount={2}
-        onImportClick={mockOnImportClick}
-        onDismiss={mockOnDismiss}
-      />
-    );
-
+    render(<NewTokensBanner {...defaultProps} />);
     await userEvent.click(screen.getByRole('button', { name: /dismiss/i }));
-
     expect(mockOnDismiss).toHaveBeenCalledOnce();
   });
 });

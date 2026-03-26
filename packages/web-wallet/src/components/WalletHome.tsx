@@ -30,6 +30,7 @@ const WalletHome: React.FC = () => {
     newTransaction,
     clearNewTransaction,
     network,
+    addressMode,
   } = useWallet();
 
   const {
@@ -191,6 +192,7 @@ const WalletHome: React.FC = () => {
         {discoveredTokenUids.length > 0 && !isDismissed && (
           <NewTokensBanner
             tokenCount={discoveredTokenUids.length}
+            isSingleAddress={addressMode === 'single'}
             onImportClick={() => navigate('/import-tokens')}
             onDismiss={dismissBanner}
           />
