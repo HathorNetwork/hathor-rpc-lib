@@ -14,6 +14,7 @@ import CreateTokenDialog from './components/CreateTokenDialog'
 import { Loader2 } from 'lucide-react'
 import htrLogoBlack from './assets/htr_logo_black.svg'
 import AddressModeDialog from './components/AddressModeDialog'
+import ImportTokensDialog from './components/ImportTokensDialog'
 
 // Route wrappers that connect URL params to dialog props
 function SendDialogRoute() {
@@ -53,6 +54,11 @@ function CreateTokenDialogRoute() {
 function AddressModeDialogRoute() {
   const navigate = useNavigate()
   return <AddressModeDialog isOpen={true} onClose={() => navigate('/')} />
+}
+
+function ImportTokensDialogRoute() {
+  const navigate = useNavigate()
+  return <ImportTokensDialog isOpen={true} onClose={() => navigate('/')} />
 }
 
 // Component that gates the wallet based on feature toggle
@@ -98,6 +104,7 @@ function FeatureGatedWallet() {
             <Route path="register-token" element={<RegisterTokenDialogRoute />} />
             <Route path="create-token" element={<CreateTokenDialogRoute />} />
             <Route path="address-mode" element={<AddressModeDialogRoute />} />
+            <Route path="import-tokens" element={<ImportTokensDialogRoute />} />
           </Route>
         </Routes>
         <Toaster />

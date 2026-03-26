@@ -190,6 +190,61 @@ export class TokenRegistryService {
   }
 
   /**
+   * Register a token quickly — saves to storage only, skips NFT detection and balance fetch.
+   * Used for batch import where balances are loaded separately after.
+   */
+  registerTokenFast(
+    configString: string,
+    network: string,
+    genesisHash: string
+  ): TokenInfo {
+    const validation = this.validateConfigString(configString);
+    if (!validation.valid || !validation.parsed) {
+      throw new Error(validation.error || 'Invalid configuration string');
+    }
+
+    const { uid, name, symbol } = validation.parsed;
+
+    if (uid === TOKEN_IDS.HTR) {
+      throw new Error('Cannot register the native HTR token');
+    }
+
+    // Skip if already registered
+    if (registeredTokenStorageService.isTokenRegistered(network, genesisHash, uid)) {
+      const existing = registeredTokenStorageService.getTokenData(network, genesisHash, uid);
+      const metadata = registeredTokenStorageService.getTokenMetadata(network, genesisHash, uid);
+      return {
+        ...(existing || { uid, name, symbol, configString }),
+        isNFT: metadata?.isNFT ?? false,
+        registeredAt: metadata?.registeredAt,
+        metadata: metadata?.metadata,
+        balance: { available: 0n, locked: 0n },
+      };
+    }
+
+    const tokenData: TokenData = { uid, name, symbol, configString };
+    const tokenMetadata: TokenMetadata = {
+      uid,
+      isNFT: false,
+      registeredAt: Date.now(),
+    };
+
+    const dataSaved = registeredTokenStorageService.addTokenData(network, genesisHash, tokenData);
+    if (!dataSaved) {
+      throw new Error('Failed to save token data to browser storage.');
+    }
+
+    registeredTokenStorageService.updateTokenMetadata(network, genesisHash, uid, tokenMetadata);
+    this.tokenCache.set(uid, tokenMetadata);
+
+    return {
+      ...tokenData,
+      ...tokenMetadata,
+      balance: { available: 0n, locked: 0n },
+    };
+  }
+
+  /**
    * Unregister a token (removes both data and metadata)
    */
   unregisterToken(tokenUid: string, network: string, genesisHash: string): void {

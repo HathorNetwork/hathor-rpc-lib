@@ -14,6 +14,19 @@ export interface WalletBalance {
  */
 export type WalletBalanceMap = Map<string, WalletBalance>;
 
+/**
+ * Token balance info including name and symbol, used for token discovery
+ */
+export interface TokenBalanceInfo {
+  uid: string;
+  name: string;
+  symbol: string;
+  balance: {
+    available: bigint;
+    locked: bigint;
+  };
+}
+
 export interface TransactionHistoryItem {
   tx_id: string;
   timestamp: number;
