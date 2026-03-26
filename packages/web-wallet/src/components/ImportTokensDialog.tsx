@@ -434,6 +434,14 @@ const ImportTokensDialog: React.FC<ImportTokensDialogProps> = ({
                     })}
                   </div>
 
+                  {/* Error from failed import */}
+                  {importError && (
+                    <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/50 rounded-lg">
+                      <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                      <span className="text-red-400 text-sm">{importError}</span>
+                    </div>
+                  )}
+
                   {/* Continue Button */}
                   <button
                     onClick={handleContinue}

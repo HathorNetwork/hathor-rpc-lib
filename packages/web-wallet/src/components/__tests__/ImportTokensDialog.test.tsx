@@ -180,7 +180,7 @@ describe('ImportTokensDialog', () => {
     });
   });
 
-  it('should show error on confirm step when import fails', async () => {
+  it('should show error and return to select step when import fails', async () => {
     mockRegisterTokensBatch.mockResolvedValue({ registered: [], errors: [{ configString: 'x', error: 'Registration failed' }] });
 
     render(<ImportTokensDialog isOpen={true} onClose={mockOnClose} />);
@@ -199,8 +199,10 @@ describe('ImportTokensDialog', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Import tokens' }));
 
+    // Should go back to select step with error message
     await waitFor(() => {
       expect(screen.getByText(/failed/i)).toBeInTheDocument();
+      expect(screen.getByText('Tokens found (2)')).toBeInTheDocument();
     });
   });
 
