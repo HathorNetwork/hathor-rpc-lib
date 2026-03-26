@@ -79,19 +79,24 @@ const ImportTokensDialog: React.FC<ImportTokensDialogProps> = ({
     ? HATHOR_EXPLORER_URLS.MAINNET
     : HATHOR_EXPLORER_URLS.TESTNET;
 
-  // Lazy load token details
+  // Ref to track which UIDs have been requested, avoiding duplicate fetches
+  // without depending on tokenDetails state (which would destabilize the callback)
+  const requestedRef = useRef(new Set<string>());
+
   const fetchDetail = useCallback(async (uid: string) => {
-    if (tokenDetails.has(uid)) return;
+    if (requestedRef.current.has(uid)) return;
+    requestedRef.current.add(uid);
 
     const detail = await tokenDiscoveryService.fetchTokenDetails(uid);
     if (detail) {
       setTokenDetails(prev => {
+        if (prev.has(uid)) return prev;
         const next = new Map(prev);
         next.set(uid, detail);
         return next;
       });
     }
-  }, [tokenDetails]);
+  }, []);
 
   const { enqueue, clear } = useThrottledQueue(fetchDetail);
 
@@ -114,7 +119,7 @@ const ImportTokensDialog: React.FC<ImportTokensDialogProps> = ({
         for (const entry of entries) {
           if (entry.isIntersecting) {
             const uid = (entry.target as HTMLElement).dataset.tokenUid;
-            if (uid && !tokenDetails.has(uid)) {
+            if (uid && !requestedRef.current.has(uid)) {
               visibleUids.push(uid);
             }
           }
@@ -128,7 +133,7 @@ const ImportTokensDialog: React.FC<ImportTokensDialogProps> = ({
     if (container) {
       container.querySelectorAll('[data-token-uid]').forEach(row => observerRef.current?.observe(row));
     }
-  }, [enqueue, tokenDetails]);
+  }, [enqueue]);
 
   useEffect(() => {
     if (!isOpen || discoveredTokenUids.length === 0) return;
