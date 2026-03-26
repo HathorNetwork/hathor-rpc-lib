@@ -321,8 +321,19 @@ const ImportTokensDialog: React.FC<ImportTokensDialogProps> = ({
 
               {/* Empty state */}
               {discoveredTokenUids.length === 0 && (
-                <div className="text-center py-8">
-                  <p className="text-sm text-muted-foreground">No new tokens found on your wallet.</p>
+                <div className="text-center py-6 space-y-3">
+                  <p className="text-sm font-bold text-white">No tokens available to import</p>
+                  <p className="text-xs text-muted-foreground">
+                    We didn't find any unregistered tokens linked to your wallet.
+                    <br />
+                    You can register a new one manually.
+                  </p>
+                  <button
+                    onClick={() => { handleClose(); navigate('/register-token'); }}
+                    className="px-6 py-2.5 bg-[#0D1117] border border-border hover:bg-[#161B22] text-white rounded-lg transition-colors font-medium"
+                  >
+                    Register a token
+                  </button>
                 </div>
               )}
 

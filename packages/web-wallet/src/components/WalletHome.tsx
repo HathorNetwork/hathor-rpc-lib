@@ -183,7 +183,6 @@ const WalletHome: React.FC = () => {
         onCreateTokenClick={() => navigate('/create-token')}
         onAddressModeClick={() => navigate('/address-mode')}
         onImportTokensClick={() => navigate('/import-tokens')}
-        hasDiscoveredTokens={discoveredTokenUids.length > 0}
       />
 
       {/* Main Container - responsive layout */}
