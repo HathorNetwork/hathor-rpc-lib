@@ -32,6 +32,8 @@ const NewTokensBanner: React.FC<NewTokensBannerProps> = ({
         </p>
       </div>
       <button
+        type="button"
+        aria-label="Dismiss new tokens banner"
         onClick={onDismiss}
         className="p-1 hover:bg-white/20 rounded transition-colors flex-shrink-0"
       >

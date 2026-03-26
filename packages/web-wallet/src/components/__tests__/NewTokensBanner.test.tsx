@@ -55,10 +55,7 @@ describe('NewTokensBanner', () => {
       />
     );
 
-    // Find the dismiss button (the one with X icon)
-    const buttons = screen.getAllByRole('button');
-    const dismissButton = buttons.find(btn => btn !== screen.getByText('Import tokens.'));
-    await userEvent.click(dismissButton!);
+    await userEvent.click(screen.getByRole('button', { name: /dismiss/i }));
 
     expect(mockOnDismiss).toHaveBeenCalledOnce();
   });

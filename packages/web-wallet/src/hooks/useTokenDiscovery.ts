@@ -77,11 +77,15 @@ export function useTokenDiscovery({
     }
   }, [isConnected, network, dismissKey]);
 
-  // Run discovery after wallet connects
+  // Run discovery after wallet connects, reset on disconnect
   useEffect(() => {
     if (isConnected && !hasDiscoveredRef.current) {
       hasDiscoveredRef.current = true;
       runDiscovery();
+    }
+    if (!isConnected) {
+      hasDiscoveredRef.current = false;
+      setDiscoveredTokenUids([]);
     }
   }, [isConnected, runDiscovery]);
 

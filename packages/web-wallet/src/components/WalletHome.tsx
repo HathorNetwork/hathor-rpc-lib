@@ -36,6 +36,7 @@ const WalletHome: React.FC = () => {
     discoveredTokenUids,
     isDismissed,
     dismissBanner,
+    refreshDiscovery,
   } = useTokenDiscovery({ isConnected, network });
 
   // Derive filter from URL search params
@@ -271,7 +272,7 @@ const WalletHome: React.FC = () => {
       </div>
 
       {/* Nested routes (dialogs) rendered here */}
-      <Outlet />
+      <Outlet context={{ discoveredTokenUids, refreshDiscovery }} />
     </div>
   );
 };

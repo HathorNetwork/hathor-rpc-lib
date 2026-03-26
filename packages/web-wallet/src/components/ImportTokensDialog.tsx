@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { X, Loader2, ExternalLink, AlertCircle, CheckCircle } from 'lucide-react';
+import { useOutletContext } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
 import { tokensUtils } from '@hathor/wallet-lib';
 import { truncateString } from '../utils/hathor';
 import { HATHOR_EXPLORER_URLS, NETWORKS } from '../constants';
 import { tokenDiscoveryService, type DiscoveredToken } from '../services/TokenDiscoveryService';
-import { useTokenDiscovery } from '../hooks/useTokenDiscovery';
 
 const BATCH_SIZE = 2;
 const BATCH_INTERVAL_MS = 500;
@@ -63,8 +63,11 @@ const ImportTokensDialog: React.FC<ImportTokensDialogProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { registerTokensBatch, network, isConnected } = useWallet();
-  const { discoveredTokenUids, refreshDiscovery } = useTokenDiscovery({ isConnected, network });
+  const { registerTokensBatch, network } = useWallet();
+  const { discoveredTokenUids, refreshDiscovery } = useOutletContext<{
+    discoveredTokenUids: string[];
+    refreshDiscovery: () => Promise<void>;
+  }>();
 
   // Token details loaded lazily, keyed by UID
   const [tokenDetails, setTokenDetails] = useState<Map<string, DiscoveredToken>>(new Map());
@@ -238,12 +241,13 @@ const ImportTokensDialog: React.FC<ImportTokensDialogProps> = ({
 
     setIsImporting(false);
 
+    // Always re-run discovery so the banner updates (even on partial success)
+    refreshDiscovery();
+
     if (errors.length > 0) {
       setImportError(`Some tokens failed: ${errors.join(', ')}`);
     } else {
       setImportSuccess(true);
-      // Re-run discovery so the banner disappears
-      refreshDiscovery();
       setTimeout(() => handleClose(), 1500);
     }
   };

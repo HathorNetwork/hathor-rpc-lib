@@ -19,15 +19,16 @@ vi.mock('../../services/TokenDiscoveryService', () => ({
   },
 }));
 
-vi.mock('../../hooks/useTokenDiscovery', () => ({
-  useTokenDiscovery: () => ({
-    discoveredTokenUids: ['token-b-uid', 'token-c-uid'],
-    isDiscovering: false,
-    isDismissed: false,
-    dismissBanner: vi.fn(),
-    refreshDiscovery: vi.fn().mockResolvedValue(undefined),
-  }),
-}));
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useOutletContext: () => ({
+      discoveredTokenUids: ['token-b-uid', 'token-c-uid'],
+      refreshDiscovery: vi.fn().mockResolvedValue(undefined),
+    }),
+  };
+});
 
 vi.mock('@hathor/wallet-lib', () => ({
   tokensUtils: {

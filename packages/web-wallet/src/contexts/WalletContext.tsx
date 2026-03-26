@@ -572,7 +572,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     // Synchronous — saves to storage + updates state immediately (no network calls)
     const result = tokenState.registerTokensBatch(configStrings);
     // Single balance refresh after all tokens are added to the list
-    balance.refreshBalance();
+    await balance.refreshBalance();
     return result;
   };
 
