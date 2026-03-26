@@ -4,8 +4,10 @@ import { ArrowUpRight, ArrowDownLeft, Loader2, Eye } from 'lucide-react';
 import TokenTabs from './TokenTabs';
 import TokenList from './TokenList';
 import Header from './Header';
+import NewTokensBanner from './NewTokensBanner';
 import { useWallet } from '../contexts/WalletContext';
 import { useTokens } from '../hooks/useTokens';
+import { useTokenDiscovery } from '../hooks/useTokenDiscovery';
 import { formatAmount } from '../utils/hathor';
 import { TOKEN_IDS } from '../constants';
 import htrLogoBlack from '../assets/htr_logo_black.svg';
@@ -27,7 +29,16 @@ const WalletHome: React.FC = () => {
     setError,
     newTransaction,
     clearNewTransaction,
+    network,
+    addressMode,
   } = useWallet();
+
+  const {
+    discoveredTokenUids,
+    isDismissed,
+    dismissBanner,
+    refreshDiscovery,
+  } = useTokenDiscovery({ isConnected, network, newTransaction });
 
   // Derive filter from URL search params
   const filterParam = searchParams.get('filter') as 'all' | 'tokens' | 'nfts' | null;
@@ -172,10 +183,21 @@ const WalletHome: React.FC = () => {
         onRegisterTokenClick={() => navigate('/register-token')}
         onCreateTokenClick={() => navigate('/create-token')}
         onAddressModeClick={() => navigate('/address-mode')}
+        onImportTokensClick={() => navigate('/import-tokens')}
       />
 
       {/* Main Container - responsive layout */}
       <div className='max-w-7xl mx-auto px-4 md:px-8 lg:px-16 py-6 md:py-9 space-y-8 md:space-y-20'>
+        {/* New Tokens Banner */}
+        {discoveredTokenUids.length > 0 && !isDismissed && (
+          <NewTokensBanner
+            tokenCount={discoveredTokenUids.length}
+            isSingleAddress={addressMode === 'single'}
+            onImportClick={() => navigate('/import-tokens')}
+            onDismiss={dismissBanner}
+          />
+        )}
+
         {/* Assets Summary Card */}
         <div className='bg-[#191C21] border border-[#24292F] rounded-2xl p-4 md:p-6'>
           <div className='flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-0'>
@@ -251,7 +273,7 @@ const WalletHome: React.FC = () => {
       </div>
 
       {/* Nested routes (dialogs) rendered here */}
-      <Outlet />
+      <Outlet context={{ discoveredTokenUids, refreshDiscovery }} />
     </div>
   );
 };

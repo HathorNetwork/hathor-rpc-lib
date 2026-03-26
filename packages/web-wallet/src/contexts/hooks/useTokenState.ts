@@ -109,6 +109,56 @@ export function useTokenState(options: UseTokenStateOptions) {
   }, [isConnected, network]);
 
   /**
+   * Register multiple tokens in batch — saves to storage and adds to state immediately.
+   * Skips NFT detection and balance fetching for new tokens.
+   * Caller should refresh balances and trigger NFT detection separately after.
+   */
+  const registerTokensBatch = useCallback((configStrings: string[]) => {
+    if (!isConnected) {
+      throw new Error('Wallet not connected');
+    }
+
+    const genesisHash = '';
+    const newTokenInfos: TokenInfo[] = [];
+    const errors: Array<{ configString: string; error: string }> = [];
+
+    for (const configString of configStrings) {
+      try {
+        const tokenInfo = tokenRegistryService.registerTokenFast(
+          configString,
+          network,
+          genesisHash
+        );
+        newTokenInfos.push(tokenInfo);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : 'Unknown error';
+        errors.push({ configString, error: msg });
+        log.error(`Failed to register token (${configString}):`, error);
+      }
+    }
+
+    if (newTokenInfos.length > 0) {
+      const currentTokens = registeredTokensRef.current;
+      let updatedTokens = [...currentTokens];
+
+      for (const tokenInfo of newTokenInfos) {
+        const existingIndex = updatedTokens.findIndex(t => t.uid === tokenInfo.uid);
+        if (existingIndex >= 0) {
+          updatedTokens[existingIndex] = tokenInfo;
+        } else {
+          updatedTokens = [...updatedTokens, tokenInfo];
+        }
+      }
+
+      registeredTokensRef.current = updatedTokens;
+      setRegisteredTokens(updatedTokens);
+      log.debug(`Batch registered ${newTokenInfos.length} tokens`);
+    }
+
+    return { registered: newTokenInfos, errors };
+  }, [isConnected, network]);
+
+  /**
    * Unregister a token
    */
   const unregisterToken = useCallback(async (tokenUid: string) => {
@@ -164,6 +214,7 @@ export function useTokenState(options: UseTokenStateOptions) {
 
     // Operations
     registerToken,
+    registerTokensBatch,
     unregisterToken,
     loadTokensForNetwork,
     getTokenInfo,

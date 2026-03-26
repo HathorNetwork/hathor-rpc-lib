@@ -320,6 +320,12 @@ export interface WalletContextType extends WalletState {
   registerToken: (configString: string) => Promise<void>;
 
   /**
+   * Register multiple tokens in batch. Adds all tokens to the list immediately,
+   * then refreshes balances once at the end.
+   */
+  registerTokensBatch: (configStrings: string[]) => Promise<{ registered: Array<{ uid: string; symbol: string }>; errors: Array<{ configString: string; error: string }> }>;
+
+  /**
    * Removes a custom token from the wallet.
    *
    * Unregisters a previously registered token, removing it from:
@@ -562,6 +568,14 @@ export function WalletProvider({ children }: WalletProviderProps) {
     await balance.refreshBalance();
   };
 
+  const registerTokensBatch = async (configStrings: string[]) => {
+    // Synchronous — saves to storage + updates state immediately (no network calls)
+    const result = tokenState.registerTokensBatch(configStrings);
+    // Single balance refresh after all tokens are added to the list
+    await balance.refreshBalance();
+    return result;
+  };
+
   const unregisterToken = async (tokenUid: string) => {
     await tokenState.unregisterToken(tokenUid);
     // Balance refresh will use registeredTokensRef which is already updated
@@ -655,6 +669,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
 
     // Token methods - directly from tokenState (no sync needed!)
     registerToken,
+    registerTokensBatch,
     unregisterToken,
     refreshTokenBalances: balance.refreshBalance,
     setSelectedTokenFilter: tokenState.setSelectedTokenFilter,

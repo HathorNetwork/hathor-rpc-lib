@@ -12,9 +12,10 @@ interface HeaderProps {
   onRegisterTokenClick?: () => void;
   onCreateTokenClick?: () => void;
   onAddressModeClick?: () => void;
+  onImportTokensClick?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClick, onAddressModeClick }) => {
+const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClick, onAddressModeClick, onImportTokensClick }) => {
   const { firstAddress, network, disconnectWallet } = useWallet();
   const [isNetworkDialogOpen, setIsNetworkDialogOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -101,6 +102,15 @@ const Header: React.FC<HeaderProps> = ({ onRegisterTokenClick, onCreateTokenClic
         className={className || "w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] transition-colors"}
       >
         Register Tokens
+      </button>
+      <button
+        onClick={() => {
+          setIsMenuOpen(false);
+          onImportTokensClick?.();
+        }}
+        className={className || "w-full px-4 py-3 text-left text-sm text-white hover:bg-[#24292F] transition-colors"}
+      >
+        Import Tokens
       </button>
       <button
         onClick={() => {

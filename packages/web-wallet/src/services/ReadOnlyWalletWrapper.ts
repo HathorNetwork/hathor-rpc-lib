@@ -1,7 +1,7 @@
 import { HathorWalletServiceWallet, Network, config } from '@hathor/wallet-lib';
 import type { GetHistoryObject, AddressInfoObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { NETWORKS, WALLET_SERVICE_URLS, WALLET_SERVICE_WS_URLS, TOKEN_IDS } from '../constants';
-import type { WalletBalance, TransactionHistoryItem } from '../types/wallet';
+import type { WalletBalance, TransactionHistoryItem, TokenBalanceInfo } from '../types/wallet';
 import { toBigInt } from '../utils/hathor';
 import { createLogger } from '../utils/logger';
 import { ERROR_PATTERNS } from '../errors/WalletConnectionErrors';
@@ -186,6 +186,47 @@ export class ReadOnlyWalletWrapper {
   }
 
   /**
+   * Get token balances with full token info (id, name, symbol).
+   * Unlike getBalance(), this preserves the token name and symbol from the API response.
+   * Used by token discovery to find unregistered tokens.
+   *
+   * @param tokenId - Optional token ID to fetch balance for a specific token.
+   *                  If null/undefined, fetches all known token balances.
+   */
+  async getAllTokenBalances(tokenId?: string): Promise<TokenBalanceInfo[]> {
+    if (!this.wallet) {
+      throw new Error('Wallet not initialized');
+    }
+
+    this.ensureConfigUrls();
+
+    try {
+      const balance = await this.wallet.getBalance(tokenId ?? null);
+      const result: TokenBalanceInfo[] = [];
+
+      if (Array.isArray(balance)) {
+        for (const item of balance) {
+          result.push({
+            uid: item.token.id,
+            name: item.token.name,
+            symbol: item.token.symbol,
+            version: item.token.version,
+            balance: {
+              available: item.balance.unlocked != null ? toBigInt(item.balance.unlocked) : 0n,
+              locked: item.balance.locked != null ? toBigInt(item.balance.locked) : 0n,
+            },
+          });
+        }
+      }
+
+      return result;
+    } catch (error) {
+      log.error('Failed to get all token balances:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get transaction history
    */
   async getTransactionHistory(count: number = 10, skip: number = 0, tokenId: string = TOKEN_IDS.HTR): Promise<TransactionHistoryItem[]> {
@@ -299,17 +340,19 @@ export class ReadOnlyWalletWrapper {
   }
 
   /**
-   * Get tokens in the wallet
+   * Get all token UIDs that the wallet has interacted with.
+   * Calls wallet-service GET /wallet/tokens.
    */
-  async getTokens(): Promise<Array<Record<string, unknown>>> {
+  async getTokens(): Promise<string[]> {
     if (!this.wallet) {
       throw new Error('Wallet not initialized');
     }
 
+    this.ensureConfigUrls();
+
     try {
       const tokens = await this.wallet.getTokens();
-      // wallet-lib returns string[] but we need Record<string, unknown>[]
-      return tokens as unknown as Array<Record<string, unknown>>;
+      return tokens as string[];
     } catch (error) {
       log.error('Failed to get tokens:', error);
       throw error;
