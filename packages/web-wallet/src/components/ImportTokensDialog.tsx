@@ -380,6 +380,7 @@ const ImportTokensDialog: React.FC<ImportTokensDialogProps> = ({
                         >
                           <input
                             type="checkbox"
+                            aria-label={`Select token ${truncateString(uid, 8, 8)}`}
                             checked={selectedTokens.has(uid)}
                             onChange={() => toggleToken(uid)}
                             className="w-4 h-4 rounded border-border bg-[#0D1117] text-primary accent-primary flex-shrink-0"
