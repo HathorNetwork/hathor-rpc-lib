@@ -234,8 +234,10 @@ export class TokenRegistryService {
       throw new Error('Failed to save token data to browser storage.');
     }
 
-    registeredTokenStorageService.updateTokenMetadata(network, genesisHash, uid, tokenMetadata);
-    this.tokenCache.set(uid, tokenMetadata);
+    const metadataSaved = registeredTokenStorageService.updateTokenMetadata(network, genesisHash, uid, tokenMetadata);
+    if (metadataSaved) {
+      this.tokenCache.set(uid, tokenMetadata);
+    }
 
     return {
       ...tokenData,

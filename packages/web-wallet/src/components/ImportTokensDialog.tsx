@@ -273,11 +273,12 @@ const ImportTokensDialog: React.FC<ImportTokensDialogProps> = ({
       className="fixed inset-0 bg-black/50 flex items-start md:items-center justify-center z-50 overflow-y-auto p-4 md:p-0"
       onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
     >
-      <div className="bg-[#191C21] border border-[#24292F] rounded-2xl w-full max-w-md my-4 md:my-0 md:mx-4">
+      <div role="dialog" aria-labelledby="import-tokens-title" className="bg-[#191C21] border border-[#24292F] rounded-2xl w-full max-w-md my-4 md:my-0 md:mx-4">
         {/* Header */}
         <div className="relative flex items-center justify-center p-6 border-b border-[#24292F]">
-          <h2 className="text-base font-bold text-primary-400">Import Tokens</h2>
+          <h2 id="import-tokens-title" className="text-base font-bold text-primary-400">Import Tokens</h2>
           <button
+            aria-label="Close import tokens dialog"
             onClick={handleClose}
             disabled={isImporting}
             className="absolute right-6 p-1 hover:bg-secondary/20 rounded transition-colors disabled:opacity-50"
