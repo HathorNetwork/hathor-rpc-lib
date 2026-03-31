@@ -73,6 +73,7 @@ describe('createNanoContractCreateTokenTx', () => {
   const createMockSendTransactionResult = (mockTransaction: ReturnType<typeof createMockTransaction>) => ({
     transaction: mockTransaction,
     runFromMining: jest.fn().mockResolvedValue({ tx_id: 'mock-tx-id' }),
+    releaseUtxos: jest.fn().mockResolvedValue(undefined),
   });
 
   beforeEach(() => {
@@ -388,6 +389,7 @@ describe('createNanoContractCreateTokenTx', () => {
     const mockSendTxResult = {
       transaction: mockTransaction,
       runFromMining: jest.fn().mockResolvedValue({ tx_id: 'mock-tx-id' }),
+      releaseUtxos: jest.fn().mockResolvedValue(undefined),
     };
 
     (wallet.createNanoContractCreateTokenTransaction as jest.Mock).mockResolvedValue(mockSendTxResult);
@@ -547,6 +549,7 @@ describe('createNanoContractCreateTokenTx', () => {
     const mockSendTxResult = {
       transaction: mockTransaction,
       runFromMining: jest.fn().mockResolvedValue({ tx_id: 'mock-tx-id' }),
+      releaseUtxos: jest.fn().mockResolvedValue(undefined),
     };
 
     (wallet.createNanoContractCreateTokenTransaction as jest.Mock).mockResolvedValue(mockSendTxResult);
@@ -630,6 +633,129 @@ describe('createNanoContractCreateTokenTx', () => {
 
     await expect(createNanoContractCreateTokenTx(rpcRequest, wallet, {}, promptHandler))
       .rejects.toThrow(SendNanoContractTxError);
+  });
+
+  it('should call releaseUtxos when user rejects the confirmation prompt', async () => {
+    const mockTransaction = createMockTransaction();
+    const mockSendTxResult = createMockSendTransactionResult(mockTransaction);
+
+    (wallet.createNanoContractCreateTokenTransaction as jest.Mock).mockResolvedValue(mockSendTxResult);
+
+    promptHandler.mockResolvedValueOnce({
+      type: TriggerResponseTypes.CreateNanoContractCreateTokenTxConfirmationResponse,
+      data: { accepted: false },
+    });
+
+    await expect(createNanoContractCreateTokenTx(rpcRequest, wallet, {}, promptHandler)).rejects.toThrow(PromptRejectedError);
+
+    expect(mockSendTxResult.releaseUtxos).toHaveBeenCalledTimes(1);
+  });
+
+  it('should call releaseUtxos when user rejects the PIN prompt', async () => {
+    const mockTransaction = createMockTransaction();
+    const mockSendTxResult = createMockSendTransactionResult(mockTransaction);
+
+    (wallet.createNanoContractCreateTokenTransaction as jest.Mock).mockResolvedValue(mockSendTxResult);
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.CreateNanoContractCreateTokenTxConfirmationResponse,
+        data: {
+          accepted: true,
+          nano: {
+            blueprintId: (rpcRequest.params.data as NanoData).blueprint_id,
+            ncId: (rpcRequest.params.data as NanoData).nc_id,
+            actions: (rpcRequest.params.data as NanoData).actions,
+            args: (rpcRequest.params.data as NanoData).args,
+            method: rpcRequest.params.method,
+            pushTx: true,
+            caller: 'wallet1',
+            fee: 100n,
+            parsedArgs: [],
+          },
+          token: createTokenOptions,
+        },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: { accepted: false },
+      });
+
+    await expect(createNanoContractCreateTokenTx(rpcRequest, wallet, {}, promptHandler)).rejects.toThrow(PromptRejectedError);
+
+    expect(mockSendTxResult.releaseUtxos).toHaveBeenCalledTimes(1);
+  });
+
+  it('should call releaseUtxos when signTx fails', async () => {
+    const mockTransaction = createMockTransaction();
+    const mockSendTxResult = createMockSendTransactionResult(mockTransaction);
+
+    (wallet.createNanoContractCreateTokenTransaction as jest.Mock).mockResolvedValue(mockSendTxResult);
+    (wallet.signTx as jest.Mock).mockRejectedValue(new Error('Sign failed'));
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.CreateNanoContractCreateTokenTxConfirmationResponse,
+        data: {
+          accepted: true,
+          nano: {
+            blueprintId: (rpcRequest.params.data as NanoData).blueprint_id,
+            ncId: (rpcRequest.params.data as NanoData).nc_id,
+            actions: (rpcRequest.params.data as NanoData).actions,
+            args: (rpcRequest.params.data as NanoData).args,
+            method: rpcRequest.params.method,
+            pushTx: true,
+            caller: 'wallet1',
+            fee: 100n,
+            parsedArgs: [],
+          },
+          token: createTokenOptions,
+        },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: { accepted: true, pinCode: '1234' },
+      });
+
+    await expect(createNanoContractCreateTokenTx(rpcRequest, wallet, {}, promptHandler)).rejects.toThrow(SendNanoContractTxError);
+
+    expect(mockSendTxResult.releaseUtxos).toHaveBeenCalledTimes(1);
+  });
+
+  it('should call releaseUtxos when runFromMining fails', async () => {
+    const mockTransaction = createMockTransaction();
+    const mockSendTxResult = createMockSendTransactionResult(mockTransaction);
+    mockSendTxResult.runFromMining.mockRejectedValue(new Error('Mining failed'));
+
+    (wallet.createNanoContractCreateTokenTransaction as jest.Mock).mockResolvedValue(mockSendTxResult);
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.CreateNanoContractCreateTokenTxConfirmationResponse,
+        data: {
+          accepted: true,
+          nano: {
+            blueprintId: (rpcRequest.params.data as NanoData).blueprint_id,
+            ncId: (rpcRequest.params.data as NanoData).nc_id,
+            actions: (rpcRequest.params.data as NanoData).actions,
+            args: (rpcRequest.params.data as NanoData).args,
+            method: rpcRequest.params.method,
+            pushTx: true,
+            caller: 'wallet1',
+            fee: 100n,
+            parsedArgs: [],
+          },
+          token: createTokenOptions,
+        },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: { accepted: true, pinCode: '1234' },
+      });
+
+    await expect(createNanoContractCreateTokenTx(rpcRequest, wallet, {}, promptHandler)).rejects.toThrow(SendNanoContractTxError);
+
+    expect(mockSendTxResult.releaseUtxos).toHaveBeenCalledTimes(1);
   });
 
   it('should default to DEPOSIT version when createTokenOptions.version is not provided', async () => {

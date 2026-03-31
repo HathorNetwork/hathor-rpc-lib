@@ -81,6 +81,7 @@ describe('sendTransaction', () => {
         prepareTx: jest.fn().mockResolvedValue(mockTransaction),
         signTx: jest.fn().mockResolvedValue(mockTransaction),
         runFromMining: sendTransactionMock,
+        releaseUtxos: jest.fn().mockResolvedValue(undefined),
       }),
     } as unknown as jest.Mocked<IHathorWallet>;
 
@@ -417,6 +418,7 @@ describe('sendTransaction', () => {
       prepareTx: jest.fn().mockResolvedValue(mockPreparedTransaction),
       signTx: signTxMock,
       runFromMining: sendTransactionMock,
+      releaseUtxos: jest.fn().mockResolvedValue(undefined),
     });
 
     promptHandler
@@ -464,6 +466,7 @@ describe('sendTransaction', () => {
       prepareTx: jest.fn().mockResolvedValue(mockTransaction),
       signTx: signTxMock,
       runFromMining: sendTransactionMock.mockResolvedValue(txResponse),
+      releaseUtxos: jest.fn().mockResolvedValue(undefined),
     });
 
     promptHandler
@@ -510,6 +513,7 @@ describe('sendTransaction', () => {
       prepareTx: jest.fn().mockResolvedValue(fbtMockTransaction),
       signTx: jest.fn().mockResolvedValue(fbtMockTransaction),
       runFromMining: sendTransactionMock.mockResolvedValue({ hash: 'txHash123' }),
+      releaseUtxos: jest.fn().mockResolvedValue(undefined),
     });
 
     promptHandler
@@ -538,5 +542,78 @@ describe('sendTransaction', () => {
       }),
       {},
     );
+  });
+
+  it('should call releaseUtxos when user rejects confirmation prompt', async () => {
+    const releaseUtxosMock = jest.fn().mockResolvedValue(undefined);
+    (wallet.sendManyOutputsSendTransaction as jest.Mock).mockResolvedValue({
+      prepareTx: jest.fn().mockResolvedValue(mockTransaction),
+      signTx: jest.fn().mockResolvedValue(mockTransaction),
+      runFromMining: sendTransactionMock,
+      releaseUtxos: releaseUtxosMock,
+    });
+
+    promptHandler.mockResolvedValueOnce({
+      type: TriggerResponseTypes.SendTransactionConfirmationResponse,
+      data: { accepted: false },
+    });
+
+    await expect(sendTransaction(rpcRequest, wallet, {}, promptHandler))
+      .rejects
+      .toThrow(PromptRejectedError);
+
+    expect(releaseUtxosMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('should call releaseUtxos when user rejects PIN prompt', async () => {
+    const releaseUtxosMock = jest.fn().mockResolvedValue(undefined);
+    (wallet.sendManyOutputsSendTransaction as jest.Mock).mockResolvedValue({
+      prepareTx: jest.fn().mockResolvedValue(mockTransaction),
+      signTx: jest.fn().mockResolvedValue(mockTransaction),
+      runFromMining: sendTransactionMock,
+      releaseUtxos: releaseUtxosMock,
+    });
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.SendTransactionConfirmationResponse,
+        data: { accepted: true },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: { accepted: false },
+      });
+
+    await expect(sendTransaction(rpcRequest, wallet, {}, promptHandler))
+      .rejects
+      .toThrow(PromptRejectedError);
+
+    expect(releaseUtxosMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('should call releaseUtxos (best-effort) when transaction execution fails', async () => {
+    const releaseUtxosMock = jest.fn().mockResolvedValue(undefined);
+    (wallet.sendManyOutputsSendTransaction as jest.Mock).mockResolvedValue({
+      prepareTx: jest.fn().mockResolvedValue(mockTransaction),
+      signTx: jest.fn().mockResolvedValue(mockTransaction),
+      runFromMining: jest.fn().mockRejectedValue(new Error('execution failed')),
+      releaseUtxos: releaseUtxosMock,
+    });
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.SendTransactionConfirmationResponse,
+        data: { accepted: true },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: { accepted: true, pinCode: '1234' },
+      });
+
+    await expect(sendTransaction(rpcRequest, wallet, {}, promptHandler))
+      .rejects
+      .toThrow(SendTransactionError);
+
+    expect(releaseUtxosMock).toHaveBeenCalledTimes(1);
   });
 });

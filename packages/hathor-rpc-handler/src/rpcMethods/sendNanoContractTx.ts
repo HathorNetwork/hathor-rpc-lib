@@ -184,6 +184,7 @@ export async function sendNanoContractTx(
     const sendNanoContractTxResponse = responseValidation.data;
 
     if (!sendNanoContractTxResponse.data.accepted) {
+      await preBuildSendTx.releaseUtxos();
       throw new PromptRejectedError();
     }
 
@@ -192,6 +193,7 @@ export async function sendNanoContractTx(
     const pinCodeResponse: PinRequestResponse = (await triggerHandler(pinPrompt, requestMetadata)) as PinRequestResponse;
 
     if (!pinCodeResponse.data.accepted) {
+      await preBuildSendTx.releaseUtxos();
       throw new PromptRejectedError('Pin prompt rejected');
     }
 
@@ -232,6 +234,7 @@ export async function sendNanoContractTx(
         response,
       } as RpcResponse;
     } catch (err) {
+      try { await preBuildSendTx.releaseUtxos(); } catch { /* best-effort */ }
       if (err instanceof Error) {
         throw new SendNanoContractTxError(err.message);
       } else {

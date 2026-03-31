@@ -47,6 +47,7 @@ interface ISendTransactionObject {
   prepareTx(): Promise<Transaction>;
   signTx(pin: string): Promise<Transaction>;
   runFromMining(): Promise<Transaction>;
+  releaseUtxos(): Promise<void>;
 }
 
 const OutputValueSchema = z.object({
@@ -182,6 +183,7 @@ export async function sendTransaction(
   const sendResponse = await promptHandler(prompt, requestMetadata) as SendTransactionConfirmationResponse;
 
   if (!sendResponse.data.accepted) {
+    await sendTransactionObject.releaseUtxos();
     throw new PromptRejectedError('User rejected send transaction prompt');
   }
 
@@ -194,6 +196,7 @@ export async function sendTransaction(
   const pinResponse = await promptHandler(pinPrompt, requestMetadata) as PinRequestResponse;
 
   if (!pinResponse.data.accepted) {
+    await sendTransactionObject.releaseUtxos();
     throw new PromptRejectedError('User rejected PIN prompt');
   }
 
@@ -225,6 +228,7 @@ export async function sendTransaction(
       response,
     } as RpcResponse;
   } catch (err) {
+    try { await sendTransactionObject.releaseUtxos(); } catch { /* best-effort */ }
     throw new SendTransactionError(err instanceof Error ? err.message : 'An unknown error occurred while sending the transaction');
   }
 } 
