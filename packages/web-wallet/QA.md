@@ -80,8 +80,6 @@
       - Text: "New tokens — We found tokens linked to your address(es) that are not yet in your wallet. Import tokens."
       - "Import tokens." as an underlined clickable link
       - X dismiss button on the right
-   1. For multi-address wallets, verify banner says "addresses" (plural)
-   1. For single-address wallets, verify banner says "address" (singular)
 1. **Banner Dismiss**
    1. Click the X button on the banner
    1. Verify the banner disappears
