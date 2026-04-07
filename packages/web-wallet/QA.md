@@ -28,6 +28,8 @@
    1. Verify menu opens with options:
       - Create Tokens
       - Register Tokens
+      - Import Tokens
+      - Address mode
       - Disconnect (in red)
    1. On mobile: click outside the menu to close it; on desktop: click outside the menu or the ☰ button again
    1. Verify menu closes properly
@@ -69,7 +71,85 @@
    1. Try registering the same token configuration string again
    1. Verify the token is re-registered successfully (registration is idempotent — no error is shown)
 
-### 5. Token Creation Tests
+### 5. Easy Token Import Tests
+1. **Prerequisites**: Ensure the wallet has tokens that are NOT registered in the web wallet (e.g., tokens received from another wallet or previously unregistered tokens)
+1. **Banner Appearance**
+   1. Connect the wallet
+   1. Verify a purple banner appears above the Assets Summary card with:
+      - Info icon on the left
+      - Text: "New tokens — We found tokens linked to your address(es) that are not yet in your wallet. Import tokens."
+      - "Import tokens." as an underlined clickable link
+      - X dismiss button on the right
+1. **Banner Dismiss**
+   1. Click the X button on the banner
+   1. Verify the banner disappears
+   1. Refresh the page
+   1. Verify the banner reappears (dismiss is per session only)
+1. **Import Tokens Dialog — Select Step**
+   1. Click "Import tokens." link in the banner (or use hamburger menu → Import Tokens)
+   1. Verify dialog opens with title "Import Tokens"
+   1. Verify green warning box: "Check before importing tokens — Adding tokens is your responsibility. Make sure you recognize the source."
+   1. Verify text: "Select the tokens you want to add to your wallet."
+   1. Verify "Tokens found (N)" header with correct count
+   1. Verify each token row shows:
+      - Checkbox (unchecked by default)
+      - Token symbol and name (e.g., "FLO (FloraCoin)") — may show "Loading..." initially
+      - Balance below the name
+      - Truncated UID on the right
+      - Explorer external link icon
+   1. Verify token details load progressively (not all at once)
+   1. Click an explorer link icon and verify it opens the token on the Hathor explorer in a new tab
+1. **Token Selection**
+   1. Click a checkbox to select a token
+   1. Verify "Continue" button becomes enabled
+   1. Click "Select all" link
+   1. Verify all checkboxes become checked
+   1. Click "Deselect all"
+   1. Verify all checkboxes become unchecked
+   1. Verify "Continue" button is disabled when no tokens are selected
+1. **Import Tokens Dialog — Confirm Step**
+   1. Select one or more tokens and click "Continue"
+   1. Verify dialog title changes to "Confirm import"
+   1. Verify text: "You are about to add these tokens to your wallet:"
+   1. Verify selected tokens are listed (without checkboxes)
+   1. Verify "Cancel" and "Import tokens" buttons are present
+   1. Click "Cancel"
+   1. Verify dialog returns to the select step with previous selections preserved
+   1. Click "Continue" again to return to confirm step
+1. **Import Tokens Dialog — Success Step**
+   1. Click "Import tokens" on the confirm step
+   1. Verify tokens appear in the "My Assets" list immediately (with 0.00 balance initially)
+   1. Verify dialog shows "Tokens imported!" with a checkmark
+   1. Verify "Close" and "See all tokens" buttons are present
+   1. Click "See all tokens"
+   1. Verify dialog closes and navigates to token list view
+   1. Verify balances load asynchronously after import
+1. **Banner After Import**
+   1. After importing all available tokens, verify the purple banner disappears
+   1. If only some tokens were imported, verify the banner remains with updated count
+1. **Empty State**
+   1. Open hamburger menu → Import Tokens (when no unregistered tokens exist)
+   1. Verify dialog shows: "No tokens available to import"
+   1. Verify text: "We didn't find any unregistered tokens linked to your wallet. You can register a new one manually."
+   1. Verify "Register a token" button is present
+   1. Click "Register a token"
+   1. Verify it navigates to the Register Token dialog
+1. **Menu Access**
+   1. Open hamburger menu
+   1. Verify "Import Tokens" option is always visible (between Register Tokens and Address mode)
+   1. Click "Import Tokens"
+   1. Verify the Import Tokens dialog opens
+1. **Real-time Discovery**
+   1. Keep the wallet open with no unregistered tokens (banner hidden)
+   1. From another wallet, send a new (unregistered) token to this wallet
+   1. Verify the purple banner appears automatically without page refresh
+1. **Error Handling**
+   1. If import partially fails (some tokens succeed, some fail):
+      - Verify error message shows which tokens failed
+      - Verify successfully imported tokens are removed from the selection
+      - Verify dialog returns to select step to allow retrying failed tokens
+
+### 6. Token Creation Tests
 1. Open hamburger menu and click "Create Tokens"
 1. **Form Layout Verification**
    1. Verify all fields are visible on a single screen:
@@ -137,7 +217,7 @@
    1. Click "Ok" button
    1. Verify dialog closes and token appears in "My Assets"
 
-### 6. Send Transaction Tests
+### 7. Send Transaction Tests
 1. **Access Send Screen**
    1. Click "Send" button from assets summary
    1. Verify send dialog opens on a single screen
@@ -203,7 +283,7 @@
    1. Enter whole number (e.g., "1")
    1. Send successfully
 
-### 7. Receive Tests
+### 8. Receive Tests
 1. Click "Receive" button from assets summary
 1. Verify receive dialog opens showing:
    - "Receive Tokens" header
@@ -229,7 +309,7 @@
    1. Verify balance updates in header and assets summary
 1. Close receive dialog and verify it closes properly
 
-### 8. Transaction History Tests
+### 9. Transaction History Tests
 1. **HTR History**
    1. Click on HTR token in "My Assets" list
    1. Verify full-screen history view opens (replaces home screen, not a modal overlay)
@@ -281,7 +361,7 @@
    1. Click back arrow in header
    1. Verify returns to home screen with token list
 
-### 9. Token Filtering Tests
+### 10. Token Filtering Tests
 1. **Filter Tabs**
    1. On home screen, locate filter tabs above "My Assets" section
    1. Verify two tabs are present: "Tokens", "NFTs"
@@ -301,7 +381,7 @@
    1. Unregister a token
    1. Verify counts decrease correctly
 
-### 10. Token Unregistration Tests
+### 11. Token Unregistration Tests
 1. **Access Unregister**
    1. Click on a registered custom token in "My Assets" (not HTR)
    1. In the full-screen history view, locate "Unregister Token" button
@@ -340,7 +420,7 @@
    1. Verify token appears back in "My Assets" with correct balance
    1. Verify all transaction history is still accessible
 
-### 11. Real-time Updates Tests
+### 12. Real-time Updates Tests
 1. Keep the web wallet open
 1. **Balance Updates**
    1. Send HTR to your wallet from another source
@@ -355,7 +435,7 @@
    1. Click "View History" in notification
    1. Verify it opens the correct token's history dialog
 
-### 12. Disconnect and Reconnection Tests
+### 13. Disconnect and Reconnection Tests
 1. **Disconnect Wallet**
    1. Open hamburger menu
    1. Click "Disconnect" (red text with logout icon)
@@ -372,7 +452,7 @@
    1. Verify previously registered tokens persist
    1. Verify network preference persists
 
-### 13. Error Handling Tests
+### 14. Error Handling Tests
 1. **Snap Not Installed**
    1. Disconnect wallet
    1. Uninstall or disable Hathor Snap in MetaMask
@@ -390,7 +470,7 @@
    1. Reconnect internet
    1. Verify wallet recovers and syncs
 
-### 14. UI/UX Tests
+### 15. UI/UX Tests
 1. **Responsive Design**
    1. Test on mobile viewport (resize browser)
    1. Verify mobile menu works correctly
