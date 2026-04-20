@@ -9,7 +9,7 @@ import { nanoUtils, ncApi, type IHathorWallet } from '@hathor/wallet-lib';
 import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
 import { sendNanoContractTx, NanoContractActionWithStringAmount } from '../../src/rpcMethods/sendNanoContractTx';
 import { TriggerTypes, RpcMethods, SendNanoContractRpcRequest, SendNanoContractTxConfirmationPrompt, TriggerResponseTypes, RpcResponseTypes } from '../../src/types';
-import { SendNanoContractTxError, InvalidParamsError } from '../../src/errors';
+import { SendNanoContractTxError, InvalidParamsError, PromptRejectedError } from '../../src/errors';
 
 // Mock transactionUtils.signTransaction
 jest.mock('@hathor/wallet-lib', () => {
@@ -455,7 +455,7 @@ describe('sendNanoContractTx', () => {
       },
     });
 
-    await expect(sendNanoContractTx(rpcRequest, wallet, {}, promptHandler)).rejects.toThrow();
+    await expect(sendNanoContractTx(rpcRequest, wallet, {}, promptHandler)).rejects.toThrow(PromptRejectedError);
 
     expect(mockReleaseUtxos).toHaveBeenCalledTimes(1);
   });
@@ -503,7 +503,7 @@ describe('sendNanoContractTx', () => {
         },
       });
 
-    await expect(sendNanoContractTx(rpcRequest, wallet, {}, promptHandler)).rejects.toThrow();
+    await expect(sendNanoContractTx(rpcRequest, wallet, {}, promptHandler)).rejects.toThrow(PromptRejectedError);
 
     expect(mockReleaseUtxos).toHaveBeenCalledTimes(1);
   });
