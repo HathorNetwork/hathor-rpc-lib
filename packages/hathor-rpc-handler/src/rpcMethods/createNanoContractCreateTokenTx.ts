@@ -24,6 +24,7 @@ import {
 import { PromptRejectedError, InvalidParamsError, SendNanoContractTxError } from '../errors';
 import { INanoContractActionSchema } from '@hathor/wallet-lib';
 import { bigIntCoercibleSchema } from '@hathor/wallet-lib/lib/utils/bigint';
+import type { ISendTransaction } from '@hathor/wallet-lib/lib/wallet/types';
 import { createTokenBaseSchema, createNanoContractCreateTokenTxConfirmationResponseSchema } from '../schemas';
 
 const createNanoContractCreateTokenTxSchema = z.object({
@@ -101,7 +102,7 @@ export async function createNanoContractCreateTokenTx(
     args: data?.args ?? [],
   };
 
-  const preBuildResult = await wallet.createNanoContractCreateTokenTransaction(
+  const preBuildResult: ISendTransaction = await wallet.createNanoContractCreateTokenTransaction(
     method,
     address,
     preBuildData,

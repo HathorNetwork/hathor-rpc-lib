@@ -23,6 +23,7 @@ import {
 import { PromptRejectedError, SendNanoContractTxError, InvalidParamsError } from '../errors';
 import { INanoContractActionSchema, NanoContractAction, ncApi, nanoUtils, Network, config, HathorWallet } from '@hathor/wallet-lib';
 import { bigIntCoercibleSchema } from '@hathor/wallet-lib/lib/utils/bigint';
+import type { ISendTransaction } from '@hathor/wallet-lib/lib/wallet/types';
 import { fetchTokenDetails } from '../helpers';
 import { sendNanoContractTxConfirmationResponseSchema } from '../schemas';
 
@@ -130,7 +131,7 @@ export async function sendNanoContractTx(
       args: params.args,
     };
 
-    const preBuildSendTx = await wallet.createNanoContractTransaction(
+    const preBuildSendTx: ISendTransaction = await wallet.createNanoContractTransaction(
       params.method,
       tempCallerAddress,
       preBuildTxData,
