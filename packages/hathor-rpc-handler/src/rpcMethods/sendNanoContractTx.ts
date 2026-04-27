@@ -235,7 +235,7 @@ export async function sendNanoContractTx(
         response,
       } as RpcResponse;
     } catch (err) {
-      try { await preBuildSendTx.releaseUtxos(); } catch { /* best-effort */ }
+      await preBuildSendTx.releaseUtxos();
       if (err instanceof Error) {
         throw new SendNanoContractTxError(err.message);
       } else {

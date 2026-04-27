@@ -220,7 +220,7 @@ export async function createNanoContractCreateTokenTx(
       response,
     };
   } catch (err) {
-    try { await preBuildResult.releaseUtxos(); } catch { /* best-effort */ }
+    await preBuildResult.releaseUtxos();
     if (err instanceof Error) {
       throw new SendNanoContractTxError(err.message);
     }

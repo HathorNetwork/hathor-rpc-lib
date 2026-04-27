@@ -47,6 +47,10 @@ interface ISendTransactionObject {
   prepareTx(): Promise<Transaction>;
   signTx(pin: string): Promise<Transaction>;
   runFromMining(): Promise<Transaction>;
+  /**
+   * Releases the UTXOs associated with the transaction.
+   * This is a best-effort operation that will not throw an error.
+   */
   releaseUtxos(): Promise<void>;
 }
 
@@ -228,7 +232,7 @@ export async function sendTransaction(
       response,
     } as RpcResponse;
   } catch (err) {
-    try { await sendTransactionObject.releaseUtxos(); } catch { /* best-effort */ }
+    await sendTransactionObject.releaseUtxos();
     throw new SendTransactionError(err instanceof Error ? err.message : 'An unknown error occurred while sending the transaction');
   }
 } 
