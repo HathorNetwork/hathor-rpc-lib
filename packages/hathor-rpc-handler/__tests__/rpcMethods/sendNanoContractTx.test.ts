@@ -9,7 +9,7 @@ import { nanoUtils, ncApi, type IHathorWallet } from '@hathor/wallet-lib';
 import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
 import { sendNanoContractTx, NanoContractActionWithStringAmount } from '../../src/rpcMethods/sendNanoContractTx';
 import { TriggerTypes, RpcMethods, SendNanoContractRpcRequest, SendNanoContractTxConfirmationPrompt, TriggerResponseTypes, RpcResponseTypes } from '../../src/types';
-import { SendNanoContractTxError, InvalidParamsError } from '../../src/errors';
+import { SendNanoContractTxError, InvalidParamsError, PromptRejectedError } from '../../src/errors';
 
 // Mock transactionUtils.signTransaction
 jest.mock('@hathor/wallet-lib', () => {
@@ -76,6 +76,7 @@ describe('sendNanoContractTx', () => {
       createNanoContractTransaction: jest.fn().mockResolvedValue({
         transaction: mockTransaction,
         runFromMining: jest.fn().mockResolvedValue({ tx_id: 'mock-tx-id' }),
+        releaseUtxos: jest.fn().mockResolvedValue(undefined),
       }),
       getServerUrl: jest.fn(),
       getTokenDetails: jest.fn().mockResolvedValue({
@@ -111,6 +112,7 @@ describe('sendNanoContractTx', () => {
     const mockSendTx = {
       transaction: mockTransaction,
       runFromMining: jest.fn().mockResolvedValue(response),
+      releaseUtxos: jest.fn().mockResolvedValue(undefined),
     };
     (wallet.createNanoContractTransaction as jest.Mock).mockResolvedValue(mockSendTx);
 
@@ -222,6 +224,7 @@ describe('sendNanoContractTx', () => {
     const mockSendTx = {
       transaction: mockTransaction,
       runFromMining: jest.fn().mockResolvedValue({ tx_id: 'mock-tx-id' }),
+      releaseUtxos: jest.fn().mockResolvedValue(undefined),
     };
     (wallet.createNanoContractTransaction as jest.Mock).mockResolvedValue(mockSendTx);
 
@@ -302,6 +305,7 @@ describe('sendNanoContractTx', () => {
     const mockSendTx = {
       transaction: mockTransaction,
       runFromMining: jest.fn().mockResolvedValue({ tx_id: 'mock-tx-id' }),
+      releaseUtxos: jest.fn().mockResolvedValue(undefined),
     };
     (wallet.createNanoContractTransaction as jest.Mock).mockResolvedValue(mockSendTx);
 
@@ -372,6 +376,7 @@ describe('sendNanoContractTx', () => {
     (wallet.createNanoContractTransaction as jest.Mock).mockResolvedValue({
       transaction: mockTransaction,
       runFromMining: jest.fn().mockRejectedValue(new Error('Transaction failed')),
+      releaseUtxos: jest.fn().mockResolvedValue(undefined),
     });
 
     promptHandler
@@ -414,6 +419,143 @@ describe('sendNanoContractTx', () => {
       type: TriggerTypes.SendNanoContractTxLoadingTrigger,
     }, {});
   });
+
+  it('should call releaseUtxos when user rejects the confirmation prompt', async () => {
+    const address = 'address123';
+
+    const mockTransaction = {
+      getFeeHeader: jest.fn().mockReturnValue({ entries: [] }),
+      getNanoHeaders: jest.fn().mockReturnValue([{ address: null, seqnum: 0 }]),
+      prepareToSend: jest.fn(),
+      toHex: jest.fn().mockReturnValue('tx-hex'),
+    };
+    const mockReleaseUtxos = jest.fn().mockResolvedValue(undefined);
+    const mockSendTx = {
+      transaction: mockTransaction,
+      runFromMining: jest.fn().mockResolvedValue({ tx_id: 'mock-tx-id' }),
+      releaseUtxos: mockReleaseUtxos,
+    };
+    (wallet.createNanoContractTransaction as jest.Mock).mockResolvedValue(mockSendTx);
+
+    promptHandler.mockResolvedValueOnce({
+      type: TriggerResponseTypes.SendNanoContractTxConfirmationResponse,
+      data: {
+        accepted: false,
+        nc: {
+          caller: address,
+          method: rpcRequest.params.method,
+          blueprintId: rpcRequest.params.blueprint_id,
+          ncId: rpcRequest.params.nc_id,
+          args: rpcRequest.params.args,
+          parsedArgs: [],
+          actions: [],
+          pushTx: true,
+          fee: 0n,
+        },
+      },
+    });
+
+    await expect(sendNanoContractTx(rpcRequest, wallet, {}, promptHandler)).rejects.toThrow(PromptRejectedError);
+
+    expect(mockReleaseUtxos).toHaveBeenCalledTimes(1);
+  });
+
+  it('should call releaseUtxos when user rejects the PIN prompt', async () => {
+    const address = 'address123';
+
+    const mockTransaction = {
+      getFeeHeader: jest.fn().mockReturnValue({ entries: [] }),
+      getNanoHeaders: jest.fn().mockReturnValue([{ address: null, seqnum: 0 }]),
+      prepareToSend: jest.fn(),
+      toHex: jest.fn().mockReturnValue('tx-hex'),
+    };
+    const mockReleaseUtxos = jest.fn().mockResolvedValue(undefined);
+    const mockSendTx = {
+      transaction: mockTransaction,
+      runFromMining: jest.fn().mockResolvedValue({ tx_id: 'mock-tx-id' }),
+      releaseUtxos: mockReleaseUtxos,
+    };
+    (wallet.createNanoContractTransaction as jest.Mock).mockResolvedValue(mockSendTx);
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.SendNanoContractTxConfirmationResponse,
+        data: {
+          accepted: true,
+          nc: {
+            caller: address,
+            method: rpcRequest.params.method,
+            blueprintId: rpcRequest.params.blueprint_id,
+            ncId: rpcRequest.params.nc_id,
+            args: rpcRequest.params.args,
+            parsedArgs: [],
+            actions: [],
+            pushTx: true,
+            fee: 0n,
+          },
+        },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: {
+          accepted: false,
+          pinCode: '',
+        },
+      });
+
+    await expect(sendNanoContractTx(rpcRequest, wallet, {}, promptHandler)).rejects.toThrow(PromptRejectedError);
+
+    expect(mockReleaseUtxos).toHaveBeenCalledTimes(1);
+  });
+
+  it('should call releaseUtxos when runFromMining fails', async () => {
+    const address = 'address123';
+    const pinCode = '1234';
+
+    const mockTransaction = {
+      getFeeHeader: jest.fn().mockReturnValue({ entries: [] }),
+      getNanoHeaders: jest.fn().mockReturnValue([{ address: null, seqnum: 0 }]),
+      prepareToSend: jest.fn(),
+      toHex: jest.fn().mockReturnValue('tx-hex'),
+    };
+    const mockReleaseUtxos = jest.fn().mockResolvedValue(undefined);
+    const mockSendTx = {
+      transaction: mockTransaction,
+      runFromMining: jest.fn().mockRejectedValue(new Error('Mining failed')),
+      releaseUtxos: mockReleaseUtxos,
+    };
+    (wallet.createNanoContractTransaction as jest.Mock).mockResolvedValue(mockSendTx);
+
+    promptHandler
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.SendNanoContractTxConfirmationResponse,
+        data: {
+          accepted: true,
+          nc: {
+            caller: address,
+            method: rpcRequest.params.method,
+            blueprintId: rpcRequest.params.blueprint_id,
+            ncId: rpcRequest.params.nc_id,
+            args: rpcRequest.params.args,
+            parsedArgs: [],
+            actions: [],
+            pushTx: true,
+            fee: 0n,
+          },
+        },
+      })
+      .mockResolvedValueOnce({
+        type: TriggerResponseTypes.PinRequestResponse,
+        data: {
+          accepted: true,
+          pinCode,
+        },
+      });
+
+    await expect(sendNanoContractTx(rpcRequest, wallet, {}, promptHandler)).rejects.toThrow(SendNanoContractTxError);
+
+    expect(mockReleaseUtxos).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('fee pre-calculation', () => {
@@ -436,6 +578,7 @@ describe('fee pre-calculation', () => {
       createAndSendNanoContractTransaction: jest.fn(),
       createNanoContractTransaction: jest.fn().mockResolvedValue({
         transaction: mockTransaction,
+        releaseUtxos: jest.fn().mockResolvedValue(undefined),
       }),
       getServerUrl: jest.fn(),
       getTokenDetails: jest.fn().mockResolvedValue({
@@ -488,6 +631,7 @@ describe('fee pre-calculation', () => {
       createAndSendNanoContractTransaction: jest.fn(),
       createNanoContractTransaction: jest.fn().mockResolvedValue({
         transaction: mockTransaction,
+        releaseUtxos: jest.fn().mockResolvedValue(undefined),
       }),
       getServerUrl: jest.fn(),
       getTokenDetails: jest.fn().mockResolvedValue({
@@ -547,6 +691,7 @@ describe('sendNanoContractTx parameter validation', () => {
       createNanoContractTransaction: jest.fn().mockImplementation(() => ({
         transaction: mockTransaction,
         runFromMining: jest.fn().mockResolvedValue({ tx_id: 'mock-tx-id' }),
+        releaseUtxos: jest.fn().mockResolvedValue(undefined),
       })),
       getServerUrl: jest.fn(),
       getFullTxById: jest.fn().mockImplementation(() => ({

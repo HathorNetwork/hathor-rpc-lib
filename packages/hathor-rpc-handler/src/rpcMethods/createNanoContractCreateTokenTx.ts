@@ -24,6 +24,7 @@ import {
 import { PromptRejectedError, InvalidParamsError, SendNanoContractTxError } from '../errors';
 import { INanoContractActionSchema } from '@hathor/wallet-lib';
 import { bigIntCoercibleSchema } from '@hathor/wallet-lib/lib/utils/bigint';
+import type { ISendTransaction } from '@hathor/wallet-lib/lib/wallet/types';
 import { createTokenBaseSchema, createNanoContractCreateTokenTxConfirmationResponseSchema } from '../schemas';
 
 const createNanoContractCreateTokenTxSchema = z.object({
@@ -101,7 +102,7 @@ export async function createNanoContractCreateTokenTx(
     args: data?.args ?? [],
   };
 
-  const preBuildResult = await wallet.createNanoContractCreateTokenTransaction(
+  const preBuildResult: ISendTransaction = await wallet.createNanoContractCreateTokenTransaction(
     method,
     address,
     preBuildData,
@@ -163,6 +164,7 @@ export async function createNanoContractCreateTokenTx(
   const confirmationResponse = responseValidation.data;
 
   if (!confirmationResponse.data.accepted) {
+    await preBuildResult.releaseUtxos();
     throw new PromptRejectedError('User rejected nano contract create token transaction prompt');
   }
 
@@ -175,6 +177,7 @@ export async function createNanoContractCreateTokenTx(
   };
   const pinResponse = await promptHandler(pinPrompt, requestMetadata) as PinRequestResponse;
   if (!pinResponse.data.accepted) {
+    await preBuildResult.releaseUtxos();
     throw new PromptRejectedError('User rejected PIN prompt');
   }
 
@@ -184,35 +187,43 @@ export async function createNanoContractCreateTokenTx(
   };
   promptHandler(loadingTrigger, requestMetadata);
 
-  // If caller changed, update the pre-built transaction
-  if (confirmedCaller !== address) {
-    const nanoHeaders = preBuildResult.transaction.getNanoHeaders();
-    if (!nanoHeaders || nanoHeaders.length === 0) {
-      throw new SendNanoContractTxError('No nano headers found in the transaction');
+  try {
+    // If caller changed, update the pre-built transaction
+    if (confirmedCaller !== address) {
+      const nanoHeaders = preBuildResult.transaction.getNanoHeaders();
+      if (!nanoHeaders || nanoHeaders.length === 0) {
+        throw new SendNanoContractTxError('No nano headers found in the transaction');
+      }
+      await wallet.setNanoHeaderCaller(nanoHeaders[0], confirmedCaller);
     }
-    await wallet.setNanoHeaderCaller(nanoHeaders[0], confirmedCaller);
+
+    await wallet.signTx(preBuildResult.transaction, { pinCode: pinResponse.data.pinCode });
+
+    // Send or return hex based on push_tx flag
+    let response: Transaction | string;
+    if (push_tx) {
+      // Send the transaction
+      response = await preBuildResult.runFromMining();
+    } else {
+      // Convert to hex format for the response when not pushing to network
+      response = preBuildResult.transaction.toHex();
+    }
+
+    // Emit loading finished trigger
+    const loadingFinishedTrigger: CreateNanoContractCreateTokenTxLoadingFinishedTrigger = {
+      type: TriggerTypes.CreateNanoContractCreateTokenTxLoadingFinishedTrigger,
+    };
+    promptHandler(loadingFinishedTrigger, requestMetadata);
+
+    return {
+      type: RpcResponseTypes.CreateNanoContractCreateTokenTxResponse,
+      response,
+    };
+  } catch (err) {
+    await preBuildResult.releaseUtxos();
+    if (err instanceof Error) {
+      throw new SendNanoContractTxError(err.message);
+    }
+    throw new SendNanoContractTxError('An unknown error occurred');
   }
-
-  await wallet.signTx(preBuildResult.transaction, { pinCode: pinResponse.data.pinCode });
-
-  // Send or return hex based on push_tx flag
-  let response: Transaction | string;
-  if (push_tx) {
-    // Send the transaction
-    response = await preBuildResult.runFromMining();
-  } else {
-    // Convert to hex format for the response when not pushing to network
-    response = preBuildResult.transaction.toHex();
-  }
-
-  // Emit loading finished trigger
-  const loadingFinishedTrigger: CreateNanoContractCreateTokenTxLoadingFinishedTrigger = {
-    type: TriggerTypes.CreateNanoContractCreateTokenTxLoadingFinishedTrigger,
-  };
-  promptHandler(loadingFinishedTrigger, requestMetadata);
-
-  return {
-    type: RpcResponseTypes.CreateNanoContractCreateTokenTxResponse,
-    response,
-  };
 } 
