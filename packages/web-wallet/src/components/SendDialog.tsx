@@ -13,6 +13,7 @@ import { TOKEN_IDS } from '../constants';
 import { readOnlyWalletWrapper } from '../services/ReadOnlyWalletWrapper';
 import { getAddressForMode } from '../utils/addressMode';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { extractErrorMessage, getSnapErrorUserMessage } from '../utils/snapErrors';
 
 interface SendDialogProps {
   isOpen: boolean;
@@ -280,7 +281,8 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
       setTransactionError(null);
       onClose();
     } catch (err) {
-      setTransactionError(err instanceof Error ? err.message : 'Failed to send transaction');
+      const rawMessage = extractErrorMessage(err, 'Failed to send transaction');
+      setTransactionError(getSnapErrorUserMessage(rawMessage));
     } finally {
       setIsLoading(false);
     }

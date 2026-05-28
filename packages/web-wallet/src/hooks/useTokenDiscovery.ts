@@ -11,6 +11,8 @@ interface UseTokenDiscoveryOptions {
   network: string;
   /** Pass newTransaction from WalletContext to re-run discovery on new tx */
   newTransaction?: unknown;
+  /** Pass registeredTokens.length so unregister/register triggers re-discovery */
+  registeredTokenCount?: number;
 }
 
 interface UseTokenDiscoveryResult {
@@ -31,6 +33,7 @@ export function useTokenDiscovery({
   isConnected,
   network,
   newTransaction,
+  registeredTokenCount,
 }: UseTokenDiscoveryOptions): UseTokenDiscoveryResult {
   const [discoveredTokenUids, setDiscoveredTokenUids] = useState<string[]>([]);
   const [isDiscovering, setIsDiscovering] = useState(false);
@@ -38,6 +41,14 @@ export function useTokenDiscovery({
 
   const hasDiscoveredRef = useRef(false);
   const prevNetworkRef = useRef(network);
+  // Mirrors `isDiscovering` state for synchronous reads inside effects/callbacks
+  // without needing to add it to dependency arrays (which would cause re-renders
+  // and risk feedback loops).
+  const isDiscoveringRef = useRef(false);
+  // Set when a re-discovery trigger fires while one is already in flight, so we
+  // can run exactly one follow-up discovery after the current one finishes
+  // (coalescing bursts like bulk token imports into a single extra run).
+  const pendingDiscoveryRef = useRef(false);
 
   const dismissKey = `${DISMISS_KEY_PREFIX}${network}`;
 
@@ -63,6 +74,14 @@ export function useTokenDiscovery({
   const runDiscovery = useCallback(async () => {
     if (!isConnected) return;
 
+    // Guard against concurrent runs. Triggers fired while a discovery is in
+    // flight are coalesced into one follow-up run via `pendingDiscoveryRef`.
+    if (isDiscoveringRef.current) {
+      pendingDiscoveryRef.current = true;
+      return;
+    }
+
+    isDiscoveringRef.current = true;
     setIsDiscovering(true);
     try {
       const uids = await tokenDiscoveryService.discoverTokenUids(network);
@@ -76,9 +95,25 @@ export function useTokenDiscovery({
       log.error('Token discovery failed:', error);
       setDiscoveredTokenUids([]);
     } finally {
+      isDiscoveringRef.current = false;
       setIsDiscovering(false);
     }
+
+    // If any trigger fired while we were running, honor it with exactly one
+    // follow-up run instead of dropping the signal (e.g. bulk token imports).
+    if (pendingDiscoveryRef.current && isConnected) {
+      pendingDiscoveryRef.current = false;
+      runDiscoveryRef.current?.();
+    }
   }, [isConnected, network, dismissKey]);
+
+  // Latest `runDiscovery` reference, used for the self-rescheduling follow-up
+  // call above so we don't need to reference the const while it's being
+  // initialized.
+  const runDiscoveryRef = useRef(runDiscovery);
+  useEffect(() => {
+    runDiscoveryRef.current = runDiscovery;
+  }, [runDiscovery]);
 
   // Run discovery after wallet connects, reset on disconnect
   useEffect(() => {
@@ -92,12 +127,20 @@ export function useTokenDiscovery({
     }
   }, [isConnected, runDiscovery]);
 
-  // Re-run discovery when a new transaction arrives (might contain a new token)
+  // Re-run discovery on new transactions. Read via ref so the effect fires
+  // only on the trigger, not when `runDiscovery`'s identity changes.
   useEffect(() => {
     if (isConnected && newTransaction && hasDiscoveredRef.current) {
-      runDiscovery();
+      runDiscoveryRef.current?.();
     }
-  }, [newTransaction]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [newTransaction, isConnected]);
+
+  // Re-run discovery on register/unregister so the Import dialog stays in sync.
+  useEffect(() => {
+    if (isConnected && hasDiscoveredRef.current) {
+      runDiscoveryRef.current?.();
+    }
+  }, [registeredTokenCount, isConnected]);
 
   const dismissBanner = useCallback(() => {
     setIsDismissed(true);

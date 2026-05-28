@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { X, Loader2, AlertCircle, CheckCircle, Copy } from 'lucide-react';
+import { X, Loader2, AlertCircle, CheckCircle, Copy, Info } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,9 +9,9 @@ import { helpersUtils, tokensUtils, constants } from '@hathor/wallet-lib';
 import { formatAmount, amountToCents } from '../utils/hathor';
 import { readOnlyWalletWrapper } from '../services/ReadOnlyWalletWrapper';
 import { getAddressForMode } from '../utils/addressMode';
-// TODO: Re-enable when fee token feature is ready
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { extractErrorMessage, getSnapErrorUserMessage } from '../utils/snapErrors';
 
 interface CreateTokenDialogProps {
   isOpen: boolean;
@@ -117,7 +117,6 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
     watch,
     setValue,
     getValues,
-    // TODO: Re-enable when fee token feature is ready
     reset,
   } = useForm<CreateTokenFormData>({
     resolver: zodResolver(createTokenSchema),
@@ -137,16 +136,18 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
   const isNFT = watch('isNFT');
   const amount = watch('amount');
   const nftData = watch('nftData');
-  // TODO: Re-enable when fee token feature is ready
-  // const tokenType = watch('tokenType');
+  const tokenType = watch('tokenType');
 
-  // When toggling to NFT mode, strip any decimal portion from the amount
+  // When toggling to NFT mode, strip any decimal portion from the amount and
+  // snap the token type to 'deposit' (NFTs are always deposit-based; the
+  // submit handler already forces this, but the UI should reflect it too).
   React.useEffect(() => {
     if (isNFT) {
       const currentAmount = getValues('amount');
       if (currentAmount.includes('.') || currentAmount.includes(',')) {
         setValue('amount', currentAmount.split(/[.,]/)[0]);
       }
+      setValue('tokenType', 'deposit');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isNFT]);
@@ -158,6 +159,9 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
   const depositInCents = useMemo(() => {
     try {
       if (!amount || amount === '0') return 0n;
+
+      // Fee tokens don't require an HTR deposit
+      if (!isNFT && tokenType === 'fee') return 0n;
 
       let amountInBaseUnits: bigint;
       if (isNFT) {
@@ -182,7 +186,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
     } catch {
       return 0n;
     }
-  }, [amount, isNFT, nftData]);
+  }, [amount, isNFT, nftData, tokenType]);
 
   // Check if user has insufficient balance
   const hasInsufficientBalance = useMemo(() => {
@@ -210,11 +214,15 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
         ? BigInt(data.amount)
         : amountToCents(data.amount);
 
+      // NFTs are always deposit-based; only regular tokens can be fee-based
+      const tokenVersion = data.isNFT ? 'deposit' : data.tokenType;
+
       // Prepare RPC params matching createTokenRpcSchema
       const params = {
         name: data.name,
         symbol: data.symbol,
         amount: String(amountInBaseUnits),
+        version: tokenVersion,
         change_address: changeAddress,
         create_mint: createMint,
         create_melt: createMelt,
@@ -279,15 +287,21 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
 
       console.error('Failed to create token:', err);
 
-      // User-friendly error messages
-      const errorMsg = err instanceof Error ? err.message : 'Failed to create token';
+      // Centralised mapping (snap crashes, HTR/token UTXO shortages, etc.)
+      // handles most cases. The branches below cover Create-specific overrides
+      // that don't fit the generic snap error mapping.
+      const errorMsg = extractErrorMessage(err, 'Failed to create token');
+      const mappedMsg = getSnapErrorUserMessage(errorMsg);
 
       if (errorMsg.includes('rejected') || errorMsg.includes('User rejected')) {
         setError('Transaction was cancelled. Please try again.');
-      } else if (errorMsg.includes('insufficient') || errorMsg.includes('Insufficient')) {
-        setError('Insufficient HTR balance for deposit and fees.');
       } else if (errorMsg.includes('timeout') || errorMsg.includes('timed out')) {
         setError('Request timed out. Please check your connection and try again.');
+      } else if (mappedMsg !== errorMsg) {
+        // getSnapErrorUserMessage produced a friendly message — use it.
+        setError(mappedMsg);
+      } else if (errorMsg.includes('insufficient') || errorMsg.includes('Insufficient')) {
+        setError('Insufficient HTR balance for deposit and fees.');
       } else {
         setError(errorMsg);
       }
@@ -564,8 +578,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
                 </div>
               </div>
 
-              {/* TODO: Re-enable Token Type dropdown when fee token feature is ready */}
-              {/* {!isNFT && (
+              {!isNFT && (
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
                 <div className="flex items-center gap-2 md:w-[120px]">
                   <label className="text-sm md:text-base font-bold text-white">Token Type</label>
@@ -596,17 +609,9 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
                       <SelectItem value="fee">Fee</SelectItem>
                     </SelectContent>
                   </Select>
-                  <ul className="list-disc list-inside text-xs text-muted-foreground mt-2 space-y-1">
-                    <li>
-                      <strong>Deposit Token:</strong> 1% HTR deposit required. No transfer fees.
-                    </li>
-                    <li>
-                      <strong>Fee Token:</strong> No deposit required. Small fee for each transfer.
-                    </li>
-                  </ul>
                 </div>
               </div>
-              )} */}
+              )}
 
               {/* Deposit Display */}
               {amount && depositInCents > 0n && (

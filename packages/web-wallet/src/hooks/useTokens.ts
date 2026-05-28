@@ -33,10 +33,19 @@ export function useTokens(selectedTokenFilter: TokenFilter = 'all') {
     };
   }, [balances]);
 
-  // Combine HTR with registered tokens
+  // Combine HTR with registered tokens, overriding each token's `balance`
+  // with the current value from the global balances Map (kept fresh by the
+  // WebSocket 'new-tx' handler). Without this, custom tokens render their
+  // initial registration-time balance until the page is reloaded.
   const allTokens = useMemo(() => {
-    return [htrToken, ...registeredTokens];
-  }, [htrToken, registeredTokens]);
+    const merged = registeredTokens.map(token => {
+      const current = balances.get(token.uid);
+      return current
+        ? { ...token, balance: { available: current.available, locked: current.locked } }
+        : token;
+    });
+    return [htrToken, ...merged];
+  }, [htrToken, registeredTokens, balances]);
 
   // Filter tokens based on selected filter
   const tokens = useMemo(() => {

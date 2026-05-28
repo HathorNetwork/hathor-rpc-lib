@@ -12,7 +12,7 @@ import type { WalletBalance } from '../../types/wallet';
 import { z } from 'zod';
 import { defaultSnapOrigin } from '@hathor/snap-utils';
 import { ERROR_PATTERNS, WalletLibErrors, PROVIDER_ERROR_CODES, hasErrorCode } from '../../errors/WalletConnectionErrors';
-import { isSnapCrashedError, getSnapErrorUserMessage } from '../../utils/snapErrors';
+import { isSnapCrashedError, getSnapErrorUserMessage, extractErrorMessage } from '../../utils/snapErrors';
 
 const log = createLogger('useWalletConnection');
 
@@ -797,7 +797,8 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
   // Handle metamask errors
   useEffect(() => {
     if (metamaskError) {
-      onError(metamaskError.message || 'An RPC error occurred');
+      const rawMessage = extractErrorMessage(metamaskError, 'An RPC error occurred');
+      onError(getSnapErrorUserMessage(rawMessage));
     }
   }, [metamaskError, onError]);
 
