@@ -4,7 +4,7 @@
  * wallet-lib errors propagated through it (e.g. UTXO shortages).
  */
 
-import { constants } from '@hathor/wallet-lib';
+import { constants, TokenVersion } from '@hathor/wallet-lib';
 
 /**
  * Error patterns that indicate the snap has crashed or become unresponsive.
@@ -149,12 +149,32 @@ export function extractErrorMessage(err: unknown, fallback: string): string {
 }
 
 /**
+ * Optional context that disambiguates the HTR-shortage message. The same
+ * wallet-lib error (`"No UTXOs available for the token 00."`) means different
+ * things depending on which token the caller is operating on:
+ *
+ * - `TokenVersion.NATIVE`  → user is sending HTR itself; the shortage is the
+ *   transfer amount, not a fee.
+ * - `TokenVersion.DEPOSIT` → deposit-token operation; HTR shortage means the
+ *   1% deposit (not a "network fee").
+ * - `TokenVersion.FEE`     → fee-token operation; HTR shortage is the network
+ *   fee. Same as the default when no context is given.
+ */
+export interface SnapErrorContext {
+  tokenVersion?: TokenVersion;
+}
+
+/**
  * Gets a user-friendly error message for snap errors.
  *
  * @param errorMessage - The original error message
+ * @param context - Optional operation context to tailor HTR-shortage messages
  * @returns A user-friendly error message
  */
-export function getSnapErrorUserMessage(errorMessage: string): string {
+export function getSnapErrorUserMessage(
+  errorMessage: string,
+  context?: SnapErrorContext,
+): string {
   if (isSnapCrashedError(errorMessage)) {
     return 'MetaMask Snap is not responding. Please refresh the page and try again.';
   }
@@ -171,11 +191,18 @@ export function getSnapErrorUserMessage(errorMessage: string): string {
   }
 
   // wallet-lib raises "No UTXOs available for the token <uid>." when
-  // auto-selection can't cover the amount. HTR shortage gets its own message
-  // because, on fee-based token operations, it means insufficient HTR for the
-  // network fee.
+  // auto-selection can't cover the amount. The HTR-shortage message depends
+  // on the token the caller is dealing with (see SnapErrorContext).
   if (isHtrUtxoShortage(errorMessage)) {
-    return 'Insufficient HTR to cover the network fee.';
+    switch (context?.tokenVersion) {
+      case TokenVersion.NATIVE:
+        return 'Insufficient balance to send this transaction.';
+      case TokenVersion.DEPOSIT:
+        return 'Insufficient HTR balance for deposit.';
+      case TokenVersion.FEE:
+      default:
+        return 'Insufficient HTR to cover the network fee.';
+    }
   }
   if (isTokenUtxoShortage(errorMessage)) {
     return 'Insufficient balance to send this transaction.';

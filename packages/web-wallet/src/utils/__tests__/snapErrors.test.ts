@@ -1,13 +1,19 @@
 import { describe, it, expect, vi } from 'vitest';
 
 // Mock @hathor/wallet-lib so we don't pull in the full wallet runtime just to
-// resolve `constants.NATIVE_TOKEN_UID`.
+// resolve `constants.NATIVE_TOKEN_UID` and the `TokenVersion` enum.
 vi.mock('@hathor/wallet-lib', () => ({
   constants: {
     NATIVE_TOKEN_UID: '00',
   },
+  TokenVersion: {
+    NATIVE: 0,
+    DEPOSIT: 1,
+    FEE: 2,
+  },
 }));
 
+import { TokenVersion } from '@hathor/wallet-lib';
 import {
   getSnapErrorUserMessage,
   isHtrUtxoShortage,
@@ -78,10 +84,42 @@ describe('snapErrors', () => {
   });
 
   describe('getSnapErrorUserMessage', () => {
-    it('routes HTR shortage to the network-fee message', () => {
+    it('routes HTR shortage to the network-fee message by default', () => {
       expect(
         getSnapErrorUserMessage('No UTXOs available for the token 00.')
       ).toBe('Insufficient HTR to cover the network fee.');
+    });
+
+    it('routes HTR shortage to a transfer-balance message for NATIVE', () => {
+      expect(
+        getSnapErrorUserMessage('No UTXOs available for the token 00.', {
+          tokenVersion: TokenVersion.NATIVE,
+        })
+      ).toBe('Insufficient balance to send this transaction.');
+    });
+
+    it('routes HTR shortage to a deposit message for DEPOSIT', () => {
+      expect(
+        getSnapErrorUserMessage('No UTXOs available for the token 00.', {
+          tokenVersion: TokenVersion.DEPOSIT,
+        })
+      ).toBe('Insufficient HTR balance for deposit.');
+    });
+
+    it('routes HTR shortage to the network-fee message for FEE', () => {
+      expect(
+        getSnapErrorUserMessage('No UTXOs available for the token 00.', {
+          tokenVersion: TokenVersion.FEE,
+        })
+      ).toBe('Insufficient HTR to cover the network fee.');
+    });
+
+    it('ignores context for non-HTR custom-token shortages', () => {
+      expect(
+        getSnapErrorUserMessage('No UTXOs available for the token abc123.', {
+          tokenVersion: TokenVersion.NATIVE,
+        })
+      ).toBe('Insufficient balance to send this transaction.');
     });
 
     it('routes custom-token shortage to the generic insufficient-balance message', () => {

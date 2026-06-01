@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useWallet } from '../contexts/WalletContext';
 import { useInvokeSnap } from '@hathor/snap-utils';
-import { helpersUtils, tokensUtils, constants } from '@hathor/wallet-lib';
+import { helpersUtils, tokensUtils, constants, TokenVersion } from '@hathor/wallet-lib';
 import { formatAmount, amountToCents } from '../utils/hathor';
 import { readOnlyWalletWrapper } from '../services/ReadOnlyWalletWrapper';
 import { getAddressForMode } from '../utils/addressMode';
@@ -291,19 +291,22 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
       // handles most cases. The branches below cover Create-specific overrides
       // that don't fit the generic snap error mapping.
       const errorMsg = extractErrorMessage(err, 'Failed to create token');
-      const mappedMsg = getSnapErrorUserMessage(errorMsg);
+      // Mirrors the version we send in the RPC payload: only regular tokens can
+      // be fee-based; NFTs are always deposit. Lets the shared mapper tailor the
+      // HTR-shortage message (deposit vs. network fee).
+      const tokenVersion = !data.isNFT && data.tokenType === 'fee'
+        ? TokenVersion.FEE
+        : TokenVersion.DEPOSIT;
+      const mappedMsg = getSnapErrorUserMessage(errorMsg, { tokenVersion });
 
       if (errorMsg.includes('rejected') || errorMsg.includes('User rejected')) {
         setError('Transaction was cancelled. Please try again.');
       } else if (errorMsg.includes('timeout') || errorMsg.includes('timed out')) {
         setError('Request timed out. Please check your connection and try again.');
-      } else if (mappedMsg !== errorMsg) {
-        // getSnapErrorUserMessage produced a friendly message — use it.
-        setError(mappedMsg);
-      } else if (errorMsg.includes('insufficient') || errorMsg.includes('Insufficient')) {
-        setError('Insufficient HTR balance for deposit and fees.');
       } else {
-        setError(errorMsg);
+        // getSnapErrorUserMessage returns a friendly message when it
+        // recognises the error, or the original message otherwise.
+        setError(mappedMsg);
       }
     } finally {
       setIsLoading(false);

@@ -8,7 +8,7 @@ import { useTokens } from '../hooks/useTokens';
 import { formatAmount, amountToCents, centsToAmount } from '../utils/hathor';
 // TODO: Re-enable when snap supports timelock
 // import { dateToUnixTimestamp, isFutureDate, getTimezoneOffset } from '../utils/timelock';
-import { Address, Network } from '@hathor/wallet-lib';
+import { Address, Network, TokenVersion } from '@hathor/wallet-lib';
 import { TOKEN_IDS } from '../constants';
 import { readOnlyWalletWrapper } from '../services/ReadOnlyWalletWrapper';
 import { getAddressForMode } from '../utils/addressMode';
@@ -282,7 +282,13 @@ const SendDialog: React.FC<SendDialogProps> = ({ isOpen, onClose, initialTokenUi
       onClose();
     } catch (err) {
       const rawMessage = extractErrorMessage(err, 'Failed to send transaction');
-      setTransactionError(getSnapErrorUserMessage(rawMessage));
+      // We only distinguish NATIVE here; for custom tokens we don't track the
+      // DEPOSIT/FEE flag locally, and the default (network-fee) message is the
+      // best fit for the most common case (fee-token send running out of HTR).
+      const tokenVersion = data.selectedToken === TOKEN_IDS.HTR
+        ? TokenVersion.NATIVE
+        : undefined;
+      setTransactionError(getSnapErrorUserMessage(rawMessage, { tokenVersion }));
     } finally {
       setIsLoading(false);
     }
