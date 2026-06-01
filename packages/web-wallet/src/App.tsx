@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, useNavigate, useParams } from 'react-router-dom'
 import { MetaMaskProvider } from '@hathor/snap-utils'
 import { WalletProvider } from './contexts/WalletContext'
+import { NetworkProvider } from './contexts/NetworkContext'
 import { FeatureToggleProvider, useFeatureToggle } from './contexts/FeatureToggleContext'
 import WalletHome from './components/WalletHome'
 import MaintenancePage from './components/MaintenancePage'
@@ -117,9 +118,11 @@ function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <FeatureToggleProvider>
-          <FeatureGatedWallet />
-        </FeatureToggleProvider>
+        <NetworkProvider>
+          <FeatureToggleProvider>
+            <FeatureGatedWallet />
+          </FeatureToggleProvider>
+        </NetworkProvider>
       </BrowserRouter>
     </ErrorBoundary>
   )

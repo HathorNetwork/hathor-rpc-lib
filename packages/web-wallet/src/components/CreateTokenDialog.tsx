@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useWallet } from '../contexts/WalletContext';
+import { useFeatureToggle } from '../contexts/FeatureToggleContext';
 import { useInvokeSnap } from '@hathor/snap-utils';
 import { helpersUtils, tokensUtils, constants, TokenVersion } from '@hathor/wallet-lib';
 import { formatAmount, amountToCents } from '../utils/hathor';
@@ -104,6 +105,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
   const activeRequestRef = useRef(0);
 
   const { registerToken, balances, addressMode } = useWallet();
+  const { isFeeTokensEnabled } = useFeatureToggle();
   const invokeSnap = useInvokeSnap();
   const { toast } = useToast();
 
@@ -138,6 +140,11 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
   const nftData = watch('nftData');
   const tokenType = watch('tokenType');
 
+  // Fee-based tokens require both the Unleash flag and a non-NFT 'fee' selection.
+  // When the flag is off the Token Type dropdown is hidden, so tokenType stays
+  // 'deposit' and the token behaves as a regular deposit token.
+  const isFeeBasedToken = isFeeTokensEnabled && !isNFT && tokenType === 'fee';
+
   // When toggling to NFT mode, strip any decimal portion from the amount and
   // snap the token type to 'deposit' (NFTs are always deposit-based; the
   // submit handler already forces this, but the UI should reflect it too).
@@ -161,7 +168,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
       if (!amount || amount === '0') return 0n;
 
       // Fee tokens don't require an HTR deposit
-      if (!isNFT && tokenType === 'fee') return 0n;
+      if (isFeeBasedToken) return 0n;
 
       let amountInBaseUnits: bigint;
       if (isNFT) {
@@ -186,7 +193,7 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
     } catch {
       return 0n;
     }
-  }, [amount, isNFT, nftData, tokenType]);
+  }, [amount, isNFT, nftData, isFeeBasedToken]);
 
   // Check if user has insufficient balance
   const hasInsufficientBalance = useMemo(() => {
@@ -214,8 +221,10 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
         ? BigInt(data.amount)
         : amountToCents(data.amount);
 
-      // NFTs are always deposit-based; only regular tokens can be fee-based
-      const tokenVersion = data.isNFT ? 'deposit' : data.tokenType;
+      // Fee-based tokens require the Unleash flag; NFTs are always deposit-based.
+      // When the flag is off we always fall back to a deposit token.
+      const isCreatingFeeToken = isFeeTokensEnabled && !data.isNFT && data.tokenType === 'fee';
+      const tokenVersion = isCreatingFeeToken ? 'fee' : 'deposit';
 
       // Prepare RPC params matching createTokenRpcSchema
       const params = {
@@ -291,10 +300,9 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
       // handles most cases. The branches below cover Create-specific overrides
       // that don't fit the generic snap error mapping.
       const errorMsg = extractErrorMessage(err, 'Failed to create token');
-      // Mirrors the version we send in the RPC payload: only regular tokens can
-      // be fee-based; NFTs are always deposit. Lets the shared mapper tailor the
-      // HTR-shortage message (deposit vs. network fee).
-      const tokenVersion = !data.isNFT && data.tokenType === 'fee'
+      // Mirrors the version we send in the RPC payload: fee-based tokens require
+      // the Unleash flag and a non-NFT 'fee' selection, otherwise it's a deposit.
+      const tokenVersion = isFeeTokensEnabled && !data.isNFT && data.tokenType === 'fee'
         ? TokenVersion.FEE
         : TokenVersion.DEPOSIT;
       const mappedMsg = getSnapErrorUserMessage(errorMsg, { tokenVersion });
@@ -581,7 +589,8 @@ const CreateTokenDialog: React.FC<CreateTokenDialogProps> = ({ isOpen, onClose }
                 </div>
               </div>
 
-              {!isNFT && (
+              {/* Token Type dropdown - only shown when fee-based tokens feature is enabled */}
+              {isFeeTokensEnabled && !isNFT && (
               <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
                 <div className="flex items-center gap-2 md:w-[120px]">
                   <label className="text-sm md:text-base font-bold text-white">Token Type</label>

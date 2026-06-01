@@ -55,6 +55,11 @@ export const DEFAULT_NETWORK = NETWORKS.MAINNET;
 export const DEFAULT_ADDRESS_INDEX = 0;
 export const DEFAULT_ADDRESS_TYPE = 'index' as const;
 
+// localStorage key for the active network. Owned by the NetworkProvider, which
+// is the single source of truth for the active network and the only place that
+// reads/writes this key.
+export const NETWORK_STORAGE_KEY = 'hathor_wallet_network';
+
 // UI Constants
 export const QR_CODE_SIZE = 200;
 export const TRANSACTION_HISTORY_LIMIT = 50;
@@ -80,10 +85,15 @@ export const UNLEASH_POLLING_INTERVAL = 15 * 1000; // 15s
 
 // Feature toggle names
 export const WEB_WALLET_MAINTENANCE_TOGGLE = 'web-wallet.maintenance';
+// Web-wallet-specific rollout flag for fee-based tokens (separate from
+// hathor-wallet-mobile's 'fee-based-tokens.rollout' so each client can be
+// rolled out independently).
+export const FEE_BASED_TOKENS_TOGGLE = 'fee-based-tokens-webwallet.rollout';
 
 // Feature toggle defaults
 // Note: Unleash Proxy only returns enabled toggles. If a toggle is disabled or
 // doesn't exist, it won't be in the response.
 export const FEATURE_TOGGLE_DEFAULTS: Record<string, boolean> = {
   [WEB_WALLET_MAINTENANCE_TOGGLE]: false, // Default: not under maintenance
+  [FEE_BASED_TOKENS_TOGGLE]: false, // Default: fee-based tokens feature disabled
 };
