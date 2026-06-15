@@ -292,7 +292,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     try {
       walletAddress = await getAddressForMode(addressMode, readOnlyWalletWrapper);
     } catch (addressError) {
-      const originalMessage = addressError instanceof Error ? addressError.message : String(addressError);
+      const originalMessage = extractErrorMessage(addressError, 'Unknown error');
       log.error('Failed to get display address:', originalMessage);
       throw new Error(`Failed to retrieve wallet address: ${originalMessage}`);
     }
@@ -306,7 +306,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
       }
       walletFirstAddress = addressInfo.address;
     } catch (addressError) {
-      const originalMessage = addressError instanceof Error ? addressError.message : String(addressError);
+      const originalMessage = extractErrorMessage(addressError, 'Unknown error');
       log.error('Failed to get first address:', originalMessage);
       throw new Error(`Failed to retrieve first address: ${originalMessage}`);
     }
@@ -444,7 +444,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
         await onConnectionReady(verifiedNetwork);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = extractErrorMessage(error, 'Unknown error');
 
       // Ignore concurrent initialization (React Strict Mode double-mount)
       if (errorMessage.includes(ERROR_PATTERNS.ALREADY_INITIALIZING)) {
@@ -594,7 +594,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
           'Get xpub timeout'
         );
       } catch (snapError) {
-        throw new Error(`Failed to get xpub: ${snapError instanceof Error ? snapError.message : String(snapError)}`);
+        throw new Error(`Failed to get xpub: ${extractErrorMessage(snapError, 'Unknown error')}`);
       }
 
       // Parse and validate xpub response
@@ -634,7 +634,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
         await onConnectionReady(newNetwork);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = extractErrorMessage(error, 'Failed to connect to wallet');
 
       // Check for unauthorized (code 4100)
       if (hasErrorCode(error, PROVIDER_ERROR_CODES.UNAUTHORIZED)) {
@@ -776,7 +776,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     checkExistingConnection(abortController.signal)
       .catch((error) => {
         // Ignore aborted errors
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage = extractErrorMessage(error, 'Unknown error');
         if (errorMessage.includes('aborted')) {
           return;
         }

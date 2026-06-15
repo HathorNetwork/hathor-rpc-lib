@@ -6,7 +6,7 @@ import { TOKEN_IDS } from '@/constants';
 import { SNAP_TIMEOUTS } from '../../constants/timeouts';
 import { createLogger } from '../../utils/logger';
 import { raceWithTimeout } from '../../utils/promise';
-import { isSnapCrashedError } from '../../utils/snapErrors';
+import { isSnapCrashedError, extractErrorMessage } from '../../utils/snapErrors';
 import type { WalletBalance } from '../../types/wallet';
 
 const log = createLogger('useNetworkManagement');
@@ -149,7 +149,7 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
         return;
       }
 
-      const originalError = networkChangeError instanceof Error ? networkChangeError.message : String(networkChangeError);
+      const originalError = extractErrorMessage(networkChangeError, 'Unknown error');
       log.error('Failed to change network:', networkChangeError);
 
       // Check if snap crashed (DataCloneError, unresponsive, etc.)

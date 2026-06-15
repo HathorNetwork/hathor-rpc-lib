@@ -55,6 +55,8 @@ vi.mock('../../../utils/snapErrors', () => ({
     msg.includes('postMessage') ||
     msg.includes('cloned') ||
     msg.includes('timeout'),
+  extractErrorMessage: (err: unknown, fallback: string) =>
+    err instanceof Error ? err.message : fallback,
 }));
 
 describe('useNetworkManagement', () => {
