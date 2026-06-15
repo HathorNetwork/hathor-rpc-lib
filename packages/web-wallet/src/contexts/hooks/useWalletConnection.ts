@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { readOnlyWalletWrapper } from '../../services/ReadOnlyWalletWrapper';
 import { SnapUnauthorizedError } from '../../services/SnapService';
-import { CHECK_CONNECTION_TIMEOUT, DEFAULT_NETWORK, TOKEN_IDS } from '@/constants';
+import { CHECK_CONNECTION_TIMEOUT, TOKEN_IDS } from '@/constants';
+import { useNetwork } from '../NetworkContext';
 import { getAddressForMode, type AddressMode } from '../../utils/addressMode';
 import { SNAP_TIMEOUTS } from '../../constants/timeouts';
 import { createLogger } from '../../utils/logger';
@@ -62,7 +63,6 @@ const GetSnapsResponseSchema = z.record(
 
 const STORAGE_KEYS = {
   XPUB: 'hathor_wallet_xpub',
-  NETWORK: 'hathor_wallet_network',
 };
 
 interface UseWalletConnectionOptions {
@@ -169,7 +169,10 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
   const [xpub, setXpub] = useState<string | null>(null);
   const [address, setAddress] = useState('');
   const [balances, setBalances] = useState<Map<string, WalletBalance>>(new Map());
-  const [network, setNetwork] = useState('mainnet');
+  // Network is owned by the NetworkProvider (single source of truth, shared with
+  // the FeatureToggleProvider). This hook reads it and drives changes through the
+  // provider, which also centralizes localStorage persistence.
+  const { network, setNetwork, clearNetwork } = useNetwork();
   const [snapVersion, setSnapVersion] = useState<string | null>(null);
   const [firstAddress, setFirstAddress] = useState<string | null>(null);
   // NOTE: Token state moved to useTokenState - this hook no longer manages tokens
@@ -339,7 +342,8 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
 
     try {
       const storedXpub = localStorage.getItem(STORAGE_KEYS.XPUB);
-      const storedNetwork = localStorage.getItem(STORAGE_KEYS.NETWORK) || DEFAULT_NETWORK;
+      // The provider seeds from localStorage, so this reflects the persisted network.
+      const storedNetwork = network;
 
       if (!storedXpub) {
         setIsCheckingConnection(false);
@@ -402,8 +406,8 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
             } catch (networkChangeError) {
               // If we can't change snap to stored network, use the snap's current network instead
               log.error('Failed to change snap network, using snap network:', networkChangeError);
+              // Persisted below via setNetwork once the wallet state is updated.
               verifiedNetwork = currentSnapNetwork;
-              localStorage.setItem(STORAGE_KEYS.NETWORK, verifiedNetwork);
             }
           }
         }
@@ -474,7 +478,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
 
       if (shouldClearStorage) {
         localStorage.removeItem(STORAGE_KEYS.XPUB);
-        localStorage.removeItem(STORAGE_KEYS.NETWORK);
+        clearNetwork();
       }
 
       // Generate user-friendly message
@@ -547,10 +551,10 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
         throw new Error('Snap is not responding. Please make sure it is installed correctly.');
       }
 
-      // Use the snap's current network. If it's a first-time connection (no stored network),
-      // default to DEFAULT_NETWORK. This avoids forcing users back to mainnet on every reconnect.
-      const storedNetwork = localStorage.getItem(STORAGE_KEYS.NETWORK);
-      const targetNetwork = storedNetwork || DEFAULT_NETWORK;
+      // Use the last persisted network (from the provider). On a first-time
+      // connection this defaults to DEFAULT_NETWORK, avoiding forcing users back
+      // to mainnet on every reconnect.
+      const targetNetwork = network;
 
       if (currentSnapNetwork !== targetNetwork) {
         setLoadingStep(`Changing snap network to ${targetNetwork}...`);
@@ -614,7 +618,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
       const walletState = await loadWalletState(addressMode);
 
       localStorage.setItem(STORAGE_KEYS.XPUB, newXpub);
-      localStorage.setItem(STORAGE_KEYS.NETWORK, newNetwork);
+      // Network is persisted by the provider via setNetwork below.
 
       setIsConnected(true);
       setAddress(walletState.address);
@@ -636,7 +640,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
       if (hasErrorCode(error, PROVIDER_ERROR_CODES.UNAUTHORIZED)) {
         log.error('Snap unauthorized - showing connection lost modal');
         localStorage.removeItem(STORAGE_KEYS.XPUB);
-        localStorage.removeItem(STORAGE_KEYS.NETWORK);
+        clearNetwork();
         onShowConnectionLostModal(true);
         setIsConnecting(false);
         setLoadingStep('');
@@ -679,7 +683,7 @@ export function useWalletConnection(options: UseWalletConnectionOptions): Wallet
     setAddress('');
     setFirstAddress(null);
     setBalances(new Map());
-    setNetwork('mainnet');
+    clearNetwork();
     setXpub(null);
     setSnapVersion(null);
     // NOTE: Token clearing is handled by useTokenState via isConnected change

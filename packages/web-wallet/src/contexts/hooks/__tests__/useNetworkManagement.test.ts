@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useNetworkManagement } from '../useNetworkManagement';
+import { NetworkProvider } from '../../NetworkContext';
 import { SnapUnauthorizedError } from '../../../services/SnapService';
 import type { AddressMode } from '../../../utils/addressMode';
 
@@ -112,8 +113,9 @@ describe('useNetworkManagement', () => {
 
   describe('changeNetwork', () => {
     it('should do nothing when not connected', async () => {
-      const { result } = renderHook(() =>
-        useNetworkManagement({ ...defaultOptions, isConnected: false })
+      const { result } = renderHook(
+        () => useNetworkManagement({ ...defaultOptions, isConnected: false }),
+        { wrapper: NetworkProvider }
       );
 
       await act(async () => {
@@ -124,8 +126,9 @@ describe('useNetworkManagement', () => {
     });
 
     it('should do nothing when xpub is null', async () => {
-      const { result } = renderHook(() =>
-        useNetworkManagement({ ...defaultOptions, xpub: null })
+      const { result } = renderHook(
+        () => useNetworkManagement({ ...defaultOptions, xpub: null }),
+        { wrapper: NetworkProvider }
       );
 
       await act(async () => {
@@ -136,7 +139,7 @@ describe('useNetworkManagement', () => {
     });
 
     it('should successfully change network', async () => {
-      const { result } = renderHook(() => useNetworkManagement(defaultOptions));
+      const { result } = renderHook(() => useNetworkManagement(defaultOptions), { wrapper: NetworkProvider });
 
       await act(async () => {
         await result.current.changeNetwork('testnet');
@@ -170,7 +173,7 @@ describe('useNetworkManagement', () => {
     });
 
     it('should show loading steps during network change', async () => {
-      const { result } = renderHook(() => useNetworkManagement(defaultOptions));
+      const { result } = renderHook(() => useNetworkManagement(defaultOptions), { wrapper: NetworkProvider });
 
       await act(async () => {
         await result.current.changeNetwork('testnet');
@@ -188,7 +191,7 @@ describe('useNetworkManagement', () => {
         new SnapUnauthorizedError('Permission denied', 4100)
       );
 
-      const { result } = renderHook(() => useNetworkManagement(defaultOptions));
+      const { result } = renderHook(() => useNetworkManagement(defaultOptions), { wrapper: NetworkProvider });
 
       await act(async () => {
         await result.current.changeNetwork('testnet');
@@ -201,7 +204,7 @@ describe('useNetworkManagement', () => {
     it('should force disconnect on snap crash without rollback', async () => {
       mockInvokeSnap.mockRejectedValue(new Error('DataCloneError: Failed to clone'));
 
-      const { result } = renderHook(() => useNetworkManagement(defaultOptions));
+      const { result } = renderHook(() => useNetworkManagement(defaultOptions), { wrapper: NetworkProvider });
 
       await act(async () => {
         await result.current.changeNetwork('testnet');
@@ -223,7 +226,7 @@ describe('useNetworkManagement', () => {
         // Second call (rollback) succeeds
         .mockResolvedValueOnce({ response: { success: true } });
 
-      const { result } = renderHook(() => useNetworkManagement(defaultOptions));
+      const { result } = renderHook(() => useNetworkManagement(defaultOptions), { wrapper: NetworkProvider });
 
       await act(async () => {
         await result.current.changeNetwork('testnet');
@@ -257,7 +260,7 @@ describe('useNetworkManagement', () => {
       // Rollback also fails (via raceWithTimeout)
       mockRaceWithTimeout.mockRejectedValueOnce(new Error('Rollback timeout'));
 
-      const { result } = renderHook(() => useNetworkManagement(defaultOptions));
+      const { result } = renderHook(() => useNetworkManagement(defaultOptions), { wrapper: NetworkProvider });
 
       await act(async () => {
         await result.current.changeNetwork('testnet');
@@ -275,7 +278,7 @@ describe('useNetworkManagement', () => {
     it('should handle address fetch failure during network change', async () => {
       mockGetAddressForMode.mockRejectedValue(new Error('Address derivation failed'));
 
-      const { result } = renderHook(() => useNetworkManagement(defaultOptions));
+      const { result } = renderHook(() => useNetworkManagement(defaultOptions), { wrapper: NetworkProvider });
 
       await act(async () => {
         await result.current.changeNetwork('testnet');
@@ -287,17 +290,22 @@ describe('useNetworkManagement', () => {
       );
     });
 
-    it('should save network to localStorage only after successful change', async () => {
+    it('should delegate network persistence via onNetworkChange after a successful change', async () => {
       const localStorageSpy = vi.spyOn(Storage.prototype, 'setItem');
 
-      const { result } = renderHook(() => useNetworkManagement(defaultOptions));
+      const { result } = renderHook(() => useNetworkManagement(defaultOptions), { wrapper: NetworkProvider });
 
       await act(async () => {
         await result.current.changeNetwork('testnet');
       });
 
-      // Should only save after state update
-      expect(localStorageSpy).toHaveBeenCalledWith('hathor_wallet_network', 'testnet');
+      // Persistence is centralized in the NetworkProvider. The hook no longer
+      // writes the network key directly; it delegates via onNetworkChange, which
+      // the app wires to setNetwork (the provider persists).
+      expect(mockOnNetworkChange).toHaveBeenCalledWith(
+        expect.objectContaining({ network: 'testnet' })
+      );
+      expect(localStorageSpy).not.toHaveBeenCalledWith('hathor_wallet_network', 'testnet');
 
       localStorageSpy.mockRestore();
     });
@@ -306,7 +314,7 @@ describe('useNetworkManagement', () => {
       const localStorageSpy = vi.spyOn(Storage.prototype, 'setItem');
       mockInvokeSnap.mockRejectedValue(new Error('Failed'));
 
-      const { result } = renderHook(() => useNetworkManagement(defaultOptions));
+      const { result } = renderHook(() => useNetworkManagement(defaultOptions), { wrapper: NetworkProvider });
 
       await act(async () => {
         await result.current.changeNetwork('testnet');
@@ -321,7 +329,7 @@ describe('useNetworkManagement', () => {
     it('should handle ERR_NETWORK as snap crash', async () => {
       mockInvokeSnap.mockRejectedValue(new Error('ERR_NETWORK: Connection reset'));
 
-      const { result } = renderHook(() => useNetworkManagement(defaultOptions));
+      const { result } = renderHook(() => useNetworkManagement(defaultOptions), { wrapper: NetworkProvider });
 
       await act(async () => {
         await result.current.changeNetwork('testnet');
@@ -334,7 +342,7 @@ describe('useNetworkManagement', () => {
     it('should handle Network Error as snap crash', async () => {
       mockInvokeSnap.mockRejectedValue(new Error('Network Error'));
 
-      const { result } = renderHook(() => useNetworkManagement(defaultOptions));
+      const { result } = renderHook(() => useNetworkManagement(defaultOptions), { wrapper: NetworkProvider });
 
       await act(async () => {
         await result.current.changeNetwork('testnet');
@@ -349,7 +357,7 @@ describe('useNetworkManagement', () => {
         address: 'HTestnetFirstAddr',
       });
 
-      const { result } = renderHook(() => useNetworkManagement(defaultOptions));
+      const { result } = renderHook(() => useNetworkManagement(defaultOptions), { wrapper: NetworkProvider });
 
       await act(async () => {
         await result.current.changeNetwork('testnet');
@@ -371,7 +379,7 @@ describe('useNetworkManagement', () => {
         new Error('Address lookup failed')
       );
 
-      const { result } = renderHook(() => useNetworkManagement(defaultOptions));
+      const { result } = renderHook(() => useNetworkManagement(defaultOptions), { wrapper: NetworkProvider });
 
       await act(async () => {
         await result.current.changeNetwork('testnet');
@@ -398,7 +406,7 @@ describe('useNetworkManagement', () => {
       // Rollback address fetch succeeds
       mockGetAddressForMode.mockResolvedValueOnce('HAddr123');
 
-      const { result } = renderHook(() => useNetworkManagement(defaultOptions));
+      const { result } = renderHook(() => useNetworkManagement(defaultOptions), { wrapper: NetworkProvider });
 
       await act(async () => {
         await result.current.changeNetwork('testnet');

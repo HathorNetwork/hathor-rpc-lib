@@ -6,10 +6,12 @@ import {
   UNLEASH_CLIENT_KEY,
   UNLEASH_POLLING_INTERVAL,
   WEB_WALLET_MAINTENANCE_TOGGLE,
+  FEE_BASED_TOKENS_TOGGLE,
   FEATURE_TOGGLE_DEFAULTS,
   STAGE,
   SKIP_FEATURE_TOGGLE,
 } from '../constants';
+import { useNetwork } from './NetworkContext';
 
 const MAX_RETRIES = 5;
 const RETRY_DELAY = 500;
@@ -32,6 +34,7 @@ function getBrowserId(): string {
 
 interface FeatureToggleContextType {
   isUnderMaintenance: boolean;
+  isFeeTokensEnabled: boolean;
   isLoading: boolean;
   featureToggles: Record<string, boolean>;
   /** Unique browser identifier used for feature toggle targeting */
@@ -65,6 +68,13 @@ export function FeatureToggleProvider({ children }: FeatureToggleProviderProps) 
   // Get or create a unique browser ID for feature toggle targeting
   const browserId = getBrowserId();
 
+  // Active Hathor network from the NetworkProvider, sent as an Unleash context
+  // property so flags can be constrained per-network (e.g. fee-based tokens are
+  // testnet-only). When it changes, the init effect below recreates the Unleash
+  // client with the new context (the client has no updateContext; the context
+  // is fixed at construction).
+  const { network } = useNetwork();
+
   useEffect(() => {
     let mounted = true;
 
@@ -87,6 +97,7 @@ export function FeatureToggleProvider({ children }: FeatureToggleProviderProps) 
             properties: {
               platform: 'web',
               stage: STAGE,
+              network,
             },
           },
         });
@@ -145,12 +156,15 @@ export function FeatureToggleProvider({ children }: FeatureToggleProviderProps) 
       // Clear the reference (unleash-client doesn't have a close method)
       unleashClientRef.current = null;
     };
-  }, []);
+    // Re-run (and recreate the client) whenever the network changes so the
+    // Unleash context reflects the active network for per-network constraints.
+  }, [network, browserId]);
 
   const isUnderMaintenance = featureToggles[WEB_WALLET_MAINTENANCE_TOGGLE] ?? FEATURE_TOGGLE_DEFAULTS[WEB_WALLET_MAINTENANCE_TOGGLE];
+  const isFeeTokensEnabled = featureToggles[FEE_BASED_TOKENS_TOGGLE] ?? FEATURE_TOGGLE_DEFAULTS[FEE_BASED_TOKENS_TOGGLE];
 
   return (
-    <FeatureToggleContext.Provider value={{ isUnderMaintenance, isLoading, featureToggles, browserId }}>
+    <FeatureToggleContext.Provider value={{ isUnderMaintenance, isFeeTokensEnabled, isLoading, featureToggles, browserId }}>
       {children}
     </FeatureToggleContext.Provider>
   );

@@ -141,6 +141,7 @@ vi.mock('../../components/ConnectionLostModal', () => ({
 
 // Import after mocks are defined
 import { WalletProvider, useWallet } from '../WalletContext';
+import { NetworkProvider } from '../NetworkContext';
 
 // Test component to consume context
 function TestConsumer({ onContext }: { onContext?: (ctx: ReturnType<typeof useWallet>) => void }) {
@@ -185,9 +186,9 @@ describe('WalletContext', () => {
   describe('Provider', () => {
     it('should render children without crashing', () => {
       render(
-        <WalletProvider>
+        <NetworkProvider><WalletProvider>
           <div data-testid="child">Hello</div>
-        </WalletProvider>
+        </WalletProvider></NetworkProvider>
       );
 
       expect(screen.getByTestId('child')).toHaveTextContent('Hello');
@@ -195,9 +196,9 @@ describe('WalletContext', () => {
 
     it('should provide default disconnected state', async () => {
       render(
-        <WalletProvider>
+        <NetworkProvider><WalletProvider>
           <TestConsumer />
-        </WalletProvider>
+        </WalletProvider></NetworkProvider>
       );
 
       await waitFor(() => {
@@ -209,9 +210,9 @@ describe('WalletContext', () => {
 
     it('should provide default network as mainnet', async () => {
       render(
-        <WalletProvider>
+        <NetworkProvider><WalletProvider>
           <TestConsumer />
-        </WalletProvider>
+        </WalletProvider></NetworkProvider>
       );
 
       await waitFor(() => {
@@ -221,9 +222,9 @@ describe('WalletContext', () => {
 
     it('should provide default token filter as tokens', async () => {
       render(
-        <WalletProvider>
+        <NetworkProvider><WalletProvider>
           <TestConsumer />
-        </WalletProvider>
+        </WalletProvider></NetworkProvider>
       );
 
       await waitFor(() => {
@@ -235,9 +236,9 @@ describe('WalletContext', () => {
       mockLoadAddressMode.mockReturnValue({ mode: 'change' });
 
       render(
-        <WalletProvider>
+        <NetworkProvider><WalletProvider>
           <TestConsumer />
-        </WalletProvider>
+        </WalletProvider></NetworkProvider>
       );
 
       await waitFor(() => {
@@ -262,9 +263,9 @@ describe('WalletContext', () => {
   describe('error management', () => {
     it('should allow setting error message', async () => {
       render(
-        <WalletProvider>
+        <NetworkProvider><WalletProvider>
           <TestConsumer />
-        </WalletProvider>
+        </WalletProvider></NetworkProvider>
       );
 
       await waitFor(() => {
@@ -280,9 +281,9 @@ describe('WalletContext', () => {
 
     it('should allow clearing error message', async () => {
       render(
-        <WalletProvider>
+        <NetworkProvider><WalletProvider>
           <TestConsumer />
-        </WalletProvider>
+        </WalletProvider></NetworkProvider>
       );
 
       await act(async () => {
@@ -303,9 +304,9 @@ describe('WalletContext', () => {
       mockUseMetaMaskContext.mockReturnValue({ error: metamaskError });
 
       render(
-        <WalletProvider>
+        <NetworkProvider><WalletProvider>
           <TestConsumer />
-        </WalletProvider>
+        </WalletProvider></NetworkProvider>
       );
 
       await waitFor(() => {
@@ -320,9 +321,9 @@ describe('WalletContext', () => {
       mockUseMetaMaskContext.mockReturnValue({ error: plainObjectError });
 
       render(
-        <WalletProvider>
+        <NetworkProvider><WalletProvider>
           <TestConsumer />
-        </WalletProvider>
+        </WalletProvider></NetworkProvider>
       );
 
       await waitFor(() => {
@@ -336,9 +337,9 @@ describe('WalletContext', () => {
   describe('token filter', () => {
     it('should allow changing token filter', async () => {
       render(
-        <WalletProvider>
+        <NetworkProvider><WalletProvider>
           <TestConsumer />
-        </WalletProvider>
+        </WalletProvider></NetworkProvider>
       );
 
       await waitFor(() => {
@@ -360,9 +361,9 @@ describe('WalletContext', () => {
       localStorage.setItem('hathor_wallet_network', 'testnet');
 
       render(
-        <WalletProvider>
+        <NetworkProvider><WalletProvider>
           <TestConsumer />
-        </WalletProvider>
+        </WalletProvider></NetworkProvider>
       );
 
       await act(async () => {
@@ -402,9 +403,9 @@ describe('WalletContext', () => {
       );
 
       render(
-        <WalletProvider>
+        <NetworkProvider><WalletProvider>
           <TestConsumer />
-        </WalletProvider>
+        </WalletProvider></NetworkProvider>
       );
 
       // Should attempt to initialize with stored xpub
@@ -415,9 +416,9 @@ describe('WalletContext', () => {
 
     it('should not check connection when no xpub stored', async () => {
       render(
-        <WalletProvider>
+        <NetworkProvider><WalletProvider>
           <TestConsumer />
-        </WalletProvider>
+        </WalletProvider></NetworkProvider>
       );
 
       await waitFor(() => {
@@ -434,9 +435,9 @@ describe('WalletContext', () => {
       let capturedContext: ReturnType<typeof useWallet> | null = null;
 
       render(
-        <WalletProvider>
+        <NetworkProvider><WalletProvider>
           <TestConsumer onContext={(ctx) => { capturedContext = ctx; }} />
-        </WalletProvider>
+        </WalletProvider></NetworkProvider>
       );
 
       await waitFor(() => {
@@ -465,9 +466,9 @@ describe('WalletContext', () => {
       let capturedContext: ReturnType<typeof useWallet> | null = null;
 
       render(
-        <WalletProvider>
+        <NetworkProvider><WalletProvider>
           <TestConsumer onContext={(ctx) => { capturedContext = ctx; }} />
-        </WalletProvider>
+        </WalletProvider></NetworkProvider>
       );
 
       await waitFor(() => {
@@ -501,9 +502,9 @@ describe('WalletContext', () => {
       }));
 
       render(
-        <WalletProvider>
+        <NetworkProvider><WalletProvider>
           <TestConsumer />
-        </WalletProvider>
+        </WalletProvider></NetworkProvider>
       );
 
       // Start connection
@@ -524,9 +525,9 @@ describe('WalletContext', () => {
       mockRequestSnap.mockRejectedValue(new Error('User rejected'));
 
       render(
-        <WalletProvider>
+        <NetworkProvider><WalletProvider>
           <TestConsumer />
-        </WalletProvider>
+        </WalletProvider></NetworkProvider>
       );
 
       await act(async () => {
@@ -568,9 +569,9 @@ describe('WalletContext', () => {
       );
 
       render(
-        <WalletProvider>
+        <NetworkProvider><WalletProvider>
           <TestConsumer />
-        </WalletProvider>
+        </WalletProvider></NetworkProvider>
       );
 
       await act(async () => {

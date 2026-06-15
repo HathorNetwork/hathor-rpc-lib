@@ -1,4 +1,5 @@
 import { readOnlyWalletWrapper } from '../../services/ReadOnlyWalletWrapper';
+import { useNetwork } from '../NetworkContext';
 import { SnapUnauthorizedError } from '../../services/SnapService';
 import { getAddressForMode, type AddressMode } from '../../utils/addressMode';
 import { TOKEN_IDS } from '@/constants';
@@ -12,7 +13,6 @@ const log = createLogger('useNetworkManagement');
 
 const STORAGE_KEYS = {
   XPUB: 'hathor_wallet_xpub',
-  NETWORK: 'hathor_wallet_network',
 };
 
 interface UseNetworkManagementOptions {
@@ -63,6 +63,10 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
     stopWallet,
     reinitializeWallet,
   } = options;
+
+  // Network persistence is centralized in the NetworkProvider. Successful changes
+  // persist via onNetworkChange -> connection.setNetwork; failures clear it here.
+  const { clearNetwork } = useNetwork();
 
   const changeNetwork = async (newNetwork: string) => {
     if (!isConnected || !xpub) {
@@ -123,16 +127,14 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
 
       const newBalances = await readOnlyWalletWrapper.getBalance(TOKEN_IDS.HTR);
 
-      // Update app state first (can throw)
+      // Update app state first (can throw). onNetworkChange routes to
+      // connection.setNetwork, which persists the new network via the provider.
       onNetworkChange({
         network: newNetwork,
         address: newAddress,
         firstAddress: newFirstAddress,
         balances: newBalances,
       });
-
-      // Only persist to localStorage after state update succeeds
-      localStorage.setItem(STORAGE_KEYS.NETWORK, newNetwork);
 
       // Load tokens for the new network (managed by useTokenState)
       await onLoadTokens(newNetwork);
@@ -160,7 +162,7 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
 
         // Don't attempt rollback if snap crashed - just disconnect
         localStorage.removeItem(STORAGE_KEYS.XPUB);
-        localStorage.removeItem(STORAGE_KEYS.NETWORK);
+        clearNetwork();
 
         try {
           await stopWallet();
@@ -219,7 +221,7 @@ export function useNetworkManagement(options: UseNetworkManagementOptions) {
 
         // Clear localStorage and stop wallet
         localStorage.removeItem(STORAGE_KEYS.XPUB);
-        localStorage.removeItem(STORAGE_KEYS.NETWORK);
+        clearNetwork();
 
         try {
           await stopWallet();

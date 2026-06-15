@@ -86,6 +86,7 @@ vi.mock('@hathor/snap-utils', () => ({
 
 vi.mock('../../../constants', () => ({
   DEFAULT_NETWORK: 'mainnet',
+  NETWORK_STORAGE_KEY: 'hathor_wallet_network',
   TOKEN_IDS: { HTR: '00' },
   CHECK_CONNECTION_TIMEOUT: 30000,
 }));
@@ -99,6 +100,7 @@ vi.mock('../../../constants/timeouts', () => ({
 }));
 
 import { useWalletConnection } from '../useWalletConnection';
+import { NetworkProvider } from '../../NetworkContext';
 import type { AddressMode } from '../../../utils/addressMode';
 
 describe('useWalletConnection - checkExistingConnection network verification', () => {
@@ -180,7 +182,7 @@ describe('useWalletConnection - checkExistingConnection network verification', (
     });
 
     await act(async () => {
-      renderHook(() => useWalletConnection(defaultOptions));
+      renderHook(() => useWalletConnection(defaultOptions), { wrapper: NetworkProvider });
     });
 
     await vi.waitFor(() => {
@@ -207,7 +209,7 @@ describe('useWalletConnection - checkExistingConnection network verification', (
     });
 
     await act(async () => {
-      renderHook(() => useWalletConnection(defaultOptions));
+      renderHook(() => useWalletConnection(defaultOptions), { wrapper: NetworkProvider });
     });
 
     await vi.waitFor(() => {
@@ -236,7 +238,7 @@ describe('useWalletConnection - checkExistingConnection network verification', (
     mockInvokeSnap.mockRejectedValueOnce(new Error('Failed to change network'));
 
     await act(async () => {
-      renderHook(() => useWalletConnection(defaultOptions));
+      renderHook(() => useWalletConnection(defaultOptions), { wrapper: NetworkProvider });
     });
 
     await vi.waitFor(() => {
@@ -258,7 +260,7 @@ describe('useWalletConnection - checkExistingConnection network verification', (
     mockInvokeSnap.mockRejectedValueOnce(new Error('Snap not responding'));
 
     await act(async () => {
-      renderHook(() => useWalletConnection(defaultOptions));
+      renderHook(() => useWalletConnection(defaultOptions), { wrapper: NetworkProvider });
     });
 
     await vi.waitFor(() => {
@@ -281,7 +283,7 @@ describe('useWalletConnection - checkExistingConnection network verification', (
     mockInvokeSnap.mockResolvedValueOnce({ response: { success: true } });
 
     await act(async () => {
-      renderHook(() => useWalletConnection(defaultOptions));
+      renderHook(() => useWalletConnection(defaultOptions), { wrapper: NetworkProvider });
     });
 
     await vi.waitFor(() => {
