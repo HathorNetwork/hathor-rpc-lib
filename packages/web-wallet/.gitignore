@@ -23,3 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 test-results/
+
+# E2E (Playwright + MetaMask Flask)
+.env.e2e
+playwright-report/
+tests/e2e/.cache/

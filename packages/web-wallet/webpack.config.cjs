@@ -26,6 +26,8 @@ if (fs.existsSync(envPath)) {
 
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
+  // E2E (Playwright) sets E2E_TLS=true to serve the dApp over HTTPS under a Snap-allowed origin.
+  const isE2E = process.env.E2E_TLS === 'true';
 
   return {
     entry: './src/main.tsx',
@@ -151,9 +153,13 @@ module.exports = (env, argv) => {
         directory: path.join(__dirname, 'public'),
       },
       port: 5173,
-      hot: true,
+      // Under E2E the dApp loads over HTTPS (remapped to a Snap-allowed origin); HMR is disabled
+      // there to avoid mid-test reloads over the remapped wss connection. `yarn dev` is unchanged.
+      hot: !isE2E,
+      liveReload: !isE2E,
       historyApiFallback: true,
       allowedHosts: 'all',
+      ...(isE2E ? { server: 'https' } : {}),
     },
     devtool: isProduction ? 'source-map' : 'eval-source-map',
     optimization: {

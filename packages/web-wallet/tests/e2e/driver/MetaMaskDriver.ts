@@ -1,0 +1,535 @@
+import type { BrowserContext, Page } from '@playwright/test';
+import { MM, MM_TEXT, SRP, UNLOCK } from './selectors';
+import { SPLIT_WINDOWS } from './windows';
+
+const DEFAULT_PASSWORD = 'Test1234!Test';
+
+/**
+ * Drives the real MetaMask Flask extension: onboarding a fresh wallet, and approving the
+ * Snap connect/install/dialog flows.
+ *
+ * Hard-won facts this encodes (verified against Flask 13.31.0):
+ *  - Onboarding's "Open wallet" button is disabled unless the SRP backup is completed, so
+ *    we reveal the seed, read it, and solve the confirmation quiz with the saved words.
+ *  - MetaMask recreates the onboarding tab between screens, so every step re-acquires the
+ *    live tab via {@link openHome}.
+ *  - MetaMask popup windows do NOT render under Playwright's persistent context. Pending
+ *    Snap approvals are driven by navigating a page to `notification.html` instead.
+ *  - The local Snap must allow the dApp origin for `htr_getXpub` (see packages/snap).
+ */
+export class MetaMaskDriver {
+  /** The 12-word seed of the wallet created during onboarding ("the backup"). */
+  seedPhrase = '';
+
+  /** Password set during onboarding/import; reused to unlock the wallet when it locks. */
+  private password = DEFAULT_PASSWORD;
+
+  private notifPage?: Page;
+
+  /** The dApp page kept in the foreground while MetaMask is driven on background tabs. */
+  private walletPage?: Page;
+
+  private constructor(
+    private readonly context: BrowserContext,
+    readonly extensionId: string,
+  ) {}
+
+  static async create(context: BrowserContext): Promise<MetaMaskDriver> {
+    const extensionId = await MetaMaskDriver.resolveExtensionId(context);
+    return new MetaMaskDriver(context, extensionId);
+  }
+
+  /** Derives the extension id from the background worker (MV3) or page (MV2) URL. */
+  private static async resolveExtensionId(context: BrowserContext): Promise<string> {
+    const idFromUrl = (url: string): string | undefined =>
+      url.match(/^chrome-extension:\/\/([a-p]{32})\//)?.[1];
+
+    const worker = context.serviceWorkers()[0];
+    if (worker) {
+      const id = idFromUrl(worker.url());
+      if (id) return id;
+    }
+    const backgroundPage = context.backgroundPages()[0];
+    if (backgroundPage) {
+      const id = idFromUrl(backgroundPage.url());
+      if (id) return id;
+    }
+    const registered = await context
+      .waitForEvent('serviceworker', { timeout: 30_000 })
+      .catch(() => undefined);
+    const id = registered && idFromUrl(registered.url());
+    if (id) return id;
+
+    throw new Error(
+      'Could not resolve the MetaMask extension id (no background service worker or page found).',
+    );
+  }
+
+  private extUrl(path: string): string {
+    return `chrome-extension://${this.extensionId}/${path}`;
+  }
+
+  /**
+   * Registers the dApp page so the driver can keep it in the foreground while it drives
+   * MetaMask on background tabs. Set once the wallet page exists (see journeys `connect()`).
+   */
+  setWalletPage(page: Page): void {
+    this.walletPage = page;
+  }
+
+  /**
+   * Brings the wallet (dApp) tab back to the front. Snap approvals are driven on background
+   * MetaMask tabs (opening `notification.html` activates that tab), so this restores the
+   * wallet as the visible tab and keeps it there. No-op in split-window mode (wallet and
+   * MetaMask already live in separate, side-by-side OS windows) and until a wallet page has
+   * been registered (e.g. during raw MetaMask onboarding, before the dApp is connected).
+   */
+  private async refocusWallet(): Promise<void> {
+    if (SPLIT_WINDOWS) return;
+    const page = this.walletPage;
+    if (page && !page.isClosed()) await page.bringToFront().catch(() => undefined);
+  }
+
+  /**
+   * Returns the current live MetaMask home tab. MetaMask recreates the onboarding tab
+   * mid-flow, so this re-resolves it rather than holding a stale handle, and never opens a
+   * duplicate (a duplicate makes MetaMask close one: "Target page has been closed").
+   */
+  async openHome(timeoutMs = 30_000): Promise<Page> {
+    const prefix = `chrome-extension://${this.extensionId}`;
+    const isHome = (p: Page) =>
+      !p.isClosed() && p.url().startsWith(prefix) && !p.url().includes('notification.html');
+
+    const deadline = Date.now() + timeoutMs;
+    for (;;) {
+      const page = this.context.pages().find(isHome);
+      if (page) {
+        await page.waitForLoadState('domcontentloaded').catch(() => undefined);
+        return page;
+      }
+      if (Date.now() >= deadline) break;
+      await delay(250);
+    }
+    const page = await this.context.newPage();
+    await page.goto(this.extUrl('home.html'));
+    await page.waitForLoadState('domcontentloaded').catch(() => undefined);
+    return page;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Onboarding
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Runs MetaMask Flask's "Create a new wallet" onboarding for a throwaway test wallet,
+   * completing the SRP backup (required to enable "Open wallet").
+   */
+  async onboardNewWallet(password: string = process.env.E2E_PASSWORD ?? DEFAULT_PASSWORD): Promise<void> {
+    this.password = password;
+    await this.clickButtonByText(MM_TEXT.acceptRisks); // Flask experimental gate
+    await this.clickTestId(MM.onboarding.createWallet);
+    await this.clickTestId(MM.onboarding.createWithSrp);
+
+    const pw = await this.openHome();
+    await pw.getByTestId(MM.onboarding.passwordNew).fill(password);
+    await pw.getByTestId(MM.onboarding.passwordConfirm).fill(password);
+    await pw.getByTestId(MM.onboarding.passwordTerms).click();
+    await pw.getByTestId(MM.onboarding.passwordSubmit).click();
+
+    const words = await this.revealAndSaveSeed();
+    await this.solveSeedQuiz(words);
+
+    // Continue triggers a "Perfect — that's right!" modal that blocks the rest.
+    await this.clickTestId(MM.onboarding.recoveryConfirm, 15_000);
+    await this.dismissGotItModal();
+
+    await this.clickTestId(MM.onboarding.metricsContinue);
+    await this.clickTestId(MM.onboarding.completeDone);
+
+    // "Open wallet" sets completedOnboarding but doesn't navigate under automation;
+    // loading the main route finalizes the wallet.
+    const home = await this.openHome();
+    await home.goto(this.extUrl('home.html#')).catch(() => undefined);
+    await home.waitForLoadState('domcontentloaded').catch(() => undefined);
+  }
+
+  /** Reveals the SRP on the review screen, records it, and continues to the quiz. */
+  private async revealAndSaveSeed(): Promise<string[]> {
+    const page = await this.openHome();
+    await page.getByTestId(MM.onboarding.recoveryReveal).click();
+    await page.waitForTimeout(1200);
+    const words: string[] = [];
+    for (let i = 0; i < 12; i++) {
+      const raw = (await page.getByTestId(SRP.chip(i)).textContent().catch(() => '')) || '';
+      words.push(raw.replace(/[^a-z]/gi, ''));
+    }
+    this.seedPhrase = words.join(' ');
+    await page.getByTestId(MM.onboarding.recoveryContinue).click();
+    await page.waitForTimeout(1200);
+    return words;
+  }
+
+  /** Fills the blanked quiz positions using the saved seed words. */
+  private async solveSeedQuiz(words: string[]): Promise<void> {
+    const page = await this.openHome();
+    const unanswered: number[] = [];
+    for (const el of await page.locator(SRP.unansweredSelector).all()) {
+      const m = ((await el.getAttribute('data-testid').catch(() => '')) || '').match(/unanswered-(\d+)/);
+      if (m) unanswered.push(Number(m[1]));
+    }
+    unanswered.sort((a, b) => a - b);
+    for (const idx of unanswered) {
+      await page.getByRole('button', { name: words[idx], exact: true }).first().click().catch(() => undefined);
+      await page.waitForTimeout(300);
+    }
+  }
+
+  private async dismissGotItModal(): Promise<void> {
+    for (let i = 0; i < 12; i++) {
+      const page = await this.openHome();
+      const gotIt = page.getByRole('button', { name: MM_TEXT.gotIt }).first();
+      if (await gotIt.isVisible().catch(() => false)) {
+        await gotIt.click().catch(() => undefined);
+        return;
+      }
+      await delay(1000);
+    }
+  }
+
+  private async clickTestId(testid: string, timeout = 30_000): Promise<void> {
+    const page = await this.openHome();
+    await page.getByTestId(testid).click({ timeout });
+  }
+
+  private async clickButtonByText(name: RegExp, timeout = 30_000): Promise<void> {
+    const page = await this.openHome();
+    await page.getByRole('button', { name }).first().click({ timeout });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Import an existing wallet
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Runs MetaMask Flask's "Import an existing wallet" onboarding with a provided Secret
+   * Recovery Phrase (12/15/18/21/24 words). Unlike {@link onboardNewWallet} there is no
+   * backup quiz — the SRP is entered directly.
+   */
+  async importWallet(
+    seedPhrase: string,
+    password: string = process.env.E2E_PASSWORD ?? DEFAULT_PASSWORD,
+  ): Promise<void> {
+    const words = seedPhrase.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (![12, 15, 18, 21, 24].includes(words.length)) {
+      throw new Error(
+        `Seed phrase must be a 12/15/18/21/24-word recovery phrase; got ${words.length} word(s).`,
+      );
+    }
+    this.seedPhrase = words.join(' ');
+    this.password = password;
+
+    await this.clickButtonByText(MM_TEXT.acceptRisks, 8_000).catch(() => undefined); // Flask gate (may be absent)
+    await this.clickImportEntry();
+
+    await this.dumpScreen('srp-screen');
+    await this.fillSeedWords(words);
+    await this.clickTestId(MM.importing.srpConfirm);
+
+    // Create-password screen (shared with the create flow): fill, accept terms, submit.
+    const pw = await this.openHome();
+    await pw.getByTestId(MM.onboarding.passwordNew).fill(password);
+    await pw.getByTestId(MM.onboarding.passwordConfirm).fill(password);
+    await pw.getByTestId(MM.onboarding.passwordTerms).click();
+    await this.dumpScreen('password-ready');
+    await pw.getByTestId(MM.onboarding.passwordSubmit).click();
+
+    // Wallet creation → optional metrics opt-in → completion ("your wallet is ready").
+    await this.finishOnboarding();
+    // Settle into an unlocked home so the later connect doesn't race a lock prompt.
+    await this.ensureUnlockedHome();
+    await this.dumpScreen('post-onboard');
+  }
+
+  /** Unlocks the home (if needed) and waits until it stays unlocked for two checks. */
+  private async ensureUnlockedHome(): Promise<void> {
+    const deadline = Date.now() + 30_000;
+    let stableUnlocked = 0;
+    while (Date.now() < deadline) {
+      const page = await this.openHome();
+      if (await this.unlockIfNeeded(page)) {
+        stableUnlocked = 0;
+        await delay(1_000);
+        continue;
+      }
+      stableUnlocked += 1;
+      if (stableUnlocked >= 2) return;
+      await delay(1_200);
+    }
+  }
+
+  /**
+   * Drives the post-password tail to a FINISHED wallet. Key derivation is async (the
+   * create-password screen lingers), then an optional metrics opt-in, then completion.
+   * "Open wallet" sets `completedOnboarding` but does NOT navigate under automation, so we
+   * click it and load the home route, looping until the URL actually leaves `/onboarding` —
+   * otherwise MetaMask still treats onboarding as incomplete and dApp snap requests resolve
+   * without ever prompting.
+   */
+  private async finishOnboarding(): Promise<void> {
+    const deadline = Date.now() + 120_000;
+    while (Date.now() < deadline) {
+      const page = await this.openHome();
+      const url = page.url();
+
+      // Left onboarding (and not on the lock screen) → finished.
+      if (!url.includes('/onboarding')) {
+        if (!(await this.unlockIfNeeded(page))) return;
+        continue;
+      }
+
+      // Metrics opt-in, if present.
+      const agree = page.getByTestId(MM.onboarding.metricsContinue);
+      if (await agree.isVisible().catch(() => false)) {
+        await agree.click().catch(() => undefined);
+        await delay(800);
+        continue;
+      }
+
+      // Completion ("wallet ready"): click "Open wallet", then force-load home to finalize.
+      const done = page.getByTestId(MM.onboarding.completeDone);
+      if (await done.isVisible().catch(() => false)) {
+        await done.click().catch(() => undefined);
+        await delay(800);
+        await page.goto(this.extUrl('home.html#')).catch(() => undefined);
+        await page.waitForLoadState('domcontentloaded').catch(() => undefined);
+        await delay(800);
+        continue;
+      }
+
+      await this.dumpScreen('finishing');
+      await delay(1_200);
+    }
+  }
+
+  /** Clicks "I have an existing wallet" then "Import using Secret Recovery Phrase". */
+  private async clickImportEntry(): Promise<void> {
+    const page = await this.openHome();
+    const byId = page.getByTestId(MM.importing.importWallet);
+    if (await byId.isVisible().catch(() => false)) {
+      await byId.click().catch(() => undefined);
+    } else {
+      await page.getByRole('button', { name: MM_TEXT.importExisting }).first().click();
+    }
+    // Social-login redesign: the import choice opens a sub-screen (?login=existing).
+    await (await this.openHome()).getByTestId(MM.importing.importWithSrp).click({ timeout: 20_000 });
+  }
+
+  /** Enters the SRP into the single import field and waits for "Continue" to enable. */
+  private async fillSeedWords(words: string[]): Promise<void> {
+    const page = await this.openHome();
+    const note = page.getByTestId(MM.importing.srpNote);
+    if (!(await note.isVisible({ timeout: 10_000 }).catch(() => false))) {
+      await this.dumpScreen('srp-screen-missing-inputs');
+      throw new Error(`SRP input ${MM.importing.srpNote} not found — see the dump above.`);
+    }
+    const phrase = words.join(' ');
+    await note.click();
+    await note.fill(phrase);
+
+    const confirm = page.getByTestId(MM.importing.srpConfirm);
+    if (!(await confirm.isEnabled().catch(() => false))) {
+      // Some builds only validate on per-character input events; retype if "fill" didn't take.
+      await note.fill('');
+      await note.pressSequentially(phrase, { delay: 15 });
+    }
+    await this.dumpScreen('srp-after-fill');
+  }
+
+  /** Logs the current screen's testids/buttons when E2E_DEBUG=1 (selector discovery). */
+  private async dumpScreen(label: string): Promise<void> {
+    if (process.env.E2E_DEBUG !== '1') return;
+    const page = await this.openHome();
+    const testIds = new Set<string>();
+    for (const el of await page.locator('[data-testid]').all()) {
+      const t = await el.getAttribute('data-testid').catch(() => null);
+      if (t) testIds.add(t);
+    }
+    const buttons = new Set<string>();
+    for (const el of await page.getByRole('button').all()) {
+      const text = ((await el.textContent().catch(() => '')) || '').trim();
+      if (text) {
+        const enabled = await el.isEnabled().catch(() => true);
+        buttons.add(enabled ? text : `${text} (disabled)`);
+      }
+    }
+    const inputs = new Set<string>();
+    for (const el of await page.locator('input, textarea').all()) {
+      const t = (await el.getAttribute('data-testid').catch(() => null)) ?? '';
+      const type = (await el.getAttribute('type').catch(() => null)) ?? 'text';
+      inputs.add(`${t || '(no-testid)'}[${type}]`);
+    }
+    console.log(
+      `\n[dump:${label}] ${page.url()}\n  testids: ${[...testIds].join(', ')}` +
+        `\n  buttons: ${[...buttons].join(' | ')}\n  inputs: ${[...inputs].join(', ')}`,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Snap approvals (connect / install / dialogs) via notification.html
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Approves the dApp connect + Snap install + the follow-up requests (e.g. getXpub) that
+   * the wallet issues on connect. Drives every pending approval until none remain.
+   */
+  async connectAndInstallSnap(): Promise<void> {
+    await this.unlockIfNeeded(await this.openHome());
+    await this.driveApprovals({ maxMs: 150_000, idleMs: 7_000, firstGraceMs: 30_000 });
+    await this.refocusWallet();
+  }
+
+  /**
+   * If `page` is showing MetaMask's unlock screen, enters the password and unlocks. Returns
+   * whether an unlock was performed. Imported wallets can land locked after onboarding, and
+   * a locked wallet renders the unlock form on `notification.html` instead of the approval.
+   */
+  private async unlockIfNeeded(page: Page): Promise<boolean> {
+    const input = page.getByTestId(UNLOCK.password);
+    if (!(await input.isVisible({ timeout: 2_000 }).catch(() => false))) return false;
+    await input.fill(this.password);
+    const submit = page.getByTestId(UNLOCK.submit);
+    if (await submit.isVisible().catch(() => false)) {
+      await submit.click().catch(() => undefined);
+    } else {
+      await input.press('Enter').catch(() => undefined);
+    }
+    await delay(1_500);
+    return true;
+  }
+
+  /** Approves the next pending Snap dialog (e.g. change network). */
+  async confirmDialog(): Promise<void> {
+    await this.driveApprovals({ maxMs: 40_000, idleMs: 3_500 });
+    await this.refocusWallet();
+  }
+
+  /** Rejects the next pending Snap dialog. */
+  async rejectDialog(): Promise<void> {
+    await this.driveApprovals({ maxMs: 40_000, idleMs: 3_500, reject: true });
+    await this.refocusWallet();
+  }
+
+  /**
+   * Renders `notification.html` and clicks through whatever approval is pending. Re-renders
+   * only when nothing is pending (to fetch the next queued request) — re-rendering mid-flow
+   * resets multi-step screens like the install permission modal.
+   */
+  private async driveApprovals(opts: {
+    maxMs: number;
+    idleMs: number;
+    reject?: boolean;
+    firstGraceMs?: number;
+  }): Promise<void> {
+    const order = opts.reject ? MM_TEXT.rejectOrder : MM_TEXT.approveOrder;
+    // The request may take a moment to register after the dApp action, so wait longer for
+    // the FIRST approval to appear; once we've acted, fall back to the shorter idle window.
+    const firstGraceMs = opts.firstGraceMs ?? Math.max(opts.idleMs, 10_000);
+    const start = Date.now();
+    let lastActive = Date.now();
+    let seenAny = false;
+    let notif = await this.openNotification();
+
+    while (Date.now() - start < opts.maxMs) {
+      if (notif.isClosed()) notif = await this.openNotification();
+      if (await this.unlockIfNeeded(notif)) {
+        lastActive = Date.now();
+        continue;
+      }
+      let buttons = await this.readButtons(notif);
+      if (process.env.E2E_DEBUG === '1') {
+        console.log(`[notif] ${notif.url().split('#').pop()} buttons: ${buttons.join(' | ')}`);
+      }
+
+      if (!MM_TEXT.anyApproval.test(buttons.join(' '))) {
+        // A pending confirmation renders its page before its buttons; navigating away from a
+        // snap_dialog REJECTS it, so wait in place when already on an approval page and only
+        // re-fetch the queue (re-navigate) when on a non-approval page.
+        if (this.isApprovalUrl(notif.url())) {
+          await delay(800);
+        } else {
+          await notif.goto(this.extUrl('notification.html')).catch(() => undefined);
+          await delay(800);
+        }
+        buttons = await this.readButtons(notif);
+      }
+
+      if (!MM_TEXT.anyApproval.test(buttons.join(' '))) {
+        if (Date.now() - lastActive > (seenAny ? opts.idleMs : firstGraceMs)) return; // settled
+        await delay(800);
+        continue;
+      }
+
+      seenAny = true;
+      lastActive = Date.now();
+      // Scroll any privacy/permission gate.
+      for (const sel of ['snap-privacy-warning-scroll', 'snap-install-scroll']) {
+        const el = notif.locator(`[data-testid="${sel}"]`).first();
+        if (await el.isVisible().catch(() => false)) await el.click().catch(() => undefined);
+      }
+      // Grant any required checkbox (e.g. "Install Hathor Wallet").
+      if (!opts.reject) {
+        for (const cb of await notif.locator('input[type="checkbox"]').all()) {
+          if (!(await cb.isChecked().catch(() => true))) await cb.check({ force: true }).catch(() => undefined);
+        }
+      }
+      // Click the highest-priority action present (last match wins — modals sit on top).
+      for (const name of order) {
+        const button = notif.getByRole('button', { name }).last();
+        if (await button.isVisible().catch(() => false) && await button.isEnabled().catch(() => false)) {
+          await button.click({ timeout: 4_000 }).catch(() => undefined);
+          break;
+        }
+      }
+      await delay(1_200);
+      if (opts.reject) return; // a single rejection resolves the request
+    }
+  }
+
+  /** True when the URL is a pending approval page (re-navigating these would reject them). */
+  private isApprovalUrl(url: string): boolean {
+    return /\/(confirmation|connect)\//.test(url) || url.includes('snap-install');
+  }
+
+  private async openNotification(): Promise<Page> {
+    if (!this.notifPage || this.notifPage.isClosed()) {
+      if (SPLIT_WINDOWS) {
+        // Keep the approval popup in MetaMask's window (not the wallet's): activate a MetaMask
+        // page first so the new tab attaches to that window instead of the focused dApp window.
+        await (await this.openHome()).bringToFront().catch(() => undefined);
+      }
+      this.notifPage = await this.context.newPage();
+    }
+    await this.notifPage.goto(this.extUrl('notification.html')).catch(() => undefined);
+    await this.notifPage.waitForLoadState('domcontentloaded').catch(() => undefined);
+    // Opening this tab activated it; bring the wallet back to front. The rest of the
+    // approval loop only re-navigates this tab (goto doesn't steal focus), so the wallet
+    // stays visible while we drive the approval on this background tab.
+    await this.refocusWallet();
+    return this.notifPage;
+  }
+
+  private async readButtons(page: Page): Promise<string[]> {
+    const out: string[] = [];
+    for (const el of await page.getByRole('button').all()) {
+      const text = ((await el.textContent().catch(() => '')) || '').trim();
+      if (text) out.push(text);
+    }
+    return out;
+  }
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
