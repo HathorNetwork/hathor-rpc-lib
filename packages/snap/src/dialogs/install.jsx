@@ -23,6 +23,9 @@ export const installPage = async () => (
             <Text>
               The dApp you are connecting to will have access to your first address and the network you are connected to
             </Text>
+            <Text>
+              It will also be able to view the balance of your registered tokens.
+            </Text>
           </Box>
         </Container>
       ),

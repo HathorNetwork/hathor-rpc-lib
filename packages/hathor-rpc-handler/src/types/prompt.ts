@@ -4,13 +4,12 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import { AddressInfoObject, GetBalanceObject, TokenDetailsObject } from '@hathor/wallet-lib/lib/wallet/types';
+import { AddressInfoObject, TokenDetailsObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { NanoContractAction } from '@hathor/wallet-lib/lib/nano_contracts/types';
 import { RequestMetadata, RpcRequest } from './rpcRequest';
 import { TokenVersion, Transaction } from '@hathor/wallet-lib';
 
 export enum TriggerTypes {
-  GetBalanceConfirmationPrompt,
   SignMessageWithAddressConfirmationPrompt,
   PinConfirmationPrompt,
   AddressRequestPrompt,
@@ -49,7 +48,6 @@ export enum TriggerResponseTypes {
   SignOracleDataConfirmationResponse,
   SendTransactionConfirmationResponse,
   CreateNanoContractCreateTokenTxConfirmationResponse,
-  GetBalanceConfirmationResponse,
   ChangeNetworkRequestConfirmationResponse,
   GetXpubConfirmationResponse,
 }
@@ -57,7 +55,6 @@ export enum TriggerResponseTypes {
 export type Trigger =
   GetAddressConfirmationPrompt
   | AddressRequestClientPrompt
-  | GetBalanceConfirmationPrompt
   | GetUtxosConfirmationPrompt
   | PinConfirmationPrompt
   | AddressRequestPrompt
@@ -136,11 +133,6 @@ export type GetXpubConfirmationPrompt = BaseConfirmationPrompt & {
   data: {
     xpub: string;
   }
-}
-
-export type GetBalanceConfirmationPrompt = BaseConfirmationPrompt & {
-  type: TriggerTypes.GetBalanceConfirmationPrompt;
-  data: GetBalanceObject[];
 }
 
 export type GetUtxosConfirmationPrompt = BaseConfirmationPrompt & {
@@ -290,11 +282,6 @@ export interface GetXpubConfirmationResponse {
   data: boolean;
 }
 
-export interface GetBalanceConfirmationResponse {
-  type: TriggerResponseTypes.GetBalanceConfirmationResponse;
-  data: boolean;
-}
-
 export interface GetUtxosConfirmationResponse {
   type: TriggerResponseTypes.GetUtxosConfirmationResponse;
   data: boolean;
@@ -368,7 +355,6 @@ export type TriggerResponse =
   | SignOracleDataConfirmationResponse
   | SendTransactionConfirmationResponse
   | CreateNanoContractCreateTokenTxConfirmationResponse
-  | GetBalanceConfirmationResponse
   | ChangeNetworkRequestConfirmationResponse
   | GetXpubConfirmationResponse;
 

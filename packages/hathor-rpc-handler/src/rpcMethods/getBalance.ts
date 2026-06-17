@@ -6,46 +6,50 @@
  */
 
 import { z } from 'zod';
+import { constants } from '@hathor/wallet-lib';
 import type { IHathorWallet } from '@hathor/wallet-lib';
 import type { GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 import {
-  TriggerTypes,
-  GetBalanceConfirmationPrompt,
   GetBalanceRpcRequest,
   TriggerHandler,
   RequestMetadata,
   RpcResponseTypes,
   RpcResponse,
-  GetBalanceConfirmationResponse,
 } from '../types';
-import { NotImplementedError, PromptRejectedError, InvalidParamsError } from '../errors';
+import { NotImplementedError, InvalidParamsError } from '../errors';
 import { validateNetwork } from '../helpers';
 
 const getBalanceSchema = z.object({
   network: z.string().min(1),
-  tokens: z.array(z.string().min(1)).min(1),
+  // Optional: omitting it returns the native token (HTR) plus all registered
+  // tokens (not an empty result); a provided list selects just that subset.
+  tokens: z.array(z.string().min(1)).min(1).optional(),
   addressIndexes: z.array(z.number().int().nonnegative()).optional(),
 });
 
 /**
- * Gets the balance for specified tokens using the provided wallet.
+ * Gets the balance for the requested tokens (or the native token plus all
+ * registered tokens when `tokens` is omitted) using the provided wallet.
  *
- * @param rpcRequest - The RPC request containing the parameters for getting the balance.
- * @param wallet - The wallet instance to use for retrieving the balance.
- * @param requestMetadata - Metadata related to the dApp that sent the RPC
- * @param promptHandler - A function to handle prompts for user confirmation.
+ * Balance is non-sensitive, read-only data shared with already-connected dApps,
+ * so this handler does NOT prompt the user for confirmation (mirroring
+ * `getConnectedNetwork` / `getWalletInformation`).
  *
- * @returns The balances of the specified tokens.
+ * @param rpcRequest - The RPC request containing the parameters.
+ * @param wallet - The wallet instance.
+ * @param _requestMetadata - Metadata about the dApp (unused).
+ * @param _promptHandler - Prompt callback (unused — balance is prompt-free).
  *
- * @throws {NotImplementedError} - If address indexes are specified, which is not implemented.
- * @throws {PromptRejectedError} - If the user rejects the balance confirmation prompt.
+ * @returns The balances of the requested/registered tokens.
+ *
+ * @throws {NotImplementedError} - If address indexes are specified.
  * @throws {InvalidParamsError} - If the request parameters are invalid.
  */
 export async function getBalance(
   rpcRequest: GetBalanceRpcRequest,
   wallet: IHathorWallet,
-  requestMetadata: RequestMetadata,
-  promptHandler: TriggerHandler,
+  _requestMetadata: RequestMetadata,
+  _promptHandler: TriggerHandler,
 ) {
   const parseResult = getBalanceSchema.safeParse(rpcRequest.params);
 
@@ -61,24 +65,21 @@ export async function getBalance(
 
   validateNetwork(wallet, params.network);
 
-  const balances: GetBalanceObject[] = (await Promise.all(
-    params.tokens.map(token => wallet.getBalance(token)),
-  )).flat();
-
-  const prompt: GetBalanceConfirmationPrompt = {
-    ...rpcRequest,
-    type: TriggerTypes.GetBalanceConfirmationPrompt,
-    data: balances
-  };
-
-  const confirmed = await promptHandler(
-    prompt,
-    requestMetadata
-  ) as GetBalanceConfirmationResponse;
-
-  if (!confirmed.data) {
-    throw new PromptRejectedError();
+  let tokenUids = params.tokens;
+  if (!tokenUids) {
+    // getRegisteredTokens() yields only custom tokens, never native HTR — seed the
+    // list with HTR so the "all tokens" response includes it.
+    tokenUids = [constants.NATIVE_TOKEN_UID];
+    for await (const token of wallet.storage.getRegisteredTokens()) {
+      if (token.uid !== constants.NATIVE_TOKEN_UID) {
+        tokenUids.push(token.uid);
+      }
+    }
   }
+
+  const balances: GetBalanceObject[] = (await Promise.all(
+    tokenUids.map(token => wallet.getBalance(token)),
+  )).flat();
 
   return {
     type: RpcResponseTypes.GetBalanceResponse,

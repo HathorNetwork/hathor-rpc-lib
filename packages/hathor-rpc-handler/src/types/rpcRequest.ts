@@ -61,7 +61,8 @@ export interface GetBalanceRpcRequest {
   method: RpcMethods.GetBalance,
   params: {
     network: string;
-    tokens: string[];
+    // Optional: omitted => balance for all registered tokens; provided => subset.
+    tokens?: string[];
     addressIndexes?: number[];
   };
 }
