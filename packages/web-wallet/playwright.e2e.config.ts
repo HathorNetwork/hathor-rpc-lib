@@ -60,6 +60,11 @@ export default defineConfig<Record<string, never>, { walletSetup: WalletSetup }>
     // The dev server presents a self-signed cert; let Playwright-driven pages accept it
     // (the browser itself also gets `--ignore-certificate-errors` in the fixture).
     ignoreHTTPSErrors: true,
+    // Bound every locator action. The default is 0 (no timeout), so a click on a not-yet-rendered
+    // element hangs until the whole test times out — which is what happens on slower machines/CI
+    // where MetaMask's onboarding UI lingers on its loading spinner. A generous bound lets actions
+    // wait for rendering, but fail fast (and clearly) instead of consuming the 180s test budget.
+    actionTimeout: 45_000,
     trace: 'on-first-retry',
     video: 'retain-on-failure',
   },
@@ -103,7 +108,10 @@ export default defineConfig<Record<string, never>, { walletSetup: WalletSetup }>
     {
       // `E2E_TLS=true` makes webpack-dev-server serve HTTPS (self-signed) and disables HMR, so
       // the dApp can load under the Snap-allowed `https://` origin in `baseURL` above.
-      command: 'E2E_TLS=true yarn dev',
+      // `SNAP_TIMEOUT_MS` raises the dApp's snap RPC timeouts for E2E: a cold snap start (which
+      // also starts a Hathor wallet) plus an approval dialog can exceed the 10s prod default on
+      // slower machines/CI. Production builds leave it unset, keeping the 10s defaults.
+      command: 'SNAP_TIMEOUT_MS=60000 E2E_TLS=true yarn dev',
       url: WEB_WALLET_SERVER_URL,
       ignoreHTTPSErrors: true,
       reuseExistingServer: !process.env.CI,
