@@ -1,4 +1,4 @@
-import type { BrowserContext, Page } from '@playwright/test';
+import type { BrowserContext, Locator, Page } from '@playwright/test';
 import { MM, MM_TEXT, SRP, UNLOCK } from './selectors';
 import { SPLIT_WINDOWS } from './windows';
 
@@ -228,7 +228,11 @@ export class MetaMaskDriver {
     this.seedPhrase = words.join(' ');
     this.password = password;
 
-    await this.clickButtonByText(MM_TEXT.acceptRisks, 8_000).catch(() => undefined); // Flask gate (may be absent)
+    // Flask experimental gate (may be absent on some versions, so best-effort). Wait as long as
+    // the create flow does — on slower machines/CI the button can take well over the old 8s to
+    // become actionable; missing it leaves MetaMask on the gate, so the get-started screen (and
+    // the import entry) never render and every later step sees a blank tab.
+    await this.clickButtonByText(MM_TEXT.acceptRisks, 30_000).catch(() => undefined);
     await this.clickImportEntry();
 
     await this.dumpScreen('srp-screen');
@@ -313,15 +317,13 @@ export class MetaMaskDriver {
 
   /** Clicks "I have an existing wallet" then "Import using Secret Recovery Phrase". */
   private async clickImportEntry(): Promise<void> {
-    const page = await this.openHome();
-    const byId = page.getByTestId(MM.importing.importWallet);
-    if (await byId.isVisible().catch(() => false)) {
-      await byId.click().catch(() => undefined);
-    } else {
-      await page.getByRole('button', { name: MM_TEXT.importExisting }).first().click();
-    }
+    // Mirror the create flow (clickTestId): wait for the stable onboarding testid through a slow
+    // render instead of an instant isVisible() race that falls back to brittle button text — that
+    // race loses while MetaMask's onboarding UI is still on its loading spinner (slower machines/CI),
+    // then hangs clicking a button that isn't there yet.
+    await this.clickTestId(MM.importing.importWallet); // "I have an existing wallet"
     // Social-login redesign: the import choice opens a sub-screen (?login=existing).
-    await (await this.openHome()).getByTestId(MM.importing.importWithSrp).click({ timeout: 20_000 });
+    await this.clickTestId(MM.importing.importWithSrp); // "Import using Secret Recovery Phrase"
   }
 
   /** Enters the SRP into the single import field and waits for "Continue" to enable. */
@@ -333,16 +335,54 @@ export class MetaMaskDriver {
       throw new Error(`SRP input ${MM.importing.srpNote} not found — see the dump above.`);
     }
     const phrase = words.join(' ');
-    await note.click();
-    await note.fill(phrase);
-
     const confirm = page.getByTestId(MM.importing.srpConfirm);
-    if (!(await confirm.isEnabled().catch(() => false))) {
-      // Some builds only validate on per-character input events; retype if "fill" didn't take.
-      await note.fill('');
-      await note.pressSequentially(phrase, { delay: 15 });
+    const enabled = () => confirm.isEnabled().catch(() => false);
+
+    // Fast path: MetaMask's "Paste" button distributes all words at once (instant on a fast Mac).
+    await page.evaluate((p) => navigator.clipboard.writeText(p), phrase).catch(() => undefined);
+    const paste = page.getByTestId(MM.importing.srpPaste);
+    if (await paste.isVisible().catch(() => false)) {
+      await paste.click().catch(() => undefined);
+    }
+    await this.waitEnabled(confirm, 8_000);
+
+    // Slow path: every bulk method (fill / typed phrase / paste) races MetaMask's reactive per-word
+    // split on slower machines/CI and silently drops words (only 18-22 of 24 register → Confirm
+    // never enables). So enter the phrase WORD BY WORD, pausing after each space so MetaMask can
+    // create and focus the next word field before the next word arrives.
+    if (!(await enabled())) {
+      await this.clearSrp(page);
+      const field = page.getByTestId(MM.importing.srpNote);
+      await field.click().catch(() => undefined);
+      for (let i = 0; i < words.length; i++) {
+        await page.keyboard.type(words[i], { delay: 15 });
+        await delay(120);
+        if (i < words.length - 1) {
+          await page.keyboard.press('Space');
+          await delay(200); // let MetaMask create + focus the next word field
+        }
+      }
+      await this.waitEnabled(confirm, 20_000);
     }
     await this.dumpScreen('srp-after-fill');
+  }
+
+  /** Resets the SRP entry to a single empty field ("Clear all" appears once words are present). */
+  private async clearSrp(page: Page): Promise<void> {
+    const clearAll = page.getByRole('button', { name: /clear all/i }).first();
+    if (await clearAll.isVisible().catch(() => false)) {
+      await clearAll.click().catch(() => undefined);
+      await delay(500);
+    }
+  }
+
+  /** Polls until the given locator is enabled, or the timeout elapses. */
+  private async waitEnabled(locator: Locator, timeoutMs: number): Promise<void> {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      if (await locator.isEnabled().catch(() => false)) return;
+      await delay(400);
+    }
   }
 
   /** Logs the current screen's testids/buttons when E2E_DEBUG=1 (selector discovery). */

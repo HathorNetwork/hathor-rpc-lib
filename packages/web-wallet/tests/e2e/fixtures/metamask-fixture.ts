@@ -72,6 +72,9 @@ export const test = base.extend<
 
       const context = await chromium.launchPersistentContext(userDataDir, {
         headless,
+        // The SRP import uses MetaMask's "Paste" button (atomic, avoids per-word drop on slow
+        // machines); writing the phrase to the clipboard needs clipboard permission.
+        permissions: ['clipboard-read', 'clipboard-write'],
         // The dApp is served locally but must present a Snap-allowed origin for `htr_getXpub`.
         // Remap `https://staging.wallet.hathor.network` (an allowed origin) to the local dev
         // server and accept its self-signed cert. Only this one host:port is remapped, so the
