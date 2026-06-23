@@ -407,9 +407,14 @@ export class MetaMaskDriver {
     return true;
   }
 
-  /** Approves the next pending Snap dialog (e.g. change network). */
+  /** Approves the next pending Snap dialog (e.g. change network, send, create token). */
   async confirmDialog(): Promise<void> {
-    await this.driveApprovals({ maxMs: 40_000, idleMs: 3_500 });
+    // The dApp action that triggers this dialog often first cold-starts a *signing* Hathor wallet
+    // inside the snap (htr_sendTransaction / createToken are not read-only), which is slow on some
+    // machines/CI. So the approval can take far longer than the old ~10s grace to appear; wait
+    // generously for the FIRST dialog before settling — otherwise it is orphaned (never clicked)
+    // and the dApp hangs with the dialog open.
+    await this.driveApprovals({ maxMs: 90_000, idleMs: 4_000, firstGraceMs: 75_000 });
     await this.refocusWallet();
   }
 
@@ -441,58 +446,80 @@ export class MetaMaskDriver {
 
     while (Date.now() - start < opts.maxMs) {
       if (notif.isClosed()) notif = await this.openNotification();
-      if (await this.unlockIfNeeded(notif)) {
+      if (await this.approveOncePass(notif, order, opts.reject ?? false)) {
+        seenAny = true;
         lastActive = Date.now();
+        if (opts.reject) return; // a single rejection resolves the request
         continue;
       }
-      let buttons = await this.readButtons(notif);
-      if (process.env.E2E_DEBUG === '1') {
-        console.log(`[notif] ${notif.url().split('#').pop()} buttons: ${buttons.join(' | ')}`);
-      }
-
-      if (!MM_TEXT.anyApproval.test(buttons.join(' '))) {
-        // A pending confirmation renders its page before its buttons; navigating away from a
-        // snap_dialog REJECTS it, so wait in place when already on an approval page and only
-        // re-fetch the queue (re-navigate) when on a non-approval page.
-        if (this.isApprovalUrl(notif.url())) {
-          await delay(800);
-        } else {
-          await notif.goto(this.extUrl('notification.html')).catch(() => undefined);
-          await delay(800);
-        }
-        buttons = await this.readButtons(notif);
-      }
-
-      if (!MM_TEXT.anyApproval.test(buttons.join(' '))) {
-        if (Date.now() - lastActive > (seenAny ? opts.idleMs : firstGraceMs)) return; // settled
-        await delay(800);
-        continue;
-      }
-
-      seenAny = true;
-      lastActive = Date.now();
-      // Scroll any privacy/permission gate.
-      for (const sel of ['snap-privacy-warning-scroll', 'snap-install-scroll']) {
-        const el = notif.locator(`[data-testid="${sel}"]`).first();
-        if (await el.isVisible().catch(() => false)) await el.click().catch(() => undefined);
-      }
-      // Grant any required checkbox (e.g. "Install Hathor Wallet").
-      if (!opts.reject) {
-        for (const cb of await notif.locator('input[type="checkbox"]').all()) {
-          if (!(await cb.isChecked().catch(() => true))) await cb.check({ force: true }).catch(() => undefined);
-        }
-      }
-      // Click the highest-priority action present (last match wins — modals sit on top).
-      for (const name of order) {
-        const button = notif.getByRole('button', { name }).last();
-        if (await button.isVisible().catch(() => false) && await button.isEnabled().catch(() => false)) {
-          await button.click({ timeout: 4_000 }).catch(() => undefined);
-          break;
-        }
-      }
-      await delay(1_200);
-      if (opts.reject) return; // a single rejection resolves the request
+      if (Date.now() - lastActive > (seenAny ? opts.idleMs : firstGraceMs)) return; // settled
+      await delay(800);
     }
+  }
+
+  /**
+   * Keeps approving every dialog that appears until `stop()` returns true. Unlike
+   * {@link driveApprovals}, this never "settles" — so a slow snap cold-start that delays an
+   * approval (e.g. the htr_getXpub dialog the dApp issues only after a lengthy network check)
+   * can't orphan it. Intended to run concurrently with the dApp reaching its connected home.
+   */
+  async driveApprovalsUntil(stop: () => boolean, opts: { maxMs?: number } = {}): Promise<void> {
+    const maxMs = opts.maxMs ?? 170_000;
+    const start = Date.now();
+    let notif = await this.openNotification();
+    while (!stop() && Date.now() - start < maxMs) {
+      if (notif.isClosed()) notif = await this.openNotification();
+      if (!(await this.approveOncePass(notif, MM_TEXT.approveOrder, false))) await delay(600);
+    }
+  }
+
+  /**
+   * One pass over the notification page: unlock if locked, and approve (or reject) the pending
+   * dialog if one is showing. Returns whether it acted this pass (clicked something).
+   */
+  private async approveOncePass(notif: Page, order: RegExp[], reject: boolean): Promise<boolean> {
+    if (await this.unlockIfNeeded(notif)) return true;
+    let buttons = await this.readButtons(notif);
+    if (process.env.E2E_DEBUG === '1') {
+      console.log(`[notif] ${notif.url().split('#').pop()} buttons: ${buttons.join(' | ')}`);
+    }
+
+    if (!MM_TEXT.anyApproval.test(buttons.join(' '))) {
+      // A pending confirmation renders its page before its buttons; navigating away from a
+      // snap_dialog REJECTS it, so wait in place when already on an approval page and only
+      // re-fetch the queue (re-navigate) when on a non-approval page.
+      if (this.isApprovalUrl(notif.url())) {
+        await delay(800);
+      } else {
+        await notif.goto(this.extUrl('notification.html')).catch(() => undefined);
+        await delay(800);
+      }
+      buttons = await this.readButtons(notif);
+    }
+
+    if (!MM_TEXT.anyApproval.test(buttons.join(' '))) return false;
+
+    // Scroll any privacy/permission gate.
+    for (const sel of ['snap-privacy-warning-scroll', 'snap-install-scroll']) {
+      const el = notif.locator(`[data-testid="${sel}"]`).first();
+      if (await el.isVisible().catch(() => false)) await el.click().catch(() => undefined);
+    }
+    // Grant any required checkbox (e.g. "Install Hathor Wallet").
+    if (!reject) {
+      for (const cb of await notif.locator('input[type="checkbox"]').all()) {
+        if (!(await cb.isChecked().catch(() => true))) await cb.check({ force: true }).catch(() => undefined);
+      }
+    }
+    // Click the highest-priority action present (last match wins — modals sit on top).
+    for (const name of order) {
+      const button = notif.getByRole('button', { name }).last();
+      if (await button.isVisible().catch(() => false) && await button.isEnabled().catch(() => false)) {
+        await button.click({ timeout: 4_000 }).catch(() => undefined);
+        break;
+      }
+    }
+    await delay(1_200);
+    return true;
   }
 
   /** True when the URL is a pending approval page (re-navigating these would reject them). */
