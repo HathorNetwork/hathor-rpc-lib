@@ -113,6 +113,9 @@ module.exports = (env, argv) => {
         'process.env.WALLET_VERSION': JSON.stringify(packageJson.version),
         'process.env.STAGE': JSON.stringify(process.env.STAGE || 'production'),
         'process.env.SKIP_FEATURE_TOGGLE': JSON.stringify(process.env.SKIP_FEATURE_TOGGLE || 'false'),
+        // Optional override for snap RPC timeouts (ms). Empty in normal builds (keeps the 10s
+        // defaults); E2E/slow CI can set it higher so a slow snap cold-start doesn't trip the race.
+        'process.env.SNAP_TIMEOUT_MS': JSON.stringify(process.env.SNAP_TIMEOUT_MS || ''),
       }),
       ...(isProduction ? [new LavaMoatPlugin({
         mode: 'production',
