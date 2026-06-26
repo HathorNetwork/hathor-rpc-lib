@@ -43,6 +43,12 @@ module.exports = (env, argv) => {
       alias: {
         '@': path.resolve(__dirname, './src'),
         '@hathor/snap-utils': path.resolve(__dirname, '../snap-utils/src'),
+        // Replace the `setimmediate` polyfill (pulled in transitively via the Node
+        // timer polyfills) with a MessageChannel-based implementation that is immune
+        // to wallet extensions proxying `event.source`. Without this, React's
+        // scheduler prefers the broken global `setImmediate` and never flushes,
+        // leaving a blank screen. See src/setImmediate.shim.ts.
+        'setimmediate': path.resolve(__dirname, 'src/setImmediate.shim.ts'),
         'buffer': require.resolve('buffer/'),
         'assert': stdLibBrowser.assert,
         'crypto': stdLibBrowser.crypto,
