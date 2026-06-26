@@ -6,7 +6,6 @@
  */
 
 import { z } from 'zod';
-import { constants } from '@hathor/wallet-lib';
 import type { IHathorWallet } from '@hathor/wallet-lib';
 import type { GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 import {
@@ -21,15 +20,15 @@ import { validateNetwork } from '../helpers';
 
 const getBalanceSchema = z.object({
   network: z.string().min(1),
-  // Optional: omitting it returns the native token (HTR) plus all registered
-  // tokens (not an empty result); a provided list selects just that subset.
+  // Optional: omitting it returns the balance of every token the wallet holds
+  // (not an empty result); a provided list selects just that subset.
   tokens: z.array(z.string().min(1)).min(1).optional(),
   addressIndexes: z.array(z.number().int().nonnegative()).optional(),
 });
 
 /**
- * Gets the balance for the requested tokens (or the native token plus all
- * registered tokens when `tokens` is omitted) using the provided wallet.
+ * Gets the balance for the requested tokens (or every token the wallet holds
+ * when `tokens` is omitted) using the provided wallet.
  *
  * Balance is non-sensitive, read-only data shared with already-connected dApps,
  * so this handler does NOT prompt the user for confirmation (mirroring
@@ -40,7 +39,8 @@ const getBalanceSchema = z.object({
  * @param _requestMetadata - Metadata about the dApp (unused).
  * @param _promptHandler - Prompt callback (unused — balance is prompt-free).
  *
- * @returns The balances of the requested/registered tokens.
+ * @returns The balances of the requested tokens, or of every token the wallet
+ * holds when `tokens` is omitted.
  *
  * @throws {NotImplementedError} - If address indexes are specified.
  * @throws {InvalidParamsError} - If the request parameters are invalid.
@@ -65,20 +65,17 @@ export async function getBalance(
 
   validateNetwork(wallet, params.network);
 
-  let tokenUids = params.tokens;
-  if (!tokenUids) {
-    // getRegisteredTokens() yields only custom tokens, never native HTR — seed the
-    // list with HTR so the "all tokens" response includes it.
-    tokenUids = [constants.NATIVE_TOKEN_UID];
-    for await (const token of wallet.storage.getRegisteredTokens()) {
-      if (token.uid !== constants.NATIVE_TOKEN_UID) {
-        tokenUids.push(token.uid);
-      }
-    }
+  let tokens: string[];
+  if (params.tokens) {
+    tokens = params.tokens;
+  } else {
+    // getTokens (not getBalance(null), which throws on the fullnode facade) is
+    // the only all-tokens primitive both wallet facades implement.
+    tokens = await wallet.getTokens();
   }
 
   const balances: GetBalanceObject[] = (await Promise.all(
-    tokenUids.map(token => wallet.getBalance(token)),
+    tokens.map(token => wallet.getBalance(token)),
   )).flat();
 
   return {

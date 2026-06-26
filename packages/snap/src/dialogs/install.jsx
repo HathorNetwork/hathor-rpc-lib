@@ -21,10 +21,7 @@ export const installPage = async () => (
               You can access the full documentation on the <Link href="https://docs.hathor.network/explanations/features/metamask-snap">Hathor docs</Link>
             </Text>
             <Text>
-              The dApp you are connecting to will have access to your first address and the network you are connected to
-            </Text>
-            <Text>
-              It will also be able to view the balance of your registered tokens.
+              The dApp you are connecting to will have access to your first address, the network you are connected to, and the balance of all your tokens.
             </Text>
           </Box>
         </Container>

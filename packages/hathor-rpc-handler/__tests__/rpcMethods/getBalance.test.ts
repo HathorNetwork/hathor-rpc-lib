@@ -38,20 +38,14 @@ describe('getBalance', () => {
   }];
 
   let mockGetBalance: jest.Mock;
-  let registeredTokens: { uid: string }[];
+  let mockGetTokens: jest.Mock;
 
   function buildWallet(): IHathorWallet {
     return {
       getNetwork: jest.fn().mockReturnValue('testnet'),
       getBalance: mockGetBalance,
-      storage: {
-        getRegisteredTokens: async function* getRegisteredTokens() {
-          for (const t of registeredTokens) {
-            yield t;
-          }
-        },
-      },
-    } as unknown as IHathorWallet;
+      getTokens: mockGetTokens,
+    } as Partial<IHathorWallet> as IHathorWallet;
   }
 
   // getBalance must never invoke the prompt handler.
@@ -60,9 +54,7 @@ describe('getBalance', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetBalance = jest.fn().mockResolvedValue(htrBalance);
-    // getRegisteredTokens() yields only explicitly-registered custom tokens,
-    // never the native HTR token.
-    registeredTokens = [];
+    mockGetTokens = jest.fn().mockResolvedValue(['00']);
   });
 
   it('should reject when network is missing', async () => {
@@ -120,8 +112,12 @@ describe('getBalance', () => {
     ).rejects.toThrow(InvalidParamsError);
   });
 
-  it('should return only the native token (HTR) when no custom tokens are registered', async () => {
-    registeredTokens = [];
+  it('should return every token the wallet holds (enumerated via getTokens) when tokens is omitted', async () => {
+    const customTokenId = '000003521effbc8efd7b746a118cdc7d41d7cc1bf9c5d1fa5de4f8453f14ba4f';
+    mockGetTokens.mockResolvedValueOnce(['00', customTokenId]);
+    mockGetBalance
+      .mockResolvedValueOnce(htrBalance)
+      .mockResolvedValueOnce(customBalance);
 
     const request = {
       method: RpcMethods.GetBalance,
@@ -130,10 +126,15 @@ describe('getBalance', () => {
 
     const result = await getBalance(request, buildWallet(), {}, mockTriggerHandler) as GetBalanceResponse;
 
-    expect(mockGetBalance).toHaveBeenCalledTimes(1);
-    expect(mockGetBalance).toHaveBeenCalledWith('00');
-    expect(result.response).toHaveLength(1);
+    expect(mockGetTokens).toHaveBeenCalledTimes(1);
+    expect(mockGetBalance).toHaveBeenCalledTimes(2);
+    expect(mockGetBalance).toHaveBeenNthCalledWith(1, '00');
+    expect(mockGetBalance).toHaveBeenNthCalledWith(2, customTokenId);
+    expect(mockGetBalance).not.toHaveBeenCalledWith(null);
+    expect(result.response).toHaveLength(2);
     expect(result.response[0].token.id).toBe('00');
+    expect(result.response[1].token.id).toBe(customTokenId);
+    expect(mockTriggerHandler).not.toHaveBeenCalled();
   });
 
   it('should NOT prompt the user (triggerHandler never called)', async () => {
@@ -166,52 +167,5 @@ describe('getBalance', () => {
     expect(result.response[0].token.id).toBe('00');
     expect(result.response[1].token.id).toBe('000003521effbc8efd7b746a118cdc7d41d7cc1bf9c5d1fa5de4f8453f14ba4f');
     expect(mockGetBalance).toHaveBeenCalledTimes(2);
-  });
-
-  it('should return the native token (HTR) plus all registered tokens when tokens is omitted', async () => {
-    registeredTokens = [
-      { uid: '000003521effbc8efd7b746a118cdc7d41d7cc1bf9c5d1fa5de4f8453f14ba4f' },
-    ];
-    mockGetBalance
-      .mockResolvedValueOnce(htrBalance)
-      .mockResolvedValueOnce(customBalance);
-
-    const request = {
-      method: RpcMethods.GetBalance,
-      params: { network: 'testnet' },
-    } as GetBalanceRpcRequest;
-
-    const result = await getBalance(request, buildWallet(), {}, mockTriggerHandler) as GetBalanceResponse;
-
-    expect(mockGetBalance).toHaveBeenCalledTimes(2);
-    expect(mockGetBalance).toHaveBeenNthCalledWith(1, '00');
-    expect(mockGetBalance).toHaveBeenNthCalledWith(2, '000003521effbc8efd7b746a118cdc7d41d7cc1bf9c5d1fa5de4f8453f14ba4f');
-    expect(result.response).toHaveLength(2);
-    expect(result.response[0].token.id).toBe('00');
-    expect(result.response[1].token.id).toBe('000003521effbc8efd7b746a118cdc7d41d7cc1bf9c5d1fa5de4f8453f14ba4f');
-    expect(mockTriggerHandler).not.toHaveBeenCalled();
-  });
-
-  it('should not duplicate HTR if it is also yielded by getRegisteredTokens', async () => {
-    // Defensive: HTR must be requested exactly once even if it is also registered.
-    registeredTokens = [
-      { uid: '00' },
-      { uid: '000003521effbc8efd7b746a118cdc7d41d7cc1bf9c5d1fa5de4f8453f14ba4f' },
-    ];
-    mockGetBalance
-      .mockResolvedValueOnce(htrBalance)
-      .mockResolvedValueOnce(customBalance);
-
-    const request = {
-      method: RpcMethods.GetBalance,
-      params: { network: 'testnet' },
-    } as GetBalanceRpcRequest;
-
-    const result = await getBalance(request, buildWallet(), {}, mockTriggerHandler) as GetBalanceResponse;
-
-    expect(mockGetBalance).toHaveBeenCalledTimes(2);
-    expect(mockGetBalance).toHaveBeenNthCalledWith(1, '00');
-    expect(mockGetBalance).toHaveBeenNthCalledWith(2, '000003521effbc8efd7b746a118cdc7d41d7cc1bf9c5d1fa5de4f8453f14ba4f');
-    expect(result.response).toHaveLength(2);
   });
 });
