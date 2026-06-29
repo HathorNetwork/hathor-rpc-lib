@@ -7,7 +7,6 @@
 
 import { z } from 'zod';
 import type { IHathorWallet } from '@hathor/wallet-lib';
-import type { GetBalanceObject } from '@hathor/wallet-lib/lib/wallet/types';
 import {
   GetBalanceRpcRequest,
   TriggerHandler,
@@ -16,12 +15,11 @@ import {
   RpcResponse,
 } from '../types';
 import { NotImplementedError, InvalidParamsError } from '../errors';
-import { validateNetwork } from '../helpers';
+import { resolveBalances, validateNetwork } from '../helpers';
 
 const getBalanceSchema = z.object({
   network: z.string().min(1),
-  // Optional: omitting it returns the balance of every token the wallet holds
-  // (not an empty result); a provided list selects just that subset.
+  // Optional: omit to return the balance of every token the wallet holds.
   tokens: z.array(z.string().min(1)).min(1).optional(),
   addressIndexes: z.array(z.number().int().nonnegative()).optional(),
 });
@@ -65,18 +63,7 @@ export async function getBalance(
 
   validateNetwork(wallet, params.network);
 
-  let tokens: string[];
-  if (params.tokens) {
-    tokens = params.tokens;
-  } else {
-    // getTokens (not getBalance(null), which throws on the fullnode facade) is
-    // the only all-tokens primitive both wallet facades implement.
-    tokens = await wallet.getTokens();
-  }
-
-  const balances: GetBalanceObject[] = (await Promise.all(
-    tokens.map(token => wallet.getBalance(token)),
-  )).flat();
+  const balances = await resolveBalances(wallet, params.tokens);
 
   return {
     type: RpcResponseTypes.GetBalanceResponse,

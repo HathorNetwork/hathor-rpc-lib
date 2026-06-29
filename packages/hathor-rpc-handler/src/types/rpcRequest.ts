@@ -180,6 +180,10 @@ export interface GetXpubRpcRequest {
 
 export interface GetWalletInformationRpcRequest {
   method: RpcMethods.GetWalletInformation,
+  params?: {
+    // Optional: omitted => balance for every token the wallet holds; provided => subset.
+    tokens?: string[];
+  };
 }
 
 export interface GenericRpcRequest {

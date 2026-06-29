@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 import type { IHathorWallet } from '@hathor/wallet-lib';
-import type { TokenDetailsObject } from '@hathor/wallet-lib/lib/wallet/types';
+import type { GetBalanceObject, TokenDetailsObject } from '@hathor/wallet-lib/lib/wallet/types';
 import { constants } from '@hathor/wallet-lib';
 import { DifferentNetworkError } from '../errors';
 
@@ -15,6 +15,29 @@ export function validateNetwork(wallet: IHathorWallet, network: string) {
   if (currentNetwork !== network) {
     throw new DifferentNetworkError();
   }
+}
+
+/**
+ * Resolves the balances for the given tokens, or for every token the wallet
+ * holds when `tokens` is empty or omitted. Shared by the `getBalance` and
+ * `getWalletInformation` handlers.
+ *
+ * @param wallet - The Hathor wallet instance.
+ * @param tokens - Token UIDs to fetch; omit or pass an empty array for all wallet tokens.
+ * @returns The balances for the resolved token list.
+ */
+export async function resolveBalances(
+  wallet: IHathorWallet,
+  tokens?: string[],
+): Promise<GetBalanceObject[]> {
+  // An empty list means "every token the wallet holds". getTokens
+  // (not getBalance(null), which throws on the fullnode facade) is the only
+  // all-tokens primitive both wallet facades implement.
+  const tokenList = tokens?.length ? tokens : await wallet.getTokens();
+
+  return (await Promise.all(
+    tokenList.map(token => wallet.getBalance(token)),
+  )).flat();
 }
 
 /**

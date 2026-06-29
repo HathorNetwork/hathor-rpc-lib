@@ -36,7 +36,8 @@
     },
     {
       "name": "htr_getBalance",
-      "summary": "Given an array of tokens, returns the balance of the wallet for each token",
+      "summary": "Returns the balance of the wallet for the requested tokens, or for every token the wallet holds when 'tokens' is omitted",
+      "description": "Balance is non-sensitive, read-only data shared with already-connected dApps, so this method does not prompt the user for confirmation.",
       "paramStructure": "by-name",
       "params": [
         {
@@ -44,9 +45,11 @@
         },
         {
           "name": "tokens",
-          "required": true,
+          "required": false,
+          "description": "Token UIDs to fetch the balance for. Omit to return the balance of every token the wallet holds; when provided, the array must contain at least one token UID.",
           "schema": {
             "type": "array",
+            "minItems": 1,
             "items": {
               "$ref": "#/components/schemas/Token"
             }
@@ -77,11 +80,49 @@
         },
         {
           "$ref": "#/components/errors/NotImplementedError"
-        },
-        {
-          "$ref": "#/components/errors/PromptRejectedError"
         }
       ]
+    },
+    {
+      "name": "htr_getWalletInformation",
+      "summary": "Returns the wallet's network, first address (index 0) and balance",
+      "description": "Balance covers every token the wallet holds, or just the requested subset when a non-empty 'tokens' is provided. Like getConnectedNetwork, this is non-sensitive, read-only data shared with already-connected dApps, so it does not prompt the user.",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "tokens",
+          "required": false,
+          "description": "Token UIDs to fetch the balance for. Omit to return the balance of every token the wallet holds; when provided, the array must contain at least one token UID.",
+          "schema": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/components/schemas/Token"
+            }
+          }
+        }
+      ],
+      "result": {
+        "name": "WalletInformation",
+        "summary": "Network name, first address and per-token balance",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "network": {
+              "$ref": "#/components/schemas/Network"
+            },
+            "address0": {
+              "$ref": "#/components/schemas/Address"
+            },
+            "balance": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/GetBalanceObject"
+              }
+            }
+          }
+        }
+      }
     },
     {
       "name": "htr_getAddress",
@@ -691,7 +732,15 @@
         ]
       },
       "Token": {
-        "$ref": "#/components/schemas/TransactionId"
+        "oneOf": [
+          {
+            "const": "00",
+            "description": "Native HTR token UID."
+          },
+          {
+            "$ref": "#/components/schemas/TransactionId"
+          }
+        ]
       },
       "GetBalanceObject": {
         "type": "object",
