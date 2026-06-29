@@ -164,6 +164,11 @@ export class MetaMaskDriver {
       const raw = (await page.getByTestId(Srp.chip(i)).textContent().catch(() => '')) || '';
       words.push(raw.replace(/[^a-z]/gi, ''));
     }
+    // An empty word breaks the quiz later as an opaque timeout — fail at the source.
+    if (words.some((word) => !word)) {
+      await this.dumpScreen('recovery-phrase-missing-word');
+      throw new Error('Failed to read all MetaMask recovery words.');
+    }
     this.seedPhrase = words.join(' ');
     await page.getByTestId(MetaMask.onboarding.recoveryContinue).click();
     await page.waitForTimeout(1200);
@@ -190,8 +195,11 @@ export class MetaMaskDriver {
       const page = await this.openHome();
       const gotIt = page.getByRole('button', { name: MetaMaskText.gotIt }).first();
       if (await gotIt.isVisible().catch(() => false)) {
-        await gotIt.click().catch(() => undefined);
-        return;
+        // Only exit once the click lands — a swallowed click leaves the modal blocking later steps.
+        const clicked = await gotIt.click().then(() => true).catch(() => false);
+        if (clicked) return;
+        await delay(300);
+        continue;
       }
       await delay(1000);
     }
