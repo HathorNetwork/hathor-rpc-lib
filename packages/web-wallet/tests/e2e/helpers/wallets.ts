@@ -20,17 +20,20 @@ function load(): WalletsConfig {
 
 /** True when a wallet with this name has a non-empty seed configured. */
 export function hasWallet(name: string): boolean {
-  return Boolean(load()[name]?.srp);
+  return Boolean(load()[name]?.srp?.trim());
 }
 
 /** Resolve a wallet name to its entry. Throws if missing/unconfigured — guard with hasWallet. */
 export function lookupWallet(name: string): WalletEntry {
   const entry = load()[name];
-  if (!entry?.srp) {
+  // Trim at the source: a whitespace-only srp would pass a bare truthiness check and then fail
+  // deep in the MetaMask import with a cryptic error instead of this clear "not configured" one.
+  const srp = entry?.srp?.trim();
+  if (!srp) {
     throw new Error(
       `Wallet "${name}" is not configured in wallets.config.json (missing or empty srp). ` +
         `Either add it, or skip the journey with test.skip(!hasWallet("${name}"), ...).`,
     );
   }
-  return entry;
+  return { ...entry, srp };
 }

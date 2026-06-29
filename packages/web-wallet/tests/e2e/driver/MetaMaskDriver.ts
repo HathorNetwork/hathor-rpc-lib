@@ -1,6 +1,7 @@
 import type { BrowserContext, Locator, Page } from '@playwright/test';
-import { MM, MM_TEXT, SRP, UNLOCK } from './selectors';
+import { MetaMask, MetaMaskText, Srp, Unlock } from './selectors';
 import { SPLIT_WINDOWS } from './windows';
+import { TIMEOUTS } from './timeouts';
 
 const DEFAULT_PASSWORD = 'Test1234!Test';
 
@@ -55,7 +56,7 @@ export class MetaMaskDriver {
       if (id) return id;
     }
     const registered = await context
-      .waitForEvent('serviceworker', { timeout: 30_000 })
+      .waitForEvent('serviceworker', { timeout: TIMEOUTS.serviceWorker })
       .catch(() => undefined);
     const id = registered && idFromUrl(registered.url());
     if (id) return id;
@@ -95,7 +96,7 @@ export class MetaMaskDriver {
    * mid-flow, so this re-resolves it rather than holding a stale handle, and never opens a
    * duplicate (a duplicate makes MetaMask close one: "Target page has been closed").
    */
-  async openHome(timeoutMs = 30_000): Promise<Page> {
+  async openHome(timeoutMs = TIMEOUTS.openHome): Promise<Page> {
     const prefix = `chrome-extension://${this.extensionId}`;
     const isHome = (p: Page) =>
       !p.isClosed() && p.url().startsWith(prefix) && !p.url().includes('notification.html');
@@ -126,25 +127,25 @@ export class MetaMaskDriver {
    */
   async onboardNewWallet(password: string = process.env.E2E_PASSWORD ?? DEFAULT_PASSWORD): Promise<void> {
     this.password = password;
-    await this.clickButtonByText(MM_TEXT.acceptRisks); // Flask experimental gate
-    await this.clickTestId(MM.onboarding.createWallet);
-    await this.clickTestId(MM.onboarding.createWithSrp);
+    await this.clickButtonByText(MetaMaskText.acceptRisks); // Flask experimental gate
+    await this.clickTestId(MetaMask.onboarding.createWallet);
+    await this.clickTestId(MetaMask.onboarding.createWithSrp);
 
     const pw = await this.openHome();
-    await pw.getByTestId(MM.onboarding.passwordNew).fill(password);
-    await pw.getByTestId(MM.onboarding.passwordConfirm).fill(password);
-    await pw.getByTestId(MM.onboarding.passwordTerms).click();
-    await pw.getByTestId(MM.onboarding.passwordSubmit).click();
+    await pw.getByTestId(MetaMask.onboarding.passwordNew).fill(password);
+    await pw.getByTestId(MetaMask.onboarding.passwordConfirm).fill(password);
+    await pw.getByTestId(MetaMask.onboarding.passwordTerms).click();
+    await pw.getByTestId(MetaMask.onboarding.passwordSubmit).click();
 
     const words = await this.revealAndSaveSeed();
     await this.solveSeedQuiz(words);
 
     // Continue triggers a "Perfect — that's right!" modal that blocks the rest.
-    await this.clickTestId(MM.onboarding.recoveryConfirm, 15_000);
+    await this.clickTestId(MetaMask.onboarding.recoveryConfirm, TIMEOUTS.recoveryConfirm);
     await this.dismissGotItModal();
 
-    await this.clickTestId(MM.onboarding.metricsContinue);
-    await this.clickTestId(MM.onboarding.completeDone);
+    await this.clickTestId(MetaMask.onboarding.metricsContinue);
+    await this.clickTestId(MetaMask.onboarding.completeDone);
 
     // "Open wallet" sets completedOnboarding but doesn't navigate under automation;
     // loading the main route finalizes the wallet.
@@ -156,15 +157,15 @@ export class MetaMaskDriver {
   /** Reveals the SRP on the review screen, records it, and continues to the quiz. */
   private async revealAndSaveSeed(): Promise<string[]> {
     const page = await this.openHome();
-    await page.getByTestId(MM.onboarding.recoveryReveal).click();
+    await page.getByTestId(MetaMask.onboarding.recoveryReveal).click();
     await page.waitForTimeout(1200);
     const words: string[] = [];
     for (let i = 0; i < 12; i++) {
-      const raw = (await page.getByTestId(SRP.chip(i)).textContent().catch(() => '')) || '';
+      const raw = (await page.getByTestId(Srp.chip(i)).textContent().catch(() => '')) || '';
       words.push(raw.replace(/[^a-z]/gi, ''));
     }
     this.seedPhrase = words.join(' ');
-    await page.getByTestId(MM.onboarding.recoveryContinue).click();
+    await page.getByTestId(MetaMask.onboarding.recoveryContinue).click();
     await page.waitForTimeout(1200);
     return words;
   }
@@ -173,7 +174,7 @@ export class MetaMaskDriver {
   private async solveSeedQuiz(words: string[]): Promise<void> {
     const page = await this.openHome();
     const unanswered: number[] = [];
-    for (const el of await page.locator(SRP.unansweredSelector).all()) {
+    for (const el of await page.locator(Srp.unansweredSelector).all()) {
       const m = ((await el.getAttribute('data-testid').catch(() => '')) || '').match(/unanswered-(\d+)/);
       if (m) unanswered.push(Number(m[1]));
     }
@@ -187,7 +188,7 @@ export class MetaMaskDriver {
   private async dismissGotItModal(): Promise<void> {
     for (let i = 0; i < 12; i++) {
       const page = await this.openHome();
-      const gotIt = page.getByRole('button', { name: MM_TEXT.gotIt }).first();
+      const gotIt = page.getByRole('button', { name: MetaMaskText.gotIt }).first();
       if (await gotIt.isVisible().catch(() => false)) {
         await gotIt.click().catch(() => undefined);
         return;
@@ -196,12 +197,12 @@ export class MetaMaskDriver {
     }
   }
 
-  private async clickTestId(testid: string, timeout = 30_000): Promise<void> {
+  private async clickTestId(testid: string, timeout = TIMEOUTS.click): Promise<void> {
     const page = await this.openHome();
     await page.getByTestId(testid).click({ timeout });
   }
 
-  private async clickButtonByText(name: RegExp, timeout = 30_000): Promise<void> {
+  private async clickButtonByText(name: RegExp, timeout = TIMEOUTS.click): Promise<void> {
     const page = await this.openHome();
     await page.getByRole('button', { name }).first().click({ timeout });
   }
@@ -232,20 +233,20 @@ export class MetaMaskDriver {
     // the create flow does — on slower machines/CI the button can take well over the old 8s to
     // become actionable; missing it leaves MetaMask on the gate, so the get-started screen (and
     // the import entry) never render and every later step sees a blank tab.
-    await this.clickButtonByText(MM_TEXT.acceptRisks, 30_000).catch(() => undefined);
+    await this.clickButtonByText(MetaMaskText.acceptRisks, TIMEOUTS.acceptRisks).catch(() => undefined);
     await this.clickImportEntry();
 
     await this.dumpScreen('srp-screen');
     await this.fillSeedWords(words);
-    await this.clickTestId(MM.importing.srpConfirm);
+    await this.clickTestId(MetaMask.importing.srpConfirm);
 
     // Create-password screen (shared with the create flow): fill, accept terms, submit.
     const pw = await this.openHome();
-    await pw.getByTestId(MM.onboarding.passwordNew).fill(password);
-    await pw.getByTestId(MM.onboarding.passwordConfirm).fill(password);
-    await pw.getByTestId(MM.onboarding.passwordTerms).click();
+    await pw.getByTestId(MetaMask.onboarding.passwordNew).fill(password);
+    await pw.getByTestId(MetaMask.onboarding.passwordConfirm).fill(password);
+    await pw.getByTestId(MetaMask.onboarding.passwordTerms).click();
     await this.dumpScreen('password-ready');
-    await pw.getByTestId(MM.onboarding.passwordSubmit).click();
+    await pw.getByTestId(MetaMask.onboarding.passwordSubmit).click();
 
     // Wallet creation → optional metrics opt-in → completion ("your wallet is ready").
     await this.finishOnboarding();
@@ -256,7 +257,7 @@ export class MetaMaskDriver {
 
   /** Unlocks the home (if needed) and waits until it stays unlocked for two checks. */
   private async ensureUnlockedHome(): Promise<void> {
-    const deadline = Date.now() + 30_000;
+    const deadline = Date.now() + TIMEOUTS.ensureUnlocked;
     let stableUnlocked = 0;
     while (Date.now() < deadline) {
       const page = await this.openHome();
@@ -269,6 +270,9 @@ export class MetaMaskDriver {
       if (stableUnlocked >= 2) return;
       await delay(1_200);
     }
+    // "ensure" contract: a silent return would leak a half-unlocked wallet into a later step.
+    await this.dumpScreen('unlock-timeout');
+    throw new Error('Timed out waiting for MetaMask to remain unlocked.');
   }
 
   /**
@@ -280,7 +284,7 @@ export class MetaMaskDriver {
    * without ever prompting.
    */
   private async finishOnboarding(): Promise<void> {
-    const deadline = Date.now() + 120_000;
+    const deadline = Date.now() + TIMEOUTS.finishOnboarding;
     while (Date.now() < deadline) {
       const page = await this.openHome();
       const url = page.url();
@@ -292,7 +296,7 @@ export class MetaMaskDriver {
       }
 
       // Metrics opt-in, if present.
-      const agree = page.getByTestId(MM.onboarding.metricsContinue);
+      const agree = page.getByTestId(MetaMask.onboarding.metricsContinue);
       if (await agree.isVisible().catch(() => false)) {
         await agree.click().catch(() => undefined);
         await delay(800);
@@ -300,7 +304,7 @@ export class MetaMaskDriver {
       }
 
       // Completion ("wallet ready"): click "Open wallet", then force-load home to finalize.
-      const done = page.getByTestId(MM.onboarding.completeDone);
+      const done = page.getByTestId(MetaMask.onboarding.completeDone);
       if (await done.isVisible().catch(() => false)) {
         await done.click().catch(() => undefined);
         await delay(800);
@@ -313,6 +317,9 @@ export class MetaMaskDriver {
       await this.dumpScreen('finishing');
       await delay(1_200);
     }
+    // "finish" contract: fail rather than silently return onboarding-incomplete (see above).
+    await this.dumpScreen('finish-onboarding-timeout');
+    throw new Error('Timed out finishing MetaMask onboarding flow.');
   }
 
   /** Clicks "I have an existing wallet" then "Import using Secret Recovery Phrase". */
@@ -321,30 +328,30 @@ export class MetaMaskDriver {
     // render instead of an instant isVisible() race that falls back to brittle button text — that
     // race loses while MetaMask's onboarding UI is still on its loading spinner (slower machines/CI),
     // then hangs clicking a button that isn't there yet.
-    await this.clickTestId(MM.importing.importWallet); // "I have an existing wallet"
+    await this.clickTestId(MetaMask.importing.importWallet); // "I have an existing wallet"
     // Social-login redesign: the import choice opens a sub-screen (?login=existing).
-    await this.clickTestId(MM.importing.importWithSrp); // "Import using Secret Recovery Phrase"
+    await this.clickTestId(MetaMask.importing.importWithSrp); // "Import using Secret Recovery Phrase"
   }
 
   /** Enters the SRP into the single import field and waits for "Continue" to enable. */
   private async fillSeedWords(words: string[]): Promise<void> {
     const page = await this.openHome();
-    const note = page.getByTestId(MM.importing.srpNote);
-    if (!(await note.isVisible({ timeout: 10_000 }).catch(() => false))) {
+    const note = page.getByTestId(MetaMask.importing.srpNote);
+    if (!(await note.isVisible({ timeout: TIMEOUTS.srpInput }).catch(() => false))) {
       await this.dumpScreen('srp-screen-missing-inputs');
-      throw new Error(`SRP input ${MM.importing.srpNote} not found — see the dump above.`);
+      throw new Error(`SRP input ${MetaMask.importing.srpNote} not found — see the dump above.`);
     }
     const phrase = words.join(' ');
-    const confirm = page.getByTestId(MM.importing.srpConfirm);
+    const confirm = page.getByTestId(MetaMask.importing.srpConfirm);
     const enabled = () => confirm.isEnabled().catch(() => false);
 
     // Fast path: MetaMask's "Paste" button distributes all words at once (instant on a fast Mac).
     await page.evaluate((p) => navigator.clipboard.writeText(p), phrase).catch(() => undefined);
-    const paste = page.getByTestId(MM.importing.srpPaste);
+    const paste = page.getByTestId(MetaMask.importing.srpPaste);
     if (await paste.isVisible().catch(() => false)) {
       await paste.click().catch(() => undefined);
     }
-    await this.waitEnabled(confirm, 8_000);
+    await this.waitEnabled(confirm, TIMEOUTS.srpConfirmFast);
 
     // Slow path: every bulk method (fill / typed phrase / paste) races MetaMask's reactive per-word
     // split on slower machines/CI and silently drops words (only 18-22 of 24 register → Confirm
@@ -352,7 +359,7 @@ export class MetaMaskDriver {
     // create and focus the next word field before the next word arrives.
     if (!(await enabled())) {
       await this.clearSrp(page);
-      const field = page.getByTestId(MM.importing.srpNote);
+      const field = page.getByTestId(MetaMask.importing.srpNote);
       await field.click().catch(() => undefined);
       for (let i = 0; i < words.length; i++) {
         await page.keyboard.type(words[i], { delay: 15 });
@@ -362,7 +369,7 @@ export class MetaMaskDriver {
           await delay(200); // let MetaMask create + focus the next word field
         }
       }
-      await this.waitEnabled(confirm, 20_000);
+      await this.waitEnabled(confirm, TIMEOUTS.srpConfirmSlow);
     }
     await this.dumpScreen('srp-after-fill');
   }
@@ -424,7 +431,7 @@ export class MetaMaskDriver {
    */
   async connectAndInstallSnap(): Promise<void> {
     await this.unlockIfNeeded(await this.openHome());
-    await this.driveApprovals({ maxMs: 150_000, idleMs: 7_000, firstGraceMs: 30_000 });
+    await this.driveApprovals(TIMEOUTS.approvals.connect);
     await this.refocusWallet();
   }
 
@@ -434,10 +441,10 @@ export class MetaMaskDriver {
    * a locked wallet renders the unlock form on `notification.html` instead of the approval.
    */
   private async unlockIfNeeded(page: Page): Promise<boolean> {
-    const input = page.getByTestId(UNLOCK.password);
-    if (!(await input.isVisible({ timeout: 2_000 }).catch(() => false))) return false;
+    const input = page.getByTestId(Unlock.password);
+    if (!(await input.isVisible({ timeout: TIMEOUTS.unlockProbe }).catch(() => false))) return false;
     await input.fill(this.password);
-    const submit = page.getByTestId(UNLOCK.submit);
+    const submit = page.getByTestId(Unlock.submit);
     if (await submit.isVisible().catch(() => false)) {
       await submit.click().catch(() => undefined);
     } else {
@@ -454,13 +461,13 @@ export class MetaMaskDriver {
     // machines/CI. So the approval can take far longer than the old ~10s grace to appear; wait
     // generously for the FIRST dialog before settling — otherwise it is orphaned (never clicked)
     // and the dApp hangs with the dialog open.
-    await this.driveApprovals({ maxMs: 90_000, idleMs: 4_000, firstGraceMs: 75_000 });
+    await this.driveApprovals(TIMEOUTS.approvals.dialog);
     await this.refocusWallet();
   }
 
   /** Rejects the next pending Snap dialog. */
   async rejectDialog(): Promise<void> {
-    await this.driveApprovals({ maxMs: 40_000, idleMs: 3_500, reject: true });
+    await this.driveApprovals({ ...TIMEOUTS.approvals.reject, reject: true });
     await this.refocusWallet();
   }
 
@@ -475,7 +482,7 @@ export class MetaMaskDriver {
     reject?: boolean;
     firstGraceMs?: number;
   }): Promise<void> {
-    const order = opts.reject ? MM_TEXT.rejectOrder : MM_TEXT.approveOrder;
+    const order = opts.reject ? MetaMaskText.rejectOrder : MetaMaskText.approveOrder;
     // The request may take a moment to register after the dApp action, so wait longer for
     // the FIRST approval to appear; once we've acted, fall back to the shorter idle window.
     const firstGraceMs = opts.firstGraceMs ?? Math.max(opts.idleMs, 10_000);
@@ -495,6 +502,12 @@ export class MetaMaskDriver {
       if (Date.now() - lastActive > (seenAny ? opts.idleMs : firstGraceMs)) return; // settled
       await delay(800);
     }
+    // Hard cap hit with approvals still pending: fail here so callers don't proceed as if the
+    // dialog was handled. (The idle-settle `return` above is the legitimate "no dialogs" exit.)
+    await this.dumpScreen('approval-timeout');
+    throw new Error(
+      `Timed out driving MetaMask approvals after ${opts.maxMs}ms (reject=${Boolean(opts.reject)}).`,
+    );
   }
 
   /**
@@ -504,12 +517,12 @@ export class MetaMaskDriver {
    * can't orphan it. Intended to run concurrently with the dApp reaching its connected home.
    */
   async driveApprovalsUntil(stop: () => boolean, opts: { maxMs?: number } = {}): Promise<void> {
-    const maxMs = opts.maxMs ?? 170_000;
+    const maxMs = opts.maxMs ?? TIMEOUTS.approvals.untilMaxMs;
     const start = Date.now();
     let notif = await this.openNotification();
     while (!stop() && Date.now() - start < maxMs) {
       if (notif.isClosed()) notif = await this.openNotification();
-      if (!(await this.approveOncePass(notif, MM_TEXT.approveOrder, false))) await delay(600);
+      if (!(await this.approveOncePass(notif, MetaMaskText.approveOrder, false))) await delay(600);
     }
   }
 
@@ -517,14 +530,14 @@ export class MetaMaskDriver {
    * One pass over the notification page: unlock if locked, and approve (or reject) the pending
    * dialog if one is showing. Returns whether it acted this pass (clicked something).
    */
-  private async approveOncePass(notif: Page, order: RegExp[], reject: boolean): Promise<boolean> {
+  private async approveOncePass(notif: Page, order: readonly RegExp[], reject: boolean): Promise<boolean> {
     if (await this.unlockIfNeeded(notif)) return true;
     let buttons = await this.readButtons(notif);
     if (process.env.E2E_DEBUG === '1') {
       console.log(`[notif] ${notif.url().split('#').pop()} buttons: ${buttons.join(' | ')}`);
     }
 
-    if (!MM_TEXT.anyApproval.test(buttons.join(' '))) {
+    if (!MetaMaskText.anyApproval.test(buttons.join(' '))) {
       // A pending confirmation renders its page before its buttons; navigating away from a
       // snap_dialog REJECTS it, so wait in place when already on an approval page and only
       // re-fetch the queue (re-navigate) when on a non-approval page.
@@ -537,7 +550,7 @@ export class MetaMaskDriver {
       buttons = await this.readButtons(notif);
     }
 
-    if (!MM_TEXT.anyApproval.test(buttons.join(' '))) return false;
+    if (!MetaMaskText.anyApproval.test(buttons.join(' '))) return false;
 
     // Scroll any privacy/permission gate.
     for (const sel of ['snap-privacy-warning-scroll', 'snap-install-scroll']) {
@@ -554,7 +567,7 @@ export class MetaMaskDriver {
     for (const name of order) {
       const button = notif.getByRole('button', { name }).last();
       if (await button.isVisible().catch(() => false) && await button.isEnabled().catch(() => false)) {
-        await button.click({ timeout: 4_000 }).catch(() => undefined);
+        await button.click({ timeout: TIMEOUTS.approvalClick }).catch(() => undefined);
         break;
       }
     }

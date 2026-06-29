@@ -70,29 +70,36 @@ export const test = base.extend<
       const userDataDir = mkdtempSync(join(tmpdir(), 'hathor-mm-e2e-'));
       const headless = process.env.E2E_HEADLESS === '1' && process.env.E2E_HEADED !== '1';
 
-      const context = await chromium.launchPersistentContext(userDataDir, {
-        headless,
-        // The SRP import uses MetaMask's "Paste" button (atomic, avoids per-word drop on slow
-        // machines); writing the phrase to the clipboard needs clipboard permission.
-        permissions: ['clipboard-read', 'clipboard-write'],
-        // The dApp is served locally but must present a Snap-allowed origin for `htr_getXpub`.
-        // Remap `https://staging.wallet.hathor.network` (an allowed origin) to the local dev
-        // server and accept its self-signed cert. Only this one host:port is remapped, so the
-        // Snap and its node / wallet-service traffic resolve normally.
-        ignoreHTTPSErrors: true,
-        args: [
-          `--disable-extensions-except=${extensionPath}`,
-          `--load-extension=${extensionPath}`,
-          '--no-sandbox',
-          '--host-resolver-rules=MAP staging.wallet.hathor.network:443 127.0.0.1:5173',
-          '--ignore-certificate-errors',
-        ],
-      });
+      let context: BrowserContext | undefined;
+      try {
+        context = await chromium.launchPersistentContext(userDataDir, {
+          headless,
+          // The SRP import uses MetaMask's "Paste" button (atomic, avoids per-word drop on slow
+          // machines); writing the phrase to the clipboard needs clipboard permission.
+          permissions: ['clipboard-read', 'clipboard-write'],
+          // The dApp is served locally but must present a Snap-allowed origin for `htr_getXpub`.
+          // Remap `https://staging.wallet.hathor.network` (an allowed origin) to the local dev
+          // server and accept its self-signed cert. Only this one host:port is remapped, so the
+          // Snap and its node / wallet-service traffic resolve normally.
+          ignoreHTTPSErrors: true,
+          args: [
+            `--disable-extensions-except=${extensionPath}`,
+            `--load-extension=${extensionPath}`,
+            '--no-sandbox',
+            '--host-resolver-rules=MAP staging.wallet.hathor.network:443 127.0.0.1:5173',
+            '--ignore-certificate-errors',
+          ],
+        });
 
-      await use(context);
-
-      await context.close();
-      rmSync(userDataDir, { recursive: true, force: true });
+        await use(context);
+      } finally {
+        // Always remove the temp profile, even if launch threw before use() ran.
+        try {
+          await context?.close();
+        } finally {
+          rmSync(userDataDir, { recursive: true, force: true });
+        }
+      }
     },
     { scope: 'worker' },
   ],

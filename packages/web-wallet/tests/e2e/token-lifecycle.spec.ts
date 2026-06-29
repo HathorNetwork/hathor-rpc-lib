@@ -15,6 +15,11 @@ test.describe.serial('funded wallet token lifecycle (testnet)', () => {
     'Set wallets.config.json -> funded.srp to a testnet stub seed to run this journey.',
   );
 
+  // Per-run unique symbols (≤5 chars). Testnet tokens persist across runs, so a fixed symbol
+  // could collide with a prior run and make the symbol-based selectors target the wrong token.
+  const tokenA = `QA${Date.now().toString(36).slice(-3).toUpperCase()}`; // deposit token
+  const tokenB = `QB${Date.now().toString(36).slice(-3).toUpperCase()}`; // fee-based token
+
   let addr: string;
   let configA: string;
   let configB: string;
@@ -36,9 +41,9 @@ test.describe.serial('funded wallet token lifecycle (testnet)', () => {
     await wallet.expectSendSuccess();
   });
 
-  test('creates a deposit token (QADBT) and shows the 1.00 HTR deposit', async ({ wallet, metamask }) => {
+  test(`creates a deposit token (${tokenA}) and shows the 1.00 HTR deposit`, async ({ wallet, metamask }) => {
     await wallet.openCreateToken();
-    await wallet.fillCreateToken({ name: `QADBT${Date.now()}`, symbol: 'QADBT', amount: '100' });
+    await wallet.fillCreateToken({ name: `${tokenA}${Date.now()}`, symbol: tokenA, amount: '100' });
     expect(await wallet.readDepositAmount()).toBe('1.00'); // 100 tokens × 1% = 1.00 HTR
     await wallet.submitCreateToken();
     await metamask.confirmDialog();
@@ -46,50 +51,50 @@ test.describe.serial('funded wallet token lifecycle (testnet)', () => {
     await wallet.closeTokenCreated();
   });
 
-  test('sends QADBT to its own address', async ({ wallet, metamask }) => {
+  test(`sends ${tokenA} to its own address`, async ({ wallet, metamask }) => {
     await wallet.openSend();
-    await wallet.fillSend({ token: 'QADBT', amount: '10', to: addr });
+    await wallet.fillSend({ token: tokenA, amount: '10', to: addr });
     await wallet.submitSend();
     await metamask.confirmDialog();
     await wallet.expectSendSuccess();
   });
 
-  test('unregisters QADBT', async ({ wallet }) => {
-    await wallet.openTokenHistory('QADBT');
+  test(`unregisters ${tokenA}`, async ({ wallet }) => {
+    await wallet.openTokenHistory(tokenA);
     await wallet.unregisterCurrentToken();
-    await wallet.expectTokenNotVisible('QADBT');
+    await wallet.expectTokenNotVisible(tokenA);
   });
 
-  test('re-imports QADBT via the New Tokens banner', async ({ wallet }) => {
-    // Unregistering QADBT (a token the wallet holds on-chain) makes it "discovered"
+  test(`re-imports ${tokenA} via the New Tokens banner`, async ({ wallet }) => {
+    // Unregistering the token (one the wallet holds on-chain) makes it "discovered"
     // again, which surfaces the New Tokens banner. Import it back through that flow,
-    // targeting QADBT by its uid from the config string ([name:symbol:uid:checksum]).
-    const qadbtUid = configA.replace(/^\[|\]$/g, '').split(':')[2];
+    // targeting it by its uid from the config string ([name:symbol:uid:checksum]).
+    const tokenAUid = configA.replace(/^\[|\]$/g, '').split(':')[2];
     await wallet.expectImportBanner();
-    await wallet.importTokenFromBanner(qadbtUid);
-    await wallet.expectTokenVisible('QADBT');
+    await wallet.importTokenFromBanner(tokenAUid);
+    await wallet.expectTokenVisible(tokenA);
   });
 
-  test('unregisters QADBT again', async ({ wallet }) => {
+  test(`unregisters ${tokenA} again`, async ({ wallet }) => {
     // Set up the second re-registration path: unregister once more so the
     // config-string flow (next test) has a token to register back.
-    await wallet.openTokenHistory('QADBT');
+    await wallet.openTokenHistory(tokenA);
     await wallet.unregisterCurrentToken();
-    await wallet.expectTokenNotVisible('QADBT');
+    await wallet.expectTokenNotVisible(tokenA);
   });
 
-  test('re-registers QADBT from its config string', async ({ wallet }) => {
+  test(`re-registers ${tokenA} from its config string`, async ({ wallet }) => {
     // Second registration path: Header menu → Register Tokens → paste config string.
     // Both paths (banner import above and config string here) must stay covered.
     await wallet.registerToken(configA);
-    await wallet.expectTokenVisible('QADBT');
+    await wallet.expectTokenVisible(tokenA);
   });
 
-  test('creates a fee-based token (QAFBT), 3 trillion units', async ({ wallet, metamask }) => {
+  test(`creates a fee-based token (${tokenB}), 3 trillion units`, async ({ wallet, metamask }) => {
     await wallet.openCreateToken();
     await wallet.waitForTokenTypeSelector();          // Unleash flag resolved on testnet
     await wallet.selectTokenType('fee');
-    await wallet.fillCreateToken({ name: `QAFBT${Date.now()}`, symbol: 'QAFBT', amount: '3000000000000' });
+    await wallet.fillCreateToken({ name: `${tokenB}${Date.now()}`, symbol: tokenB, amount: '3000000000000' });
     await wallet.expectNoDepositLine();                // fee tokens require no HTR deposit
     await wallet.submitCreateToken();
     await metamask.confirmDialog();
@@ -98,9 +103,9 @@ test.describe.serial('funded wallet token lifecycle (testnet)', () => {
     void configB;                                      // captured for parity / future re-register
   });
 
-  test('sends QAFBT to its own address', async ({ wallet, metamask }) => {
+  test(`sends ${tokenB} to its own address`, async ({ wallet, metamask }) => {
     await wallet.openSend();
-    await wallet.fillSend({ token: 'QAFBT', amount: '1000000', to: addr });
+    await wallet.fillSend({ token: tokenB, amount: '1000000', to: addr });
     await wallet.submitSend();
     await metamask.confirmDialog();
     await wallet.expectSendSuccess();

@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -54,8 +54,10 @@ export async function resolveFlaskPath(): Promise<string> {
   const zipPath = join(CACHE_DIR, `flask-${version}.zip`);
 
   try {
-    execSync(`curl -fL --retry 3 -o "${zipPath}" "${assetUrl}"`, { stdio: 'inherit' });
-    execSync(`unzip -oq "${zipPath}" -d "${dest}"`, { stdio: 'inherit' });
+    // Argument arrays (no shell): `assetUrl`/`version` are dynamic, so never interpolate them
+    // into a shell string.
+    execFileSync('curl', ['-fL', '--retry', '3', '-o', zipPath, assetUrl], { stdio: 'inherit' });
+    execFileSync('unzip', ['-o', '-q', zipPath, '-d', dest], { stdio: 'inherit' });
   } catch (err) {
     throw new Error(
       `Failed to download/unpack MetaMask Flask ${version} from ${assetUrl}. ` +
@@ -76,9 +78,14 @@ export async function resolveFlaskPath(): Promise<string> {
  */
 async function discoverFlaskAssetUrl(version: string): Promise<string> {
   const api = `https://api.github.com/repos/MetaMask/metamask-extension/releases/tags/v${version}`;
+  // Bound the request: this runs on the test-setup critical path, and fetch() has no default
+  // timeout, so a stalled connection would hang setup until Playwright's outer timeout.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15_000);
   const res = await fetch(api, {
+    signal: controller.signal,
     headers: { 'User-Agent': 'hathor-web-wallet-e2e', Accept: 'application/vnd.github+json' },
-  });
+  }).finally(() => clearTimeout(timer));
   if (!res.ok) {
     throw new Error(`GitHub API returned ${res.status} for ${api}. Is v${version} a real Flask release?`);
   }

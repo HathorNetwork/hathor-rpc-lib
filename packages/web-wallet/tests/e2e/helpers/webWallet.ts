@@ -53,6 +53,10 @@ export class WebWallet {
       if (sustained) return;
       await this.page.reload({ waitUntil: 'domcontentloaded' }).catch(() => undefined);
     }
+    // Fail at the source: returning unsustained would shift the failure to a later step.
+    throw new Error(
+      'Connect Wallet did not reach a sustained connecting state after 4 warm-up attempts.',
+    );
   }
 
   /** The dApp's connect "loading step" text (shown while connectWallet runs). */
@@ -415,12 +419,12 @@ export class WebWallet {
   // --- Copy first address --------------------------------------------------
 
   /**
-   * Clicks the header address chip (copies the wallet's first address) and verifies both
-   * the "Copied to clipboard" toast and the real clipboard content. The chip shows the
-   * truncated address (first 7 + "..." + last 7); the clipboard holds the full address, so
-   * we assert it starts/ends with the shown fragments.
+   * Clicks the header address chip (copies the wallet's first address) and waits for the
+   * "Copied to clipboard" toast. Returns the chip's shown text and the clipboard content for
+   * the spec to assert: the chip shows a truncated address (first 7 + "..." + last 7) while
+   * the clipboard holds the full address.
    */
-  async copyFirstAddressAndVerifyClipboard(): Promise<void> {
+  async copyFirstAddress(): Promise<{ shown: string; clipboard: string }> {
     await this.focus();
     const origin = new URL(this.page.url()).origin;
     await this.page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin });
@@ -428,16 +432,21 @@ export class WebWallet {
     const chip = this.page.getByTitle(/first address of your wallet/i);
     await expect(chip).toBeVisible();
     const shown = ((await chip.locator('span.font-mono').textContent()) ?? '').trim();
-    const [head, tail] = shown.split('...');
-    if (!head || !tail) throw new Error(`Unexpected truncated address: "${shown}"`);
 
     await chip.click();
     await expect(this.page.getByText(/copied to clipboard/i).first()).toBeVisible();
 
-    const clip = (await this.page.evaluate(() => navigator.clipboard.readText())).trim();
-    expect(clip.length).toBeGreaterThan(head.length + tail.length);
-    expect(clip.startsWith(head)).toBe(true);
-    expect(clip.endsWith(tail)).toBe(true);
+    const clipboard = (await this.page.evaluate(() => navigator.clipboard.readText())).trim();
+    return { shown, clipboard };
+  }
+
+  /** Asserts the clipboard holds the full address the chip shows truncated. */
+  expectClipboardHoldsFullAddress({ shown, clipboard }: { shown: string; clipboard: string }): void {
+    const [head, tail] = shown.split('...');
+    if (!head || !tail) throw new Error(`Unexpected truncated address: "${shown}"`);
+    expect(clipboard.length).toBeGreaterThan(head.length + tail.length);
+    expect(clipboard.startsWith(head)).toBe(true);
+    expect(clipboard.endsWith(tail)).toBe(true);
   }
 
   // --- Address mode dialog (local, no Snap) --------------------------------
@@ -494,6 +503,11 @@ export class WebWallet {
     // Click the overlay itself (top-left), not the centered panel — it only closes when
     // e.target === the overlay element.
     await this.addressModeOverlay().click({ position: { x: 5, y: 5 } });
+    await expect(this.page.getByRole('heading', { name: /^address mode$/i })).toBeHidden();
+  }
+
+  /** Asserts the Address mode dialog is closed. Use in specs so closure is verified explicitly. */
+  async expectAddressModeClosed(): Promise<void> {
     await expect(this.page.getByRole('heading', { name: /^address mode$/i })).toBeHidden();
   }
 

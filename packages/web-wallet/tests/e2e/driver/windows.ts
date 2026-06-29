@@ -1,4 +1,4 @@
-import type { BrowserContext, Page } from '@playwright/test';
+import type { BrowserContext, CDPSession, Page } from '@playwright/test';
 
 /**
  * When `E2E_SPLIT_WINDOWS=1`, the suite places the MetaMask UI and the Hathor wallet in two
@@ -136,15 +136,15 @@ async function setWindowBounds(
   page: Page,
   bounds: { left: number; top: number; width: number; height: number },
 ): Promise<{ left: number; top: number; width: number; height: number } | undefined> {
+  let cdp: CDPSession | undefined;
   try {
-    const cdp = await context.newCDPSession(page);
+    cdp = await context.newCDPSession(page);
     const { windowId } = await cdp.send('Browser.getWindowForTarget', {});
     await cdp.send('Browser.setWindowBounds', {
       windowId,
       bounds: { ...bounds, windowState: 'normal' },
     });
     const { bounds: after } = await cdp.send('Browser.getWindowForTarget', {});
-    await cdp.detach().catch(() => undefined);
     return {
       left: after.left ?? bounds.left,
       top: after.top ?? bounds.top,
@@ -154,5 +154,8 @@ async function setWindowBounds(
   } catch {
     // Best-effort: tiling is a nicety; never fail a run over window placement.
     return undefined;
+  } finally {
+    // Detach in finally so a thrown cdp.send() can't leak the session across retries.
+    await cdp?.detach().catch(() => undefined);
   }
 }

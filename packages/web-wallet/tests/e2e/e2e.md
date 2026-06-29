@@ -34,7 +34,7 @@ literally; they were chosen deliberately over the "obvious" alternatives.
 
 ## The layering model
 
-Four roles. Each has ONE job. Crossing the boundaries is what caused past confusion.
+Four roles. Each has ONE job. Crossing the boundaries has caused past confusion.
 
 | Layer | File | Job | Knows MetaMask? | Called by |
 |-------|------|-----|-----------------|-----------|
@@ -56,7 +56,7 @@ another checks an intermediate state. So write it out as its own step in the spe
 happy-path helper like `sendToken(wallet, metamask, {...})` that does fill → submit →
 `confirmDialog()` → `expectSuccess()` collapses that choice and locks every caller into
 approval — leaving no way to write the "reject in the Snap and check the error" test, which
-is a first-class case (see `qa-snap-token-flows.md` TC-CT-021, TC-ST-030). Accept the small
+is a first-class case. Accept the small
 repetition in happy-path specs: it's what keeps every test free to choose its Snap outcome.
 
 ---
@@ -154,8 +154,9 @@ facts (verified in source) that have tripped people up:
 
 - **Deposit token creation shows the cost**: `DEPOSIT: X HTR` / `TOTAL: ...`
   (`CreateTokenDialog.tsx`). 100 tokens → `1.00 HTR` (1% deposit). This is assertable.
-- **Fee-based tokens show NO fee anywhere.** Not in the create modal (`depositInCents = 0n`
-  for fee tokens), not in the send dialog. The 1 HTR network fee only surfaces as an *error*
+- **Fee-based tokens currently show NO fee anywhere** (current behavior — likely to change soon;
+  treat this as version-specific, not a permanent rule). Not in the create modal
+  (`depositInCents = 0n` for fee tokens), not in the send dialog. The 1 HTR network fee only surfaces as an *error*
   message when HTR is insufficient. → For fee tokens, **assert success only**; do **not**
   invent a "fee displayed" assertion. If a fee must truly be measured, measure it via an HTR
   **balance delta** — and only when explicitly required.
@@ -196,8 +197,8 @@ niceties only; never assert on window geometry.
   tests. ✅ Keep the Snap decision in the spec.
 - ❌ Filing network-switch under "provisioning/setup" → can't express journeys that switch
   network mid-flow. ✅ It's a spec verb.
-- ❌ Assuming the fee is shown for fee tokens → there's nothing to assert. ✅ Verify the
-  component; assert success only.
+- ❌ Assuming information is shown for a given context → it may be deliberately hidden. ✅ Verify
+  the component first; assert only what it actually renders.
 - ❌ Running with `SKIP_FEATURE_TOGGLE=true` → fee-token UI never appears. ✅ Use real Unleash
   on testnet and wait for the flag-gated UI.
 - ❌ Splitting a dependent chain across files → order/skip guarantees break. ✅ One serial file.
@@ -219,10 +220,12 @@ These bit us once each — check for them when a `getByRole`/`getByText` fails:
   token` appears twice — the trigger in the history view and the confirm button in the dialog.
   Disambiguate with `.first()` / `.last()` (primary/quick action is first in DOM; a dialog
   mounts on top, so its button is last) or scope to the dialog.
-- **Icon-only buttons have no accessible name.** The dialog X close and the header hamburger
-  render only a lucide icon (no text, no `aria-label`), so `getByRole('button', { name: … })`
-  can't find them. Target them structurally instead: the X is the `following-sibling::button`
-  of the dialog's heading; the hamburger is the last button in `<header>`.
+- **Icon-only buttons have no accessible name.** ⚠️ This is an accessibility bug in the dApp, not
+  just a test inconvenience: the dialog X close and the header hamburger render only a lucide icon
+  (no text, no `aria-label`), so `getByRole('button', { name: … })` can't find them. Once they get
+  a proper accessible name, this workaround — and this gotcha — should be removed. Until then,
+  target them structurally: the X is the `following-sibling::button` of the dialog's heading; the
+  hamburger is the last button in `<header>`.
 - **Toasts render their text twice** — once in a visible `<div>` and once in a
   `<span role="status" aria-live>` for screen readers. Assert with `.first()`.
 - **Confirmation toggles are siblings of their label, not children.** In a
@@ -231,7 +234,7 @@ These bit us once each — check for them when a `getByRole`/`getByText` fails:
 
 ## File map
 
-```
+```text
 tests/e2e/
   e2e.md                       # this file
   wallets.config.json          # named registry of PUBLIC testnet stub seeds (committed)
@@ -243,17 +246,17 @@ tests/e2e/
     wallets.ts                 # typed loader for wallets.config.json
   driver/
     MetaMaskDriver.ts          # the Snap side: onboard/import/connect, confirmDialog/rejectDialog
+    selectors.ts               # MetaMask DOM selectors, pinned to one Flask version
+    timeouts.ts                # centralized, env-tunable deadlines (E2E_TIMEOUT_SCALE)
+    flask.ts                   # resolve/download a pinned MetaMask Flask build
     windows.ts                 # optional two-window split for headed runs
   *.spec.ts                    # one journey per file
 ```
 
 ## Related docs
 
-- `packages/web-wallet/docs/qa-snap-token-flows.md` — case catalog (TC-CT-*, TC-ST-*, TC-SE-*);
-  the source of truth for what each create/send case must assert.
-- `packages/web-wallet/docs/qa-automation-strategy.md` — which layer (unit / component / E2E)
-  owns each case.
-- `docs/superpowers/specs/` — dated design docs for the E2E structure and journeys.
+- `packages/web-wallet/docs/qa-automation-strategy.md` — tooling, how to run the suite, and
+  which layer (unit / component / E2E) owns each case.
 
 > **Security:** `wallets.config.json` holds **public testnet stub seeds only** — never a
 > mainnet seed or any wallet with real value.

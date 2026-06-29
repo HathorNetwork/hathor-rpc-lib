@@ -5,9 +5,9 @@
  * assumed. If onboarding breaks after a Flask bump, re-capture these.
  *
  * The Snap connect/install/dialog flows happen on `notification.html` and are driven by
- * visible role/text (see MM_TEXT) because those screens vary most between versions.
+ * visible role/text (see MetaMaskText) because those screens vary most between versions.
  */
-export const MM = {
+export const MetaMask = {
   onboarding: {
     /** "Create a new wallet" on the welcome screen. */
     createWallet: 'onboarding-create-wallet',
@@ -43,13 +43,13 @@ export const MM = {
 } as const;
 
 /** Testid prefix helpers for the SRP quiz. */
-export const SRP = {
+export const Srp = {
   chip: (i: number) => `recovery-phrase-chip-${i}`,
   unansweredSelector: '[data-testid^="recovery-phrase-quiz-unanswered-"]',
 } as const;
 
 /** Unlock screen (shown on home and notification when the wallet is locked). */
-export const UNLOCK = {
+export const Unlock = {
   password: 'unlock-password',
   submit: 'unlock-submit',
 } as const;
@@ -57,7 +57,7 @@ export const UNLOCK = {
 /**
  * Visible-text matchers (resilient to version churn).
  */
-export const MM_TEXT = {
+export const MetaMaskText = {
   /** Flask-only "Experimental area" gate. */
   acceptRisks: /i accept the risks/i,
   /** "Perfect — That's right!" modal shown after solving the SRP quiz. */

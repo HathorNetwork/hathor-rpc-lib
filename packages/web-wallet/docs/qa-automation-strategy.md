@@ -1,7 +1,7 @@
 # QA Automation Strategy — Web Wallet Snap Flows
 
-Companion to [`qa-snap-token-flows.md`](./qa-snap-token-flows.md). Describes how the QA
-cases are automated, the tooling, and how to run it.
+Describes how the QA cases are automated, the tooling, and how to run it. See also the
+driver-level notes in [`../tests/e2e/e2e.md`](../tests/e2e/e2e.md).
 
 ## TL;DR
 
@@ -11,7 +11,7 @@ cases are automated, the tooling, and how to run it.
   actual Snap approval/rejection popups. No mocked provider.
 - **Network:** public Hathor **testnet** (the Snap talks to public testnet nodes — no
   local node needed).
-- **Run on demand** via `yarn e2e` (not per-PR, not on a timer — CI wiring deferred).
+- **Run on demand** via `yarn e2e` (not per-PR, not on a timer).
 
 ## Why this shape
 
@@ -24,16 +24,14 @@ The cost is that MetaMask E2E is inherently slower and more brittle than unit te
 it is **opt-in** (`yarn e2e`) rather than a blocking gate, and the fragile bits (the
 extension's own DOM) are isolated in a single, version-pinned driver.
 
-## Phased delivery
+## Journeys (Playwright projects)
 
-| Journey (Playwright project) | Scope | Status |
-|------------------------------|-------|--------|
-| `onboarding` | New wallet → connect + install Snap → connected home (Mainnet) | **✅ done — passing** |
-| `import` | Import the `funded` wallet → connect → switch to **testnet** | done — runs by default (committed `funded` stub; clear `funded.srp` to skip) |
-| `feature-example` | Template: funded wallet on testnet + stub assertion | scaffold |
-| token send (`TC-ST-001`/`TC-ST-030`) | Copy the template; funded + insufficient-balance | planned |
-| token creation (`TC-CT-001`/`TC-CT-021`) | Copy the template | planned |
-| CI integration (xvfb / true headless) | — | deferred |
+| Journey (Playwright project) | Scope |
+|------------------------------|-------|
+| `onboarding` | New wallet → connect + install Snap → connected home (Mainnet) |
+| `import` | Import the `funded` wallet → connect → switch to **testnet** |
+| `token-lifecycle` | Funded wallet on **testnet**: send HTR, create/send deposit + fee tokens, unregister/re-register |
+| `feature-example` | Template (copy to start a new journey): funded wallet on testnet + stub assertion |
 
 Each journey is its own Playwright **project** = one isolated MetaMask context (one wallet
 state). The worker-scoped `wallet` fixture provisions that context once from the project's
@@ -47,7 +45,7 @@ externally (see *Funded wallet* below).
 
 ## Architecture
 
-```
+```text
 packages/web-wallet/
   playwright.e2e.config.ts        # separate config; boots snap (:8080) + web-wallet (:5173)
   tests/e2e/
@@ -55,7 +53,9 @@ packages/web-wallet/
     driver/
       flask.ts                    # resolve/download a pinned MetaMask Flask build
       selectors.ts                # all MetaMask DOM selectors, pinned to one Flask version
+      timeouts.ts                 # centralized, env-tunable deadlines (E2E_TIMEOUT_SCALE)
       MetaMaskDriver.ts           # onboard / import / connect+install snap / approve / reject
+      windows.ts                  # optional two-window split for headed runs
     helpers/
       webWallet.ts                # page object for the dApp (verified text/roles)
       journeys.ts                 # reusable provisioning (onboard/import -> connect -> network)
@@ -63,6 +63,7 @@ packages/web-wallet/
     wallets.config.json           # committed registry of testnet stub wallets (by name)
     onboarding.spec.ts            # journey: new wallet -> connected home
     import.spec.ts                # journey: import funded wallet -> connect -> testnet
+    token-lifecycle.spec.ts       # journey: funded wallet -> send/create/unregister tokens (testnet)
     feature-example.spec.ts       # template: copy to add a feature journey
     .cache/                       # downloaded Flask build (gitignored)
   .env.e2e.example                # E2E config template (real .env.e2e gitignored)
@@ -128,8 +129,8 @@ yarn e2e:headed     # forces a visible browser (useful for debugging)
 ```
 
 Verified against **Flask 13.31.0**. The onboarding `data-testid`s are version-sensitive;
-if a Flask bump breaks onboarding, re-capture them (the git history of this work has a
-throwaway probe spec that walks and dumps each screen).
+if a Flask bump breaks onboarding, re-capture them (an earlier throwaway probe spec in git
+history walks and dumps each screen).
 
 > Local note: on this machine `/usr/local/bin/yarn` (classic 1.x) and `node` can shadow
 > the Nix-provided yarn-berry/Node 22. If `yarn` reports 1.x, use `corepack yarn …` (and a
@@ -154,20 +155,19 @@ swapping in your own):
 
 - **Selector drift:** MetaMask's DOM changes between versions. Pin one Flask version
   (`E2E_FLASK_VERSION` / `E2E_METAMASK_PATH`); when it changes, update `driver/selectors.ts`.
-- **On-chain timing (Phases 2–3):** testnet confirmation is non-deterministic. Happy
+- **On-chain timing:** testnet confirmation is non-deterministic. Happy
   paths assert up to "tx submitted + success UI"; post-confirmation balance updates are a
   soft, generously-timed check — not a hard gate.
-- **Headless in CI:** deferred. Locally this runs headed. The robust CI path will be
-  xvfb (a real browser on a virtual display); true `--headless=new` with MetaMask MV3 is
-  flakier and will be evaluated later.
+- **Headless in CI:** locally this runs headed. The robust CI path is xvfb (a real browser
+  on a virtual display); true `--headless=new` with MetaMask MV3 is flakier.
 - **Permanent test data:** created tokens / sent txs persist on testnet and can't be
   cleaned up. Token names are unique per run; runs are on-demand to limit fund usage.
 
 ## Traceability
 
-| QA case | Phase | Spec |
-|---------|-------|------|
-| Onboarding + connect (home) | onboarding | `onboarding.spec.ts` |
-| Import + connect + testnet switch | import | `import.spec.ts` |
-| `TC-ST-001`, `TC-ST-030` | 2 | `send-token.spec.ts` (planned) |
-| `TC-CT-001`, `TC-CT-021` | 3 | `create-token.spec.ts` (planned) |
+| QA case | Spec |
+|---------|------|
+| Onboarding + connect (home) | `onboarding.spec.ts` |
+| Import + connect + testnet switch | `import.spec.ts` |
+| `TC-ST-001`, `TC-ST-030` (token send) | `token-lifecycle.spec.ts` |
+| `TC-CT-001`, `TC-CT-021` (token create) | `token-lifecycle.spec.ts` |

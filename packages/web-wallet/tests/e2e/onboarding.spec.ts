@@ -44,11 +44,13 @@ test.describe.serial('onboarding — clean wallet UI', () => {
   test('address mode dialog closes via the X button', async ({ wallet }) => {
     await wallet.openAddressModeDialog();
     await wallet.closeAddressModeViaX();
+    await wallet.expectAddressModeClosed();
   });
 
   test('address mode dialog closes when clicking outside', async ({ wallet }) => {
     await wallet.openAddressModeDialog();
     await wallet.closeAddressModeViaBackdrop();
+    await wallet.expectAddressModeClosed();
   });
 
   test('Send shows Insufficient balance and disables the button (zero funds)', async ({ wallet }) => {
@@ -60,7 +62,8 @@ test.describe.serial('onboarding — clean wallet UI', () => {
   });
 
   test('copy address chip copies the first address to the clipboard', async ({ wallet }) => {
-    await wallet.copyFirstAddressAndVerifyClipboard();
+    const copied = await wallet.copyFirstAddress();
+    wallet.expectClipboardHoldsFullAddress(copied);
   });
 
   test('change network modal shows its texts and options, and dismisses via X', async ({ wallet }) => {
