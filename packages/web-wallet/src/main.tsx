@@ -1,3 +1,4 @@
+import './setImmediate.shim' // Must run before react-dom so React's scheduler uses the safe setImmediate
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './polyfills' // Must be imported first to set up global polyfills
