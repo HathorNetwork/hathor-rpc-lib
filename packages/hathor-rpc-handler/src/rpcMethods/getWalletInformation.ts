@@ -16,21 +16,32 @@ import {
   RpcMethods,
 } from '../types';
 import { InvalidParamsError } from '../errors';
+import { resolveBalances } from '../helpers';
 
 const getWalletInformationSchema = z.object({
   method: z.literal(RpcMethods.GetWalletInformation),
+  params: z.object({
+    // Optional: omit to return the balance of every token the wallet holds. When
+    // provided, the list must contain at least one token UID (selecting that subset).
+    tokens: z.array(z.string().min(1)).min(1).optional(),
+  }).optional(),
 });
 
 /**
- * Handles the 'get_wallet_information' RPC request by retrieving the network information
- * and the address at index 0 from the wallet.
+ * Handles the 'get_wallet_information' RPC request by retrieving the network,
+ * the address at index 0 and the wallet balance from the wallet.
  *
- * @param rpcRequest - The RPC request object containing the method.
+ * The balance covers every token the wallet holds, or just the requested subset
+ * when a non-empty `params.tokens` is provided. Like the network and address, balance is
+ * non-sensitive, read-only data shared with already-connected dApps, so this
+ * handler does NOT prompt the user for confirmation.
+ *
+ * @param rpcRequest - The RPC request object containing the method and optional params.
  * @param wallet - The Hathor wallet instance used to get the wallet information.
  * @param _requestMetadata - (unused) Metadata related to the dApp that sent the RPC
- * @param _promptHandler - (unused) The function to handle prompts for user confirmation.
+ * @param _promptHandler - (unused — wallet information is prompt-free).
  *
- * @returns An object containing the network name and address at index 0.
+ * @returns An object containing the network name, the address at index 0 and the balance.
  *
  * @throws {InvalidParamsError} - If the request parameters are invalid.
  */
@@ -48,10 +59,12 @@ export async function getWalletInformation(
 
   const network: string = wallet.getNetwork();
   const address0 = await wallet.getAddressAtIndex(0);
+  const balance = await resolveBalances(wallet, parseResult.data.params?.tokens);
 
   const result = {
     network,
     address0,
+    balance,
   };
 
   return {

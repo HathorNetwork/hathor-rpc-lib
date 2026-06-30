@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { addressPage, balancePage, changeNetworkPage, createNanoPage, createTokenPage, oracleDataPage, sendTransactionPage, signWithAddressPage, utxosPage, xpubPage } from '../dialogs';
+import { addressPage, changeNetworkPage, createNanoPage, createTokenPage, oracleDataPage, sendTransactionPage, signWithAddressPage, utxosPage, xpubPage } from '../dialogs';
 import { setNetwork } from '../utils/network';
 import { DEFAULT_PIN_CODE, NETWORK_MAP } from '../constants';
 import { RpcMethods, TriggerTypes, TriggerResponseTypes } from '@hathor/hathor-rpc-handler';
@@ -25,9 +25,6 @@ export const promptHandler = (origin, wallet) => async (promptRequest) => {
           pinCode: DEFAULT_PIN_CODE,
         }
       };
-    case TriggerTypes.GetBalanceConfirmationPrompt:
-      approved = await balancePage(data, params, origin);
-      return { data: approved };
     case TriggerTypes.AddressRequestPrompt:
       approved = await addressPage(data, params, origin);
       return { data: approved };

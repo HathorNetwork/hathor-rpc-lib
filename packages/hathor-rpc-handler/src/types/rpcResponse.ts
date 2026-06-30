@@ -110,6 +110,7 @@ export interface GetWalletInformationResponse extends BaseRpcResponse {
   response: {
     network: string;
     address0: string;
+    balance: GetBalanceObject[];
   }
 }
 
