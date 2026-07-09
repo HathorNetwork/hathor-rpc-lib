@@ -11,7 +11,9 @@
     "preview": "webpack serve --mode production",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "e2e": "playwright test --config playwright.e2e.config.ts",
+    "e2e:headed": "E2E_HEADED=1 playwright test --config playwright.e2e.config.ts"
   },
   "dependencies": {
     "@hathor/hathor-rpc-handler": "workspace:",
