@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test';
+import { TIMEOUTS } from '../timeouts';
 
 type NetworkName = 'Mainnet' | 'Testnet';
 
@@ -116,7 +117,9 @@ export class WebWallet {
   /** The connection succeeded once the home screen ("Assets summary") is visible. */
   async expectConnected(): Promise<void> {
     await this.focus();
-    await expect(this.page.getByText(/assets summary/i)).toBeVisible({ timeout: 60_000 });
+    await expect(this.page.getByText(/assets summary/i)).toBeVisible({
+      timeout: TIMEOUTS.dapp.connectedHome,
+    });
   }
 
   /** Header network button shows the current Hathor network (Mainnet/Testnet). */
@@ -128,7 +131,7 @@ export class WebWallet {
     await this.focus();
     await expect(
       this.page.getByRole('button', { name: new RegExp(name, 'i') }).first(),
-    ).toBeVisible({ timeout: 60_000 });
+    ).toBeVisible({ timeout: TIMEOUTS.dapp.network });
   }
 
   /** Opens the "Change network" dialog from the header. */
@@ -160,7 +163,9 @@ export class WebWallet {
     // The address loads asynchronously (snap htr_getAddress), so the <p> first renders the
     // "No address available" fallback — wait until it's replaced by the real address.
     const addrLocator = this.page.locator('p.font-mono.break-all').first();
-    await expect(addrLocator).not.toHaveText(/no address available/i, { timeout: 30_000 });
+    await expect(addrLocator).not.toHaveText(/no address available/i, {
+      timeout: TIMEOUTS.dapp.asyncValue,
+    });
     const address = (await addrLocator.textContent())?.trim() ?? '';
     if (!address || /no address/i.test(address)) {
       throw new Error(`Receive address unavailable: "${address}"`);
@@ -199,12 +204,16 @@ export class WebWallet {
 
   /** Success = the Send dialog closes and no error box is shown. */
   async expectSendSuccess(): Promise<void> {
-    await expect(this.page.getByRole('heading', { name: /send tokens/i })).toBeHidden({ timeout: 60_000 });
+    await expect(this.page.getByRole('heading', { name: /send tokens/i })).toBeHidden({
+      timeout: TIMEOUTS.dapp.dialogSettle,
+    });
   }
 
   /** Asserts the Send dialog's transaction-error box matches `pattern` (for reject/edge cases). */
   async expectSendError(pattern: RegExp): Promise<void> {
-    await expect(this.page.getByText(pattern).first()).toBeVisible({ timeout: 60_000 });
+    await expect(this.page.getByText(pattern).first()).toBeVisible({
+      timeout: TIMEOUTS.dapp.dialogSettle,
+    });
   }
 
   // --- Create token --------------------------------------------------------
@@ -249,7 +258,9 @@ export class WebWallet {
 
   /** Waits for "Token Created" and returns the displayed config string. */
   async expectTokenCreated(): Promise<string> {
-    await expect(this.page.getByRole('heading', { name: /token created/i })).toBeVisible({ timeout: 90_000 });
+    await expect(this.page.getByRole('heading', { name: /token created/i })).toBeVisible({
+      timeout: TIMEOUTS.dapp.tokenCreated,
+    });
     const config = (await this.page.locator('span.font-mono.break-all').first().textContent())?.trim() ?? '';
     if (!/^\[.+:.+:.+:.+\]$/.test(config)) {
       throw new Error(`Unexpected config string: "${config}"`);
@@ -307,7 +318,9 @@ export class WebWallet {
       .locator('xpath=ancestor::div[2]').getByRole('button').click();
     await this.page.getByRole('button', { name: /^unregister token$/i }).last().click();
     // The success toast renders the text twice (visible div + aria-live status span).
-    await expect(this.page.getByText(/unregistered successfully/i).first()).toBeVisible({ timeout: 30_000 });
+    await expect(this.page.getByText(/unregistered successfully/i).first()).toBeVisible({
+      timeout: TIMEOUTS.dapp.toast,
+    });
   }
 
   // --- Register (local, no Snap) ------------------------------------------
@@ -321,7 +334,9 @@ export class WebWallet {
     await this.page.getByRole('textbox').first().fill(configString);
     await this.page.getByRole('button', { name: /^register token$/i }).click();
     // Specific text (not just /registered/) so a lingering "unregistered" toast can't match.
-    await expect(this.page.getByText(/token registered successfully/i).first()).toBeVisible({ timeout: 30_000 });
+    await expect(this.page.getByText(/token registered successfully/i).first()).toBeVisible({
+      timeout: TIMEOUTS.dapp.toast,
+    });
   }
 
   // --- Import via "New tokens" banner (local, no Snap) --------------------
@@ -338,7 +353,7 @@ export class WebWallet {
     await this.focus();
     await expect(
       this.page.getByRole('button', { name: 'Import tokens.', exact: true }),
-    ).toBeVisible({ timeout: 30_000 });
+    ).toBeVisible({ timeout: TIMEOUTS.dapp.banner });
   }
 
   /**
@@ -360,7 +375,7 @@ export class WebWallet {
     // Select the target token's row by data-token-uid (present immediately, even
     // before the row's name/balance lazy-loads); the row's checkbox lives inside.
     const row = dialog.locator(`[data-token-uid="${uid}"]`);
-    await expect(row).toBeVisible({ timeout: 30_000 });
+    await expect(row).toBeVisible({ timeout: TIMEOUTS.dapp.banner });
     await row.getByRole('checkbox').check();
 
     // Select → Confirm. "Continue" enables once a token is picked; the dialog
@@ -370,7 +385,9 @@ export class WebWallet {
 
     // Confirm → success. "Import tokens" (no period) is the dialog's confirm button.
     await dialog.getByRole('button', { name: 'Import tokens', exact: true }).click();
-    await expect(dialog.getByText(/tokens imported!/i)).toBeVisible({ timeout: 30_000 });
+    await expect(dialog.getByText(/tokens imported!/i)).toBeVisible({
+      timeout: TIMEOUTS.dapp.toast,
+    });
 
     // Close the success screen, back to the connected home.
     await dialog.getByRole('button', { name: /^close$/i }).click();
@@ -381,7 +398,9 @@ export class WebWallet {
 
   /** Waits for the flag-gated "Token Type" selector to render after the toggle re-fetch. */
   async waitForTokenTypeSelector(): Promise<void> {
-    await expect(this.page.getByText(/^token type$/i)).toBeVisible({ timeout: 30_000 });
+    await expect(this.page.getByText(/^token type$/i)).toBeVisible({
+      timeout: TIMEOUTS.dapp.flagGatedUi,
+    });
   }
 
   /** Selects the token type in the create-token dialog ("Deposit" or "Fee"). */
@@ -473,14 +492,18 @@ export class WebWallet {
 
   /** Waits out the loading check, then asserts the given mode's radio is selected. */
   async expectAddressModeSelected(mode: 'single' | 'dynamic'): Promise<void> {
-    await expect(this.page.getByText(/checking address usage/i)).toBeHidden({ timeout: 30_000 });
+    await expect(this.page.getByText(/checking address usage/i)).toBeHidden({
+      timeout: TIMEOUTS.dapp.addressUsage,
+    });
     const name = mode === 'single' ? /single address/i : /dynamic address/i;
     await expect(this.page.getByRole('radio', { name })).toBeChecked();
   }
 
   /** Picks an address mode by clicking its (sr-only radio) label. Waits loading out first. */
   async chooseAddressMode(mode: 'single' | 'dynamic'): Promise<void> {
-    await expect(this.page.getByText(/checking address usage/i)).toBeHidden({ timeout: 30_000 });
+    await expect(this.page.getByText(/checking address usage/i)).toBeHidden({
+      timeout: TIMEOUTS.dapp.addressUsage,
+    });
     const label = mode === 'single' ? 'Single Address' : 'Dynamic Address';
     await this.page.getByText(label, { exact: true }).click();
   }

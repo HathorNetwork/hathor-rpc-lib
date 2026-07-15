@@ -2,6 +2,12 @@
 
 **Read this before reading or writing any E2E test in `tests/e2e/`.**
 
+> **This suite is on-demand and NON-GATING.** It is not run per-PR and does not block merges.
+> A red run here means "a real-MetaMask journey didn't pass on this machine right now" — often
+> a slow cold-start, not a broken product. Run it deliberately with `yarn e2e` (see
+> `docs/qa-automation-strategy.md`); investigate failures, but never treat this suite as a
+> required check.
+
 These tests drive the **real MetaMask Flask extension** + the **Hathor Snap** against the
 web-wallet's actual UI. The rules below are the architectural decisions the suite is built
 on. They exist to prevent recurring confusion about *where each piece of logic belongs* —
@@ -231,6 +237,16 @@ These bit us once each — check for them when a `getByRole`/`getByText` fails:
 - **Confirmation toggles are siblings of their label, not children.** In a
   `flex justify-between` row the label text and the toggle button are siblings, so from the
   label go up two levels (`xpath=ancestor::div[2]`) before selecting the button.
+
+## Two timeout knobs — which to reach for
+
+- **`E2E_TIMEOUT_SCALE`** (test side) multiplies every deadline in `tests/e2e/timeouts.ts` —
+  the MetaMask driver's waits *and* the page object's `TIMEOUTS.dapp` waits. Reach for it to
+  stretch the whole suite for a slow machine/CI (e.g. `E2E_TIMEOUT_SCALE=2`).
+- **`SNAP_TIMEOUT_MS`** (dApp side) raises the web-wallet's own hard snap-RPC cap (default 10s;
+  see `src/constants/timeouts.ts`), injected at build time via webpack `DefinePlugin`. Reach
+  for it when a slow snap **cold-start** trips the dApp's internal RPC race (the e2e webServer
+  already sets `SNAP_TIMEOUT_MS=60000`). It does NOT affect Playwright waits.
 
 ## File map
 
