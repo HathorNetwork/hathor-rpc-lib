@@ -180,6 +180,8 @@ export interface NanoContractParams {
   tokenDetails?: Map<string, TokenDetailsObject>;
   fee: bigint;
   contractPaysFees?: boolean;
+  /** Where the transaction's own change outputs go, notably the fee change */
+  changeAddress?: string;
   preparedTx: Transaction;
 }
 
