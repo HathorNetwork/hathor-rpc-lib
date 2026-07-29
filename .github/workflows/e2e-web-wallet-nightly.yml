@@ -1,0 +1,90 @@
+# Real-MetaMask-Flask E2E suite for the web-wallet — SIGNAL ONLY, NON-GATING.
+#
+# This runs on a schedule (not per-PR) purely to surface rot in the on-demand E2E infrastructure
+# (see packages/web-wallet/tests/e2e/e2e.md). It is NOT a required check and MUST NOT be added to
+# branch protection. A red run means "a real-MetaMask journey didn't pass on the runner", which is
+# often a slow cold-start rather than a broken product — triage via the uploaded artifacts.
+name: E2E Web Wallet (nightly, non-gating)
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # 06:00 UTC daily
+  workflow_dispatch: {} # allow manual runs from the Actions tab
+
+concurrency:
+  group: e2e-web-wallet-nightly
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    # Non-gating: never fail the workflow status in a way that could be mistaken for a gate.
+    # The step-level result + artifacts carry the signal; a red job here blocks nobody.
+    timeout-minutes: 60
+    env:
+      # Pin the Flask build the selectors are verified against (driver/selectors.ts).
+      E2E_FLASK_VERSION: '13.31.0'
+      # Stretch every driver + page-object deadline for a slower shared runner.
+      E2E_TIMEOUT_SCALE: '2'
+      # MetaMask password for the throwaway wallet the driver onboards/imports each run. NOT a
+      # secret — it guards a fresh local MetaMask created per run; the funded seed is already public
+      # in wallets.config.json. The driver defaults to DEFAULT_PASSWORD ('Test1234!Test') if unset;
+      # 'Hathor@123' matches the owner's local .env.e2e so CI reproduces local runs 1:1. Override via
+      # a repo Actions variable `vars.E2E_PASSWORD` if desired.
+      E2E_PASSWORD: ${{ vars.E2E_PASSWORD || 'Hathor@123' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@ba0dd844c9180cbf77aa72a116d6fbc515d0e87b
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Cache Nix
+        uses: DeterminateSystems/magic-nix-cache-action@v7
+
+      - name: Install dependencies
+        run: nix develop . -c yarn install
+
+      # Independent of PR 1: build the workspace dependency the snap dev build consumes, so this
+      # workflow is self-sufficient whether or not PR 1's self-building `yarn e2e` has merged.
+      - name: Build hathor-rpc-handler (snap dependency)
+        run: nix develop . -c yarn workspace @hathor/hathor-rpc-handler build
+
+      - name: Install Playwright Chromium
+        run: nix develop . -c yarn workspace @hathor/web-wallet exec playwright install chromium --with-deps
+
+      - name: Install xvfb
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      # Headed Chromium under a virtual display (MV3 extensions need a real display). The Playwright
+      # config's webServer boots the local snap (:8080) and the dApp dev server (:5173) itself.
+      - name: Run real-MetaMask E2E suite
+        run: |
+          xvfb-run -a nix develop . -c \
+            yarn workspace @hathor/web-wallet exec \
+            playwright test --config playwright.e2e.config.ts
+
+      - name: Upload Playwright report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: packages/web-wallet/playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload traces & videos
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: packages/web-wallet/test-results/
+          retention-days: 14
+          if-no-files-found: ignore
