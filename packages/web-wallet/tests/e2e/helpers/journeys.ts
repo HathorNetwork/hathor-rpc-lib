@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 import type { MetaMaskDriver } from '../driver/MetaMaskDriver';
 import { WebWallet } from './webWallet';
+import { TIMEOUTS } from '../timeouts';
 
 export type Network = 'mainnet' | 'testnet';
 
@@ -33,51 +34,69 @@ export async function switchNetwork(
 const SNAP_ID = 'local:http://localhost:8080';
 
 /**
- * Installs the Snap and issues one read-only invoke BEFORE the dApp's timed connect runs.
+ * Drive the Snap to a *ready* state before the dApp's own timed connect runs.
  *
- * The Snap's first RPC also starts a read-only Hathor wallet (a network connect + initial
- * sync — see packages/snap onRpcRequest). On a slow machine that cold-start exceeds the dApp's
- * 10s NETWORK_CHECK timeout, so the dApp gives up with "Snap is not responding". Doing it here
- * out-of-band (untimed, with approvals driven concurrently) leaves the read-only wallet already
- * started, so the dApp's own (raced) network check hits a warm Snap and returns well within 10s.
+ * Cold MV3 service worker + the Snap's first heavy op (it starts a read-only Hathor wallet on its
+ * first RPC) is the dominant E2E flake: the dApp's ~10s NETWORK_CHECK can fire while that cold-start
+ * is still in flight and give up with "Snap is not responding". Warming out-of-band here only helps
+ * if every stage is *guaranteed* complete — a best-effort warm-up can return with the worker still
+ * cold. So each stage is success-gated with a real deadline: we do not return until (a) the provider
+ * is injected, (b) wallet_getSnaps answers (worker awake), (c) the Snap is installed, and (d) the
+ * Snap answers a real read-only invoke (its read-only wallet finished starting). After this returns,
+ * the dApp's raced network check hits a genuinely warm Snap.
  */
 async function warmSnap(dappPage: Page, metamask: MetaMaskDriver): Promise<void> {
   let done = false;
   const approvals = metamask.driveApprovalsUntil(() => done).catch(() => undefined);
   try {
-    await dappPage.evaluate(async (snapId) => {
-      type Eth = { request: (a: unknown) => Promise<unknown> };
-      const getEth = () => (window as unknown as { ethereum?: Eth }).ethereum;
-      // Wait for MetaMask to inject its provider (cold service worker can be slow to appear).
-      for (let i = 0; i < 60 && !getEth()?.request; i++) {
-        await new Promise((r) => setTimeout(r, 500));
-      }
-      const eth = getEth();
-      if (!eth?.request) return;
-      const probe = async (req: unknown, ms: number) =>
-        Promise.race([
-          eth.request(req),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
-        ]);
-      // Wake the MV3 service worker so wallet_requestSnaps doesn't hang on a cold worker.
-      for (let i = 0; i < 6; i++) {
-        try {
-          await probe({ method: 'wallet_getSnaps' }, 8_000);
-          break;
-        } catch {
-          /* retry */
+    await dappPage.evaluate(
+      async ([snapId, probe]) => {
+        type Eth = { request: (a: unknown) => Promise<unknown> };
+        const getEth = () => (window as unknown as { ethereum?: Eth }).ethereum;
+        const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+        const withTimeout = <T>(p: Promise<T>, ms: number): Promise<T> =>
+          Promise.race([
+            p,
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error('probe timeout')), ms),
+            ),
+          ]);
+
+        // (a) Wait for MetaMask to inject its provider.
+        const providerDeadline = Date.now() + probe.provider;
+        while (!getEth()?.request) {
+          if (Date.now() >= providerDeadline) throw new Error('MetaMask provider never injected');
+          await sleep(250);
         }
-      }
-      // Install the Snap (raises the install approval, driven concurrently above).
-      await eth.request({ method: 'wallet_requestSnaps', params: { [snapId]: {} } });
-      // First invoke starts the read-only Hathor wallet inside the Snap; read-only = no dialog.
-      await eth
-        .request({
-          method: 'wallet_invokeSnap',
-          params: { snapId, request: { method: 'htr_getConnectedNetwork' } },
-        })
-        .catch(() => undefined);
-    }, SNAP_ID);
+        const eth = getEth() as Eth;
+
+        // Poll a request until it *succeeds* (not a fixed try-count).
+        const pollUntilOk = async (req: unknown, budgetMs: number): Promise<void> => {
+          const deadline = Date.now() + budgetMs;
+          for (;;) {
+            try {
+              await withTimeout(eth.request(req), probe.perTry);
+              return;
+            } catch (err) {
+              if (Date.now() >= deadline) throw err;
+              await sleep(300);
+            }
+          }
+        };
+
+        // (b) Worker awake, (c) Snap installed, (d) read-only wallet started.
+        await pollUntilOk({ method: 'wallet_getSnaps' }, probe.workerWake);
+        await pollUntilOk({ method: 'wallet_requestSnaps', params: { [snapId]: {} } }, probe.install);
+        await pollUntilOk(
+          {
+            method: 'wallet_invokeSnap',
+            params: { snapId, request: { method: 'htr_getConnectedNetwork' } },
+          },
+          probe.snapReady,
+        );
+      },
+      [SNAP_ID, TIMEOUTS.probe] as const,
+    );
   } finally {
     done = true;
     await approvals;
