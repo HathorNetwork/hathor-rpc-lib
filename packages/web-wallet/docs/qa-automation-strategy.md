@@ -185,7 +185,17 @@ resolver fails loudly on a mismatch (`E2E_ALLOW_FLASK_MISMATCH=1` overrides). To
    onboarding + import screens, confirming each `data-testid` in `driver/selectors.ts`
    (`MetaMask.onboarding.*`, `MetaMask.importing.*`, `Srp.*`, `Unlock.*`) still resolves.
 3. Update any changed selectors, then set `EXPECTED_FLASK_VERSION` to the new version.
-4. Update the pinned download checksum (see the Flask-integrity note, item 6 / PR 4).
+4. Recompute the pinned download checksum in `EXPECTED_FLASK_SHA256` (`driver/selectors.ts`). The
+   resolver verifies the downloaded zip's SHA-256 against this pin **before** unzip and refuses to
+   unpack on a mismatch, so a stale hash blocks the new build. To recompute:
+   - Fetch the exact `metamask-flask-chrome-<version>.zip` the resolver would (prefer the
+     non-`deprecated` asset) over TLS, or hash the freshly-downloaded `tests/e2e/.cache/flask-<version>.zip`:
+     ```bash
+     shasum -a 256 tests/e2e/.cache/flask-<version>.zip
+     ```
+   - When the GitHub release asset exposes a `digest` (`sha256:<hex>`), confirm it matches before
+     trusting the value — the resolver logs a warning if the pin and the API digest disagree.
+   - Add the lowercase hex (no `sha256:` prefix) under the new version key in `EXPECTED_FLASK_SHA256`.
 
 ## Traceability
 
