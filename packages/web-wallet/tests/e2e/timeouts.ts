@@ -78,4 +78,21 @@ export const TIMEOUTS = {
     /** "Checking address usage…" resolving in the Address mode dialog. */
     addressUsage: ms(30_000),
   },
+  /**
+   * Out-of-band Snap warm-up (helpers/journeys.ts `warmSnap`) budgets. Each stage is polled until
+   * it *succeeds*, so these are success deadlines, not fixed try-counts. Passed into the page's
+   * evaluate() context, so they must stay plain numbers.
+   */
+  probe: {
+    /** MetaMask provider injection (cold service worker can be slow to appear). */
+    provider: ms(30_000),
+    /** Per-request race cap inside each poll. */
+    perTry: ms(8_000),
+    /** wallet_getSnaps answering (MV3 worker awake). */
+    workerWake: ms(45_000),
+    /** wallet_requestSnaps resolving (install; retried on a cold-worker reject). */
+    install: ms(60_000),
+    /** First real invoke resolving (read-only wallet started). */
+    snapReady: ms(60_000),
+  },
 };
