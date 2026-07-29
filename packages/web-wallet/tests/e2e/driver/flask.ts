@@ -1,11 +1,17 @@
+import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { EXPECTED_FLASK_VERSION } from './selectors';
+import { EXPECTED_FLASK_VERSION, EXPECTED_FLASK_SHA256 } from './selectors';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = resolve(here, '..', '.cache');
+
+/** SHA-256 (hex) of a file, read into memory — fine for a ~30-90 MB extension zip on dev/CI. */
+function sha256File(path: string): string {
+  return createHash('sha256').update(readFileSync(path)).digest('hex');
+}
 
 /**
  * Guards against silent MetaMask drift: selectors are pinned to EXPECTED_FLASK_VERSION, so a
@@ -88,18 +94,51 @@ export async function resolveFlaskPath(): Promise<string> {
   }
 
   mkdirSync(dest, { recursive: true });
-  const assetUrl = await discoverFlaskAssetUrl(version);
+  const asset = await discoverFlaskAssetUrl(version); // { url, digest? }
+  const assetUrl = asset.url;
   const zipPath = join(CACHE_DIR, `flask-${version}.zip`);
 
   try {
     // Argument arrays (no shell): `assetUrl`/`version` are dynamic, so never interpolate them
     // into a shell string.
     execFileSync('curl', ['-fL', '--retry', '3', '-o', zipPath, assetUrl], { stdio: 'inherit' });
+
+    const actualSha = sha256File(zipPath);
+    const pinnedSha = EXPECTED_FLASK_SHA256[version];
+
+    // Cross-check the release asset digest when the API exposes it (sanity, not the gate).
+    if (asset.digest) {
+      const apiSha = asset.digest.replace(/^sha256:/i, '').toLowerCase();
+      if (pinnedSha && pinnedSha.toLowerCase() !== apiSha) {
+        console.warn(
+          `[flask] WARNING: pinned SHA-256 for ${version} disagrees with the GitHub asset digest. ` +
+            `The pin may be stale or the asset changed — re-verify before trusting this build.`,
+        );
+      }
+    }
+
+    if (!pinnedSha) {
+      throw new Error(
+        `No pinned SHA-256 for MetaMask Flask ${version} in EXPECTED_FLASK_SHA256 (driver/selectors.ts). ` +
+          `Add one (see the upgrade checklist in docs/qa-automation-strategy.md) before downloading.`,
+      );
+    }
+    if (actualSha.toLowerCase() !== pinnedSha.toLowerCase()) {
+      rmSync(zipPath, { force: true });
+      rmSync(dest, { recursive: true, force: true });
+      throw new Error(
+        `MetaMask Flask ${version} SHA-256 mismatch: expected ${pinnedSha}, got ${actualSha}. ` +
+          `Refusing to unpack an unverified extension. If you intentionally bumped Flask, update ` +
+          `EXPECTED_FLASK_SHA256 after re-verifying selectors.`,
+      );
+    }
+
     execFileSync('unzip', ['-o', '-q', zipPath, '-d', dest], { stdio: 'inherit' });
   } catch (err) {
     throw new Error(
-      `Failed to download/unpack MetaMask Flask ${version} from ${assetUrl}. ` +
-        `Verify the version exists, or set E2E_METAMASK_PATH instead. Cause: ${String(err)}`,
+      `Failed to download/verify/unpack MetaMask Flask ${version} from ${assetUrl}. ` +
+        `Verify the version exists and the pinned checksum is correct, or set E2E_METAMASK_PATH ` +
+        `instead. Cause: ${String(err)}`,
     );
   }
 
@@ -111,11 +150,22 @@ export async function resolveFlaskPath(): Promise<string> {
   return unpacked;
 }
 
+/** A GitHub release asset, narrowed to the fields the resolver needs. */
+interface GithubReleaseAsset {
+  /** Immutable asset id (stable even if the mutable tag is re-pointed). */
+  id: number;
+  name: string;
+  browser_download_url: string;
+  /** `sha256:<hex>` on newer releases; absent on older ones. */
+  digest?: string;
+}
+
 /**
  * Finds the GitHub release asset (a `metamask-flask-chrome-*.zip`) for the given version.
- * Prefers a non-"deprecated" build when several are published.
+ * Prefers a non-"deprecated" build when several are published. Returns the download URL plus the
+ * API-reported `digest` (when present) so the caller can cross-check its pinned SHA-256.
  */
-async function discoverFlaskAssetUrl(version: string): Promise<string> {
+async function discoverFlaskAssetUrl(version: string): Promise<{ url: string; digest?: string }> {
   const api = `https://api.github.com/repos/MetaMask/metamask-extension/releases/tags/v${version}`;
   // Bound the request: this runs on the test-setup critical path, and fetch() has no default
   // timeout, so a stalled connection would hang setup until Playwright's outer timeout.
@@ -128,9 +178,7 @@ async function discoverFlaskAssetUrl(version: string): Promise<string> {
   if (!res.ok) {
     throw new Error(`GitHub API returned ${res.status} for ${api}. Is v${version} a real Flask release?`);
   }
-  const release = (await res.json()) as {
-    assets?: Array<{ name: string; browser_download_url: string }>;
-  };
+  const release = (await res.json()) as { assets?: GithubReleaseAsset[] };
   const flaskZips = (release.assets ?? []).filter((a) =>
     /^metamask-flask-chrome-.*\.zip$/.test(a.name),
   );
@@ -138,7 +186,7 @@ async function discoverFlaskAssetUrl(version: string): Promise<string> {
     throw new Error(`Release v${version} has no metamask-flask-chrome-*.zip asset.`);
   }
   const preferred = flaskZips.find((a) => !/deprecated/i.test(a.name)) ?? flaskZips[0];
-  return preferred.browser_download_url;
+  return { url: preferred.browser_download_url, digest: preferred.digest };
 }
 
 /** Returns the directory containing `manifest.json` (root or one level down), or null. */

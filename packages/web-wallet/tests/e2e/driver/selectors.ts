@@ -11,6 +11,16 @@
 /** The single MetaMask Flask version these selectors are verified against (item 8 guard). */
 export const EXPECTED_FLASK_VERSION = '13.31.0';
 
+/**
+ * SHA-256 of the official `metamask-flask-chrome-<version>.zip` release asset, keyed by version.
+ * Verified before unzip (see driver/flask.ts). Trust-on-first-use: computed once from the GitHub
+ * release over TLS and cross-checked against the release asset `digest` when present. To move the
+ * pin, see "Upgrading the pinned MetaMask Flask version" in docs/qa-automation-strategy.md.
+ */
+export const EXPECTED_FLASK_SHA256: Record<string, string> = {
+  '13.31.0': '33b78846c5b743edaac19964257e851cc2b09aaa9d4a4dc89165cb544670cd5e',
+};
+
 export const MetaMask = {
   onboarding: {
     /** "Create a new wallet" on the welcome screen. */
