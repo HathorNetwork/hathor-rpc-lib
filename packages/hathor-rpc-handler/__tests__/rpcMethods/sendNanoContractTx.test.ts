@@ -678,6 +678,83 @@ describe('fee pre-calculation', () => {
   });
 });
 
+describe('sendNanoContractTx change_address', () => {
+  let wallet: IHathorWallet;
+  let promptHandler: jest.Mock;
+  let capturedPrompt: SendNanoContractTxConfirmationPrompt | undefined;
+
+  const buildRequest = (extraParams: Record<string, unknown> = {}) => ({
+    method: RpcMethods.SendNanoContractTx,
+    id: '1',
+    jsonrpc: '2.0',
+    params: {
+      network: 'mainnet',
+      method: 'initialize',
+      blueprint_id: 'blueprint123',
+      nc_id: null,
+      actions: [] as NanoContractAction[],
+      args: [],
+      push_tx: true,
+      ...extraParams,
+    },
+  } as SendNanoContractRpcRequest);
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    capturedPrompt = undefined;
+    wallet = {
+      createNanoContractTransaction: jest.fn().mockResolvedValue({
+        transaction: {
+          getFeeHeader: jest.fn().mockReturnValue({ entries: [] }),
+          toHex: jest.fn().mockReturnValue('tx-hex'),
+        },
+        releaseUtxos: jest.fn().mockResolvedValue(undefined),
+      }),
+      getServerUrl: jest.fn(),
+      getAddressAtIndex: jest.fn().mockResolvedValue('temp-address'),
+    } as Partial<IHathorWallet> as IHathorWallet;
+    // Capture the confirmation prompt and reject it, which ends the flow before signing
+    promptHandler = jest.fn().mockImplementation((prompt: SendNanoContractTxConfirmationPrompt) => {
+      capturedPrompt = prompt;
+      return { type: TriggerResponseTypes.SendNanoContractTxConfirmationResponse, data: { accepted: false } };
+    });
+  });
+
+  it('should pre-build the transaction with the change address and show it in the prompt', async () => {
+    await expect(sendNanoContractTx(buildRequest({ change_address: 'change-addr' }), wallet, {}, promptHandler))
+      .rejects.toThrow(PromptRejectedError);
+
+    expect(wallet.createNanoContractTransaction).toHaveBeenCalledWith(
+      'initialize',
+      'temp-address',
+      expect.anything(),
+      expect.objectContaining({ changeAddress: 'change-addr', signTx: false }),
+    );
+    expect(capturedPrompt!.type).toBe(TriggerTypes.SendNanoContractTxConfirmationPrompt);
+    expect(capturedPrompt!.data.changeAddress).toBe('change-addr');
+  });
+
+  it.each([
+    ['omitted', {}],
+    ['null', { change_address: null }],
+  ])('should not pass a change address when it is %s', async (_label, extraParams) => {
+    await expect(sendNanoContractTx(buildRequest(extraParams), wallet, {}, promptHandler))
+      .rejects.toThrow(PromptRejectedError);
+
+    const options = (wallet.createNanoContractTransaction as jest.Mock).mock.calls[0][3];
+    expect(options).not.toHaveProperty('changeAddress');
+    expect(capturedPrompt!.data.changeAddress).toBeUndefined();
+  });
+
+  it('should reject a change address that is not a string', async () => {
+    await expect(sendNanoContractTx(buildRequest({ change_address: 123 }), wallet, {}, promptHandler))
+      .rejects.toThrow(InvalidParamsError);
+
+    expect(wallet.createNanoContractTransaction).not.toHaveBeenCalled();
+    expect(promptHandler).not.toHaveBeenCalled();
+  });
+});
+
 describe('sendNanoContractTx parameter validation', () => {
   const createMockWallet = () => {
     const mockTransaction = {
