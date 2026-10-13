@@ -51,10 +51,15 @@ case $command in
   sync)
     echo "Syncing for site: $site"
     cd "$(dirname "$0")/.." || exit 1
+    # The AASA file has no extension, so `sync` would upload it as binary/octet-stream.
+    # Apple requires application/json: skip it in the sync and upload it with an explicit type.
+    AASA=.well-known/apple-app-site-association
     if [ -n "$aws_profile" ]; then
-      aws s3 sync --delete ./dist/ s3://$S3_BUCKET --profile $aws_profile
+      aws s3 sync --delete --exclude "$AASA" ./dist/ s3://$S3_BUCKET --profile $aws_profile
+      aws s3 cp "./dist/$AASA" "s3://$S3_BUCKET/$AASA" --content-type application/json --profile $aws_profile
     else
-      aws s3 sync --delete ./dist/ s3://$S3_BUCKET
+      aws s3 sync --delete --exclude "$AASA" ./dist/ s3://$S3_BUCKET
+      aws s3 cp "./dist/$AASA" "s3://$S3_BUCKET/$AASA" --content-type application/json
     fi
     ;;
   clear_cache)
