@@ -17,6 +17,10 @@ test.describe.serial('funded wallet token lifecycle (testnet)', () => {
 
   // Per-run unique symbols (≤5 chars). Testnet tokens persist across runs, so a fixed symbol
   // could collide with a prior run and make the symbol-based selectors target the wrong token.
+  // IMPORTANT: never put these in a `test(...)` title. Playwright evaluates the spec in both the
+  // main and worker processes at slightly different times, so a Date.now()-derived title would
+  // differ between them and abort with "Test not found in the worker process". Titles stay
+  // static; the dynamic symbols live in the test bodies only.
   const tokenA = `QA${Date.now().toString(36).slice(-3).toUpperCase()}`; // deposit token
   const tokenB = `QB${Date.now().toString(36).slice(-3).toUpperCase()}`; // fee-based token
 
@@ -41,7 +45,7 @@ test.describe.serial('funded wallet token lifecycle (testnet)', () => {
     await wallet.expectSendSuccess();
   });
 
-  test(`creates a deposit token (${tokenA}) and shows the 1.00 HTR deposit`, async ({ wallet, metamask }) => {
+  test('creates a deposit token and shows the 1.00 HTR deposit', async ({ wallet, metamask }) => {
     await wallet.openCreateToken();
     await wallet.fillCreateToken({ name: `${tokenA}${Date.now()}`, symbol: tokenA, amount: '100' });
     expect(await wallet.readDepositAmount()).toBe('1.00'); // 100 tokens × 1% = 1.00 HTR
@@ -51,7 +55,7 @@ test.describe.serial('funded wallet token lifecycle (testnet)', () => {
     await wallet.closeTokenCreated();
   });
 
-  test(`sends ${tokenA} to its own address`, async ({ wallet, metamask }) => {
+  test('sends the deposit token to its own address', async ({ wallet, metamask }) => {
     await wallet.openSend();
     await wallet.fillSend({ token: tokenA, amount: '10', to: addr });
     await wallet.submitSend();
@@ -59,13 +63,13 @@ test.describe.serial('funded wallet token lifecycle (testnet)', () => {
     await wallet.expectSendSuccess();
   });
 
-  test(`unregisters ${tokenA}`, async ({ wallet }) => {
+  test('unregisters the deposit token', async ({ wallet }) => {
     await wallet.openTokenHistory(tokenA);
     await wallet.unregisterCurrentToken();
     await wallet.expectTokenNotVisible(tokenA);
   });
 
-  test(`re-imports ${tokenA} via the New Tokens banner`, async ({ wallet }) => {
+  test('re-imports the deposit token via the New Tokens banner', async ({ wallet }) => {
     // Unregistering the token (one the wallet holds on-chain) makes it "discovered"
     // again, which surfaces the New Tokens banner. Import it back through that flow,
     // targeting it by its uid from the config string ([name:symbol:uid:checksum]).
@@ -75,7 +79,7 @@ test.describe.serial('funded wallet token lifecycle (testnet)', () => {
     await wallet.expectTokenVisible(tokenA);
   });
 
-  test(`unregisters ${tokenA} again`, async ({ wallet }) => {
+  test('unregisters the deposit token again', async ({ wallet }) => {
     // Set up the second re-registration path: unregister once more so the
     // config-string flow (next test) has a token to register back.
     await wallet.openTokenHistory(tokenA);
@@ -83,14 +87,14 @@ test.describe.serial('funded wallet token lifecycle (testnet)', () => {
     await wallet.expectTokenNotVisible(tokenA);
   });
 
-  test(`re-registers ${tokenA} from its config string`, async ({ wallet }) => {
+  test('re-registers the deposit token from its config string', async ({ wallet }) => {
     // Second registration path: Header menu → Register Tokens → paste config string.
     // Both paths (banner import above and config string here) must stay covered.
     await wallet.registerToken(configA);
     await wallet.expectTokenVisible(tokenA);
   });
 
-  test(`creates a fee-based token (${tokenB}), 3 trillion units`, async ({ wallet, metamask }) => {
+  test('creates a fee-based token, 3 trillion units', async ({ wallet, metamask }) => {
     await wallet.openCreateToken();
     await wallet.waitForTokenTypeSelector();          // Unleash flag resolved on testnet
     await wallet.selectTokenType('fee');
@@ -103,7 +107,7 @@ test.describe.serial('funded wallet token lifecycle (testnet)', () => {
     void configB;                                      // captured for parity / future re-register
   });
 
-  test(`sends ${tokenB} to its own address`, async ({ wallet, metamask }) => {
+  test('sends the fee-based token to its own address', async ({ wallet, metamask }) => {
     await wallet.openSend();
     await wallet.fillSend({ token: tokenB, amount: '1000000', to: addr });
     await wallet.submitSend();

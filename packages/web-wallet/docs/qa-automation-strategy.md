@@ -128,6 +128,11 @@ yarn e2e            # runs Playwright; auto-starts the snap (:8080) and web-wall
 yarn e2e:headed     # forces a visible browser (useful for debugging)
 ```
 
+> `yarn e2e` first builds `@hathor/hathor-rpc-handler` (its `dist/` is consumed by the snap's
+> dev build). This runs automatically now, so a clean checkout works from these steps alone —
+> and a change under `packages/hathor-rpc-handler/src/**` is always picked up (no stale-handler
+> trap).
+
 Verified against **Flask 13.31.0**. The onboarding `data-testid`s are version-sensitive;
 if a Flask bump breaks onboarding, re-capture them (an earlier throwaway probe spec in git
 history walks and dumps each screen).
@@ -151,10 +156,17 @@ swapping in your own):
 2. Run the bootstrap to print the Snap-derived **testnet** address.
 3. Fund that address via the Hathor testnet faucet / faucet service.
 
+> The committed `funded` seed is a **disposable testnet stub** — its funds have no real value
+> and are topped up by the testnet faucet. If it runs dry, the funded journeys (`import`,
+> `feature-example`, `token-lifecycle`) simply fail at their first funded step; re-fund the
+> Snap-derived **testnet** address via the steps above. Onboarding needs no funds.
+
 ## Honest limitations
 
 - **Selector drift:** MetaMask's DOM changes between versions. Pin one Flask version
   (`E2E_FLASK_VERSION` / `E2E_METAMASK_PATH`); when it changes, update `driver/selectors.ts`.
+  The resolver enforces the pin (`EXPECTED_FLASK_VERSION`) and fails loudly on a mismatch — see
+  the upgrade checklist below.
 - **On-chain timing:** testnet confirmation is non-deterministic. Happy
   paths assert up to "tx submitted + success UI"; post-confirmation balance updates are a
   soft, generously-timed check — not a hard gate.
@@ -162,6 +174,18 @@ swapping in your own):
   on a virtual display); true `--headless=new` with MetaMask MV3 is flakier.
 - **Permanent test data:** created tokens / sent txs persist on testnet and can't be
   cleaned up. Token names are unique per run; runs are on-demand to limit fund usage.
+
+### Upgrading the pinned MetaMask Flask version
+
+Selectors are pinned to one Flask build (`EXPECTED_FLASK_VERSION` in `driver/selectors.ts`); the
+resolver fails loudly on a mismatch (`E2E_ALLOW_FLASK_MISMATCH=1` overrides). To move the pin:
+
+1. Bump `E2E_FLASK_VERSION` (in `.env.e2e`) to the new release and clear `tests/e2e/.cache/`.
+2. Run with `E2E_ALLOW_FLASK_MISMATCH=1 yarn e2e:headed --project=onboarding` and walk the
+   onboarding + import screens, confirming each `data-testid` in `driver/selectors.ts`
+   (`MetaMask.onboarding.*`, `MetaMask.importing.*`, `Srp.*`, `Unlock.*`) still resolves.
+3. Update any changed selectors, then set `EXPECTED_FLASK_VERSION` to the new version.
+4. Update the pinned download checksum (see the Flask-integrity note, item 6 / PR 4).
 
 ## Traceability
 
