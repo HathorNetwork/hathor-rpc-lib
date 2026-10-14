@@ -49,6 +49,7 @@ describe('signOracleData', () => {
       ...mockSignOracleDataRequest,
       type: TriggerTypes.SignOracleDataConfirmationPrompt,
       data: {
+        ncId: mockSignOracleDataRequest.params.nc_id,
         oracle: mockSignOracleDataRequest.params.oracle,
         data: mockSignOracleDataRequest.params.data,
       },
@@ -76,6 +77,7 @@ describe('signOracleData', () => {
       ...mockSignOracleDataRequest,
       type: TriggerTypes.SignOracleDataConfirmationPrompt,
       data: {
+        ncId: mockSignOracleDataRequest.params.nc_id,
         oracle: mockSignOracleDataRequest.params.oracle,
         data: mockSignOracleDataRequest.params.data,
       },
@@ -109,6 +111,7 @@ describe('signOracleData', () => {
       ...mockSignOracleDataRequest,
       type: TriggerTypes.SignOracleDataConfirmationPrompt,
       data: {
+        ncId: mockSignOracleDataRequest.params.nc_id,
         oracle: mockSignOracleDataRequest.params.oracle,
         data: mockSignOracleDataRequest.params.data,
       },
@@ -207,11 +210,37 @@ describe('signOracleData parameter validation', () => {
     ).rejects.toThrow(InvalidParamsError);
   });
 
+  // A 30-byte nc_id plus a one-character data serialize to exactly 32 bytes: the shape that would
+  // let the oracle signature be the input signature of a transaction the dApp built.
+  it.each([
+    ['30 bytes', 'ab'.repeat(30)],
+    ['63 hex characters', '0'.repeat(63)],
+    ['65 hex characters', '0'.repeat(65)],
+    ['a 0x prefix', `0x${'0'.repeat(62)}`],
+    ['a non-hex character', `${'0'.repeat(63)}g`],
+    ['an empty string', ''],
+  ])('should reject an nc_id of %s before any prompt', async (_label, ncId) => {
+    const request = {
+      method: RpcMethods.SignOracleData,
+      params: {
+        nc_id: ncId,
+        network: 'testnet',
+        oracle: '76a9140b4671452484138af42caf9c9676d951a075232c88ac',
+        data: '/',
+      },
+    } as SignOracleDataRpcRequest;
+
+    await expect(
+      signOracleData(request, mockWallet, {}, mockTriggerHandler)
+    ).rejects.toThrow(new InvalidParamsError('nc_id: nc_id must be a nano contract id: 64 hex characters'));
+    expect(mockTriggerHandler).not.toHaveBeenCalled();
+  });
+
   it('should accept valid parameters', async () => {
     const validRequest = {
       method: RpcMethods.SignOracleData,
       params: {
-        nc_id: 'test-nc-id',
+        nc_id: '000063f99b133c7630bc9d0117919f5b8726155412ad063dbbd618bdc7f85d7a',
         network: 'testnet',
         oracle: '76a9140b4671452484138af42caf9c9676d951a075232c88ac',
         data: 'test-data',
