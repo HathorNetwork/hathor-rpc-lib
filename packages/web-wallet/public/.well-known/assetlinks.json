@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "network.hathor.wallet",
+      "sha256_cert_fingerprints":
+        ["6C:4D:9E:FB:B7:D6:F8:D7:8D:91:A0:74:8F:86:F7:2C:D2:E5:82:40:CD:00:C8:5B:0C:DA:19:F9:33:BC:AE:2E"]
+    }
+  }
+]
