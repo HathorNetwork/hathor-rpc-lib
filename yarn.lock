@@ -2451,12 +2451,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@hathor/ct-crypto-provider@npm:0.5.0":
+  version: 0.5.0
+  resolution: "@hathor/ct-crypto-provider@npm:0.5.0"
+  dependencies:
+    "@types/node": "npm:20.14.2"
+  checksum: 10/6b08051a5c7e0d977439ee043343ce9a7215e1dde1270c55e9547b55054527974db942b8e0d56ec539bcbe2f63f4fa3fd41e9ab8710ecd025baab9e3f27afc7a
+  languageName: node
+  linkType: hard
+
 "@hathor/hathor-rpc-handler@workspace:, @hathor/hathor-rpc-handler@workspace:*, @hathor/hathor-rpc-handler@workspace:packages/hathor-rpc-handler":
   version: 0.0.0-use.local
   resolution: "@hathor/hathor-rpc-handler@workspace:packages/hathor-rpc-handler"
   dependencies:
     "@eslint/js": "npm:9.4.0"
-    "@hathor/wallet-lib": "npm:3.0.1"
+    "@hathor/wallet-lib": "npm:4.2.0"
     "@types/eslint__js": "npm:8.42.3"
     "@types/jest": "npm:29.5.12"
     "@types/node": "npm:22.0.0"
@@ -2591,10 +2600,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@hathor/wallet-lib@npm:3.0.1":
-  version: 3.0.1
-  resolution: "@hathor/wallet-lib@npm:3.0.1"
+"@hathor/wallet-lib@npm:4.2.0":
+  version: 4.2.0
+  resolution: "@hathor/wallet-lib@npm:4.2.0"
   dependencies:
+    "@hathor/ct-crypto-provider": "npm:0.5.0"
     axios: "npm:1.7.7"
     bitcore-lib: "npm:8.25.10"
     bitcore-mnemonic: "npm:8.25.10"
@@ -2605,7 +2615,7 @@ __metadata:
     queue-microtask: "npm:1.2.3"
     ws: "npm:8.17.1"
     zod: "npm:3.23.8"
-  checksum: 10/db74f87ffbc3c9fb915db88c8290821fc61629d9558b3aed3e9d61248caa7513fdd53af12f87e600ac2e2534903a52ae75c4f3832599728370e7b9523639d04e
+  checksum: 10/3d4dffc187a11606251fc830de3585fe91104db5796db49214fc9a46e29fe79f54fe5a977d3730b6330eceb6d43487ad426b8dafb846e2185ceec28d9424eee5
   languageName: node
   linkType: hard
 
@@ -5649,6 +5659,15 @@ __metadata:
   dependencies:
     undici-types: "npm:~7.8.0"
   checksum: 10/ff8921c515d72fbc0a11ff282096e2d2e11ac04a2e9c7f765bcec5cb69cd367a88ab5dd556dc162ac98b9212957939b7ae80f12f3fc90db10c82135affd6d120
+  languageName: node
+  linkType: hard
+
+"@types/node@npm:20.14.2":
+  version: 20.14.2
+  resolution: "@types/node@npm:20.14.2"
+  dependencies:
+    undici-types: "npm:~5.26.4"
+  checksum: 10/c38e47b190fa0a8bdfde24b036dddcf9401551f2fb170a90ff33625c7d6f218907e81c74e0fa6e394804a32623c24c60c50e249badc951007830f0d02c48ee0f
   languageName: node
   linkType: hard
 
@@ -17476,6 +17495,13 @@ __metadata:
   bin:
     undeclared-identifiers: bin.js
   checksum: 10/e1f2a18d7bf735ec2b9ee464a621d8db72768e75e59334d34d1f7085e21558c621cc105dfd4cc7a0a219b91c43b71fbdea0508cdbe3b3396ed96902c6d5d590e
+  languageName: node
+  linkType: hard
+
+"undici-types@npm:~5.26.4":
+  version: 5.26.5
+  resolution: "undici-types@npm:5.26.5"
+  checksum: 10/0097779d94bc0fd26f0418b3a05472410408877279141ded2bd449167be1aed7ea5b76f756562cb3586a07f251b90799bab22d9019ceba49c037c76445f7cddd
   languageName: node
   linkType: hard
 

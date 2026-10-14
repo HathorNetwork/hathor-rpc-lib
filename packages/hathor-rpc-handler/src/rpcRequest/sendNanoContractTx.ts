@@ -21,6 +21,7 @@ export function sendNanoContractTxRpcRequest(
   ncId: string | null,
   maxFee?: string,
   contractPaysFees?: boolean,
+  changeAddress?: string,
 ): SendNanoContractRpcRequest {
   return {
     method: RpcMethods.SendNanoContractTx,
@@ -34,6 +35,7 @@ export function sendNanoContractTxRpcRequest(
       nc_id: ncId,
       ...(maxFee !== undefined && { max_fee: maxFee }),
       ...(contractPaysFees !== undefined && { contract_pays_fees: contractPaysFees }),
+      ...(changeAddress !== undefined && { change_address: changeAddress }),
     }
   };
 }

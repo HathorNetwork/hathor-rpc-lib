@@ -41,6 +41,7 @@ const sendNanoContractSchema = z.object({
   args: z.array(z.unknown()).default([]),
   max_fee: bigIntCoercibleSchema.optional(),
   contract_pays_fees: z.boolean().optional(),
+  change_address: z.string().nullish(),
   push_tx: z.boolean().default(true),
 }).transform(data => ({
   ...data,
@@ -49,6 +50,7 @@ const sendNanoContractSchema = z.object({
   pushTx: data.push_tx,
   ...(data.max_fee !== undefined && { maxFee: data.max_fee }),
   ...(data.contract_pays_fees !== undefined && { contractPaysFees: data.contract_pays_fees }),
+  ...(data.change_address != null && { changeAddress: data.change_address }),
 })).refine(
   (data) => data.blueprintId || data.ncId,
   "Either blueprint_id or nc_id must be provided"
@@ -138,6 +140,7 @@ export async function sendNanoContractTx(
       {
         ...(params.maxFee !== undefined && { maxFee: params.maxFee }),
         ...(params.contractPaysFees !== undefined && { contractPaysFees: params.contractPaysFees }),
+        ...(params.changeAddress !== undefined && { changeAddress: params.changeAddress }),
         signTx: false,
       },
     );
@@ -170,6 +173,7 @@ export async function sendNanoContractTx(
         tokenDetails,
         fee,
         contractPaysFees: params.contractPaysFees ?? false,
+        changeAddress: params.changeAddress,
         preparedTx: preBuildSendTx.transaction,
       },
     };

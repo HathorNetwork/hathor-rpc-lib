@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import { Network, bufferUtils, nanoUtils, type IHathorWallet } from '@hathor/wallet-lib';
+import { Network, bufferUtils, errors, nanoUtils, walletUtils, type IHathorWallet } from '@hathor/wallet-lib';
 import {
   TriggerTypes,
   TriggerResponseTypes,
@@ -225,5 +225,60 @@ describe('signOracleData parameter validation', () => {
     await expect(
       signOracleData(validRequest, mockWallet, {}, mockTriggerHandler)
     ).resolves.toBeDefined();
+  });
+});
+
+// Runs the wallet-lib oracle signing for real (no nanoUtils mocks) against an xpub-only wallet.
+describe('signOracleData with a readonly wallet', () => {
+  const network = new Network('mainnet');
+  const ncId = '00'.repeat(32);
+  // Any fixed key works: only the signing path matters here.
+  const oracleKey = walletUtils
+    .getXPrivKeyFromSeed(walletUtils.generateWalletWords(), { networkName: 'mainnet' })
+    .deriveChild(0);
+  const oracleAddress = oracleKey.publicKey.toAddress(network.bitcoreNetwork).toString();
+
+  const request = {
+    method: RpcMethods.SignOracleData,
+    params: { nc_id: ncId, network: 'mainnet', oracle: oracleAddress, data: 'yes' },
+  } as SignOracleDataRpcRequest;
+
+  const buildWallet = (hasPrivateKeyMethod: boolean) => ({
+    getNetwork: jest.fn().mockReturnValue('mainnet'),
+    getNetworkObject: jest.fn().mockReturnValue(network),
+    storage: {
+      isReadonly: jest.fn().mockResolvedValue(true),
+      hasPrivateKeyMethod: jest.fn().mockReturnValue(hasPrivateKeyMethod),
+    },
+    isAddressMine: jest.fn().mockImplementation(async (address: string) => address === oracleAddress),
+    getPrivateKeyFromAddress: jest.fn().mockResolvedValue(oracleKey.privateKey),
+  } as unknown as IHathorWallet);
+
+  const acceptAll = () => jest.fn()
+    .mockResolvedValueOnce({ type: TriggerResponseTypes.SignOracleDataConfirmationResponse, data: true })
+    .mockResolvedValueOnce({ type: TriggerResponseTypes.PinRequestResponse, data: { accepted: true, pinCode: '' } });
+
+  beforeEach(() => {
+    // The suite above replaces nanoUtils with spies; this one needs the real functions.
+    jest.restoreAllMocks();
+  });
+
+  it('should sign with the key from an external private-key provider', async () => {
+    const wallet = buildWallet(true);
+
+    const result = await signOracleData(request, wallet, {}, acceptAll());
+
+    expect(wallet.getPrivateKeyFromAddress).toHaveBeenCalledWith(oracleAddress, { pinCode: '' });
+    expect(result.type).toBe(RpcResponseTypes.SignOracleDataResponse);
+    // The signature is the oracle input data: the signature followed by the oracle's public key
+    const { signature } = (result.response as { signedData: { signature: string } }).signedData;
+    expect(signature.endsWith(oracleKey.publicKey.toString())).toBe(true);
+  });
+
+  it('should still refuse to sign without an external private-key provider', async () => {
+    const wallet = buildWallet(false);
+
+    await expect(signOracleData(request, wallet, {}, acceptAll())).rejects.toThrow(errors.WalletFromXPubGuard);
+    expect(wallet.getPrivateKeyFromAddress).not.toHaveBeenCalled();
   });
 });
