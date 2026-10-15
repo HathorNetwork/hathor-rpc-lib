@@ -257,6 +257,8 @@ tests/e2e/
 
 - `packages/web-wallet/docs/qa-automation-strategy.md` — tooling, how to run the suite, and
   which layer (unit / component / E2E) owns each case.
+- `.github/workflows/e2e-web-wallet-nightly.yml` — scheduled, **non-gating** CI run of this suite
+  (signal only; never a required check). Triage failures via its uploaded Playwright artifacts.
 
 > **Security:** `wallets.config.json` holds **public testnet stub seeds only** — never a
 > mainnet seed or any wallet with real value.
