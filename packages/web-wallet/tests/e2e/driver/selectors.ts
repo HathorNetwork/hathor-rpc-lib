@@ -7,6 +7,10 @@
  * The Snap connect/install/dialog flows happen on `notification.html` and are driven by
  * visible role/text (see MetaMaskText) because those screens vary most between versions.
  */
+
+/** The single MetaMask Flask version these selectors are verified against (item 8 guard). */
+export const EXPECTED_FLASK_VERSION = '13.31.0';
+
 export const MetaMask = {
   onboarding: {
     /** "Create a new wallet" on the welcome screen. */

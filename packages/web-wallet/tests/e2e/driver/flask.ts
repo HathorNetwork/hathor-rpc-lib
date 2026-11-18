@@ -1,10 +1,44 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { EXPECTED_FLASK_VERSION } from './selectors';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = resolve(here, '..', '.cache');
+
+/**
+ * Guards against silent MetaMask drift: selectors are pinned to EXPECTED_FLASK_VERSION, so a
+ * different build (e.g. a silent auto-update, or a stale `.cache`) rots selectors into baffling
+ * mid-journey failures. Fail loudly and actionably at resolve time instead.
+ * `E2E_ALLOW_FLASK_MISMATCH=1` downgrades to a warning for someone intentionally validating a new
+ * version.
+ */
+function assertFlaskVersion(manifestDir: string): void {
+  let actual = '';
+  try {
+    const manifest = JSON.parse(readFileSync(join(manifestDir, 'manifest.json'), 'utf8')) as {
+      version?: string;
+    };
+    actual = manifest.version ?? '';
+  } catch {
+    return; // an unreadable/absent manifest is already handled by findManifestDir; don't double-fail
+  }
+  // The manifest reports a 4-part build (e.g. "13.31.0.150"); the pin is the 3-part prefix.
+  if (actual === EXPECTED_FLASK_VERSION || actual.startsWith(`${EXPECTED_FLASK_VERSION}.`)) return;
+
+  const message =
+    `MetaMask Flask version mismatch: driver/selectors.ts is pinned to ` +
+    `${EXPECTED_FLASK_VERSION}, but the loaded build is "${actual || 'unknown'}". ` +
+    `Selectors are version-sensitive — re-verify them (see "Upgrading the pinned MetaMask ` +
+    `version" in docs/qa-automation-strategy.md), then bump EXPECTED_FLASK_VERSION. ` +
+    `Set E2E_ALLOW_FLASK_MISMATCH=1 to proceed anyway.`;
+  if (process.env.E2E_ALLOW_FLASK_MISMATCH === '1') {
+    console.warn(`[flask] WARNING: ${message}`);
+    return;
+  }
+  throw new Error(message);
+}
 
 /**
  * Resolves a path to an *unpacked* MetaMask Flask build to load as a Chromium extension.
@@ -30,6 +64,7 @@ export async function resolveFlaskPath(): Promise<string> {
           `Point it at an unpacked MetaMask Flask build directory.`,
       );
     }
+    assertFlaskVersion(found);
     return found;
   }
 
@@ -47,7 +82,10 @@ export async function resolveFlaskPath(): Promise<string> {
 
   const dest = join(CACHE_DIR, `flask-${version}`);
   const cached = existsSync(dest) ? findManifestDir(dest) : null;
-  if (cached) return cached;
+  if (cached) {
+    assertFlaskVersion(cached);
+    return cached;
+  }
 
   mkdirSync(dest, { recursive: true });
   const assetUrl = await discoverFlaskAssetUrl(version);
@@ -69,6 +107,7 @@ export async function resolveFlaskPath(): Promise<string> {
   if (!unpacked) {
     throw new Error(`Downloaded Flask ${version} but no manifest.json found under ${dest}.`);
   }
+  assertFlaskVersion(unpacked);
   return unpacked;
 }
 

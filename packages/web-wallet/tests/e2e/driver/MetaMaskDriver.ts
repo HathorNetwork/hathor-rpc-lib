@@ -1,9 +1,12 @@
 import type { BrowserContext, Locator, Page } from '@playwright/test';
 import { MetaMask, MetaMaskText, Srp, Unlock } from './selectors';
 import { SPLIT_WINDOWS } from './windows';
-import { TIMEOUTS } from './timeouts';
+import { TIMEOUTS } from '../timeouts';
 
 const DEFAULT_PASSWORD = 'Test1234!Test';
+
+/** This Flask build's SRP length. Kept explicit so the reveal read is bounded and checkable. */
+const SEED_WORD_COUNT = 12;
 
 /**
  * Drives the real MetaMask Flask extension: onboarding a fresh wallet, and approving the
@@ -158,20 +161,38 @@ export class MetaMaskDriver {
   private async revealAndSaveSeed(): Promise<string[]> {
     const page = await this.openHome();
     await page.getByTestId(MetaMask.onboarding.recoveryReveal).click();
-    await page.waitForTimeout(1200);
-    const words: string[] = [];
-    for (let i = 0; i < 12; i++) {
-      const raw = (await page.getByTestId(Srp.chip(i)).textContent().catch(() => '')) || '';
-      words.push(raw.replace(/[^a-z]/gi, ''));
+
+    // Chips populate asynchronously; on a slow render a one-shot read can catch an empty chip
+    // and turn a transient into a hard failure. Poll the read (bounded by TIMEOUTS.seedReveal)
+    // until every word is present, THEN keep the fail-fast throw for a genuinely missing word.
+    const deadline = Date.now() + TIMEOUTS.seedReveal;
+    let words: string[] = [];
+    for (;;) {
+      words = await this.readSeedWords(page);
+      if (words.length === SEED_WORD_COUNT && words.every((word) => word)) break;
+      if (Date.now() >= deadline) {
+        await this.dumpScreen('recovery-phrase-missing-word');
+        throw new Error(
+          `Failed to read all ${SEED_WORD_COUNT} MetaMask recovery words within ` +
+            `${TIMEOUTS.seedReveal}ms (read: ${JSON.stringify(words)}).`,
+        );
+      }
+      await page.waitForTimeout(300);
     }
-    // An empty word breaks the quiz later as an opaque timeout — fail at the source.
-    if (words.some((word) => !word)) {
-      await this.dumpScreen('recovery-phrase-missing-word');
-      throw new Error('Failed to read all MetaMask recovery words.');
-    }
+
     this.seedPhrase = words.join(' ');
     await page.getByTestId(MetaMask.onboarding.recoveryContinue).click();
     await page.waitForTimeout(1200);
+    return words;
+  }
+
+  /** Reads the SRP chips once; empty/missing chips come back as empty strings (letters only). */
+  private async readSeedWords(page: Page): Promise<string[]> {
+    const words: string[] = [];
+    for (let i = 0; i < SEED_WORD_COUNT; i++) {
+      const raw = (await page.getByTestId(Srp.chip(i)).textContent().catch(() => '')) || '';
+      words.push(raw.replace(/[^a-z]/gi, ''));
+    }
     return words;
   }
 

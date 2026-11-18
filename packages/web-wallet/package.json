@@ -12,8 +12,9 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "e2e": "playwright test --config playwright.e2e.config.ts",
-    "e2e:headed": "E2E_HEADED=1 playwright test --config playwright.e2e.config.ts"
+    "e2e:deps": "yarn workspace @hathor/hathor-rpc-handler build",
+    "e2e": "yarn e2e:deps && playwright test --config playwright.e2e.config.ts",
+    "e2e:headed": "yarn e2e:deps && E2E_HEADED=1 playwright test --config playwright.e2e.config.ts"
   },
   "dependencies": {
     "@hathor/hathor-rpc-handler": "workspace:",
