@@ -27,7 +27,10 @@ import { PromptRejectedError, InvalidParamsError } from '../errors';
 import { z } from 'zod';
 
 const signOracleDataSchema = z.object({
-  nc_id: z.string(),
+  // A nano contract id is 32 bytes. The wallet signs nc_id followed by the data, and with a shorter
+  // nc_id a dApp could make that 32 bytes: the signature hash of a transaction it built, whose input
+  // signature the oracle signature would then be.
+  nc_id: z.string().regex(/^[0-9a-f]{64}$/i, 'nc_id must be a nano contract id: 64 hex characters'),
   network: z.string().min(1),
   oracle: z.string().min(1),
   data: z.string().min(1),
@@ -52,6 +55,7 @@ export async function signOracleData(
     ...rpcRequest,
     type: TriggerTypes.SignOracleDataConfirmationPrompt,
     data: {
+      ncId: params.nc_id,
       oracle: params.oracle,
       data: params.data,
     }

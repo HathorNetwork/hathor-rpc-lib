@@ -143,6 +143,8 @@ export type GetUtxosConfirmationPrompt = BaseConfirmationPrompt & {
 export type SignOracleDataConfirmationPrompt = BaseConfirmationPrompt & {
   type: TriggerTypes.SignOracleDataConfirmationPrompt;
   data: {
+    // The nano contract the data is signed for: wallets should show it with the oracle and data.
+    ncId: string;
     oracle: string;
     data: string;
   }
