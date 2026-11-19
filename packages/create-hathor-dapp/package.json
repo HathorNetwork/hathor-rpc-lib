@@ -1,0 +1,42 @@
+{
+  "name": "@hathor/create-hathor-dapp",
+  "version": "0.1.0",
+  "description": "Create Hathor dApps with one command",
+  "main": "index.js",
+  "bin": {
+    "create-hathor-dapp": "./cli.js"
+  },
+  "files": [
+    "template",
+    "cli.js",
+    "index.js"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "hathor",
+    "dapp",
+    "nextjs",
+    "template",
+    "blockchain",
+    "metamask",
+    "snap"
+  ],
+  "author": "Hathor Network",
+  "license": "MIT",
+  "dependencies": {
+    "prompts": "^2.4.2",
+    "chalk": "^4.1.2",
+    "fs-extra": "^11.2.0",
+    "validate-npm-package-name": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HathorNetwork/hathor-rpc-lib.git",
+    "directory": "packages/create-hathor-dapp"
+  }
+}
